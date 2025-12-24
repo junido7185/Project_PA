@@ -1,10 +1,17 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerInteraction : MonoBehaviour
 {
     public float interactDistance = 2.0f; // 상호작용 가능한 거리 (2미터)
     public LayerMask interactLayer;       // (심화) 특정 레이어만 감지할 때 사용
+    private Animator anim; // 애니메이터 가져오기
 
+    void Start()
+    {
+        // 내 몸(또는 자식)에 있는 Animator 찾기
+        anim = GetComponentInChildren<Animator>();
+    }
     void Update()
     {
         // 스페이스바(Space)를 눌렀을 때 실행
@@ -39,16 +46,8 @@ public class PlayerInteraction : MonoBehaviour
             // 4. 무엇에 맞았는지 확인
             if (hit.collider.CompareTag("Tree"))
             {
-                // 기존 코드: Debug.Log(...); Destroy(...);
-                
-                // 수정 코드: 나무에 붙은 Gatherable 스크립트를 가져온다
-                Gatherable gatherable = hit.collider.GetComponent<Gatherable>();
-                
-                if (gatherable != null)
-                {
-                    Debug.Log("🌲 나무 채집!");
-                    gatherable.Harvest(); // 수확 함수 실행 (여기서 인벤토리 추가 + 삭제 다 함)
-                }
+                // 바로 채집하지 말고, 코루틴으로 '시간차'를 둡니다.
+                StartCoroutine(ChopAndHarvest(hit.collider.gameObject));
             }
             else if (hit.collider.CompareTag("Shop"))
             {
@@ -68,5 +67,28 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
+    // ⏳ 시간차 공격 함수 (Coroutine)
+    IEnumerator ChopAndHarvest(GameObject treeObj)
+    {
+        // 1. 도끼질 애니메이션 실행!
+        if (anim != null)
+        {
+            anim.SetTrigger("DoChop"); 
+        }
 
+        // 2. 도끼가 내려가는 시간(약 0.5초)만큼 기다림
+        // (애니메이션 속도에 맞춰서 조절하세요)
+        yield return new WaitForSeconds(0.5f);
+
+        // 3. 나무가 아직 존재하면 채집 실행
+        if (treeObj != null)
+        {
+            Gatherable gatherable = treeObj.GetComponent<Gatherable>();
+            if (gatherable != null)
+            {
+                Debug.Log("🪓 쩍!");
+                gatherable.Harvest();
+            }
+        }
+    }
 }
