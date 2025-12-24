@@ -64,6 +64,18 @@ public class PlayerInteraction : MonoBehaviour
             {
                 Debug.Log("💬 NPC와 대화를 시작합니다.");
             }
+            else if (hit.collider.CompareTag("Worktable"))
+            {
+                Crafter crafter = hit.collider.GetComponent<Crafter>();
+                if (crafter != null)
+                {
+                    // 도끼질 모션 재활용 (제작 모션처럼 보이게!)
+                    if (anim != null) anim.SetTrigger("DoChop"); 
+                    
+                    Debug.Log("⚙️ 가공 시작...");
+                    crafter.Craft();
+                }
+            }
         }
     }
 
