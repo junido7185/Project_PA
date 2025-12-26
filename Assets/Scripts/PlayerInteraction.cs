@@ -47,7 +47,8 @@ public class PlayerInteraction : MonoBehaviour
             if (hit.collider.CompareTag("Tree"))
             {
                 // 바로 채집하지 말고, 코루틴으로 '시간차'를 둡니다.
-                StartCoroutine(ChopAndHarvest(hit.collider.gameObject));
+                // (CheckToolAndChop 안에서 검사 통과 시 StartCoroutine을 실행해 줍니다.)
+                CheckToolAndChop(hit.collider.gameObject);
             }
             else if (hit.collider.CompareTag("Shop"))
             {
@@ -102,5 +103,28 @@ public class PlayerInteraction : MonoBehaviour
                 gatherable.Harvest();
             }
         }
+    }
+
+    void CheckToolAndChop(GameObject targetObj)
+    {
+        // 1. 대상(나무)이 요구하는 도구가 뭔지 확인
+        Gatherable gatherable = targetObj.GetComponent<Gatherable>();
+        if (gatherable == null) return;
+
+        // 2. 현재 내가 손에 든 아이템 가져오기
+        ItemData currentItem = Inventory.instance.GetSelectedItem();
+
+        // 3. 비교 (맨손이거나, 도구 타입이 안 맞으면 거절)
+        if (gatherable.requiredTool != ToolType.None)
+        {
+            if (currentItem == null || currentItem.toolType != gatherable.requiredTool)
+            {
+                Debug.Log("🚫 도구가 필요합니다! (" + gatherable.requiredTool + ")");
+                return; // 함수 종료 (안 캡니다)
+            }
+        }
+
+        // 4. 조건 통과하면 채집 시작
+        StartCoroutine(ChopAndHarvest(targetObj));
     }
 }

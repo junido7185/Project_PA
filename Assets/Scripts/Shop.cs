@@ -7,32 +7,47 @@ public class Shop : MonoBehaviour
     {
         Inventory inventory = Inventory.instance;
 
-        // 1. 인벤토리가 비었는지 확인
         if (inventory.items.Count == 0)
         {
             Debug.Log("🚫 팔 물건이 없습니다!");
             return;
         }
 
-        int totalEarnings = 0; // 총 판매 수익금
+        int totalEarnings = 0;
+        int soldCount = 0; // 몇 개 팔았는지 세기
 
-        // 2. 인벤토리의 모든 아이템 가격 합산
-        foreach (ItemData item in inventory.items)
+        // ⭐ 리스트를 수정(삭제)할 때는 '뒤에서부터' 반복하긔
+        // (앞에서부터 지우면 인덱스가 당겨져서 건너뛰는 아이템이 생기거든요)
+        for (int i = inventory.items.Count - 1; i >= 0; i--)
         {
+            ItemData item = inventory.items[i];
+
+            // 🛑 중요: 도구(ToolType이 None이 아닌 것)는 팔지 않고 건너뜀!
+            if (item.toolType != ToolType.None)
+            {
+                continue; 
+            }
+
+            // 판매 로직
             totalEarnings += item.basePrice;
+            inventory.items.RemoveAt(i); // 리스트에서 해당 아이템만 쏙 뺌
+            soldCount++;
         }
 
-        // 3. 돈 지급
-        GameManager.instance.AddMoney(totalEarnings);
-        Debug.Log("💵 정산 완료! 수익: " + totalEarnings + "G");
-
-        // 4. 인벤토리 비우기
-        inventory.items.Clear();
-        
-        // 5. UI 갱신 요청 (초인종 누르기)
-        if (inventory.onItemChangedCallback != null)
+        if (soldCount > 0)
         {
-            inventory.onItemChangedCallback.Invoke();
+            GameManager.instance.AddMoney(totalEarnings);
+            Debug.Log("💵 정산 완료! " + soldCount + "개 판매, 수익: " + totalEarnings + "G");
+
+            // UI 갱신 요청
+            if (inventory.onItemChangedCallback != null)
+            {
+                inventory.onItemChangedCallback.Invoke();
+            }
+        }
+        else
+        {
+            Debug.Log("🚫 판매할 수 있는 아이템(자원)이 없습니다.");
         }
     }
 }
