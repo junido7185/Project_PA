@@ -111,19 +111,49 @@ public class BuildManager : MonoBehaviour
 
     void BuildIt()
     {
-        // 돈 검사
-        if (GameManager.instance.money < currentBuilding.price)
+        Debug.Log("🏗️ 건설 시작 시도...");
+
+        // 1. 필수 데이터 체크
+        if (Inventory.instance == null || GameManager.instance == null) return;
+
+        ItemData heldItem = Inventory.instance.GetSelectedItem();
+        if (heldItem == null) return;
+        if (ghostObject == null) return;
+
+        // ⭐ [핵심 1] 중요 데이터 미리 백업 (대피시키기!)
+        // 아이템을 지우면 currentBuilding도 null이 될 수 있으므로, 미리 프리팹과 위치를 빼둡니다.
+        GameObject prefabToBuild = currentBuilding.prefab; 
+        Vector3 buildPos = ghostObject.transform.position;
+        Quaternion buildRot = ghostObject.transform.rotation;
+        int price = currentBuilding.price; // 가격도 미리 저장
+
+        // 2. 돈 검사
+        if (GameManager.instance.money < price)
         {
             Debug.Log("💸 돈 부족!");
             return;
         }
 
-        GameManager.instance.AddMoney(-currentBuilding.price);
+        // 3. 자원 차감 (이제 여기서 currentBuilding이 null이 되어도 상관없음!)
+        GameManager.instance.AddMoney(-price); 
+        Inventory.instance.RemoveItems(heldItem, 1); 
+        Debug.Log("➖ 아이템 차감 완료");
 
-        // 진짜 건물 생성
-        Instantiate(currentBuilding.prefab, ghostObject.transform.position, ghostObject.transform.rotation);
-        Debug.Log("✅ 건설 완료!");
-        
-        // 딩컴은 건설 후에도 모드 유지함 (연속 건설)
+        // 4. 건물 생성 (백업해둔 prefabToBuild 사용)
+        if (prefabToBuild != null)
+        {
+            Instantiate(prefabToBuild, buildPos, buildRot);
+            Debug.Log("✅ 건설 성공! (건물 소환됨)");
+        }
+        else
+        {
+            Debug.LogError("🚨 프리팹이 비어있어서 건설 실패!");
+        }
+
+        // 5. 남은 아이템 확인
+        if (Inventory.instance.HasItems(heldItem, 1) == false)
+        {
+            StopBuildMode();
+        }
     }
 }

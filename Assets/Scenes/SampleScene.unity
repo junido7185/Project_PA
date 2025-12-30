@@ -1749,14 +1749,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildManager
   gridSize: 2
   buildDistance: 2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 64
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 128
-  ghostMaterial: {fileID: 2100000, guid: bcd2f8936e254ec4e8bf767995d359c5, type: 2}
-  playerBody: {fileID: 1164814030}
   currentBuilding: {fileID: 0}
 --- !u!1 &1210526750
 GameObject:
@@ -1814,20 +1809,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1210526750}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7f6b78e84c1ca6498d87c971f27f55a, type: 3}
+  m_Script: {fileID: 11500000, guid: 9e148196cb3f52346a76d060b68545c4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BuildManager
-  gridSize: 2
-  buildDistance: 2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  obstacleLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  ghostMaterial: {fileID: 0}
-  playerBody: {fileID: 0}
-  currentBuilding: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::SaveManager
+  allBuildingTypes:
+  - {fileID: 11400000, guid: ea4185422a90a964ea7ef95b1a739166, type: 2}
+  - {fileID: 11400000, guid: de6d1dc5ff7e2bc44b1e0432976cf542, type: 2}
 --- !u!1001 &1243476943
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2701,7 +2688,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59dff76ad437c22468c7f052726ee628, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BuildMenuUI
-  buildPanel: {fileID: 0}
 --- !u!1001 &1770131950
 PrefabInstance:
   m_ObjectHideFlags: 0

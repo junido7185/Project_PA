@@ -8,6 +8,7 @@ TagManager:
   - Shop
   - Worktable
   - Rock
+  - Building
   layers:
   - Default
   - TransparentFX
