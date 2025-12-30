@@ -6,7 +6,8 @@ public enum ToolType
     None,       // 도구 아님 (재료 등)
     Axe,        // 도끼 (나무용)
     Pickaxe,    // 곡괭이 (광석용)
-    Weapon      // 무기 (전투용)
+    Weapon,     // 무기 (전투용)
+    Building    // 설치할 오브젝트
 }
 
 // 이 스크립트는 게임 오브젝트에 붙이는 게 아니라,
@@ -22,4 +23,9 @@ public class ItemData : ScriptableObject
     
     [TextArea]
     public string description;    // 아이템 설명
+
+    // ⭐ [핵심 추가] 이 아이템을 들면 지어질 건물 데이터!
+    // 비어있으면 일반 아이템, 들어있으면 건설 아이템으로 인식합니다.
+    [Header("건설 설정 (건축 아이템일 경우만)")]
+    public BuildingData buildingToBuild;
 }

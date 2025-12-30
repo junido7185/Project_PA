@@ -88,6 +88,44 @@ public class Inventory : MonoBehaviour
             onItemChangedCallback.Invoke();
         }
     }
+
+    // 재료가 충분한지 확인하는 함수
+    public bool HasItems(ItemData item, int count)
+    {
+        int currentCount = 0;
+        
+        // 내 주머니(items)를 뒤져서 개수를 센다
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (items[i] == item)
+            {
+                currentCount++; // 아이템 발견! +1
+            }
+        }
+        
+        // 찾은 개수가 필요 개수보다 많으면 합격
+        return currentCount >= count;
+    }
+
+    // 아이템을 차감하는 함수
+    public void RemoveItems(ItemData item, int count)
+    {
+        int itemsToRemove = count;
+
+        for (int i = items.Count - 1; i >= 0; i--)
+        {
+            if (itemsToRemove <= 0) break;
+
+            if (items[i] == item)
+            {
+                items.RemoveAt(i); 
+                itemsToRemove--;   
+                
+                if (onSlotChangedCallback != null)
+                    onSlotChangedCallback.Invoke(i); 
+            }
+        }
+    }
     
     // (나중에 아이템 제거, 정렬 기능 등 추가 예정)
 }

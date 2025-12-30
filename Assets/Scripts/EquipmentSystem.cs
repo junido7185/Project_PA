@@ -2,35 +2,38 @@ using UnityEngine;
 
 public class EquipmentSystem : MonoBehaviour
 {
-    // Inspector에서 연결할 장비 모델들
-    public GameObject axeModel;     // 도끼 오브젝트 (Equip_Axe)
-    public GameObject pickaxeModel; // 나중에 곡괭이도 생기면 추가
+    public GameObject axeModel;     
+    public GameObject pickaxeModel; 
 
     void Start()
     {
-        // 인벤토리 슬롯 변경될 때마다 내 함수(UpdateEquipment) 실행해달라고 등록
         Inventory.instance.onSlotChangedCallback += UpdateEquipment;
-        
-        // 시작할 때 한 번 실행 (초기화)
         UpdateEquipment(Inventory.instance.selectedSlotIndex);
     }
 
     void UpdateEquipment(int slotIndex)
     {
+        // 1. 모델 초기화 (도끼/곡괭이 끄기)
         if (axeModel != null) axeModel.SetActive(false);
-        if (pickaxeModel != null) pickaxeModel.SetActive(false); // 👇 주석 해제
+        if (pickaxeModel != null) pickaxeModel.SetActive(false);
 
+        // 2. 일단 건설 모드 끄기 (기본값)
+        // (BuildManager가 내 몸에 붙어있으니 GetComponent로 바로 찾음)
+        BuildManager buildMgr = GetComponent<BuildManager>();
+        if (buildMgr != null) buildMgr.StopBuildMode();
+
+        // 3. 아이템 데이터 확인
         ItemData item = Inventory.instance.GetSelectedItem();
-        if (item == null) return;
+        if (item == null) return; // 빈손
 
-        if (item.toolType == ToolType.Axe)
+        // --- 도구 모델 켜기 ---
+        if (item.toolType == ToolType.Axe && axeModel != null) axeModel.SetActive(true);
+        if (item.toolType == ToolType.Pickaxe && pickaxeModel != null) pickaxeModel.SetActive(true);
+
+        // --- ⭐ 건설 아이템이면 건설 모드 켜기 ---
+        if (item.buildingToBuild != null && buildMgr != null)
         {
-            if (axeModel != null) axeModel.SetActive(true);
-        }
-        else if (item.toolType == ToolType.Pickaxe) // 👇 주석 해제 및 로직 활성화
-        {
-            if (pickaxeModel != null) pickaxeModel.SetActive(true);
-            Debug.Log("⛏️ 곡괭이 장착!");
+            buildMgr.SetBuildMode(item.buildingToBuild);
         }
     }
 }

@@ -987,6 +987,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CommonTree_3 (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 5499962449107183316, guid: 56f07ac26ef8c4a48903c698834b4592, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1005,7 +1009,7 @@ GameObject:
   - component: {fileID: 782078349}
   - component: {fileID: 782078348}
   - component: {fileID: 782078352}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Worktable
   m_TagString: Worktable
   m_Icon: {fileID: 0}
@@ -1131,7 +1135,7 @@ GameObject:
   - component: {fileID: 803414310}
   - component: {fileID: 803414309}
   - component: {fileID: 803414313}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1365,6 +1369,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CommonTree_3 (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 5499962449107183316, guid: 56f07ac26ef8c4a48903c698834b4592, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1594,9 +1602,10 @@ GameObject:
   - component: {fileID: 1164814032}
   - component: {fileID: 1164814033}
   - component: {fileID: 1164814034}
+  - component: {fileID: 1164814035}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1711,6 +1720,7 @@ MonoBehaviour:
   startingItems:
   - {fileID: 11400000, guid: 51cfe209ea1b32049a1956ae7e8eaf1f, type: 2}
   - {fileID: 11400000, guid: 063464a0e13b2e647b9e5834834f0fb8, type: 2}
+  - {fileID: 11400000, guid: 2ec09717f2bfda645b6f454524249a18, type: 2}
 --- !u!114 &1164814034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1725,6 +1735,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentSystem
   axeModel: {fileID: 1466189251}
   pickaxeModel: {fileID: 2144488341}
+--- !u!114 &1164814035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1164814025}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7f6b78e84c1ca6498d87c971f27f55a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildManager
+  gridSize: 2
+  buildDistance: 2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  ghostMaterial: {fileID: 2100000, guid: bcd2f8936e254ec4e8bf767995d359c5, type: 2}
+  playerBody: {fileID: 1164814030}
+  currentBuilding: {fileID: 0}
 --- !u!1 &1210526750
 GameObject:
   m_ObjectHideFlags: 0
@@ -1784,6 +1817,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7f6b78e84c1ca6498d87c971f27f55a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BuildManager
+  gridSize: 2
+  buildDistance: 2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  ghostMaterial: {fileID: 0}
+  playerBody: {fileID: 0}
   currentBuilding: {fileID: 0}
 --- !u!1001 &1243476943
 PrefabInstance:
@@ -1836,6 +1879,10 @@ PrefabInstance:
     - target: {fileID: 5499962449107183316, guid: 56f07ac26ef8c4a48903c698834b4592, type: 3}
       propertyPath: m_Name
       value: CommonTree_3 (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5499962449107183316, guid: 56f07ac26ef8c4a48903c698834b4592, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2182,7 +2229,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.392}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -2205,6 +2252,106 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1520602758}
+  m_CullTransparentMesh: 1
+--- !u!1 &1666148656
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1666148657}
+  - component: {fileID: 1666148660}
+  - component: {fileID: 1666148659}
+  - component: {fileID: 1666148658}
+  m_Layer: 5
+  m_Name: CraftingPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &1666148657
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666148656}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1721866178}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 500, y: 400}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1666148658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666148656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 0
+  m_StartCorner: 0
+  m_StartAxis: 0
+  m_CellSize: {x: 100, y: 120}
+  m_Spacing: {x: 0, y: 0}
+  m_Constraint: 1
+  m_ConstraintCount: 4
+--- !u!114 &1666148659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666148656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 0.891803, b: 0.77672946, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1666148660
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666148656}
   m_CullTransparentMesh: 1
 --- !u!1001 &1679874457
 PrefabInstance:
@@ -2432,6 +2579,8 @@ GameObject:
   - component: {fileID: 1721866177}
   - component: {fileID: 1721866176}
   - component: {fileID: 1721866175}
+  - component: {fileID: 1721866179}
+  - component: {fileID: 1721866180}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -2517,6 +2666,7 @@ RectTransform:
   - {fileID: 1520602759}
   - {fileID: 1337448245}
   - {fileID: 2083908704}
+  - {fileID: 1666148657}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2524,6 +2674,34 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1721866179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721866174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 124327b5f4554774d8f6bd7c75996c69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CraftingUI
+  craftingPanel: {fileID: 1666148656}
+  slotParent: {fileID: 1666148657}
+  slotPrefab: {fileID: 596180908524657765, guid: aaebd20b5852e6d4f987582ad7ce005a, type: 3}
+--- !u!114 &1721866180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721866174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59dff76ad437c22468c7f052726ee628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BuildMenuUI
+  buildPanel: {fileID: 0}
 --- !u!1001 &1770131950
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2677,6 +2855,10 @@ PrefabInstance:
     - target: {fileID: 5499962449107183316, guid: 56f07ac26ef8c4a48903c698834b4592, type: 3}
       propertyPath: m_Name
       value: CommonTree_3 (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5499962449107183316, guid: 56f07ac26ef8c4a48903c698834b4592, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2852,7 +3034,7 @@ GameObject:
   - component: {fileID: 1962432425}
   - component: {fileID: 1962432424}
   - component: {fileID: 1962432428}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Shop_Bin
   m_TagString: Shop
   m_Icon: {fileID: 0}
@@ -3051,7 +3233,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -3140,6 +3322,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 7ec07590327314243be462ff38f40c6b, type: 3}
       propertyPath: m_Name
       value: Character
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 7ec07590327314243be462ff38f40c6b, type: 3}
+      propertyPath: m_TagString
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 7ec07590327314243be462ff38f40c6b, type: 3}
       propertyPath: m_Controller
@@ -3321,6 +3507,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CommonTree_3
       objectReference: {fileID: 0}
+    - target: {fileID: 5499962449107183316, guid: 56f07ac26ef8c4a48903c698834b4592, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3345,6 +3535,10 @@ PrefabInstance:
     - target: {fileID: 3584934866814496129, guid: 41e4986bef1ddc6499eb581451605a2e, type: 3}
       propertyPath: m_Name
       value: Rock_4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3584934866814496129, guid: 41e4986bef1ddc6499eb581451605a2e, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4218729259529910075, guid: 41e4986bef1ddc6499eb581451605a2e, type: 3}
       propertyPath: m_LocalPosition.x

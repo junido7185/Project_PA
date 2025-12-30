@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uBAA9\uC7AC \uAC00\uACF5"
   inputItem: {fileID: 11400000, guid: c23028a8cc77c064a88ea3acdcb8a124, type: 2}
-  inputCount: 1
+  inputCount: 2
   outputItem: {fileID: 11400000, guid: 85a4e07e2854c824daf8996a7f2834e5, type: 2}
   outputCount: 1

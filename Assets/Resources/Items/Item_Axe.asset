@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Item_Axe
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemName: "\uB0A1\uC740 \uB3C4\uB07C"
-  icon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  icon: {fileID: 21300000, guid: 3730e1eedfffd2948bb740e30373d554, type: 3}
   basePrice: 50
   isStackable: 0
   toolType: 1
