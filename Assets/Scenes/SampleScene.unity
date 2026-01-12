@@ -1008,7 +1008,6 @@ GameObject:
   - component: {fileID: 782078350}
   - component: {fileID: 782078349}
   - component: {fileID: 782078348}
-  - component: {fileID: 782078352}
   m_Layer: 7
   m_Name: Worktable
   m_TagString: Worktable
@@ -1109,19 +1108,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &782078352
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 782078347}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6114e1a120f1e8e4e9b1b8c5f8c9561b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Crafter
-  recipe: {fileID: 11400000, guid: 38a984328ef6c8b4899657d18b08671d, type: 2}
 --- !u!1 &803414308
 GameObject:
   m_ObjectHideFlags: 0
@@ -1137,7 +1123,7 @@ GameObject:
   - component: {fileID: 803414313}
   m_Layer: 6
   m_Name: Ground
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
@@ -1703,6 +1689,7 @@ MonoBehaviour:
   interactLayer:
     serializedVersion: 2
     m_Bits: 0
+  farmlandPrefab: {fileID: 2331185570302644887, guid: 3f2b544a0b0bdbc4cb87f375e2d438bc, type: 3}
 --- !u!114 &1164814033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1721,6 +1708,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 51cfe209ea1b32049a1956ae7e8eaf1f, type: 2}
   - {fileID: 11400000, guid: 063464a0e13b2e647b9e5834834f0fb8, type: 2}
   - {fileID: 11400000, guid: 2ec09717f2bfda645b6f454524249a18, type: 2}
+  - {fileID: 11400000, guid: 42ef502e9069a6f418122fe23e310e7e, type: 2}
+  - {fileID: 11400000, guid: 43cef530bbf04194688232887c588351, type: 2}
 --- !u!114 &1164814034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3587,9 +3576,9 @@ SceneRoots:
   - {fileID: 440786836}
   - {fileID: 782078351}
   - {fileID: 196176659594444528}
-  - {fileID: 688930130}
   - {fileID: 1243476943}
   - {fileID: 1007704614}
   - {fileID: 1772777779}
   - {fileID: 1907959895}
   - {fileID: 824581535503502959}
+  - {fileID: 688930130}

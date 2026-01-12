@@ -6,6 +6,7 @@ public class PlayerInteraction : MonoBehaviour
     public float interactDistance = 2.0f; // 상호작용 가능한 거리 (2미터)
     public LayerMask interactLayer;       // (심화) 특정 레이어만 감지할 때 사용
     private Animator anim; // 애니메이터 가져오기
+    public GameObject farmlandPrefab; // 밭 프리팹 연결용
 
     void Start()
     {
@@ -23,58 +24,108 @@ public class PlayerInteraction : MonoBehaviour
 
     void TryInteract()
     {
-        // 1. 레이저 시작점: 발바닥(transform.position)이 아니라 가슴 높이 정도(Vector3.up * 0.5f)에서 쏴야 함.
+        // 1. 시작점: 가슴 높이
         Vector3 origin = transform.position + Vector3.up * 0.5f;
         
-        // 2. 레이저 방향: 플레이어가 바라보는 앞쪽(transform.forward)
+        // 2. 기본 방향: 정면
         Vector3 direction = transform.forward;
 
-        // 3. 레이캐스트 발사! (충돌 정보는 hit 변수에 담김)
-        RaycastHit hit;
+        // 딩컴 스타일 보정
+        // 만약 괭이(Hoe)를 들고 있다면? -> 시선을 '대각선 아래'로 깐다!
+        ItemData heldItem = Inventory.instance.GetSelectedItem();
+        if (heldItem != null && (heldItem.toolType == ToolType.Hoe || heldItem.toolType == ToolType.Seed))
+        {
+            // 정면(forward) + 아래(down) = 대각선 아래 ↘️
+            direction = (transform.forward + Vector3.down).normalized;
+        }
 
-        // ⭐ 핵심 변경: Raycast -> SphereCast (구체를 쏘는 것)
-        // 반지름(radius)을 0.5f로 줘서 두꺼운 빔을 쏩니다.
+        RaycastHit hit;
         float radius = 0.5f;
-        
-        // 디버그용 그림도 레이저 대신 동그라미가 나가는 걸 표현하긴 어려우니 선으로 유지하되,
-        // 마음속으로는 "이 선 주변 0.5미터는 다 맞는다"고 생각하세요.
+
+        // 디버그: 빨간 선이 땅에 박히는지 눈으로 확인하세요!
         Debug.DrawRay(origin, direction * interactDistance, Color.red, 1.0f);
 
-        // Physics.SphereCast(시작점, 반지름, 방향, 결과담을변수, 거리)
         if (Physics.SphereCast(origin, radius, direction, out hit, interactDistance))
         {
-            // 4. 무엇에 맞았는지 확인
-            if (hit.collider.CompareTag("Tree"))
+            // 디버그 로그: 뭐가 맞았는지 확인
+            // Debug.Log($"🎯 맞은 놈: {hit.collider.name} / 태그: {hit.collider.tag}");
+
+            GameObject hitObj = hit.collider.gameObject;
+
+            if (hitObj.CompareTag("Tree"))
             {
-                // 바로 채집하지 말고, 코루틴으로 '시간차'를 둡니다.
-                // (CheckToolAndChop 안에서 검사 통과 시 StartCoroutine을 실행해 줍니다.)
-                CheckToolAndChop(hit.collider.gameObject);
+                CheckToolAndChop(hitObj);
             }
-            else if (hit.collider.CompareTag("Shop"))
+            else if (hitObj.CompareTag("Shop"))
             {
-                Debug.Log("🏪 상점 접속!");
-                
-                // 상점 스크립트를 가져와서 판매 함수 실행
-                Shop shop = hit.collider.GetComponent<Shop>();
-                if (shop != null)
+                Shop shop = hitObj.GetComponent<Shop>();
+                if (shop != null) shop.SellAllItems();
+            }
+            else if (hitObj.CompareTag("Worktable"))
+            {
+                if (CraftingUI.instance != null) CraftingUI.instance.ToggleUI();
+            }
+            // 경작지 (씨앗 심기)
+            else if (hitObj.CompareTag("Farmland"))
+            {
+                heldItem = Inventory.instance.GetSelectedItem();
+                Farmland land = hitObj.GetComponent<Farmland>();
+
+                // 손에 '씨앗'을 들고 있고, 밭 스크립트가 있다면
+                if (heldItem != null && heldItem.toolType == ToolType.Seed && land != null)
                 {
-                    shop.SellAllItems();
+                    if (heldItem.cropPrefab != null)
+                    {
+                        // 심기 시도 (성공하면 true 반환)
+                        if (land.Plant(heldItem.cropPrefab))
+                        {
+                            // 씨앗 1개 소모
+                            Inventory.instance.RemoveItems(heldItem, 1);
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.Log("🌱 씨앗이 필요하거나, 이미 작물이 있습니다.");
                 }
             }
-            else if (hit.collider.CompareTag("NPC"))
+            // 작물 수확
+            else if (hitObj.CompareTag("Crop"))
             {
-                Debug.Log("💬 NPC와 대화를 시작합니다.");
-            }
-            else if (hit.collider.CompareTag("Worktable"))
-            {
-                Crafter crafter = hit.collider.GetComponent<Crafter>();
-                if (crafter != null)
+                // 맞은 놈이나 그 부모에게서 Crop 스크립트 찾기
+                Crop crop = hitObj.GetComponent<Crop>();
+                if (crop == null) crop = hitObj.GetComponentInParent<Crop>();
+
+                // 작물이 있고, 다 자랐다면?
+                if (crop != null && crop.isFullyGrown)
                 {
-                    // 도끼질 모션 재활용 (제작 모션처럼 보이게!)
-                    if (anim != null) anim.SetTrigger("DoChop"); 
+                    crop.Harvest(); // 수확 실행!
                     
-                    Debug.Log("⚙️ 가공 시작...");
-                    crafter.Craft();
+                    // (선택) 줍는 애니메이션
+                    if (anim != null) anim.SetTrigger("DoChop"); // 임시로 도끼질 모션 사용
+                }
+                else
+                {
+                    Debug.Log("⏳ 아직 덜 자랐습니다.");
+                }
+            }
+            // 땅 (Ground)
+            else if (hitObj.CompareTag("Ground")) 
+            {
+                if (heldItem != null && heldItem.toolType == ToolType.Hoe)
+                {
+                    Debug.Log("🌱 땅을 갑니다!");
+                    
+                    Vector3 hitPos = hit.point;
+                    float x = Mathf.Round(hitPos.x / 2.0f) * 2.0f;
+                    float z = Mathf.Round(hitPos.z / 2.0f) * 2.0f;
+                    Vector3 landPos = new Vector3(x, hitPos.y + 0.05f, z);
+
+                    if (farmlandPrefab != null)
+                    {
+                        Instantiate(farmlandPrefab, landPos, Quaternion.identity);
+                        // anim.SetTrigger("DoChop"); 
+                    }
                 }
             }
         }

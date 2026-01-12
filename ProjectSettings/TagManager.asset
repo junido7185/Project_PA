@@ -9,6 +9,8 @@ TagManager:
   - Worktable
   - Rock
   - Building
+  - Farmland
+  - Ground
   layers:
   - Default
   - TransparentFX
