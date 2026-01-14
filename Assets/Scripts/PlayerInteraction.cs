@@ -30,7 +30,7 @@ public class PlayerInteraction : MonoBehaviour
         // 2. 기본 방향: 정면
         Vector3 direction = transform.forward;
 
-        // 딩컴 스타일 보정
+        // 딩컴 스타일 시선 처리
         // 만약 괭이(Hoe)를 들고 있다면? -> 시선을 '대각선 아래'로 깐다!
         ItemData heldItem = Inventory.instance.GetSelectedItem();
         if (heldItem != null && (heldItem.toolType == ToolType.Hoe || heldItem.toolType == ToolType.Seed))
@@ -127,6 +127,23 @@ public class PlayerInteraction : MonoBehaviour
                         // anim.SetTrigger("DoChop"); 
                     }
                 }
+            }
+            // 가구 상호작용 (Building 태그 통합 관리)
+            else if (hitObj.CompareTag("Building"))
+            {
+                // 1. 의자인지 검사 (신분증 확인)
+                Chair chair = hitObj.GetComponent<Chair>();
+                if (chair != null)
+                {
+                    if (!chair.isOccupied)
+                    {
+                        Debug.Log("🪑 의자에 앉습니다.");
+                        // 내 플레이어 컨트롤러에 앉으라고 명령
+                        PlayerController pc = GetComponent<PlayerController>();
+                        if (pc != null) pc.SitDown(chair.sitPoint);
+                    }
+                }
+                // 나중에 여기에 '침대', '보관함' 등 추가 가능
             }
         }
     }

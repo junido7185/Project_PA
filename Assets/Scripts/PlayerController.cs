@@ -2,51 +2,86 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float moveSpeed = 5f; // 이동 속도 (Inspector에서 조절 가능)
-    private CharacterController controller; // 캐릭터 컨트롤러 컴포넌트
-
-    // 👇 추가: 애니메이터 변수
+    public float moveSpeed = 5f; 
+    private CharacterController controller; 
     private Animator anim;
+
+    // 👇 [추가] 앉은 상태인지 확인하는 깃발
+    public bool isSitting = false; 
 
     void Start()
     {
-        // 내 몸에 붙어있는 CharacterController를 찾아온다.
         controller = GetComponent<CharacterController>();
-
-        // 👇 추가: 자식 오브젝트에 있는 Animator 찾기
         anim = GetComponentInChildren<Animator>();
     }
 
     void Update()
     {
-        // 1. 키보드 입력 받기 (WASD 또는 화살표)
-        // Unity의 레거시 입력 시스템 사용
-        float h = Input.GetAxisRaw("Horizontal"); // A, D, 좌, 우 (-1 ~ 1)
-        float v = Input.GetAxisRaw("Vertical");   // W, S, 상, 하 (-1 ~ 1)
+        // ⭐ [추가] 앉아있을 때는 이동 로직을 막습니다!
+        if (isSitting)
+        {
+            // 아무 방향키나 누르면 일어납니다.
+            if (Input.GetAxisRaw("Horizontal") != 0 || Input.GetAxisRaw("Vertical") != 0)
+            {
+                StandUp();
+            }
+            return; // 아래 이동 코드를 실행하지 않고 여기서 끝냄
+        }
 
-        // 2. 이동 방향 벡터 만들기 (x, y, z)
-        // 쿼터뷰에서는 위(W)를 누르면 (0, 0, 1)이 아니라 (1, 0, 1)처럼 대각선으로 보여야 할 수도 있지만,
-        // 우선 기본적인 월드 기준 이동으로 구현합니다.
+        float h = Input.GetAxisRaw("Horizontal"); 
+        float v = Input.GetAxisRaw("Vertical");   
+
         Vector3 direction = new Vector3(h, 0, v).normalized;
 
-        // 👇 추가: 애니메이션 제어
-        // 움직임 벡터의 크기(magnitude)를 Speed 파라미터로 전달
-        // 0이면 멈춤(Idle), 1이면 달림(Run)
         if (anim != null)
         {
-            // DampTime 0.1f를 주면 값이 부드럽게 변해서 모션이 자연스러워짐
             anim.SetFloat("Speed", direction.magnitude, 0.1f, Time.deltaTime);
         }
 
-        // 3. 이동하기
         if (direction.magnitude >= 0.1f)
         {
-            // 움직이는 방향으로 캐릭터 회전시키기 (선택 사항)
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, targetAngle, 0f);
 
-            // 실제 이동 (방향 * 속도 * 프레임보정)
             controller.Move(direction * moveSpeed * Time.deltaTime);
+        }
+    }
+
+    // 앉기 함수
+    public void SitDown(Transform targetSeat)
+    {
+        isSitting = true;
+        controller.enabled = false; // 물리 충돌 및 이동 끄기 (텔레포트 위해 필수)
+        
+        // 의자의 '앉는 위치(SitPoint)'로 순간이동 & 의자 방향 보기
+        transform.position = targetSeat.position;
+        transform.rotation = targetSeat.rotation;
+
+        if (anim != null) 
+        {
+            anim.SetBool("IsSitting", true); // 애니메이터에 파라미터 전달
+        }
+    }
+
+    // 일어나기 함수
+    public void StandUp()
+    {
+        isSitting = false;
+        
+        // ❌ [기존 코드의 문제점]
+        // controller.enabled = true; // 먼저 켜버리면...
+        // transform.position += ...  // 이동할 때 물리 충돌이 발생해서 튕겨나감!
+
+        // ✅ [수정된 코드] 순서 변경!
+        // 1. 먼저 안전한 곳(의자 앞)으로 이동시킵니다.
+        transform.position += transform.forward * 1.0f; 
+
+        // 2. 이동이 끝난 뒤에 물리 엔진(컨트롤러)을 켭니다.
+        controller.enabled = true; 
+
+        if (anim != null) 
+        {
+            anim.SetBool("IsSitting", false);
         }
     }
 }

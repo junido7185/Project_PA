@@ -11,6 +11,7 @@ TagManager:
   - Building
   - Farmland
   - Ground
+  - Crop
   layers:
   - Default
   - TransparentFX
