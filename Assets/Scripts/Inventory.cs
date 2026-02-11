@@ -1,131 +1,166 @@
-using System.Collections.Generic; // 리스트(List)를 쓰기 위해 필요
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Inventory : MonoBehaviour
 {
-    // 싱글톤(Singleton): 어디서든 Inventory.instance로 접근 가능하게 만듦
+    // ⭐ 싱글톤 추가 (기존 코드 호환용)
     public static Inventory instance;
 
-    // 🔔 UI 갱신을 위한 '초인종' (델리게이트 이벤트)
-    // "아이템이 변경되면 실행할 함수들을 등록하세요" 라는 뜻
+    public int size = 24; // 인벤토리 슬롯 개수
+    public List<InventorySlot> slots;
+
+    // ⭐ 핫바 연결 (선택된 아이템을 찾기 위해 필수)
+    public Hotbar hotbar;
+    public int selectedHotbarIndex = 0; // 현재 핫바에서 선택된 슬롯 번호
+
+    // UI 갱신용 이벤트 (기존 코드 호환용)
     public delegate void OnItemChanged();
     public OnItemChanged onItemChangedCallback;
 
-    // 아이템을 담을 리스트 (가방)
-    public List<ItemData> items = new List<ItemData>();
-
-    // 선택된 슬롯 번호 (0부터 시작)
-    public int selectedSlotIndex = 0; 
-    
-    // 슬롯 변경 이벤트 (UI 갱신용)
-    public delegate void OnSlotChanged(int index);
-    public OnSlotChanged onSlotChangedCallback;
-
-    // 👇 추가: 테스트용 시작 아이템 목록
-    public List<ItemData> startingItems;
-
-    void Awake()
+    private void Awake()
     {
-        if (instance != null)
-        {
-            Debug.LogWarning("인벤토리가 2개 이상입니다!");
-            return;
-        }
+        if (instance != null) { Destroy(gameObject); return; }
         instance = this;
+
+        // 슬롯 초기화
+        slots = new List<InventorySlot>(new InventorySlot[size]);
+        for (int i = 0; i < size; i++) slots[i] = new InventorySlot();
     }
 
-    void Start() // Awake 대신 Start에 넣거나 Awake 밑에 추가
+    // ⭐ [호환 함수 1] 현재 손에 든(핫바에서 선택된) 아이템 가져오기
+    public Item GetSelectedItem()
     {
-        // 시작 아이템 지급
-        foreach (ItemData item in startingItems)
+        if (hotbar == null) return null;
+        
+        InventorySlot slot = hotbar.GetSlot(selectedHotbarIndex);
+        if (slot != null && !slot.IsEmpty)
         {
-            AddItem(item);
-        }
-    }
-
-    void Update()
-    {
-        // 키보드 숫자키 1~8 입력 감지
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SelectSlot(0);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SelectSlot(1);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SelectSlot(2);
-        if (Input.GetKeyDown(KeyCode.Alpha4)) SelectSlot(3);
-        if (Input.GetKeyDown(KeyCode.Alpha5)) SelectSlot(4);
-        if (Input.GetKeyDown(KeyCode.Alpha6)) SelectSlot(5);
-        if (Input.GetKeyDown(KeyCode.Alpha7)) SelectSlot(6);
-        if (Input.GetKeyDown(KeyCode.Alpha8)) SelectSlot(7);
-    }
-
-    void SelectSlot(int index)
-    {
-        selectedSlotIndex = index;
-        Debug.Log("👉 슬롯 선택: " + (index + 1) + "번");
-
-        // UI 갱신 요청
-        if (onSlotChangedCallback != null)
-            onSlotChangedCallback.Invoke(index);
-    }
-
-    // 현재 들고 있는 아이템 데이터 반환 (없으면 null)
-    public ItemData GetSelectedItem()
-    {
-        if (selectedSlotIndex < items.Count)
-        {
-            return items[selectedSlotIndex];
+            return slot.item;
         }
         return null;
     }
 
-    // 아이템 추가 함수
-    public void AddItem(ItemData item)
-    {
-        items.Add(item);
-        Debug.Log("🎒 인벤토리에 추가됨: " + item.itemName + " (현재 " + items.Count + "개)");
-        
-        // 초인종 누르기! (등록된 UI가 있다면 갱신하라고 신호 보냄)
-        if (onItemChangedCallback != null)
-        {
-            onItemChangedCallback.Invoke();
-        }
-    }
-
-    // 재료가 충분한지 확인하는 함수
-    public bool HasItems(ItemData item, int count)
+    // ⭐ [호환 함수 2] 아이템 가지고 있는지 확인
+    public bool HasItems(Item item, int count)
     {
         int currentCount = 0;
         
-        // 내 주머니(items)를 뒤져서 개수를 센다
-        for (int i = 0; i < items.Count; i++)
-        {
-            if (items[i] == item)
-            {
-                currentCount++; // 아이템 발견! +1
-            }
-        }
+        // 인벤토리 검사
+        foreach (var slot in slots)
+            if (!slot.IsEmpty && slot.item == item) currentCount += slot.count;
         
-        // 찾은 개수가 필요 개수보다 많으면 합격
+        // 핫바 검사
+        if (hotbar != null)
+            foreach (var slot in hotbar.slots)
+                if (!slot.IsEmpty && slot.item == item) currentCount += slot.count;
+
         return currentCount >= count;
     }
 
-    // 아이템을 차감하는 함수
-    public void RemoveItems(ItemData item, int count)
+    // ⭐ [호환 함수 3] 아이템 제거 (핫바 -> 인벤토리 순으로 차감)
+    public void RemoveItems(Item item, int count)
     {
-        int itemsToRemove = count;
+        int leftToRemove = count;
 
-        for (int i = items.Count - 1; i >= 0; i--)
+        // 1. 핫바에서 제거
+        if (hotbar != null) 
+            leftToRemove = RemoveFromList(hotbar.slots, item, leftToRemove);
+
+        // 2. 인벤토리에서 제거
+        if (leftToRemove > 0) 
+            RemoveFromList(slots, item, leftToRemove);
+
+        // UI 갱신 알림
+        RefreshAllUI();
+    }
+
+    // 리스트에서 아이템 빼는 내부 로직
+    private int RemoveFromList(List<InventorySlot> list, Item item, int amount)
+    {
+        for (int i = 0; i < list.Count; i++)
         {
-            if (itemsToRemove <= 0) break;
-
-            if (items[i] == item)
+            if (amount <= 0) break;
+            if (!list[i].IsEmpty && list[i].item == item)
             {
-                items.RemoveAt(i); 
-                itemsToRemove--;   
-                
-                if (onSlotChangedCallback != null)
-                    onSlotChangedCallback.Invoke(i); 
+                if (list[i].count > amount)
+                {
+                    list[i].count -= amount;
+                    amount = 0;
+                }
+                else
+                {
+                    amount -= list[i].count;
+                    list[i].item = null;
+                    list[i].count = 0;
+                }
             }
         }
+        return amount;
     }
-    
-    // (나중에 아이템 제거, 정렬 기능 등 추가 예정)
+
+    public void RefreshAllUI()
+    {
+        if (onItemChangedCallback != null) onItemChangedCallback.Invoke();
+        
+        // 에셋 쪽 UI들도 갱신
+        InventoryUI invUI = FindAnyObjectByType<InventoryUI>();
+        if(invUI) invUI.RefreshUI();
+        
+        HotbarUI hotUI = FindAnyObjectByType<HotbarUI>();
+        if(hotUI) hotUI.RefreshUI();
+    }
+
+    // --- 아래는 프레임워크 원본 로직 (AddItem 등) ---
+
+    public bool AddItem(Item newItem, int amount = 1)
+    {
+        // 1. 겹치기(Stacking) 시도
+        foreach (var slot in slots)
+        {
+            if (!slot.IsEmpty && slot.item == newItem && slot.count < newItem.maxStack)
+            {
+                int space = newItem.maxStack - slot.count;
+                int add = Mathf.Min(space, amount);
+                slot.count += add;
+                amount -= add;
+                if (amount <= 0) return true;
+            }
+        }
+
+        // 2. 빈 슬롯 찾기
+        foreach (var slot in slots)
+        {
+            if (slot.IsEmpty)
+            {
+                slot.item = newItem;
+                slot.count = amount;
+                return true;
+            }
+        }
+        return false; // 가방 꽉 참
+    }
+
+    public void MoveOrSwap(int from, int to)
+    {
+        if (from == to) return;
+        var slotFrom = slots[from];
+        var slotTo = slots[to];
+
+        if (slotTo.IsEmpty)
+        {
+            slotTo.item = slotFrom.item;
+            slotTo.count = slotFrom.count;
+            slotFrom.item = null;
+            slotFrom.count = 0;
+        }
+        else
+        {
+            var tmpItem = slotFrom.item;
+            var tmpCount = slotFrom.count;
+            slotFrom.item = slotTo.item;
+            slotFrom.count = slotTo.count;
+            slotTo.item = tmpItem;
+            slotTo.count = tmpCount;
+        }
+    }
 }

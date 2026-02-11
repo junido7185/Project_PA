@@ -7,33 +7,41 @@ public class EquipmentSystem : MonoBehaviour
 
     void Start()
     {
-        Inventory.instance.onSlotChangedCallback += UpdateEquipment;
-        UpdateEquipment(Inventory.instance.selectedSlotIndex);
+        // ⭐ 인벤토리 이벤트 이름이 바뀌었을 수 있으니 다시 연결
+        Inventory.instance.onItemChangedCallback += RefreshEquipment;
     }
 
-    void UpdateEquipment(int slotIndex)
+    // Inventory.cs에서 RefreshAllUI()가 호출될 때 같이 실행됨
+    void RefreshEquipment()
     {
-        // 1. 모델 초기화 (도끼/곡괭이 끄기)
+        // 1. 모델 끄기
         if (axeModel != null) axeModel.SetActive(false);
         if (pickaxeModel != null) pickaxeModel.SetActive(false);
 
-        // 2. 일단 건설 모드 끄기 (기본값)
-        // (BuildManager가 내 몸에 붙어있으니 GetComponent로 바로 찾음)
+        // 2. 건설 모드 끄기
         BuildManager buildMgr = GetComponent<BuildManager>();
         if (buildMgr != null) buildMgr.StopBuildMode();
 
-        // 3. 아이템 데이터 확인
-        ItemData item = Inventory.instance.GetSelectedItem();
-        if (item == null) return; // 빈손
+        // 3. 현재 든 아이템 확인
+        Item item = Inventory.instance.GetSelectedItem();
+        if (item == null) return; 
 
         // --- 도구 모델 켜기 ---
         if (item.toolType == ToolType.Axe && axeModel != null) axeModel.SetActive(true);
         if (item.toolType == ToolType.Pickaxe && pickaxeModel != null) pickaxeModel.SetActive(true);
 
-        // --- ⭐ 건설 아이템이면 건설 모드 켜기 ---
+        // --- 건설 아이템이면 건설 모드 켜기 ---
         if (item.buildingToBuild != null && buildMgr != null)
         {
             buildMgr.SetBuildMode(item.buildingToBuild);
         }
+    }
+    
+    // 핫바 UI에서 휠 돌릴 때마다 호출해주면 반응 속도가 더 빠름
+    void Update()
+    {
+        // (최적화를 위해 매 프레임 체크하기보다 이벤트 방식 권장하지만, 
+        // 핫바 변경 타이밍을 확실히 잡기 위해 Update에서 체크해도 됨)
+        RefreshEquipment();
     }
 }

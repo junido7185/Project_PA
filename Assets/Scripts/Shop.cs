@@ -1,53 +1,63 @@
 using UnityEngine;
 
-public class Shop : MonoBehaviour
+public class Shop : MonoBehaviour, IInteractable
 {
-    // 판매 함수 (외부에서 호출)
+    public void Interact(GameObject interactor)
+    {
+        Debug.Log("🏪 상점 주인: 어서오세요!");
+        SellAllItems(); 
+    }
+
+    public string GetInteractPrompt()
+    {
+        return "모두 판매하기"; 
+    }
+    
     public void SellAllItems()
     {
         Inventory inventory = Inventory.instance;
-
-        if (inventory.items.Count == 0)
-        {
-            Debug.Log("🚫 팔 물건이 없습니다!");
-            return;
-        }
-
         int totalEarnings = 0;
-        int soldCount = 0; // 몇 개 팔았는지 세기
+        int soldCount = 0;
 
-        // ⭐ 리스트를 수정(삭제)할 때는 '뒤에서부터' 반복하긔
-        // (앞에서부터 지우면 인덱스가 당겨져서 건너뛰는 아이템이 생기거든요)
-        for (int i = inventory.items.Count - 1; i >= 0; i--)
+        // 1. 인벤토리 슬롯 검사
+        soldCount += SellFromSlots(inventory.slots, ref totalEarnings);
+
+        // 2. 핫바 슬롯 검사 (옵션: 핫바도 팔고 싶다면)
+        if (inventory.hotbar != null)
         {
-            ItemData item = inventory.items[i];
-
-            // 🛑 중요: 도구(ToolType이 None이 아닌 것)는 팔지 않고 건너뜀!
-            if (item.toolType != ToolType.None)
-            {
-                continue; 
-            }
-
-            // 판매 로직
-            totalEarnings += item.basePrice;
-            inventory.items.RemoveAt(i); // 리스트에서 해당 아이템만 쏙 뺌
-            soldCount++;
+            soldCount += SellFromSlots(inventory.hotbar.slots, ref totalEarnings);
         }
 
         if (soldCount > 0)
         {
             GameManager.instance.AddMoney(totalEarnings);
-            Debug.Log("💵 정산 완료! " + soldCount + "개 판매, 수익: " + totalEarnings + "G");
-
-            // UI 갱신 요청
-            if (inventory.onItemChangedCallback != null)
-            {
-                inventory.onItemChangedCallback.Invoke();
-            }
+            Debug.Log($"💵 정산 완료! {soldCount}개 판매, 수익: {totalEarnings}G");
+            
+            // UI 갱신
+            inventory.RefreshAllUI();
         }
         else
         {
             Debug.Log("🚫 판매할 수 있는 아이템(자원)이 없습니다.");
         }
+    }
+
+    // 슬롯 리스트를 돌면서 판매하는 내부 함수
+    private int SellFromSlots(System.Collections.Generic.List<InventorySlot> slots, ref int earnings)
+    {
+        int count = 0;
+        foreach (var slot in slots)
+        {
+            if (!slot.IsEmpty && slot.item.toolType == ToolType.None) // 도구는 안 팜
+            {
+                earnings += slot.item.basePrice * slot.count;
+                count += slot.count;
+
+                // ⭐ 슬롯 비우기 (리스트 삭제가 아니라 내용을 null로 만듦)
+                slot.item = null;
+                slot.count = 0;
+            }
+        }
+        return count;
     }
 }

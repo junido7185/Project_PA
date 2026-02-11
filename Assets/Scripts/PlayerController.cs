@@ -17,15 +17,26 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // ⭐ [추가] 'I' 키를 누르면 인벤토리 토글
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            if (InventoryUI.instance != null)
+            {
+                InventoryUI.instance.Toggle();
+            }
+        }
+
+        // 인벤토리가 열려있으면 이동 막기 (선택 사항 - 원하면 주석 해제)
+        if (InventoryUI.instance.gameObject.activeSelf) return;
+
         // ⭐ [추가] 앉아있을 때는 이동 로직을 막습니다!
         if (isSitting)
         {
-            // 아무 방향키나 누르면 일어납니다.
             if (Input.GetAxisRaw("Horizontal") != 0 || Input.GetAxisRaw("Vertical") != 0)
             {
                 StandUp();
             }
-            return; // 아래 이동 코드를 실행하지 않고 여기서 끝냄
+            return; 
         }
 
         float h = Input.GetAxisRaw("Horizontal"); 

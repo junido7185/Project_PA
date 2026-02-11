@@ -8,7 +8,7 @@ public class Crop : MonoBehaviour
     public float timePerStage = 3.0f; // 다음 단계까지 걸리는 시간 (테스트용 3초)
     
     [Header("수확 설정")]
-    public ItemData harvestItem;      // 다 자라고 수확하면 줄 아이템
+    public Item harvestItem;      // 다 자라고 수확하면 줄 아이템
     
     private int currentStageIndex = 0;
     public bool isFullyGrown = false;

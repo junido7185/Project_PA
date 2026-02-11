@@ -1,52 +1,84 @@
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; // UI를 건드리기 위해 필수!
 
 public class InventoryUI : MonoBehaviour
 {
-    public Transform itemsParent;   // 슬롯들이 들어갈 부모 객체 (InventoryPanel)
-    public GameObject slotPrefab;   // 슬롯 디자인 (Slot_Prefab)
+    // ⭐ [추가] 외부에서 접근 가능하도록 싱글톤 설정
+    public static InventoryUI instance;
 
-    Inventory inventory;
+    public Inventory inventory;
+    public Hotbar hotbar;
+    public Transform slotParent;
+    public GameObject slotPrefab;
+    public ItemTooltip tooltip;
+
+    public RectTransform dragLayer;
+    public Canvas rootCanvas;
+
+    private List<InventorySlotUI> slotUIs;
+
+    void Awake()
+    {
+        // ⭐ [추가] 싱글톤 초기화
+        if (instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
+    }
 
     void Start()
     {
-        inventory = Inventory.instance;
-        
-        // 인벤토리의 초인종(이벤트)에 내 함수(UpdateUI)를 등록한다.
-        // 즉, "아이템이 들어오면 UpdateUI를 실행해줘!"라고 예약하는 것.
-        inventory.onItemChangedCallback += UpdateUI;
-    }
+        slotUIs = new List<InventorySlotUI>();
+        foreach (Transform child in slotParent) Destroy(child.gameObject);
 
-    // 화면 갱신 함수
-    void UpdateUI()
-    {
-        Debug.Log("🖥️ UI 갱신 시작!");
-
-        // 1. 기존에 그려진 슬롯 싹 지우기 (초기화)
-        foreach (Transform child in itemsParent)
+        for (int i = 0; i < inventory.size; i++)
         {
-            Destroy(child.gameObject);
+            var slotGO = Instantiate(slotPrefab, slotParent);
+            var slotUI = slotGO.GetComponent<InventorySlotUI>();
+            slotUI.tooltip = tooltip;
+            slotUI.Setup(inventory, hotbar, i, this);
+            slotUIs.Add(slotUI);
         }
 
-        // 2. 현재 인벤토리 리스트만큼 슬롯 새로 만들기
-        for (int i = 0; i < inventory.items.Count; i++)
+        RefreshUI();
+
+        // ⭐ [추가] 시작하자마자 화면에서 숨기기!
+        gameObject.SetActive(false);
+    }
+
+    public void RefreshUI()
+    {
+        if (slotUIs == null || inventory == null) return;
+        for (int i = 0; i < inventory.size; i++)
         {
-            // 슬롯 생성 (Prefab 복제)
-            GameObject newSlot = Instantiate(slotPrefab, itemsParent);
+            if (i < slotUIs.Count) slotUIs[i].SetSlot(inventory.slots[i]);
+        }
+    }
+
+    // ⭐ [추가] 껐다 켰다 하는 함수
+    public void Toggle()
+    {
+        bool isActive = !gameObject.activeSelf; // 현재 상태의 반대로
+        gameObject.SetActive(isActive);
+
+        if (isActive)
+        {
+            RefreshUI(); // 켤 때 갱신 한 번 해줌
             
-            // 슬롯 안의 Icon 이미지 찾아서 바꾸기
-            ItemData item = inventory.items[i];
-            Image iconImage = newSlot.transform.Find("Icon").GetComponent<Image>();
+            // 인벤토리 열리면 마우스 보이기
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            // 닫으면 마우스 숨기고 게임으로 돌아가기
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
             
-            if (item.icon != null)
-            {
-                iconImage.sprite = item.icon;
-                iconImage.enabled = true;
-            }
-            else
-            {
-                iconImage.enabled = false; // 아이콘 없으면 숨김
-            }
+            // 툴팁도 같이 꺼주기 (혹시 켜져있을까봐)
+            if(tooltip != null) tooltip.Hide();
         }
     }
 }
