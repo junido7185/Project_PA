@@ -50,6 +50,13 @@ public class SaveManager : MonoBehaviour
             data.reputation = TierService.Instance.Reputation;
         }
 
+        // 3. 인게임 시간
+        if (GameClock.Instance != null)
+        {
+            data.gameHour = GameClock.Instance.CurrentHour;
+            data.gameDay  = GameClock.Instance.CurrentDay;
+        }
+
         var playerGo = GameObject.FindGameObjectWithTag("Player");
         if (playerGo != null) data.playerPosition = playerGo.transform.position;
 
@@ -66,9 +73,18 @@ public class SaveManager : MonoBehaviour
             }
         }
 
+        // 4. 인벤토리 직렬화
+        if (Inventory.instance != null)
+        {
+            data.inventorySlots = SerializeSlots(Inventory.instance.slots);
+
+            if (Inventory.instance.hotbar != null)
+                data.hotbarSlots = SerializeSlots(Inventory.instance.hotbar.slots);
+        }
+
         string json = JsonUtility.ToJson(data, true);
         await _repository.SaveAsync(SaveKey, json);
-        Debug.Log($"💾 저장 완료 ({data.buildings.Count}개 건물)");
+        Debug.Log($"💾 저장 완료 (건물 {data.buildings.Count}개, 인벤토리 {data.inventorySlots.Count}칸, 핫바 {data.hotbarSlots.Count}칸)");
     }
 
     public async System.Threading.Tasks.Task LoadGameAsync()
@@ -93,6 +109,12 @@ public class SaveManager : MonoBehaviour
         if (TierService.Instance != null)
         {
             TierService.Instance.ForceSetTier(data.currentTier, data.reputation, "SaveManager.LoadGame");
+        }
+
+        // 3. 인게임 시간 복구
+        if (GameClock.Instance != null)
+        {
+            GameClock.Instance.ForceSet(data.gameHour, data.gameDay, "SaveManager.LoadGame");
         }
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -130,10 +152,83 @@ public class SaveManager : MonoBehaviour
             }
         }
 
-        Debug.Log($"📂 로드 완료! (복구된 건물: {count}개)");
+        // 5. 인벤토리 복구
+        if (Inventory.instance != null)
+        {
+            if (data.inventorySlots != null && data.inventorySlots.Count > 0)
+                DeserializeSlots(data.inventorySlots, Inventory.instance.slots);
+
+            if (Inventory.instance.hotbar != null
+                && data.hotbarSlots != null && data.hotbarSlots.Count > 0)
+                DeserializeSlots(data.hotbarSlots, Inventory.instance.hotbar.slots);
+
+            Inventory.instance.RefreshAllUI();
+        }
+
+        Debug.Log($"📂 로드 완료! (건물 {count}개, 인벤토리/핫바 복구)");
     }
 
     // 기존 동기 API 호환 — 핫키(F5/F9) 외에 외부에서 호출하는 코드가 있을 수 있어 유지.
     public void SaveGame() => _ = SaveGameAsync();
     public void LoadGame() => _ = LoadGameAsync();
+
+    // -------- 슬롯 직렬화 헬퍼 --------
+
+    // InventorySlot 리스트 → SlotSaveData 리스트.
+    // 빈 칸은 count=0 인 빈 DTO 로 직렬화한다 (JsonUtility 가 null 리스트 원소를 지원하지 않음).
+    List<SlotSaveData> SerializeSlots(List<InventorySlot> slots)
+    {
+        var result = new List<SlotSaveData>(slots.Count);
+        foreach (var slot in slots)
+        {
+            if (slot.IsEmpty)
+            {
+                result.Add(new SlotSaveData()); // count=0 → 빈 칸
+            }
+            else
+            {
+                result.Add(new SlotSaveData
+                {
+                    itemId       = slot.item.id,
+                    itemName     = slot.item.itemName,
+                    count        = slot.count,
+                    quality      = slot.instance.quality,
+                    currentPrice = slot.instance.currentPrice
+                });
+            }
+        }
+        return result;
+    }
+
+    // SlotSaveData 리스트 → InventorySlot 리스트 복원.
+    // 기존 슬롯을 먼저 Clear 한 뒤, ItemRegistry.Find 로 원형을 찾아 채운다.
+    void DeserializeSlots(List<SlotSaveData> saved, List<InventorySlot> slots)
+    {
+        // 기존 슬롯 초기화
+        foreach (var slot in slots) slot.Clear();
+
+        int len = Mathf.Min(saved.Count, slots.Count);
+        for (int i = 0; i < len; i++)
+        {
+            var sd = saved[i];
+            if (sd == null || sd.count <= 0) continue;
+
+            Item item = ItemRegistry.Instance != null
+                ? ItemRegistry.Instance.Find(sd.itemId, sd.itemName)
+                : null;
+
+            if (item == null)
+            {
+                Debug.LogWarning($"❓ 슬롯[{i}] 복원 실패: id={sd.itemId} name=\"{sd.itemName}\" — ItemRegistry 에 미등록");
+                continue;
+            }
+
+            var inst = new ItemInstance(item, sd.count)
+            {
+                quality      = sd.quality,
+                currentPrice = sd.currentPrice
+            };
+            slots[i].SetInstance(inst);
+        }
+    }
 }

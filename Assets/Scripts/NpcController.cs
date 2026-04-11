@@ -46,12 +46,22 @@ public class NpcController : MonoBehaviour
     [Header("디버그 (읽기 전용)")]
     [SerializeField] private float debugShoppingProbability;
     [SerializeField] private string debugLastDecision;
+    [SerializeField] private bool debugSchedulePaused;
+    [SerializeField] private bool debugShoppingPriority;
 
     private NavMeshAgent agent;
     private float idleTimer = 0f;
 
     // 결정론 RNG
     private System.Random _rng;
+
+    // -------- NpcScheduleController 에서 제어하는 플래그 --------
+
+    // true 이면 Update 전체가 차단된다 (수면/휴식 페이즈).
+    private bool _schedulePaused = false;
+
+    // true 이면 쇼핑 확률이 대폭 상승 (쇼핑 페이즈).
+    private bool _shoppingPriorityMode = false;
 
     // 쇼핑 세션 상태
     private Shop _activeShop;
@@ -80,6 +90,11 @@ public class NpcController : MonoBehaviour
 
     void Update()
     {
+        // 스케줄에 의해 일시 정지 중이면 처리 차단
+        debugSchedulePaused  = _schedulePaused;
+        debugShoppingPriority = _shoppingPriorityMode;
+        if (_schedulePaused) return;
+
         switch (currentState)
         {
             case State.Idle:
@@ -112,11 +127,21 @@ public class NpcController : MonoBehaviour
         }
 
         // 쇼핑 확률 계산 (E/N/사교형이 더 자주 외출)
-        float shoppingProb = 0.10f
-            + 0.08f * GetTrait(p => p.traitEI)
-            + 0.04f * GetTrait(p => p.traitSN)
-            + 0.05f * GetSocialBias();
-        shoppingProb = Mathf.Clamp(shoppingProb, 0.01f, 0.6f);
+        // _shoppingPriorityMode(쇼핑 페이즈): 기본값 0.85 로 대폭 상승
+        float shoppingProb;
+        if (_shoppingPriorityMode)
+        {
+            shoppingProb = 0.85f + 0.08f * GetTrait(p => p.traitEI);
+            shoppingProb = Mathf.Clamp(shoppingProb, 0.7f, 0.98f);
+        }
+        else
+        {
+            shoppingProb = 0.10f
+                + 0.08f * GetTrait(p => p.traitEI)
+                + 0.04f * GetTrait(p => p.traitSN)
+                + 0.05f * GetSocialBias();
+            shoppingProb = Mathf.Clamp(shoppingProb, 0.01f, 0.6f);
+        }
         debugShoppingProbability = shoppingProb;
 
         if (_rng.NextDouble() < shoppingProb)
@@ -275,6 +300,64 @@ public class NpcController : MonoBehaviour
         _arrivedAtSlot = false;
         _browseTimer = 0f;
         ChangeState(State.Idle);
+    }
+
+    // ---------- NpcScheduleController 공개 API ----------
+
+    /// <summary>
+    /// 스케줄에 의한 일시 정지.
+    /// 현재 FSM을 Idle 로 되돌리고 NavMesh 이동을 정지한다.
+    /// </summary>
+    public void Pause()
+    {
+        if (_schedulePaused) return;
+        _schedulePaused = true;
+
+        // 이동 중이면 경로 취소
+        if (agent != null && agent.isOnNavMesh && !agent.isStopped)
+            agent.ResetPath();
+
+        // 쇼핑 세션 정리
+        _currentSlotTarget = null;
+        _visitedSlots.Clear();
+        _arrivedAtSlot = false;
+        _browseTimer = 0f;
+
+        ChangeState(State.Idle);
+    }
+
+    /// <summary>스케줄에 의한 재개. 다음 idleTickInterval 후 자연스럽게 행동을 시작한다.</summary>
+    public void Resume()
+    {
+        if (!_schedulePaused) return;
+        _schedulePaused = false;
+        idleTimer = 0f; // 즉시 틱 평가되지 않도록 타이머 리셋
+    }
+
+    /// <summary>
+    /// 쇼핑 우선 모드 설정.
+    /// true: 쇼핑 확률이 대폭 상승 (쇼핑 페이즈).
+    /// false: 일반 확률 복원 (배회 페이즈).
+    /// </summary>
+    public void SetShoppingPriority(bool priority)
+    {
+        _shoppingPriorityMode = priority;
+    }
+
+    /// <summary>
+    /// 현재 Idle 상태이면 즉시 쇼핑을 시작한다.
+    /// NpcScheduleController 가 쇼핑 페이즈 진입 시 호출해 즉각 반응성을 확보한다.
+    /// </summary>
+    public void TryForceShop()
+    {
+        if (_schedulePaused) return;
+        if (currentState != State.Idle) return;
+
+        // 상점 참조가 없으면 캐싱 재시도 후 시작
+        TryCacheShopReference();
+        if (shopLocation == null || _activeShop == null) return;
+
+        BeginShoppingVisit();
     }
 
     // ---------- 상태 전환 ----------

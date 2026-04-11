@@ -13,8 +13,28 @@ public class SaveData
     public long cumulativeRevenue = 0;
     public int reputation = 0;
 
+    // 인게임 시간 (GameClock)
+    public float gameHour = 7f;   // 0~23.99
+    public int   gameDay  = 1;    // 1 이상
+
     // 건물 정보 리스트
     public List<BuildingSaveData> buildings = new List<BuildingSaveData>();
+
+    // 인벤토리 · 핫바 (SlotSaveData.count == 0 이면 빈 칸)
+    public List<SlotSaveData> inventorySlots = new List<SlotSaveData>();
+    public List<SlotSaveData> hotbarSlots    = new List<SlotSaveData>();
+}
+
+// 인벤토리/핫바 한 칸을 직렬화한 DTO.
+// ItemRegistry.Find(itemId, itemName) 로 Item 원형을 복원한다.
+[System.Serializable]
+public class SlotSaveData
+{
+    public int    itemId;       // Item.id (복원 1차 키)
+    public string itemName;    // Item.itemName (폴백 키)
+    public int    count;       // 0 = 빈 칸
+    public float  quality;
+    public int    currentPrice;
 }
 
 [System.Serializable]

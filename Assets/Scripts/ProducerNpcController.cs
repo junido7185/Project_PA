@@ -63,11 +63,16 @@ public class ProducerNpcController : MonoBehaviour
     [SerializeField] private int _debugInventoryCount;
     [SerializeField] private float _debugProductionTimer;
     [SerializeField] private string _debugLastAction;
+    [SerializeField] private bool _debugSchedulePaused;
 
     // -------- 내부 상태 --------
 
     private NavMeshAgent _agent;
     private System.Random _rng;
+
+    // NpcScheduleController 에서 제어하는 일시 정지 플래그.
+    // true 이면 Update 전체가 차단된다 (Work 페이즈 외 시간대).
+    private bool _schedulePaused = false;
 
     // NPC 인벤토리 — 생산물을 담아 둔다.
     private readonly List<ItemInstance> _npcInventory = new List<ItemInstance>();
@@ -106,6 +111,10 @@ public class ProducerNpcController : MonoBehaviour
         _debugState = _currentState;
         _debugInventoryCount = TotalInventoryCount();
         _debugProductionTimer = _productionTimer;
+        _debugSchedulePaused = _schedulePaused;
+
+        // 스케줄에 의해 일시 정지 중이면 처리 차단
+        if (_schedulePaused) return;
 
         switch (_currentState)
         {
@@ -334,6 +343,34 @@ public class ProducerNpcController : MonoBehaviour
             Debug.Log($"🚚 {DisplayName}: 납품 전량 완료. Idle로 복귀.");
         }
         ChangeState(State.Idle);
+    }
+
+    // -------- NpcScheduleController 공개 API --------
+
+    /// <summary>
+    /// 스케줄에 의한 일시 정지.
+    /// 현재 FSM 을 Idle 로 되돌리고 NavMesh 이동을 정지한다.
+    /// 보관 중인 NPC 인벤토리는 유지한다 — 다음 Work 페이즈 재개 시 납품 시도.
+    /// </summary>
+    public void Pause()
+    {
+        if (_schedulePaused) return;
+        _schedulePaused = true;
+
+        if (_agent != null && _agent.isOnNavMesh && !_agent.isStopped)
+            _agent.ResetPath();
+
+        ChangeState(State.Idle);
+        _debugLastAction = "스케줄에 의해 정지됨";
+    }
+
+    /// <summary>스케줄에 의한 재개. FSM 이 Idle 에서 자연스럽게 다음 행동을 선택한다.</summary>
+    public void Resume()
+    {
+        if (!_schedulePaused) return;
+        _schedulePaused = false;
+        _idleTimer = 0f; // 즉시 틱 평가되지 않도록 타이머 리셋
+        _debugLastAction = "스케줄에 의해 재개됨";
     }
 
     // -------- 상태 전환 --------
