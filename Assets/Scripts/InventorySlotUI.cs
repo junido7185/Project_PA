@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 public enum SlotOwner { Inventory, Hotbar }
 
@@ -24,7 +25,12 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
     void Update()
     {
         if (tooltip != null && tooltip.gameObject.activeSelf)
-            tooltip.UpdatePosition(Input.mousePosition);
+        {
+            Vector2 mousePos = Mouse.current != null
+                ? Mouse.current.position.ReadValue()
+                : Vector2.zero;
+            tooltip.UpdatePosition(mousePos);
+        }
     }
 
     public void Setup(Inventory inv, Hotbar hb, int idx, InventoryUI ui)
@@ -63,15 +69,17 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
         var s = GetSlot();
         if (s.IsEmpty) return;
 
-        int amount = (eventData.button == PointerEventData.InputButton.Right) ? Mathf.CeilToInt(s.count / 2f) : (Input.GetKey(KeyCode.LeftShift) ? 1 : s.count);
+        bool shiftHeld = Keyboard.current != null && Keyboard.current.shiftKey.isPressed;
+        int amount = (eventData.button == PointerEventData.InputButton.Right)
+            ? Mathf.CeilToInt(s.count / 2f)
+            : (shiftHeld ? 1 : s.count);
 
         DragContext.draggedItem = s.item;
         DragContext.draggedCount = amount;
         DragContext.fromSlotIndex = index;
         DragContext.fromOwner = owner;
 
-        s.count -= amount;
-        if (s.count <= 0) { s.item = null; s.count = 0; }
+        s.AddCount(-amount);
 
         Transform parentLayer = owner == SlotOwner.Inventory ? inventoryUI.dragLayer : hotbarUI.dragLayer;
         dragIcon = new GameObject("DragIcon");
@@ -107,24 +115,23 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
 
         if (targetSlot.IsEmpty)
         {
-            targetSlot.item = DragContext.draggedItem;
-            targetSlot.count = DragContext.draggedCount;
+            targetSlot.Set(DragContext.draggedItem, DragContext.draggedCount);
         }
         else if (targetSlot.item == DragContext.draggedItem)
         {
             int space = targetSlot.item.maxStack - targetSlot.count;
             int add = Mathf.Min(space, DragContext.draggedCount);
-            targetSlot.count += add;
+            targetSlot.AddCount(add);
             DragContext.draggedCount -= add;
             if (DragContext.draggedCount > 0) ReturnToOriginalSlot();
         }
         else
         {
-            // Swap
+            // Swap — ItemInstance 참조 자체를 교환해 동적 상태(quality 등)를 보존한다.
             var orig = GetOriginalSlot();
-            var tmpItem = targetSlot.item; var tmpCount = targetSlot.count;
-            targetSlot.item = DragContext.draggedItem; targetSlot.count = DragContext.draggedCount;
-            orig.item = tmpItem; orig.count = tmpCount;
+            var targetInstance = targetSlot.instance;
+            targetSlot.Set(DragContext.draggedItem, DragContext.draggedCount);
+            orig.SetInstance(targetInstance);
         }
 
         DragContext.draggedItem = null; DragContext.draggedCount = 0;
@@ -138,8 +145,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
     void ReturnToOriginalSlot()
     {
         var s = GetOriginalSlot();
-        if (s.IsEmpty) { s.item = DragContext.draggedItem; s.count = DragContext.draggedCount; }
-        else if (s.item == DragContext.draggedItem) s.count += DragContext.draggedCount;
+        if (s.IsEmpty) s.Set(DragContext.draggedItem, DragContext.draggedCount);
+        else if (s.item == DragContext.draggedItem) s.AddCount(DragContext.draggedCount);
         DragContext.draggedItem = null;
     }
     void RefreshAllUIs()

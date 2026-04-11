@@ -1,90 +1,127 @@
 using UnityEngine;
-using System.IO; 
 using System.Collections.Generic;
 
+// 역할:
+// - 게임 상태의 직렬화/역직렬화를 담당.
+// - 저장 백엔드는 ISaveRepository 로 추상화되어 있어, 나중에 UGS Cloud Save 구현체로
+//   필드 하나만 교체하면 클라우드 저장으로 이관된다.
+// - 무엇을 저장할지는 FindGameObjectsWithTag 같은 씬 스캔 대신 BuildingRegistry 가 보유한
+//   명시적 목록을 사용한다.
 public class SaveManager : MonoBehaviour
 {
     public static SaveManager instance;
-    string savePath;
 
-    // 도감 (여기에 Data_Floor 등이 들어있어야 함)
-    public List<BuildingData> allBuildingTypes; 
+    // 도감 — 로드 시 prefabName 으로 프리팹을 조회하는 데 사용한다.
+    public List<BuildingData> allBuildingTypes;
+
+    // 저장소 백엔드. MVP 에서는 로컬 JSON 고정.
+    // 멀티 전환 시 이 필드 하나만 UGSCloudSaveRepository 로 교체된다.
+    private ISaveRepository _repository;
+
+    private const string SaveKey = "savegame";
 
     void Awake()
     {
         instance = this;
-        savePath = Path.Combine(Application.persistentDataPath, "savegame.json");
+        _repository = new LocalJsonSaveRepository();
     }
 
-    void Update()
+    void Start()
     {
-        if (Input.GetKeyDown(KeyCode.F5)) SaveGame();
-        if (Input.GetKeyDown(KeyCode.F9)) LoadGame();
+        if (PlayerInputHandler.Instance != null)
+        {
+            PlayerInputHandler.Instance.OnSave += () => _ = SaveGameAsync();
+            PlayerInputHandler.Instance.OnLoad += () => _ = LoadGameAsync();
+        }
     }
 
-    public void SaveGame()
+    public async System.Threading.Tasks.Task SaveGameAsync()
     {
         SaveData data = new SaveData();
 
         // 1. 플레이어 정보
-        data.money = GameManager.instance.money;
-        data.playerPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
+        data.money = EconomyService.Instance != null ? EconomyService.Instance.Money : 0;
+        data.cumulativeRevenue = EconomyService.Instance != null ? EconomyService.Instance.CumulativeRevenue : 0;
 
-        // 2. 건물 정보 (태그로 찾기)
-        GameObject[] buildings = GameObject.FindGameObjectsWithTag("Building");
-        
-        foreach (GameObject b in buildings)
+        // 2. 티어 정보
+        if (TierService.Instance != null)
         {
-            // 이름 뒤에 붙는 "(Clone)" 제거 -> "Building_Floor"만 남음
-            string realName = b.name.Replace("(Clone)", "").Trim();
-            data.buildings.Add(new BuildingSaveData(realName, b.transform.position, b.transform.rotation));
+            data.currentTier = TierService.Instance.CurrentTier;
+            data.reputation = TierService.Instance.Reputation;
+        }
+
+        var playerGo = GameObject.FindGameObjectWithTag("Player");
+        if (playerGo != null) data.playerPosition = playerGo.transform.position;
+
+        // 3. 건물 정보 — 레지스트리가 가진 명시 목록을 직렬화한다.
+        if (BuildingRegistry.Instance != null)
+        {
+            foreach (var b in BuildingRegistry.Instance.Buildings)
+            {
+                if (b.gameObject == null) continue;
+                data.buildings.Add(new BuildingSaveData(
+                    b.prefabName,
+                    b.gameObject.transform.position,
+                    b.gameObject.transform.rotation));
+            }
         }
 
         string json = JsonUtility.ToJson(data, true);
-        File.WriteAllText(savePath, json);
-
-        Debug.Log($"💾 저장 완료 ({buildings.Length}개 건물): {savePath}");
+        await _repository.SaveAsync(SaveKey, json);
+        Debug.Log($"💾 저장 완료 ({data.buildings.Count}개 건물)");
     }
 
-    public void LoadGame()
+    public async System.Threading.Tasks.Task LoadGameAsync()
     {
-        if (!File.Exists(savePath))
+        string json = await _repository.LoadAsync(SaveKey);
+        if (string.IsNullOrEmpty(json))
         {
             Debug.Log("📂 저장된 파일이 없습니다.");
             return;
         }
 
-        string json = File.ReadAllText(savePath);
         SaveData data = JsonUtility.FromJson<SaveData>(json);
 
-        // 1. 플레이어 복구
-        GameManager.instance.money = 0; 
-        GameManager.instance.AddMoney(data.money);
-        
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null) 
+        // 1. 플레이어 복구 — 돈은 EconomyService 의 단일 경로로만 세팅한다.
+        if (EconomyService.Instance != null)
         {
-            CharacterController cc = player.GetComponent<CharacterController>();
-            if(cc != null) cc.enabled = false; // 강제 이동을 위해 잠시 끄기
-            player.transform.position = data.playerPosition;
-            if(cc != null) cc.enabled = true;
+            EconomyService.Instance.ForceSet(data.money, "SaveManager.LoadGame");
+            EconomyService.Instance.ForceSetCumulativeRevenue(data.cumulativeRevenue, "SaveManager.LoadGame");
         }
 
-        // 2. 기존 건물 삭제 (중복 방지)
-        GameObject[] existings = GameObject.FindGameObjectsWithTag("Building");
-        foreach (GameObject b in existings) Destroy(b);
+        // 2. 티어 복구
+        if (TierService.Instance != null)
+        {
+            TierService.Instance.ForceSetTier(data.currentTier, data.reputation, "SaveManager.LoadGame");
+        }
 
-        // 3. 건물 다시 짓기
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            CharacterController cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            player.transform.position = data.playerPosition;
+            if (cc != null) cc.enabled = true;
+        }
+
+        // 3. 기존 건물 제거 — 레지스트리가 보유한 목록만 정확히 파괴한다.
+        if (BuildingRegistry.Instance != null)
+        {
+            BuildingRegistry.Instance.ClearAll();
+        }
+
+        // 4. 건물 다시 짓기
         int count = 0;
         foreach (BuildingSaveData bData in data.buildings)
         {
-            // ⭐ [핵심 수정] 한글 이름(buildingName)이 아니라 '프리팹 이름(prefab.name)'으로 찾습니다!
-            // 저장된 이름("Building_Floor") == 프리팹 파일 이름("Building_Floor")
-            BuildingData bd = allBuildingTypes.Find(x => x.prefab.name == bData.buildingName);
-            
+            BuildingData bd = allBuildingTypes.Find(x => x.prefab != null && x.prefab.name == bData.buildingName);
             if (bd != null)
             {
-                Instantiate(bd.prefab, bData.position, bData.rotation);
+                var go = Instantiate(bd.prefab, bData.position, bData.rotation);
+                if (BuildingRegistry.Instance != null)
+                {
+                    BuildingRegistry.Instance.Register(bd, go);
+                }
                 count++;
             }
             else
@@ -95,4 +132,8 @@ public class SaveManager : MonoBehaviour
 
         Debug.Log($"📂 로드 완료! (복구된 건물: {count}개)");
     }
+
+    // 기존 동기 API 호환 — 핫키(F5/F9) 외에 외부에서 호출하는 코드가 있을 수 있어 유지.
+    public void SaveGame() => _ = SaveGameAsync();
+    public void LoadGame() => _ = LoadGameAsync();
 }

@@ -27,7 +27,7 @@ public class Hotbar : MonoBehaviour
             {
                 int space = newItem.maxStack - slot.count;
                 int add = Mathf.Min(space, amount);
-                slot.count += add;
+                slot.AddCount(add);
                 amount -= add;
                 if (amount <= 0) return true;
             }
@@ -37,8 +37,7 @@ public class Hotbar : MonoBehaviour
         {
             if (slot.IsEmpty)
             {
-                slot.item = newItem;
-                slot.count = amount;
+                slot.Set(newItem, amount);
                 return true;
             }
         }

@@ -55,20 +55,16 @@ public class StorageUI : MonoBehaviour
         // 현재 상자 내용물 표시
         for (int i = 0; i < currentBox.items.Count; i++)
         {
-            int index = i; 
-            // ⭐ [수정] ItemData -> Item
-            Item item = currentBox.items[i];
+            int index = i;
+            ItemInstance inst = currentBox.items[i];
+            if (inst == null || inst.data == null) continue;
 
             GameObject newSlot = Instantiate(slotPrefab, itemsParent);
-            
+
             // 아이콘 설정
             Image icon = newSlot.transform.Find("Icon").GetComponent<Image>();
-            icon.sprite = item.icon;
+            icon.sprite = inst.data.icon;
             icon.enabled = true;
-            
-            // 수량 텍스트 (옵션)
-            // TMP_Text countText = newSlot.GetComponentInChildren<TMP_Text>();
-            // if(countText) countText.text = ""; // 스택 기능이 없으면 비워둠
 
             // 버튼 클릭 연결
             Button btn = newSlot.GetComponent<Button>();
@@ -81,12 +77,12 @@ public class StorageUI : MonoBehaviour
     {
         if (currentBox == null) return;
 
-        // ⭐ [수정] ItemData -> Item
-        Item item = currentBox.items[index];
-        
-        // 인벤토리에 넣기
-        Inventory.instance.AddItem(item);
-        
+        ItemInstance inst = currentBox.items[index];
+        if (inst == null || inst.data == null) return;
+
+        // 인벤토리에 넣기 (원형 템플릿 기반)
+        Inventory.instance.AddItem(inst.data, inst.count);
+
         // 상자에서 빼기
         currentBox.RemoveItem(index);
 

@@ -7,7 +7,12 @@ public class SaveData
     // 플레이어 정보
     public int money;
     public Vector3 playerPosition;
-    
+
+    // 티어 시스템
+    public int currentTier = 0;
+    public long cumulativeRevenue = 0;
+    public int reputation = 0;
+
     // 건물 정보 리스트
     public List<BuildingSaveData> buildings = new List<BuildingSaveData>();
 }
