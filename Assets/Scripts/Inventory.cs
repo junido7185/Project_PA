@@ -195,6 +195,40 @@ public class Inventory : MonoBehaviour
         return false; // 가방 꽉 참
     }
 
+    // 차감될 재료 count 개의 가중평균 quality 를 반환한다.
+    // RemoveItems 와 동일하게 hotbar → inventory 순으로 탐색해 실제 소모될 스택과 일치시킨다.
+    // HasItems 로 사전 확인을 권장한다 (수량 부족 시 보유분만으로 평균을 낸다).
+    public float GetAverageQuality(Item item, int count)
+    {
+        float totalQuality = 0f;
+        int   totalCount   = 0;
+        int   remaining    = count;
+
+        if (hotbar != null)
+            AccumulateQuality(hotbar.slots, item, ref remaining, ref totalQuality, ref totalCount);
+
+        if (remaining > 0)
+            AccumulateQuality(slots, item, ref remaining, ref totalQuality, ref totalCount);
+
+        return totalCount > 0 ? totalQuality / totalCount : 1f;
+    }
+
+    private void AccumulateQuality(List<InventorySlot> list, Item item,
+        ref int remaining, ref float totalQuality, ref int totalCount)
+    {
+        foreach (var slot in list)
+        {
+            if (remaining <= 0) break;
+            if (slot.IsEmpty || slot.item != item) continue;
+
+            float q    = slot.instance != null ? slot.instance.quality : 1f;
+            int   take = Mathf.Min(slot.count, remaining);
+            totalQuality += q * take;
+            totalCount   += take;
+            remaining    -= take;
+        }
+    }
+
     public void MoveOrSwap(int from, int to)
     {
         if (from == to) return;

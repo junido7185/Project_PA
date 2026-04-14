@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04a0d4d4c1e88804e8a4aced10b21ad7, type: 3}
+  m_Name: Profile_Farmer
+  m_EditorClassIdentifier: Assembly-CSharp::NpcProfile
+  npcName: Farmer_01
+  bio: 
+  traitEI: -0.3
+  traitSN: 0.5
+  traitTF: 0
+  traitJP: -0.5
+  workEfficiency: 1.2
+  socialWeight: 0.4
+  homeStayBias: 0.3
+  utilityConsumption: 1
+  luxuryConsumption: 1
+  priceSensitivity: 1

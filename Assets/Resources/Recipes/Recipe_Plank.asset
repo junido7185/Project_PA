@@ -12,8 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
   m_Name: Recipe_Plank
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: "\uBAA9\uC7AC \uAC00\uACF5"
-  inputItem: {fileID: 11400000, guid: c23028a8cc77c064a88ea3acdcb8a124, type: 2}
-  inputCount: 2
-  outputItem: {fileID: 11400000, guid: 85a4e07e2854c824daf8996a7f2834e5, type: 2}
+  recipeName: Plank
+  icon: {fileID: 0}
+  description: 
+  ingredients:
+  - item: {fileID: 11400000, guid: a059185af048eab4bb38e0a3b4b62602, type: 2}
+    count: 2
+  outputItem: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
   outputCount: 1
+  baseOutputQuality: 1.2
+  ingredientQualityWeight: 0.3
+  requiredTier: 0
+  requiredWorkbench: 1
+  inputItem: {fileID: 0}
+  inputCount: 0

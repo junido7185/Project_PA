@@ -16,8 +16,7 @@ using UnityEngine;
 //   5) 결과 quality 계산: baseOutputQuality + ingredientQualityWeight × (재료평균 - 1)
 //   6) ItemInstance 생성 → Inventory.AddInstance 로 메타 보존 추가
 //
-// MVP 단순화:
-// - 재료 평균 quality 는 1.0 고정. 향후 Inventory 에 "quality 가중평균 차감" 헬퍼가 생기면 자연 확장.
+// 주의:
 // - 재료 환원 트랜잭션 없음. 가방 풀 시 경고만 띄우고 false 반환 (재료는 이미 차감된 상태).
 public static class CraftingService
 {
@@ -48,6 +47,15 @@ public static class CraftingService
             return false;
         }
 
+        // 2-a. 히든 블루프린트 잠금 (FriendshipService 가 있을 때만 검사)
+        //      히든 레시피이면 친밀도로 해금되기 전까지는 가공 자체를 차단한다.
+        if (FriendshipService.Instance != null
+            && !FriendshipService.Instance.IsRecipeUnlocked(recipe))
+        {
+            Debug.Log($"📜 [{recipe.recipeName}] 은(는) 아직 전수받지 못한 비법입니다 (친밀도 부족).");
+            return false;
+        }
+
         // 3. 재료 보유 확인
         if (Inventory.instance == null)
         {
@@ -71,8 +79,22 @@ public static class CraftingService
             }
         }
 
-        // 4. 재료 평균 quality (MVP: 1.0 고정 — 추후 가중평균으로 확장)
-        float ingredientAvgQuality = 1f;
+        // 4. 재료 가중평균 quality — 차감될 스택의 quality 를 count 비례로 평균.
+        //    Inventory.GetAverageQuality 가 hotbar → inventory 순으로 탐색하므로
+        //    RemoveItems 의 차감 순서와 일치한다.
+        float ingredientAvgQuality;
+        {
+            float totalQ     = 0f;
+            int   totalCount = 0;
+            foreach (var ing in recipe.ingredients)
+            {
+                if (ing == null || ing.item == null || ing.count <= 0) continue;
+                float avg = Inventory.instance.GetAverageQuality(ing.item, ing.count);
+                totalQ     += avg * ing.count;
+                totalCount += ing.count;
+            }
+            ingredientAvgQuality = totalCount > 0 ? totalQ / totalCount : 1f;
+        }
 
         // 5. 재료 차감
         foreach (var ing in recipe.ingredients)

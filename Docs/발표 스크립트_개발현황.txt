@@ -1,0 +1,786 @@
+================================================================
+프로젝트 P.A. (Pioneer Assistance) — 개발 진행 상황 발표
+================================================================
+발표 주제 : 16주 MVP 로드맵 중 코어 시스템 구현 완료 보고
+발표 일자 : 2026-04-14 (개발 15세션 시점)
+엔진/언어 : Unity 6 (6000.3.2f1) URP / C#
+작성자    : dev_slime (1인 개발)
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 1 · 오프닝 — "기획에서 코드로" ]
+────────────────────────────────────────────────────────────────
+안녕하세요. 프로젝트 P.A., Pioneer Assistance의 개발 진행 상황을
+보고드릴 dev_slime입니다.
+
+지난번 발표에서는 "역-공급망 경영 시뮬레이션"이라는 새로운 장르
+제안과, 그 안에서 NPC가 MBTI 성향에 따라 구매 의사결정을 내리는
+경제 엔진이 어떻게 기존 심라이프의 매너리즘을 해결할 수 있는지를
+말씀드렸습니다. 그땐 어디까지나 "제안" 이었고, 오늘은 그 제안이
+실제로 코드베이스의 어디까지 내려왔는지를 말씀드리려 합니다.
+
+결론부터 말씀드리면, 기획서 Docs 01부터 05까지에서 제안한 모든
+핵심 루프의 코드 뼈대가 완성되었습니다. 플레이어가 진열대에
+물건을 올려두면, NPC가 자기 성격에 맞춰 걸어와서 가격을 보고
+살지 말지 판단하고, 판매된 금액이 쌓이면 상점이 자동으로 진화하는
+루프가 실제로 돕니다. 오늘 발표는 그 루프가 어떤 아키텍처 위에
+올라가 있는지, 씬과 모델링은 어떻게 구성되어 있는지, 그리고
+16주 중 12주를 지난 지금 무엇이 남았는지를 차례로 보여드리겠습니다.
+
+발표는 다음 순서로 진행하겠습니다.
+  1) 전체 아키텍처 — Unity식 MVC 패턴과 서비스 레이어
+  2) 씬 구성 — 단일 MainGame 씬 전략과 자동 빌더
+  3) 모델링 · 아트 구성 — 9캐릭터 · 12건물 · 8환경
+  4) 8대 핵심 시스템 — 코드 레벨 완성 현황
+  5) 통합 플레이 루프 — 하루치 시나리오 시연
+  6) 남은 작업과 기술 부채
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 2 · 한눈에 보는 진척도 ]
+────────────────────────────────────────────────────────────────
+본격적인 설명 전에, 이번 발표에서 보여드릴 규모를 숫자로 먼저
+감을 잡아주시면 좋겠습니다.
+
+  ▸ C# 스크립트     : 61개
+  ▸ ScriptableObject: 7개 아이템 · 7개 NPC 프로필 · 5개 티어
+                     4개 스케줄 · 4개 생산 설정 · 3개 레시피
+  ▸ 개발 세션       : 15세션 (Day 1 ~ 2026-04-14)
+  ▸ 완성 기능       : 30개 (Docs/07 개발일지 ✅ 체크 기준)
+  ▸ 남은 작업       : UI 전면 구축 + 씬 셋업 · 멀티플레이
+
+스크립트가 61개라는 숫자보다 중요한 건, 이 스크립트들이 서로
+어떻게 엮여 있느냐입니다. 1인 개발이기 때문에 처음부터 "내가
+6개월 뒤에 봐도 이해되게 짜자"는 원칙을 지키려 했고, 그게
+다음에 보여드릴 아키텍처로 이어집니다.
+
+Docs/06 로드맵 기준으로는, Phase 1부터 3까지 — 그러니까 핵심
+경제, 가공 시스템, 건설과 자동화 — 의 코드 뼈대가 모두
+완성되었고, Phase 4의 안정화 영역에 해당하는 저장 마이그레이션과
+계절, 감사 시스템까지도 미리 선행되었습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 3 · 아키텍처 개요 — Unity식 MVC + 서비스 레이어 ]
+────────────────────────────────────────────────────────────────
+        ┌─────────────────────────────────────────┐
+        │   View  (UI · InventoryUI · CraftingUI) │
+        └──────────────────▲──────────────────────┘
+                           │ 이벤트 구독
+        ┌──────────────────┴──────────────────────┐
+        │   Controller (PlayerController, NpcController,   │
+        │   BuildManager, Shop, CraftingService ...)       │
+        └──────────────────▲──────────────────────┘
+                           │ 단일 경로 호출
+        ┌──────────────────┴──────────────────────┐
+        │   Service Singletons (ExecutionOrder 보장)       │
+        │   EconomyService(-100) → TierService(-90)        │
+        │   → GameClock(-80) → ItemRegistry(-70)           │
+        │   → Hiring/Friendship(-60) → Grid(-50) → Audit(-40) │
+        └──────────────────▲──────────────────────┘
+                           │ 읽기/쓰기
+        ┌──────────────────┴──────────────────────┐
+        │   Model  (ScriptableObject 정적 데이터 +        │
+        │   ItemInstance · SaveData 동적 DTO)              │
+        └─────────────────────────────────────────┘
+
+P.A.의 아키텍처는 기본적으로 Unity에서 쓰는 MVC 패턴을 따르되,
+그 사이에 "서비스 레이어" 를 하나 더 끼워넣은 형태입니다.
+왜 레이어를 하나 더 뒀냐면, 유니티에서 MonoBehaviour들이 서로
+직접 참조하기 시작하면 초기화 순서 문제, 참조 유실 문제가
+끊임없이 터지기 때문입니다. 그래서 재화, 시간, 티어, 아이템
+도감처럼 "모든 시스템이 공유해야 하는 정보"는 전부 서비스
+싱글톤으로 빼두고, 화면에 있는 컨트롤러들은 이 서비스에만
+의존하게 설계했습니다.
+
+이 아키텍처를 관통하는 세 가지 원칙이 있습니다.
+
+첫째, 단일 경로 강제(Single Path). 재화 변경은 오직
+EconomyService의 TrySpend와 Deposit 두 함수를 통해서만 이뤄집니다.
+예전엔 GameManager.money += 같은 직접 대입이 세 군데에 흩어져
+있었는데, 나중에 멀티플레이로 넘어갈 때 NetworkVariable 한 곳만
+바꾸면 전체가 동기화되려면 경로가 하나여야 합니다. 지금 GameManager는
+하위 호환을 위한 얇은 프록시로 축소되어 있고, 실제 돈이 움직이는
+건 EconomyService 하나뿐입니다.
+
+둘째, 실행 순서 보장. DefaultExecutionOrder 속성을 써서 서비스들의
+Awake 순서를 코드에 박아뒀습니다. EconomyService가 -100으로
+가장 먼저 뜨고, 그 다음 TierService, GameClock, ItemRegistry가
+차례로 올라온 뒤에 일반 MonoBehaviour들이 시작합니다. 이렇게 해두면
+"초기화 타이밍 때문에 NullRef"라는 고전적인 버그가 근본적으로
+사라집니다.
+
+셋째, 결정론. NPC가 구매 결정을 할 때 UnityEngine.Random을
+쓰면 안 됩니다. 이건 멀티플레이로 넘어가는 순간 서버와 클라이언트
+시드가 달라서 "내 섬에선 샀는데 친구 섬에선 안 샀다" 같은 상황이
+터집니다. 그래서 처음부터 System.Random 인스턴스를 NPC별로
+독립 시드로 돌리고 있습니다. 같은 시드면 항상 같은 행동 — 이건
+유닛 테스트와 리플레이에도 그대로 이득입니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 4 · 씬 구성 — "MainGame" 단일 씬 전략 ]
+────────────────────────────────────────────────────────────────
+씬은 MainGame 하나로 운영합니다. 졸업작품 규모에서 여러 씬을
+쪼개 관리하는 건 오히려 참조 유실 리스크만 키우기 때문에,
+단일 씬에 전부 담되 나중에 섬이 여러 개가 되면 Addressables로
+넘길 수 있는 여지만 남겨뒀습니다.
+
+실제 Hierarchy 최상단은 이렇게 구성되어 있습니다.
+
+  ├─ [Services]              ← 9개 싱글톤 컴포넌트 집합
+  │    EconomyService · TierService · GameClock · ItemRegistry
+  │    HiringService · FriendshipService · GridService
+  │    AuditService · BuildingRegistry
+  ├─ Ground (NavMeshSurface 부착, Plane 50×50)
+  ├─ Player (c-01 모델 · CharacterController · Animator)
+  ├─ Shop (Tag = "Shop")
+  │    └─ ShopSlot ×4 (티어 진화 시 최대 20개까지 확장)
+  ├─ Workbenches
+  │    BasicWorkbench · Kitchen · Forge · SewingTable
+  ├─ Markers (WorkSpot · HomePoint 10개)
+  └─ NPCs
+       ├─ 생산형 ×3 (Farmer · Lumberjack · Miner)
+       ├─ 전문가 ×4 (Chef · Blacksmith · Tailor · Carpenter)
+       └─ 소비형 ×N (MBTI 프로필로 성격 주입)
+
+여기서 가장 자랑하고 싶은 부분이 바로 [Services] 그룹입니다.
+저 빈 GameObject 하나에 9개 싱글톤 컴포넌트가 전부 부착되어
+있고, 게임이 시작되면 ExecutionOrder 순서대로 알아서 초기화됩니다.
+개발 중에 씬을 어떻게 재배치해도 이 한 오브젝트만 씬에 있으면
+전체 시스템이 돌아가기 때문에, 유지보수가 훨씬 가벼워졌습니다.
+
+▶ 자동화 — PA_SceneAutoBuilder (세션 15 신규)
+
+그런데 61개 스크립트와 30여 개의 ScriptableObject, 그리고 NPC
+프리팹들을 수동으로 씬에 올리는 건 생각보다 시간이 많이 걸립니다.
+체크리스트대로 해도 한 시간쯤 들고, 중간에 Inspector 참조 하나
+빼먹으면 플레이 시에만 NullRef가 터집니다. 그래서 이번 세션 15에
+에디터 스크립트를 하나 만들었습니다.
+
+유니티 상단 메뉴에서 [P.A. System > Build Full Scene] 을 한 번
+누르면, 다음 14단계가 자동으로 실행됩니다.
+
+  1.  폴더 구조 생성
+  2.  Item ScriptableObject 7종 생성
+  3.  TierDefinition 5단계 생성
+  4.  NpcProfile 7종 생성 (MBTI 4축 + 가중치)
+  5.  NpcDailySchedule 4종 생성 (ContextMenu 기본값 호출)
+  6.  ProductionData 4종 생성
+  7.  RecipeData 3종 생성
+  8.  "Shop" 태그 등록 (TagManager.asset 직접 수정)
+  9.  Ground + NavMeshSurface 부착
+  10. [Services] GameObject에 9개 싱글톤 부착
+  11. Shop + ShopSlot 4개 배치
+  12. Workbench 4종 배치 (Cube + 컴포넌트)
+  13. Marker 빈 GameObject 10개 배치
+  14. NPC 생산형 3 + 전문가 4 배치 및 참조 자동 연결
+
+기술적으로 어려웠던 부분을 잠깐 말씀드리면, private
+[SerializeField] 필드에 값을 넣으려면 SerializedObject로
+직접 접근해야 해서, EconomyService의 _money 초기값이나
+TierService의 TierDefinition 리스트를 전부 리플렉션으로 주입했습니다.
+또 NavMeshSurface는 AI Navigation 패키지에 의존하기 때문에
+컴파일 타임 참조를 박으면 패키지가 없는 머신에서 빌드가 깨지는데,
+이걸 Type.GetType()으로 런타임에 잡아서 패키지 미설치 시 경고만
+출력하고 넘어가도록 처리했습니다.
+
+수동으로 1시간 걸리던 씬 구성이 수초 만에 끝나고, NavMesh Bake만
+수동으로 남겨뒀습니다. Bake는 씬 전체 지오메트리를 스캔하는
+작업이라 자동화보다는 명시적으로 남기는 게 안전하다고 판단했습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 5 · 모델링 · 아트 구성 — 9캐릭터 · 12건물 · 8환경 ]
+────────────────────────────────────────────────────────────────
+아트 파이프라인은 1인 개발의 현실적 제약에 맞춰 설계되어 있습니다.
+제가 Blender를 전문적으로 다루는 아티스트가 아니기 때문에,
+생성형 AI와 Mixamo 오토 리깅을 주력으로 삼고 있습니다.
+
+  ▸ Tripo3D.ai (AI 3D 생성) — 로우폴리 모델 다량 확보
+  ▸ Mixamo 오토 리깅 — Humanoid rig + Idle/Walk/Run/Sit 공용 애니
+  ▸ Synty / Quaternius 에셋 — 보조 환경 · 건물
+  ▸ URP 셰이더 + Bloom · SSAO — 소프트 로우폴리 감성 통일
+
+이 파이프라인의 장점은 "일관된 스타일을 빠르게 양산" 할 수
+있다는 점입니다. Tripo3D에 프롬프트만 바꿔가며 캐릭터를 뽑고,
+그 FBX를 Mixamo에 올려서 Humanoid 리깅을 자동으로 받은 다음,
+공용 Animator Controller에 붙이면 바로 걸어다닙니다.
+
+▶ 캐릭터 9종 (Docs/08 §캐릭터 카탈로그)
+  C-01 플레이어 (상점 관리자)
+  C-02~09 NPC 8종
+    · 생산형 : Farmer · Lumberjack · Miner
+    · 전문가 : Chef · Blacksmith · Tailor · Carpenter
+    · 소비형 : 일반 주민 (MBTI 프로필로 개성 주입)
+
+여기서 중요한 설계 포인트는, 캐릭터의 "직업"은 프리팹에 박히지만
+"성격"은 NpcProfile ScriptableObject로 분리되어 있다는 점입니다.
+Inspector에서 프로필 에셋만 드래그 드롭으로 바꾸면 같은 모델도
+ENFP 주민이 됐다가 ISTJ 주민이 됩니다. 기획서 Docs/03의 핵심
+의도이기도 합니다.
+
+▶ 건물 12종
+  상점 4단계  : 가판대 → 잡화점 → 마트 → 백화점
+  가공 작업대 : BasicWorkbench · Kitchen · Forge · SewingTable
+  기타       : 창고 · 농경지 · 플레이어 하우스 · NPC 하우스
+
+▶ 환경 8종 · 상호작용 소품 6종
+  나무 · 광석 · 수풀 채집 오브젝트, 의자(앉기), 저장 상자 등
+
+▶ 애니메이터 설계
+
+  PlayerAnimator.controller
+    Parameters : Speed (Float), IsSitting (Bool)
+    States     : Idle ↔ Walk (Speed 기반 Blend) + Sit (AnyState)
+
+  NpcAnimator.controller
+    Parameters : Speed (Float)
+    States     : Idle ↔ Walk (NavMeshAgent.velocity.magnitude 연동)
+
+애니메이터에서 한 가지 반드시 말씀드리고 싶은 게, Mixamo
+애니메이션의 루트 모션을 명시적으로 OFF 했다는 점입니다.
+Mixamo 애니메이션은 내부적으로 캐릭터의 위치와 회전을 직접
+덮어쓰는 "루트 모션"을 포함하고 있는데, 이걸 켜둔 채로
+CharacterController에 Move를 걸면 두 시스템이 위치를 동시에
+쓰면서 캐릭터가 매 프레임 순간이동 하는 것처럼 보입니다.
+이걸 PlayerController.Start에서 anim.applyRootMotion = false로
+꺼주면 이동은 전적으로 스크립트가 제어하게 됩니다.
+
+또 하나, 동물의 숲 스타일의 쿼터뷰 조작을 위해 카메라 상대 이동을
+구현했습니다. 입력은 카메라의 forward와 right 벡터를 XZ 평면에
+투영한 값으로 변환되기 때문에, 카메라가 어느 각도로 있든 W를
+누르면 화면의 위쪽 방향으로 캐릭터가 이동합니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 6 · 코드 아키텍처 레이어 (61개 스크립트 분류) ]
+────────────────────────────────────────────────────────────────
+61개 스크립트를 역할별로 분류해 두었습니다. 이 분류 자체가
+Assets/Scripts 폴더 구조에도 반영되어 있어서, 새 기능을 추가할
+때 어디에 둬야 할지 고민이 없습니다.
+
+  ▸ Core          PlayerController · PlayerInteraction ·
+                 PlayerInputHandler · CameraController · GameManager
+  ▸ Inventory     Item · ItemInstance · ItemRegistry · Inventory ·
+                 InventorySlot · Hotbar · (UI 3종)
+  ▸ Build / Grid  BuildManager · BuildingData · BuildingRegistry ·
+                 GridService
+  ▸ Shop / Economy Shop · ShopSlot · EconomyService · PurchaseEvaluator
+  ▸ NPC AI        NpcProfile · NpcController · ProducerNpcController ·
+                 SpecialistNpcController · NpcScheduleController ·
+                 NpcDailySchedule · NpcDialogue
+  ▸ Hiring / Bond NpcSpecialty · NpcCandidateData · HiringService ·
+                 HiddenBlueprintData · FriendshipService
+  ▸ Dialogue      DialogueData · DialogueService
+  ▸ Crafting      Workbench · RecipeData · CraftingService · CraftingUI
+  ▸ Production    ProductionData · SeasonModifier
+  ▸ Tier / Time   TierDefinition · TierService · AuditService · GameClock
+  ▸ Save          SaveData · SaveManager · ISaveRepository ·
+                 LocalJsonSaveRepository
+  ▸ Farming / Misc Farmland · Crop · Gatherable · StorageBox ·
+                 EquipmentSystem · Chair · IInteractable
+
+이제 이 중에서 특히 중요한 8대 시스템을 하나씩 말씀드리겠습니다.
+각 시스템이 "왜 이렇게 짜여 있는가" 를 설명드리면, 전체 구조가
+훨씬 잘 그려지실 겁니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 7 · 시스템 1. 경제 — EconomyService 단일 경로 ]
+────────────────────────────────────────────────────────────────
+경제 시스템부터 보겠습니다. 이 시스템은 P.A. 아키텍처 원칙의
+가장 좋은 예시입니다.
+
+세션 8 이전에는 재화 변경 경로가 무려 세 군데에 흩어져 있었습니다.
+GameManager.money += price 같은 직접 대입이 있었고, AddMoney()
+헬퍼가 있었고, 어떤 곳에선 그냥 = 로 덮어쓰기도 했습니다. 이
+상태로 멀티플레이로 넘어가면 네트워크 변수 동기화가 불가능합니다.
+또, 잔액 확인 후 차감 사이에 다른 호출이 끼어드는 레이스 컨디션도
+있었습니다. 플레이어가 버튼을 빠르게 두 번 누르면 돈은 한 번만
+깎이는데 건물은 두 개 지어지는 식입니다.
+
+그래서 세션 8에서 EconomyService를 만들고 DefaultExecutionOrder를
+-100으로 박아 가장 먼저 초기화되도록 했습니다.
+
+  ▸ TrySpend(amount, reason) / Deposit(amount, reason) 두 진입점
+  ▸ OnMoneyChanged 이벤트로 UI가 구독
+  ▸ 잔액 확인과 차감을 한 함수 안에서 원자적으로 처리
+  ▸ 나중에 _money 필드를 NetworkVariable<int>로 교체만 하면
+    스타듀밸리 스타일의 "공유 지갑" 멀티플레이가 완성
+
+BuildManager는 건물을 짓기 전에 TrySpend를 호출하고, 실패하면
+그냥 리턴합니다. 성공했을 때만 건물이 생성됩니다. 이 한 줄의
+변경으로 "돈은 깎였는데 건물은 안 생김" 같은 유형의 버그가
+근본적으로 사라졌습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 8 · 시스템 2. 아이템 — 정적 / 동적 분리 ]
+────────────────────────────────────────────────────────────────
+다음은 아이템 시스템입니다. P.A.의 경제 엔진이 돌아가려면
+"같은 원목이라도 품질이 다르면 값이 다르다" 가 구현되어야 합니다.
+이걸 위해 아이템을 정적 원형과 동적 인스턴스로 분리했습니다.
+
+    Item (ScriptableObject) ── 정적 원형, 절대 변하지 않음
+       id · name · basePrice · category · icon · prefab
+
+    ItemInstance (런타임 클래스) ── 런타임 동적 상태
+       instanceId (Guid) · quality (품질 배수) ·
+       currentPrice · count · EffectivePrice 프로퍼티
+
+  ItemCategory enum: Raw / Processed / Utility / Luxury / Tool
+
+원래는 InventorySlot이 Item ScriptableObject를 직접 들고
+있었는데, 이러면 "품질 1.4짜리 원목"과 "품질 1.0짜리 원목"을
+구분할 수가 없습니다. 그래서 세션 8에서 InventorySlot 내부를
+ItemInstance로 갈아엎었습니다.
+
+다만 기존 코드가 slot.item, slot.count를 읽는 곳이 수십 군데라서,
+그걸 다 고치는 대신 slot.item은 instance.data로, slot.count는
+instance.count로 자동 위임하는 읽기 전용 프로퍼티를 유지했습니다.
+쓰기는 반드시 SetInstance()나 Clear() 헬퍼를 경유하도록 했고,
+드래그 앤 드롭 스왑은 참조 교환 방식으로 구현해 품질·가격 메타가
+절대 유실되지 않습니다.
+
+마지막으로 ItemRegistry 싱글톤이 있는데, 이건 세이브 로드 시점에
+"itemId 3번이 뭐였지?" 를 Guid 없이 복구하기 위한 도감입니다.
+id로 먼저 찾고, 실패하면 name으로 폴백해서 id 리넘버링에도 안전합니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 9 · 시스템 3. MBTI 구매 엔진 — 이 프로젝트의 심장 ]
+────────────────────────────────────────────────────────────────
+이번 프로젝트의 가장 큰 차별점이자 제가 가장 공들인 부분입니다.
+NPC가 진열대 앞에 걸어가서 상품을 구경하고, 자기 MBTI 성향에 맞춰
+구매 여부를 결정합니다.
+
+먼저 NpcProfile ScriptableObject가 있고, 여기에 MBTI 4축이
+-1에서 +1 사이의 연속 실수로 표현됩니다.
+
+  ▸ traitEI : -1(I) ~ +1(E)  쇼핑 · 배회 빈도에 영향
+  ▸ traitSN : -1(S) ~ +1(N)  실용품 vs 사치품 선호
+  ▸ traitTF : -1(T) ~ +1(F)  카테고리 보너스 증폭 · 가격 민감도
+  ▸ traitJP : -1(J) ~ +1(P)  스케줄 drift · 연속 가공 횟수
+  ▸ priceSensitivity / utilityConsumption / luxuryConsumption
+
+왜 -1/+1 연속 실수로 뒀냐면, "이 NPC는 E형" 같은 이산 값으로
+두면 E형 사이의 개성이 사라집니다. 연속값이면 "약간 외향적인 ENFP"
+와 "극단적으로 외향적인 ESTP"가 구매 결정에서 자연스럽게 다르게
+움직이게 됩니다.
+
+실제 구매 결정은 PurchaseEvaluator.cs에서 이뤄지는데, 이건
+MonoBehaviour가 아니라 순수 함수입니다.
+
+    idealPrice = basePrice × (1 + 0.5 × max(0, quality - 1))
+    ratio      = displayPrice / idealPrice
+    baseProb   = ratio에 따른 구간 보간
+                 (0.7 → 0.95, 1.0 → 0.70, 1.5 → 0.05)
+    categoryBonus     = MBTI S/N/T/F에 따라 가감
+    sensitivityPenalty = (ratio-1) × 0.30 × priceSensitivity
+                         (ratio > 1 일 때만)
+    finalProb  = clamp01(baseProb + bonus - penalty)
+    rng.NextDouble() < finalProb  →  구매 결정
+
+순수 함수로 뺀 이유가 중요합니다. 첫째, 외부 상태에 의존하지
+않으니 유닛 테스트로 "이 조합에선 이 확률이 나와야 한다"를 바로
+검증할 수 있습니다. 둘째, 아까 말씀드린 결정론 원칙에 따라
+rng는 System.Random 인스턴스를 NPC별 독립 시드로 주입하기 때문에,
+같은 시드면 항상 같은 결과가 나옵니다. 나중에 멀티플레이로 넘어가도
+서버에서 클라이언트의 구매 결정을 똑같이 재현해서 검증할 수 있습니다.
+
+MBTI 4축 모두를 실제 연산에 반영한 건 세션 13에서였습니다.
+이전까진 E/I와 S/N만 쓰였고 T/F와 J/P는 Inspector에 필드만 있고
+아무 데도 안 쓰이고 있었는데, 세션 13에서 카테고리 보너스 증폭과
+스케줄 drift, 연속 가공 횟수에 각각 연결해 4축을 모두 활성화했습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 10 · 시스템 4. NPC FSM — 3종 컨트롤러 + 스케줄 ]
+────────────────────────────────────────────────────────────────
+NPC는 역할이 여럿이기 때문에, 하나의 거대한 FSM이 아니라 작은
+컨트롤러 여러 개를 조합하는 방식으로 설계되어 있습니다.
+
+  ▸ NpcController (소비형 FSM)
+      Idle → MovingToShop → BrowsingShop → (Buy|Pass) → Idle
+      slotArriveDistance · browseDurationAtSlot · maxSlotsPerVisit
+
+  ▸ ProducerNpcController (생산형 FSM)
+      Idle → MovingToSpot → Producing → 임계 도달 → 납품 이동
+      ProductionData로 산출물 · 주기 · 임계 설정, 계절 보정 적용
+
+  ▸ SpecialistNpcController (전문가 FSM)
+      Idle → MovingToWorkbench → CraftingAtBench → Idle
+      NpcSpecialty ↔ WorkbenchType 매핑 (Chef ↔ Kitchen 등)
+      연속 가공: J형 최대 3회, P형 1회
+
+한 NPC에 소비형 + 생산형 두 컨트롤러를 동시에 붙일 수도 있습니다.
+예를 들어 Farmer NPC는 오전엔 농사를 짓고 오후엔 자기가 번 돈으로
+쇼핑을 가게 할 수 있죠. 이걸 누가 언제 켜고 끄느냐가 문제인데,
+그 역할을 NpcScheduleController가 담당합니다.
+
+▶ NpcScheduleController + GameClock + NpcDailySchedule (세션 10)
+
+  GameClock(-80):
+    secondsPerGameHour 배속 조정 (10=테스트, 60=기본, 120=느린 진행)
+    OnHourTick(int) · OnNewDay(int) 이벤트
+
+  NpcDailySchedule (ScriptableObject):
+    SchedulePhase enum: Sleep · WakeUp · Work · Lunch ·
+                      Afternoon · Shopping · Evening · Rest
+    ScheduleWindow 리스트로 시간대별 페이즈 지정
+
+  NpcScheduleController:
+    GameClock.OnHourTick 매 정각 EvaluateAndApply() 호출
+    페이즈별 서브 컨트롤러 Pause / Resume 조합
+
+여기서 J/P 축이 실제로 연산에 들어옵니다. driftChance =
+max(0, traitJP) × 0.30 공식으로 P형(+1)은 30% 확률로 스케줄을
+이탈해 갑자기 쇼핑을 하러 가고, J형(-1)은 이탈 확률 0%로 스케줄을
+엄격하게 준수합니다. 같은 농부 NPC라도 J형이면 7시 정각에 밭에
+나가고 P형이면 "오늘은 기분이 내키니까 쇼핑이나 갈까?" 가 됩니다.
+
+Sleep이나 Rest 페이즈가 되면 homePoint 트랜스폼으로
+NavMeshAgent가 이동해 집으로 귀가합니다.
+
+▶ 대화 (세션 13)
+
+  DialogueData: topic별로 T/F 톤 분리
+                (Greeting, ShopBought, ShopTooExpensive 등)
+  DialogueService: traitTF ≤ -0.2 Thinking 풀 / ≥ 0.2 Feeling 풀
+                  중립이면 합산 풀에서 랜덤 선택
+  NpcDialogue: 구매 성공 시 ShopBought, 패스 시 ShopTooExpensive
+
+"고마워요! 잘 쓸게요~" 같은 Feeling 톤과, "가격 대비 합리적이군요."
+같은 Thinking 톤이 MBTI에 따라 자연스럽게 갈립니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 11 · 시스템 5. 가공 — Process 3.0 빈 파이프를 닫다 ]
+────────────────────────────────────────────────────────────────
+세션 9의 작업은 기획서 Docs/02의 4단계 자원 흐름 중 유일하게
+비어 있던 "2차 가공 및 제작" 단계를 채우는 것이었습니다.
+
+이전까지의 문제는 이랬습니다. PurchaseEvaluator의 idealPrice
+공식에 quality가 들어가는데, 정작 그 quality를 "만들어 주는
+곳" 이 코드베이스 전체에 단 한 곳도 없었습니다. 그래서
+PurchaseEvaluator에 넘어오는 quality는 항상 1.0이었고, 결과적으로
+"부가가치 메커니즘"이라는 핵심 차별점이 0% 가동되고 있었습니다.
+
+세션 9에서 이 빈 파이프를 이렇게 채웠습니다.
+
+  RecipeData 확장
+    ▸ RecipeIngredient 직렬화 클래스 → 다중 재료 지원
+    ▸ WorkbenchType enum → 어느 작업대에서만 만들 수 있는지
+    ▸ baseOutputQuality (1.2 기본) + ingredientQualityWeight (0.3)
+    ▸ requiredTier / requiredWorkbench
+    ▸ OnValidate 자동 마이그레이션 → 기존 에셋 손실 없이 새 구조 적용
+
+  Workbench (IInteractable) — 월드 작업대 진입점
+
+  CraftingService (순수 헬퍼)
+    TryCraft(RecipeData, Workbench) 한 함수가 모든 검사·차감·생성
+    결과 quality = baseQ + weight × (avgIngredient - 1)
+    avgIngredient는 Inventory.GetAverageQuality로 가중평균 계산
+
+  CraftingUI
+    Workbench 컨텍스트별 레시피 필터 + 잠금 시각화
+
+그리고 세션 11에서 재료의 quality가 결과물에 전파되도록
+가중평균 계산을 추가했습니다. 품질 1.4짜리 원목 2개로 가공하면
+결과물도 품질이 올라가는 구조입니다. 그러니까 플레이어가 "좋은
+재료를 쓸수록 NPC가 더 잘 사주는" 루프가 실제로 동작합니다.
+
+▶ 최종 루프 (세션 9 이후 최초 성립)
+
+    원목 ×2 보유
+      ↓  Workbench(BasicWorkbench) 앞에서 Space
+    CraftingUI 열림 — "원목 가공" 레시피만 표시
+      ↓  클릭
+    ✅ 가공 완료: 가공목재 ×1 (품질 1.40)
+      ↓  ShopSlot 에 진열, 가격 책정
+    NPC BrowsingShop → PurchaseEvaluator
+      → idealPrice = basePrice × 1.2 (quality 보정)
+      → ratio 가 낮음 → buy 확률 상승
+    EconomyService.Deposit → 누적 매출 증가
+      → TierService 자동 승급 평가
+
+이 루프가 세션 9에서 처음으로 끝까지 동작했을 때가 개발 중
+가장 기쁜 순간이었습니다. 기획서의 모든 추상적인 도식이 실제로
+돌아간다는 게 눈앞에서 확인됐거든요.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 12 · 시스템 6. 상점 진화 · 티어 · 감사 ]
+────────────────────────────────────────────────────────────────
+상점이 단계별로 진화하는 건 동물의 숲의 "너굴 상점 진화" 를
+오마주한 기획입니다. 코드 레벨로 내려오면 TierDefinition
+ScriptableObject 5단계로 구현되어 있습니다.
+
+  Tier0  가판대   (4슬롯)
+  Tier2  잡화점   (8슬롯)
+  Tier3  마트     (12슬롯)
+  Tier4  백화점   (20슬롯)
+
+shopSlotCount 필드가 0이면 이전 티어의 값을 캐스케이드하도록
+해서, Tier1은 따로 설정하지 않아도 Tier0의 4슬롯을 유지합니다.
+설정 부담을 최소화한 작은 디테일입니다.
+
+TierService는 누적 매출 · 평판 · 고용 NPC 수를 조건으로 자동
+승급을 판단하고, 승급 시 OnTierAdvanced 이벤트를 발화합니다.
+Shop은 이 이벤트를 구독하고 있다가 ApplyTierSlots()를 호출해
+managedSlots 리스트에 등록된 ShopSlot들을 활성화 순서대로
+SetActive(true) 해줍니다. 그러니까 매출이 쌓이면 언젠가 어느
+순간 갑자기 상점이 쓱 넓어지는 연출이 자동으로 나옵니다.
+
+AuditService (세션 13)는 기획서 Docs/05의 "본사 감사" 컨셉을
+구현한 것입니다. GameClock.OnNewDay를 구독하고 있다가 7일
+(1계절) 마다 감사를 실행해 Tier4로의 수동 승급을 평가합니다.
+감사 1일 전엔 예고 로그를 남겨서 플레이어가 준비할 수 있게 했습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 13 · 시스템 7. 건설 · 그리드 · 계절 ]
+────────────────────────────────────────────────────────────────
+건설 시스템은 초창기 UI 팝업 방식에서 "아이템을 핫바에 들고
+설치하는" 방식으로 세션 4에서 전면 개편됐습니다. 스타듀밸리와
+동물의 숲 둘 다 이 방식을 쓰고 있고, 플레이테스트 중에도 이쪽이
+훨씬 직관적이라는 피드백이 나왔습니다.
+
+BuildManager의 설치 흐름은 이렇습니다.
+
+  1. 핫바에서 건물 아이템 선택 → Ghost View 생성
+  2. 마우스 위치를 GridService로 셀 좌표 변환
+  3. GridService로 1차 점유 필터 (HashSet O(1) 조회)
+  4. OverlapBox로 2차 필터 (콜라이더 겹침 확인)
+  5. EconomyService.TrySpend → 성공 시만 건물 생성
+  6. BuildingRegistry.Register → 명시적 등록
+
+예전엔 FindGameObjectsWithTag("Building") 으로 매번 건물을
+찾던 안티패턴이 있었는데, 이건 건물이 많아지면 성능이 급격히
+떨어지고 멀티플레이 동기화도 까다로워집니다. 세션 8에서
+BuildingRegistry를 도입해 생성·파괴 시점에 명시적으로 Register와
+Unregister를 호출하도록 바꿨습니다.
+
+GridService는 세션 13에서 추가됐습니다. HashSet<Vector2Int>
+기반이라 점유 확인이 O(1)이고, 철거 시엔 Release, 세이브 로드
+시엔 Clear 후 재등록 방식으로 일관되게 관리됩니다.
+
+SeasonModifier는 기획서의 "계절감" 을 코드로 내린 것입니다.
+
+  Spring 농업 1.3×  Summer 채광 1.2×
+  Autumn 벌목 1.2×  Winter 전체 0.7×
+
+daysPerSeason이 7이라 28일이 1년이 되고, Season enum이 순환합니다.
+생산형·전문가 NPC의 CalculateEffectiveInterval()에서 이 계수를
+읽어 생산 주기를 보정합니다. 겨울에는 생산이 전반적으로 느려지고,
+봄에는 Farmer가 평소보다 빠르게 수확하는 식입니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 14 · 시스템 8. 채용 · 친밀도 · 저장 버전 관리 ]
+────────────────────────────────────────────────────────────────
+마지막 시스템 그룹입니다. 이쪽은 전부 세션 13에 한 번에 들어온
+시스템들이고, Docs/05의 채용·친밀도 명세를 코드로 내린 결과입니다.
+
+HiringService:
+  NpcCandidateData 에셋으로 채용 후보를 정의
+  (profile · specialty · hireCost · requiredTier · spawnPrefab)
+  TryHire(): 티어 검사 → EconomyService.TrySpend → Instantiate
+  → InjectProfile로 NpcController/Producer/Dialogue에 프로필 주입
+
+FriendshipService:
+  점수 구간 10 / 25 / 50 / 80 / 120 → Level 1~5
+  대화 1회 +2점, 구매 성공 +5점
+  HiddenBlueprintData: friendshipId + requiredLevel → RecipeData 해금
+  CraftingService.TryCraft 와 CraftingUI에서 잠금 체크
+
+친밀도가 오르면 숨겨진 레시피가 해금되는 구조라서, "이 NPC와
+친해지면 이 요리를 배울 수 있다" 같은 장기 목표가 자연스럽게
+생깁니다. 동물의 숲의 주민 친밀도와 스타듀밸리의 요리책 해금을
+합친 형태라고 보시면 됩니다.
+
+저장 시스템은 기획서 Docs/04의 "로컬 JSON → UGS Cloud Save"
+전환을 염두에 두고 설계됐습니다.
+
+  ISaveRepository 인터페이스
+    └─ LocalJsonSaveRepository (현재 구현체)
+        LoadAsync / SaveAsync / ExistsAsync
+
+SaveManager는 이 인터페이스에만 의존하기 때문에, 나중에
+UGSCloudSaveRepository를 만들어 주입만 바꾸면 SaveManager
+본문은 한 줄도 고칠 필요가 없습니다.
+
+그리고 세션 13에서 저장 버전 관리까지 추가했습니다.
+
+  SaveData.version 필드 (기존 세이브는 version=0)
+  MigrateSaveData 체인:
+    v0 → v1 (인벤토리 필드 초기화)
+    v1 → v2 (lastAuditDay 추가)
+  CurrentSaveVersion = 2, 저장 시 스탬프
+
+이 덕분에 개발 중 SaveData 스키마가 바뀌어도 이전 세이브를
+불러올 때 자동으로 현재 버전으로 올려줍니다. 플레이 테스트를
+멈추지 않고 리팩토링을 할 수 있게 하는 장치입니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 15 · 통합 플레이 루프 — 하루치 시나리오 시연 ]
+────────────────────────────────────────────────────────────────
+지금까지 말씀드린 8대 시스템이 실제로 어떻게 맞물려 돌아가는지,
+게임 내 하루를 타임라인으로 따라가 보겠습니다.
+
+  06:00 ──── GameClock Day 시작 / Season: Spring
+  07:00  ▸ Farmer NPC WakeUp 페이즈
+           → NpcScheduleController가 ProducerNpc Resume
+           → 옥수수 생산 개시 (Spring 1.3× 보정으로 주기 77%)
+  09:00  ▸ 플레이어가 F6으로 세이브 로드
+           → ISaveRepository가 SaveData v2 복원
+           → 인벤토리 · 핫바 · 그리드 · 감사일까지 전부 복원
+  10:00  ▸ 가공 루프 가동
+           Farmer가 원목 납품 → 플레이어가 Workbench와 상호작용
+           → CraftingService.TryCraft(원목 가공)
+           → 결과물 가공목재(quality=1.40) 생성
+           → ShopSlot에 진열, displayPrice=120 책정
+  13:00  ▸ 소비형 NPC Shopping 페이즈 Resume
+           → NpcController.TryForceShop() 즉시 트리거
+           → NavMeshAgent로 ShopSlot 앞 이동
+           → PurchaseEvaluator.Evaluate()
+             (E형 + Luxury 선호 + quality 1.4 보정 → finalProb 0.82)
+           → BUY → EconomyService.Deposit(120)
+           → NpcDialogue.SpeakTopic(ShopBought) — F형 톤으로
+           → FriendshipService.AddPoints(+5)
+  18:00  ▸ Evening 페이즈 → 모든 NPC homePoint로 귀가
+  23:59  ▸ AuditService 주기 체크
+           → 누적 매출 임계 도달
+           → TierService 자동 승급 (Tier1 → Tier2)
+           → Shop.ApplyTierSlots() → 슬롯이 4개에서 8개로 자동 확장
+
+이 하나의 하루 안에서 아까 말씀드린 8대 시스템이 전부
+맞물려 돌아갑니다. GameClock의 OnHourTick이 스케줄 컨트롤러를
+깨우고, 스케줄이 NPC를 깨우고, NPC가 진열대에서 MBTI 평가를
+돌리고, 구매금이 EconomyService에 쌓이고, 쌓인 돈이 TierService를
+트리거해 상점이 진화합니다. 이 전체 루프가 한 줄의 if 문 없이,
+이벤트 구독만으로 자연스럽게 이어집니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 16 · 완성 기능 30선 (Docs/07 체크리스트 기준) ]
+────────────────────────────────────────────────────────────────
+ [x] 플레이어 이동 + 상호작용           [x] 인벤토리 + 핫바 + 드래그 드롭
+ [x] 아이템 채집 + 파밍                 [x] 건설 시스템 + BuildingRegistry
+ [x] 창고 보관                           [x] 로컬 JSON 저장/로드
+ [x] ItemInstance 품질/가격 메타         [x] EconomyService 단일 경로
+ [x] ShopSlot 진열 + 품질 보존           [x] MBTI 구매 평가 엔진 (4축)
+ [x] NPC 쇼핑 FSM                        [x] Tier 자동 승급 시스템
+ [x] 생산형 NPC + 계절 보정              [x] Input System 단일 진입점
+ [x] 워크샵 가공 시스템 (quality)        [x] Raw → Processed 빈 파이프 닫음
+ [x] NPC 일과 스케줄 + J/P drift         [x] 인벤토리 직렬화 (ItemRegistry)
+ [x] NPC 귀가 이동 (NavMeshAgent)        [x] 재료 품질 가중평균 전파
+ [x] 상점 4단계 진화                      [x] 대화 시스템 (T/F 톤 분기)
+ [x] NPC 채용 시스템                      [x] 친밀도 + 히든 레시피
+ [x] 전문가 NPC 자동 가공                 [x] MBTI 4축 완성 (T/F, J/P)
+ [x] 감사 시스템 (7일 주기)               [x] 계절 시스템 (28일 = 1년)
+ [x] 그리드 점유맵 (O(1))                 [x] 저장 버전 관리 (v0→v1→v2)
+
+이 30가지가 Docs/07 개발일지에서 실제로 ✅ 체크된 항목들입니다.
+한 세션에 하나씩만 했다면 30세션이 걸렸을 텐데, 리팩토링 세션에
+여러 시스템을 동시에 완성하는 방식으로 15세션 안에 정리했습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 17 · 기술적 의사결정 하이라이트 ]
+────────────────────────────────────────────────────────────────
+지금까지 설명드린 시스템들이 개별적으로는 잘 동작한다고 해도,
+한 프로젝트 안에서 서로 충돌하지 않으려면 관통하는 원칙이
+필요합니다. 제가 특히 신경쓴 세 가지를 말씀드리겠습니다.
+
+① 단일 경로 강제 (Single Path)
+
+재화 · 아이템 · 건물 등록 · 저장 · 가공 — 모든 쓰기 연산을
+각자 하나의 헬퍼로 집중시켰습니다. EconomyService.TrySpend,
+BuildingRegistry.Register, CraftingService.TryCraft, Inventory.
+AddInstance 이렇게요. 이 원칙의 진짜 이득은 멀티플레이 전환
+시점에 나타납니다. 교체해야 할 지점이 명확하기 때문에, 인터페이스만
+네트워크 버전으로 갈아끼우면 나머지 코드는 무수정으로 재활용됩니다.
+
+② 결정론 (Deterministic RNG)
+
+UnityEngine.Random을 전면 금지하고, System.Random 인스턴스를
+NPC별로 독립 시드로 돌립니다. 같은 시드 → 같은 행동 → 서버 검증
+가능. 이게 멀티플레이에 대비한 가장 싼 방법입니다. 나중에
+네트워크 코드를 얹을 때 "NPC가 서버랑 클라에서 다르게 결정함"
+같은 재현 불가 버그를 원천 차단합니다.
+
+③ 자동 마이그레이션
+
+리팩토링을 하다 보면 데이터 구조가 바뀌는 일이 잦습니다. 그때마다
+기존 에셋과 세이브를 새로 만들게 하면 플레이 테스트의 맥이 끊깁니다.
+그래서 RecipeData는 OnValidate에서 자동으로 신규 스키마로
+이전하고, SaveData는 version 필드와 MigrateSaveData 체인으로
+버전 차이를 흡수합니다. 이 장치 덕분에 세션 9에서 RecipeData
+스키마를 크게 바꿨는데도 기존 테스트 데이터 하나 잃지 않았습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 18 · 남은 작업 · 기술 부채 ]
+────────────────────────────────────────────────────────────────
+솔직하게 남은 작업도 말씀드리겠습니다. 코드는 거의 다 되어있는데,
+눈에 보이는 UI가 아직 많이 부족합니다.
+
+★★★ (Phase 4 즉시 착수 대상)
+  ▸ UI 전면 구축
+    대화 · 채용 · 가공 · 상점 UI가 현재 전부 Debug.Log 출력 상태입니다.
+    로직은 이미 다 돼 있기 때문에, UI 쪽은 순수하게 View 레이어만
+    붙이면 됩니다. 14일치 스프린트로 잡고 있습니다.
+  ▸ 씬 통합 부트스트랩
+    PA_SceneAutoBuilder로 80%가 자동화되어 있고, 플레이어 모델
+    배치와 HUD Canvas 구성만 수동으로 남았습니다.
+
+★★
+  ▸ FriendshipService 저장/로드 — _points가 런타임 전용.
+                                 SaveData 확장 필요
+  ▸ HiringService 저장/로드 — 고용 NPC 목록 직렬화 필요
+
+★
+  ▸ UGS Cloud Save 구현체 — 인터페이스는 이미 준비됨
+  ▸ 멀티플레이 전환 — _money를 NetworkVariable<int>로 교체
+  ▸ Farmland 실시간 타이머 → 이벤트 기반으로 최적화
+
+알려진 리스크:
+  ▸ 오전 작업 누적 인벤토리
+    Shopping 페이즈로 전환될 때 납품 흐름이 중단되는 경우가 있습니다.
+    Pause() 시 OfferingItems 상태면 납품 완료 후 정지하도록 개선 예정.
+  ▸ Tailor NPC에 Bread 레시피가 임시 할당되어 있음
+    재봉 레시피 RecipeData 에셋이 준비되면 교체됩니다.
+
+이런 부분들이 남아 있긴 하지만, 모두 "이미 동작하는 코드의 끝단에
+붙이는 작업" 이라 리스크가 크지 않습니다.
+
+────────────────────────────────────────────────────────────────
+[ 슬라이드 19 · 클로징 — 16주 MVP 일정 대비 현황 ]
+────────────────────────────────────────────────────────────────
+  Phase 1 (1~4주)   기초 + 핵심 경제          ✅ 완료
+  Phase 2 (5~8주)   가공 + NPC 고도화         ✅ 완료
+  Phase 3 (9~12주)  건설 + 자동화             ✅ 코드 완료 (UI 대기)
+  Phase 4 (13~16주) 안정화 + 폴리싱           ▶ 진행 중
+                   (저장 마이그레이션 · 계절 · 감사는 선행 완료)
+
+정리하겠습니다. 지난번 발표에서 제안한 역-공급망 경영 루프의
+모든 코드 뼈대가 갖춰졌습니다. 플레이어가 재료를 모으고, NPC가
+가공하고, 완성품이 진열되고, MBTI 성격의 손님들이 사가고, 매출이
+쌓여 상점이 진화하는 루프가 실제로 돕니다.
+
+남은 4주는 UI 폴리싱과 씬 통합, 그리고 멀티플레이 준비를 통해
+실제로 플레이 가능한 졸업 전시용 데모를 완성하는 데 집중하겠습니다.
+지금까지의 작업이 탄탄한 기반 위에 있기 때문에, 남은 기간은
+"덮개를 씌우고 다듬는" 성격의 작업이 될 것으로 예상합니다.
+
+긴 발표 들어주셔서 감사합니다. 질문 받겠습니다.
+
+================================================================
+부록 A — DefaultExecutionOrder 체인 (의존성 다이어그램)
+================================================================
+EconomyService(-100)        ← 가장 먼저 초기화
+  └→ TierService(-90)       ← 매출 구독
+      └→ GameClock(-80)     ← OnNewDay 이벤트 발화
+          └→ ItemRegistry(-70)
+              ├→ HiringService(-60)
+              ├→ FriendshipService(-60)
+              │   └→ GridService(-50)
+              │       └→ AuditService(-40)
+              │           └→ 나머지 MonoBehaviour (기본)
+
+================================================================
+부록 B — 참고 문서 (Docs 폴더)
+================================================================
+  01_개요_및_정체성.md            — 기획 의도 · 벤치마킹
+  02_게임_플레이_및_시스템_명세.md — 4단계 자원 흐름 · 가공
+  03_NPC_AI_및_MBTI_명세.md        — MBTI 4축 연속 실수 설계
+  04_멀티플레이_및_데이터_명세.md   — NGO · UGS · 데이터 영속성
+  05_상점_진화_및_채용_명세.md     — 4단계 상점 · 감사 · 전문가
+  06_개발_로드맵_및_명세.md         — 16주 MVP WBS
+  07_개발일지.md                    — 15세션 전체 기록
+  08_아트_및_씬_구성_가이드.md     — 캐릭터 · 건물 · 환경 카탈로그

@@ -97,13 +97,28 @@ public class BuildManager : MonoBehaviour
 
     void CheckPlaceable(Vector3 pos)
     {
+        // 1차 필터: GridService 점유맵 확인 (O(1))
+        if (GridService.Instance != null && GridService.Instance.IsOccupiedWorld(pos))
+        {
+            canBuild = false;
+            SetGhostColor(false);
+            return;
+        }
+
+        // 2차 필터: 물리 OverlapBox (기존 장애물 판정)
         Vector3 boxSize = new Vector3(gridSize * 0.9f, 1f, gridSize * 0.9f);
         Vector3 center  = pos + Vector3.up * 1.0f;
         Collider[] hits = Physics.OverlapBox(center, boxSize / 2,
                             Quaternion.Euler(0, currentRotationY, 0), obstacleLayer);
         canBuild = (hits.Length == 0);
 
-        Color color = canBuild ? new Color(0, 1, 0, 0.5f) : new Color(1, 0, 0, 0.5f);
+        SetGhostColor(canBuild);
+    }
+
+    void SetGhostColor(bool placeable)
+    {
+        if (ghostObject == null) return;
+        Color color = placeable ? new Color(0, 1, 0, 0.5f) : new Color(1, 0, 0, 0.5f);
         foreach (Renderer r in ghostObject.GetComponentsInChildren<Renderer>())
         {
             if (r.material.HasProperty("_BaseColor")) r.material.SetColor("_BaseColor", color);
@@ -145,6 +160,11 @@ public class BuildManager : MonoBehaviour
         {
             var go = Instantiate(prefabToBuild, buildPos, buildRot);
             BuildingRegistry.Instance?.Register(currentBuilding, go);
+
+            // 그리드 점유 등록
+            if (GridService.Instance != null)
+                GridService.Instance.TryOccupyWorld(buildPos);
+
             Debug.Log("✅ 건설 성공!");
         }
 

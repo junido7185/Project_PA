@@ -39,4 +39,14 @@ public class TierDefinition : ScriptableObject
     [TextArea]
     [Tooltip("이 등급에 도달했을 때 해금되는 건물/기능 설명")]
     public string unlockDescription;
+
+    [Header("상점 슬롯 (Docs/05 §3)")]
+    [Tooltip("이 티어에서 활성화할 상점 슬롯 수.\n" +
+             "0 이면 이전 티어 값을 그대로 유지한다 (캐스케이드).\n" +
+             "권장값: Tier0=4(가판대), Tier2=8(잡화점), Tier3=12(마트), Tier4=20(백화점)")]
+    public int shopSlotCount = 0;
+
+    [Tooltip("이 티어의 상점 단계 이름 — UI 및 디버그 로그에 표시된다.\n" +
+             "권장값: 가판대 / 잡화점 / 마트 / 백화점")]
+    public string shopStageName = "";
 }

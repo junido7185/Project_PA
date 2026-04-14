@@ -50,10 +50,14 @@ public class NpcController : MonoBehaviour
     [SerializeField] private bool debugShoppingPriority;
 
     private NavMeshAgent agent;
+    private Animator anim;
     private float idleTimer = 0f;
 
     // 결정론 RNG
     private System.Random _rng;
+
+    // 선택적 대사 컴포넌트 (같은 GameObject) — 쇼핑 결과 대사 분기에 사용.
+    private NpcDialogue _dialogue;
 
     // -------- NpcScheduleController 에서 제어하는 플래그 --------
 
@@ -74,7 +78,9 @@ public class NpcController : MonoBehaviour
 
     void Awake()
     {
-        agent = GetComponent<NavMeshAgent>();
+        agent    = GetComponent<NavMeshAgent>();
+        anim     = GetComponentInChildren<Animator>();
+        _dialogue = GetComponent<NpcDialogue>();  // 있으면 대사 풀 연동, 없으면 null — 무해.
 
         int seed = randomSeed != 0
             ? randomSeed
@@ -106,6 +112,13 @@ public class NpcController : MonoBehaviour
             case State.BrowsingShop:
                 UpdateBrowsingShop();
                 break;
+        }
+
+        // NavMeshAgent 속력으로 Walk/Idle 구동
+        if (anim != null && anim.runtimeAnimatorController != null)
+        {
+            float speed = agent != null ? agent.velocity.magnitude : 0f;
+            anim.SetFloat("Speed", speed, 0.1f, Time.deltaTime);
         }
     }
 
@@ -282,9 +295,23 @@ public class NpcController : MonoBehaviour
             if (_currentSlotTarget.TryPurchaseByNpc(DisplayName, out int paid))
             {
                 Debug.Log($"🤖 {DisplayName}: 구매 성공! +{paid}G");
+                // 구매 직후 소감 대사 (DialogueData 가 연결된 NPC 만)
+                if (_dialogue != null) _dialogue.SpeakTopic(DialogueTopic.ShopBought);
+                // 친밀도 가산 — NpcDialogue.friendshipId 가 있는 경우에만 집계.
+                if (_dialogue != null
+                    && !string.IsNullOrEmpty(_dialogue.friendshipId)
+                    && FriendshipService.Instance != null)
+                {
+                    FriendshipService.Instance.AddPurchasePoints(_dialogue.friendshipId);
+                }
                 EndShoppingVisit("구매 완료");
                 return;
             }
+        }
+        else
+        {
+            // 패스 대사 — "가격이 너무 비싸" 또는 일반 잡담
+            if (_dialogue != null) _dialogue.SpeakTopic(DialogueTopic.ShopTooExpensive);
         }
 
         // 패스 — 다음 슬롯으로

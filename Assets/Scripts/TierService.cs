@@ -140,6 +140,33 @@ public class TierService : MonoBehaviour
     /// <summary>현재 등급의 TierDefinition 을 반환한다.</summary>
     public TierDefinition GetCurrentDefinition() => GetDefinition(_currentTier);
 
+    // -------- 상점 슬롯 헬퍼 (Docs/05 §3) --------
+
+    /// <summary>
+    /// tier 0 부터 인자 tier 까지를 순회하며 마지막으로 설정된 shopSlotCount 를 반환한다.
+    /// shopSlotCount=0 인 티어는 이전 값을 유지 (캐스케이드).
+    /// 결과가 0 이면 TierDefinition 에 값이 하나도 설정되지 않은 것이다.
+    /// </summary>
+    public int GetEffectiveShopSlotCount(int tier)
+    {
+        int result = 0;
+        for (int t = 0; t <= Mathf.Clamp(tier, 0, 4); t++)
+        {
+            TierDefinition def = GetDefinition(t);
+            if (def != null && def.shopSlotCount > 0)
+                result = def.shopSlotCount;
+        }
+        return result;
+    }
+
+    /// <summary>지정 tier 의 TierDefinition 을 반환한다. 등록되지 않은 tier 이면 null.</summary>
+    public TierDefinition GetDefinition(int tier)
+    {
+        foreach (var def in tierDefinitions)
+            if (def != null && def.tier == tier) return def;
+        return null;
+    }
+
     // -------- 내부 --------
 
     private void OnRevenueChanged(long _) => EvaluateTierConditions();
@@ -158,10 +185,4 @@ public class TierService : MonoBehaviour
         OnTierAdvanced?.Invoke(oldTier, _currentTier);
     }
 
-    private TierDefinition GetDefinition(int tier)
-    {
-        foreach (var def in tierDefinitions)
-            if (def != null && def.tier == tier) return def;
-        return null;
-    }
 }

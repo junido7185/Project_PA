@@ -4,6 +4,10 @@ using UnityEngine;
 [System.Serializable]
 public class SaveData
 {
+    // 스키마 버전 — SaveManager 가 로드 시 마이그레이션에 사용한다.
+    // 새 필드가 추가되면 CurrentSaveVersion(SaveManager) 을 올리고 마이그레이션 함수를 추가한다.
+    public int version = 0;
+
     // 플레이어 정보
     public int money;
     public Vector3 playerPosition;
@@ -16,6 +20,9 @@ public class SaveData
     // 인게임 시간 (GameClock)
     public float gameHour = 7f;   // 0~23.99
     public int   gameDay  = 1;    // 1 이상
+
+    // 감사 시스템 (AuditService) — v2 추가
+    public int lastAuditDay = 0;
 
     // 건물 정보 리스트
     public List<BuildingSaveData> buildings = new List<BuildingSaveData>();

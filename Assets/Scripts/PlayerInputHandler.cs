@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.EventSystems;
 
 // 프로젝트 전체 입력의 단일 진입점.
@@ -27,8 +28,6 @@ using UnityEngine.EventSystems;
 public class PlayerInputHandler : MonoBehaviour
 {
     public static PlayerInputHandler Instance { get; private set; }
-
-    private InputSystem_Actions _actions;
 
     // -------- 현재 이동 벡터 (폴링 방식으로도 읽을 수 있도록 프로퍼티 제공) --------
     public Vector2 MoveInput { get; private set; }
@@ -72,22 +71,6 @@ public class PlayerInputHandler : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-
-        _actions = new InputSystem_Actions();
-    }
-
-    void OnEnable()
-    {
-        _actions.Enable();
-        _actions.Player.Move.performed += OnMovePerformed;
-        _actions.Player.Move.canceled  += OnMoveCanceled;
-    }
-
-    void OnDisable()
-    {
-        _actions.Player.Move.performed -= OnMovePerformed;
-        _actions.Player.Move.canceled  -= OnMoveCanceled;
-        _actions.Disable();
     }
 
     void Update()
@@ -95,6 +78,18 @@ public class PlayerInputHandler : MonoBehaviour
         var kb    = Keyboard.current;
         var mouse = Mouse.current;
         if (kb == null) return;
+
+        // -------- 이동 (WASD / 방향키 폴링) --------
+        Vector2 move = Vector2.zero;
+        if (kb.wKey.isPressed || kb.upArrowKey.isPressed)    move.y += 1f;
+        if (kb.sKey.isPressed || kb.downArrowKey.isPressed)  move.y -= 1f;
+        if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) move.x += 1f;
+        if (kb.aKey.isPressed || kb.leftArrowKey.isPressed)  move.x -= 1f;
+        if (move != MoveInput)
+        {
+            MoveInput = move;
+            OnMoveChanged?.Invoke(MoveInput);
+        }
 
         // -------- 버튼 입력 감지 --------
         if (kb.spaceKey.wasPressedThisFrame)  OnInteractPressed?.Invoke();
@@ -125,20 +120,6 @@ public class PlayerInputHandler : MonoBehaviour
         // -------- 건설 배치 좌클릭 (UI 위 클릭 제외) --------
         if (mouse.leftButton.wasPressedThisFrame && !IsPointerOverUI())
             OnBuildPlace?.Invoke();
-    }
-
-    // -------- 이동 콜백 --------
-
-    private void OnMovePerformed(InputAction.CallbackContext ctx)
-    {
-        MoveInput = ctx.ReadValue<Vector2>();
-        OnMoveChanged?.Invoke(MoveInput);
-    }
-
-    private void OnMoveCanceled(InputAction.CallbackContext ctx)
-    {
-        MoveInput = Vector2.zero;
-        OnMoveChanged?.Invoke(MoveInput);
     }
 
     // -------- 헬퍼 --------

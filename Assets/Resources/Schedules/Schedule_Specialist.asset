@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f565c9c2718f3045a0c9b740bd52cbc, type: 3}
+  m_Name: Schedule_Specialist
+  m_EditorClassIdentifier: Assembly-CSharp::NpcDailySchedule
+  windows:
+  - phase: 0
+    startHour: 0
+    endHour: 7
+  - phase: 1
+    startHour: 7
+    endHour: 9
+  - phase: 2
+    startHour: 9
+    endHour: 18
+  - phase: 5
+    startHour: 18
+    endHour: 20
+  - phase: 7
+    startHour: 20
+    endHour: 24
+  defaultPhase: 4

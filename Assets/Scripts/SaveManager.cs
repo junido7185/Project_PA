@@ -20,6 +20,9 @@ public class SaveManager : MonoBehaviour
 
     private const string SaveKey = "savegame";
 
+    // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
+    private const int CurrentSaveVersion = 2;
+
     void Awake()
     {
         instance = this;
@@ -82,6 +85,12 @@ public class SaveManager : MonoBehaviour
                 data.hotbarSlots = SerializeSlots(Inventory.instance.hotbar.slots);
         }
 
+        // 5. 감사 시스템
+        data.lastAuditDay = AuditService.Instance != null ? AuditService.Instance.LastAuditDay : 0;
+
+        // 버전 스탬프
+        data.version = CurrentSaveVersion;
+
         string json = JsonUtility.ToJson(data, true);
         await _repository.SaveAsync(SaveKey, json);
         Debug.Log($"💾 저장 완료 (건물 {data.buildings.Count}개, 인벤토리 {data.inventorySlots.Count}칸, 핫바 {data.hotbarSlots.Count}칸)");
@@ -97,6 +106,13 @@ public class SaveManager : MonoBehaviour
         }
 
         SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+        // 버전 마이그레이션
+        if (data.version < CurrentSaveVersion)
+        {
+            data = MigrateSaveData(data);
+            Debug.Log($"💾 세이브 마이그레이션 완료: v{data.version}");
+        }
 
         // 1. 플레이어 복구 — 돈은 EconomyService 의 단일 경로로만 세팅한다.
         if (EconomyService.Instance != null)
@@ -126,11 +142,17 @@ public class SaveManager : MonoBehaviour
             if (cc != null) cc.enabled = true;
         }
 
-        // 3. 기존 건물 제거 — 레지스트리가 보유한 목록만 정확히 파괴한다.
+        // 3-a. 감사 시스템 복구
+        if (AuditService.Instance != null)
+            AuditService.Instance.ForceSetLastAuditDay(data.lastAuditDay);
+
+        // 3-b. 기존 건물 제거 — 레지스트리가 보유한 목록만 정확히 파괴한다.
         if (BuildingRegistry.Instance != null)
-        {
             BuildingRegistry.Instance.ClearAll();
-        }
+
+        // 그리드 점유맵 초기화 (건물 재배치 전)
+        if (GridService.Instance != null)
+            GridService.Instance.Clear();
 
         // 4. 건물 다시 짓기
         int count = 0;
@@ -141,9 +163,12 @@ public class SaveManager : MonoBehaviour
             {
                 var go = Instantiate(bd.prefab, bData.position, bData.rotation);
                 if (BuildingRegistry.Instance != null)
-                {
                     BuildingRegistry.Instance.Register(bd, go);
-                }
+
+                // 그리드 점유 재등록
+                if (GridService.Instance != null)
+                    GridService.Instance.TryOccupyWorld(bData.position);
+
                 count++;
             }
             else
@@ -171,6 +196,32 @@ public class SaveManager : MonoBehaviour
     // 기존 동기 API 호환 — 핫키(F5/F9) 외에 외부에서 호출하는 코드가 있을 수 있어 유지.
     public void SaveGame() => _ = SaveGameAsync();
     public void LoadGame() => _ = LoadGameAsync();
+
+    // -------- 버전 마이그레이션 --------
+
+    // 저장 데이터의 스키마가 바뀔 때마다 한 단계씩 올리는 체인.
+    // 각 단계는 해당 버전에서 추가된 필드에 안전한 기본값을 채운다.
+    SaveData MigrateSaveData(SaveData data)
+    {
+        // v0 → v1: inventorySlots / hotbarSlots 가 없던 시절
+        if (data.version < 1)
+        {
+            if (data.inventorySlots == null) data.inventorySlots = new List<SlotSaveData>();
+            if (data.hotbarSlots == null) data.hotbarSlots = new List<SlotSaveData>();
+            data.version = 1;
+            Debug.Log("💾 마이그레이션 v0→v1: 인벤토리 슬롯 초기화");
+        }
+
+        // v1 → v2: lastAuditDay 추가
+        if (data.version < 2)
+        {
+            data.lastAuditDay = 0;
+            data.version = 2;
+            Debug.Log("💾 마이그레이션 v1→v2: 감사 시스템 필드 추가");
+        }
+
+        return data;
+    }
 
     // -------- 슬롯 직렬화 헬퍼 --------
 

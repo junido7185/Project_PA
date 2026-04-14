@@ -118,7 +118,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
     {
         if (Inventory.instance == null || currentItem == null || currentItem.data == null) return;
 
-        bool added = Inventory.instance.AddItem(currentItem.data, currentItem.count);
+        bool added = Inventory.instance.AddInstance(currentItem);
         if (!added)
         {
             Debug.Log("🚫 가방이 꽉 차서 회수할 수 없습니다.");

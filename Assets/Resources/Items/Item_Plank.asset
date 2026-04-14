@@ -9,13 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 20e46675da3566e4da1a7863e13b7cf5, type: 3}
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
   m_Name: Item_Plank
-  m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: "\uD310\uC790"
-  icon: {fileID: 21300000, guid: 4529ec1f96075cf43abd428185f25409, type: 3}
-  basePrice: 30
-  isStackable: 1
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 7
+  itemName: Plank
+  description: 
+  icon: {fileID: 0}
+  maxStack: 99
+  model: {fileID: 0}
+  basePrice: 25
   toolType: 0
-  description: "\uD1B5\uB098\uBB34\uB97C \uAC00\uACF5\uD574 \uB9CC\uB4E0 \uAC74\uCD95
-    \uC790\uC7AC"
+  category: 1
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

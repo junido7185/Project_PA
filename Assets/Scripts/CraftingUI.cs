@@ -99,8 +99,10 @@ public class CraftingUI : MonoBehaviour
             if (recipe == null) continue;
             if (!PassesWorkbenchFilter(recipe)) continue;
 
-            bool unlocked = TierService.Instance == null
-                            || TierService.Instance.IsUnlocked(recipe.requiredTier);
+            bool unlocked = (TierService.Instance == null
+                             || TierService.Instance.IsUnlocked(recipe.requiredTier))
+                            && (FriendshipService.Instance == null
+                                || FriendshipService.Instance.IsRecipeUnlocked(recipe));
 
             GameObject newSlot = Instantiate(slotPrefab, slotParent);
 

@@ -1,6 +1,10 @@
 using System;
 using UnityEngine;
 
+// 계절 enum — GameClock.CurrentSeason 으로 산출.
+// Spring → Summer → Autumn → Winter → Spring ... 순환.
+public enum Season { Spring, Summer, Autumn, Winter }
+
 // 게임 내 시간 흐름을 관리하는 싱글톤 서비스 — Docs/03 일과 스케줄의 기반.
 //
 // 설계 의도:
@@ -29,9 +33,14 @@ public class GameClock : MonoBehaviour
     [Tooltip("씬 시작 시각 (0~23.99). 기본 7시 = 기상 직전")]
     [Range(0f, 23.99f)] public float startHour = 7f;
 
+    [Header("계절 설정")]
+    [Tooltip("한 계절의 길이 (일수). 기본 7일 = 28일에 1년 순환")]
+    public int daysPerSeason = 7;
+
     [Header("현재 상태 (Inspector 읽기 전용)")]
     [SerializeField] private float _currentHour;
     [SerializeField] private int _currentDay = 1;
+    [SerializeField] private Season _currentSeason;
 
     /// <summary>현재 게임 시각 (0~24 float). 예: 7.5 = 오전 7:30.</summary>
     public float CurrentHour => _currentHour;
@@ -42,13 +51,20 @@ public class GameClock : MonoBehaviour
     /// <summary>현재 시각의 정수 (0~23). 페이즈 비교에 사용.</summary>
     public int CurrentHourInt => Mathf.FloorToInt(_currentHour);
 
+    /// <summary>현재 계절. daysPerSeason 단위로 Spring→Summer→Autumn→Winter 순환.</summary>
+    public Season CurrentSeason => ComputeSeason(_currentDay);
+
     /// <summary>정수 시각이 바뀔 때 발화. 파라미터: 새 시각(0~23).</summary>
     public event Action<int> OnHourTick;
 
     /// <summary>자정(00:00)을 지나 새 날이 시작될 때 발화. 파라미터: 새 일수.</summary>
     public event Action<int> OnNewDay;
 
+    /// <summary>계절이 바뀔 때 발화. 파라미터: 새 계절.</summary>
+    public event Action<Season> OnSeasonChanged;
+
     private int _prevHourInt;
+    private Season _prevSeason;
 
     // -------- Unity 생명주기 --------
 
@@ -59,6 +75,8 @@ public class GameClock : MonoBehaviour
 
         _currentHour = startHour;
         _prevHourInt = Mathf.FloorToInt(_currentHour);
+        _prevSeason = ComputeSeason(_currentDay);
+        _currentSeason = _prevSeason;
     }
 
     void Update()
@@ -75,6 +93,16 @@ public class GameClock : MonoBehaviour
             _currentDay++;
             Debug.Log($"🌅 GameClock: Day {_currentDay} 시작 (0시)");
             OnNewDay?.Invoke(_currentDay);
+
+            // 계절 전환 확인
+            Season newSeason = ComputeSeason(_currentDay);
+            _currentSeason = newSeason;
+            if (newSeason != _prevSeason)
+            {
+                Debug.Log($"🌸 계절 변화: {_prevSeason} → {newSeason} (Day {_currentDay})");
+                _prevSeason = newSeason;
+                OnSeasonChanged?.Invoke(newSeason);
+            }
         }
 
         // 정각 이벤트 (정수 시각이 바뀔 때만 1회)
@@ -103,6 +131,16 @@ public class GameClock : MonoBehaviour
         _currentHour = Mathf.Clamp(hour, 0f, 23.99f);
         _currentDay  = Mathf.Max(1, day);
         _prevHourInt = Mathf.FloorToInt(_currentHour);
-        Debug.Log($"💾 GameClock[{reason}]: Day {_currentDay} {GetTimeString()}");
+        _prevSeason  = ComputeSeason(_currentDay);
+        _currentSeason = _prevSeason;
+        Debug.Log($"💾 GameClock[{reason}]: Day {_currentDay} {GetTimeString()} ({_currentSeason})");
+    }
+
+    // -------- 내부: 계절 산출 --------
+
+    private Season ComputeSeason(int day)
+    {
+        int safeDaysPerSeason = Mathf.Max(1, daysPerSeason);
+        return (Season)(((day - 1) / safeDaysPerSeason) % 4);
     }
 }

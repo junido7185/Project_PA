@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2acd1de11a836234ca9ad07ff0d0e9a8, type: 3}
+  m_Name: Production_Ore
+  m_EditorClassIdentifier: Assembly-CSharp::ProductionData
+  producedItem: {fileID: 11400000, guid: 8283f21f84e1134458262a89b7e29984, type: 2}
+  baseProductionInterval: 15
+  baseProductionAmount: 3
+  deliveryThreshold: 10
+  maxInventoryCount: 30
+  overrideDeliveryPrice: 15

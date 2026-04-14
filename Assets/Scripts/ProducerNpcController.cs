@@ -37,6 +37,9 @@ public class ProducerNpcController : MonoBehaviour
     [Tooltip("생산할 품목과 속도를 정의하는 ScriptableObject")]
     public ProductionData productionData;
 
+    [Tooltip("생산 직종. 계절 보정(SeasonModifier)에 사용")]
+    public NpcSpecialty specialty = NpcSpecialty.Farmer;
+
     [Tooltip("결정론 RNG 시드. 0이면 이름 해시 기반 자동 설정")]
     public int randomSeed = 0;
 
@@ -427,7 +430,8 @@ public class ProducerNpcController : MonoBehaviour
         float eiFactor = 1f + 0.3f * (-GetTrait(p => p.traitEI));
         eiFactor = Mathf.Max(0.1f, eiFactor);
 
-        return productionData.baseProductionInterval / (workEff * eiFactor);
+        float seasonMod = SeasonModifier.GetProductionModifier(specialty);
+        return productionData.baseProductionInterval / (workEff * eiFactor * Mathf.Max(0.1f, seasonMod));
     }
 
     // 실제 생산량:  max(1, round(baseAmount × workEfficiency × (1 + 0.2 × (-traitJP))))

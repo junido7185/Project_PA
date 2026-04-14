@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 // NPC 하루 일과를 GameClock 에 맞춰 조율하는 오케스트레이터.
 //
@@ -33,12 +34,20 @@ public class NpcScheduleController : MonoBehaviour
     [Tooltip("생산형 NPC (채집·납품). 없어도 무방")]
     public ProducerNpcController producerController;
 
+    [Tooltip("전문가 NPC (Workbench 자동 가공). 없어도 무방")]
+    public SpecialistNpcController specialistController;
+
+    [Header("귀가 설정")]
+    [Tooltip("Sleep / Rest 페이즈에 NPC 가 걸어갈 목적지. null 이면 제자리 정지.")]
+    public Transform homePoint;
+
     [Header("디버그 (읽기 전용)")]
     [SerializeField] private SchedulePhase _scheduledPhase;  // 스케줄상 원래 페이즈
     [SerializeField] private SchedulePhase _activePhase;     // 실제 수행 중 (P형 이탈 포함)
     [SerializeField] private string _debugStatus = "초기화 전";
 
     private System.Random _rng;
+    private NavMeshAgent _agent;
 
     // -------- Unity 생명주기 --------
 
@@ -48,6 +57,8 @@ public class NpcScheduleController : MonoBehaviour
         string seedStr = (profile != null ? profile.npcName : gameObject.name)
                          + "::Schedule::" + gameObject.GetInstanceID();
         _rng = new System.Random(seedStr.GetHashCode());
+
+        _agent = GetComponent<NavMeshAgent>();
     }
 
     void Start()
@@ -135,14 +146,15 @@ public class NpcScheduleController : MonoBehaviour
         // 1. 전체 정지
         consumerController?.Pause();
         producerController?.Pause();
+        specialistController?.Pause();
 
         // 2. 페이즈별 서브 컨트롤러 활성화
         switch (phase)
         {
-            // ---- 정지 상태 ----
+            // ---- 정지 상태 — homePoint 로 귀가 후 대기 ----
             case SchedulePhase.Sleep:
             case SchedulePhase.Rest:
-                // 아무 것도 활성화하지 않음 — 제자리 정지
+                ReturnHome();
                 break;
 
             // ---- 기상·준비 ----
@@ -157,8 +169,9 @@ public class NpcScheduleController : MonoBehaviour
 
             // ---- 작업·생산 ----
             case SchedulePhase.Work:
-                // 생산 NPC 만 활성화 (소비 NPC 는 작업 중)
+                // 생산 NPC + 전문가 NPC 활성화 (소비 NPC 는 작업 중)
                 producerController?.Resume();
+                specialistController?.Resume();
                 break;
 
             // ---- 자유 배회 ----
@@ -183,6 +196,21 @@ public class NpcScheduleController : MonoBehaviour
                 }
                 break;
         }
+    }
+
+    // -------- 귀가 --------
+
+    // Sub-controller 들이 Pause() 에서 agent.ResetPath() 를 호출한 직후 실행된다.
+    // homePoint 가 연결되어 있으면 NavMeshAgent 로 걸어가고,
+    // 도착 후에는 서브 컨트롤러가 비활성 상태이므로 자연히 그 자리에 멈춘다.
+    void ReturnHome()
+    {
+        if (_agent == null || homePoint == null) return;
+        if (!_agent.isOnNavMesh) return;
+
+        _agent.isStopped = false;
+        _agent.SetDestination(homePoint.position);
+        _debugStatus = $"귀가 중 → {homePoint.name}";
     }
 
     // -------- 공개 API (외부 이벤트 트리거용) --------
