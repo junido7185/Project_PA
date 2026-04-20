@@ -32,4 +32,12 @@ public class CameraController : MonoBehaviour
         // 3. 적용
         transform.position = smoothedPosition;
     }
+
+    // 🚪 Docs/08 §건물 진입 — 플레이어 순간이동 직후 카메라를 즉시 타겟에 고정
+    // Lerp 경로가 실내·실외 사이를 가로지르면 긴 패닝이 보이므로 1프레임만에 스냅해야 한다.
+    public void SnapToTarget()
+    {
+        if (target == null) return;
+        transform.position = target.position + offset;
+    }
 }

@@ -66,7 +66,11 @@ public class InventoryUI : MonoBehaviour
         if (isActive)
         {
             RefreshUI(); // 켤 때 갱신 한 번 해줌
-            
+
+            // 📱 상호배타: 스마트폰이 열려있으면 강제로 닫는다 (Docs §레퍼런스.html)
+            if (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen)
+                SmartphoneUI.instance.Toggle();
+
             // 인벤토리 열리면 마우스 보이기
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;

@@ -61,14 +61,24 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public void Interact(GameObject interactor)
     {
-        if (IsEmpty) TryStockFromPlayer();
-        else TryTakeBackToPlayer();
+        if (IsEmpty)
+        {
+            TryStockFromPlayer();
+        }
+        else
+        {
+            // §2 ShopPriceUI — 찬 슬롯은 가격 조정 UI 를 연다 (문라이터2 스타일)
+            if (ShopPriceUI.instance != null)
+                ShopPriceUI.instance.Open(this);
+            else
+                TryTakeBackToPlayer(); // UI 없을 때 폴백
+        }
     }
 
     public string GetInteractPrompt()
     {
         if (IsEmpty) return "진열하기";
-        return $"회수하기 ({currentItem.data.itemName} / {EffectiveDisplayPrice}G)";
+        return $"가격 조정 ({currentItem.data.itemName} / {EffectiveDisplayPrice}G)";
     }
 
     // 플레이어가 들고 있는 아이템 1개를 이 슬롯에 진열한다.
@@ -112,6 +122,9 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
         Debug.Log($"🛒 진열: {held.data.itemName} @ {displayPrice}G");
     }
+
+    // ShopPriceUI 에서 "회수" 버튼을 눌렀을 때 호출된다.
+    public void RetrieveItem() => TryTakeBackToPlayer();
 
     // 진열된 아이템을 회수해 플레이어 인벤토리로 돌려놓는다.
     private void TryTakeBackToPlayer()

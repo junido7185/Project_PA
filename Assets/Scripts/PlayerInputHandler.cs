@@ -17,6 +17,7 @@ using UnityEngine.EventSystems;
 //   Move       — WASD / 게임패드 좌스틱
 //   Interact   — Space
 //   Inventory  — I
+//   Phone      — P
 //   Craft      — C
 //   BuildRotate— R
 //   BuildPlace — 마우스 좌클릭 (UI 위 제외)
@@ -43,6 +44,9 @@ public class PlayerInputHandler : MonoBehaviour
 
     /// <summary>I 키 — 인벤토리 패널 토글</summary>
     public event Action OnInventoryToggle;
+
+    /// <summary>P 키 — 📱 스마트폰 패널 토글 (Docs §레퍼런스.html)</summary>
+    public event Action OnPhoneToggle;
 
     /// <summary>C 키 — 제작 패널 토글</summary>
     public event Action OnCraftToggle;
@@ -94,6 +98,7 @@ public class PlayerInputHandler : MonoBehaviour
         // -------- 버튼 입력 감지 --------
         if (kb.spaceKey.wasPressedThisFrame)  OnInteractPressed?.Invoke();
         if (kb.iKey.wasPressedThisFrame)      OnInventoryToggle?.Invoke();
+        if (kb.pKey.wasPressedThisFrame)      OnPhoneToggle?.Invoke(); // 📱 스마트폰
         if (kb.cKey.wasPressedThisFrame)      OnCraftToggle?.Invoke();
         if (kb.rKey.wasPressedThisFrame)      OnBuildRotate?.Invoke();
         if (kb.f5Key.wasPressedThisFrame)     OnSave?.Invoke();
