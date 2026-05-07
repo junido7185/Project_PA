@@ -108,6 +108,18 @@ public class PA_DevConsole : EditorWindow
         { _report = Diagnose(); Repaint(); }
         EditorGUILayout.EndHorizontal();
 
+        // 자매 윈도우 열기 버튼
+        EditorGUILayout.BeginHorizontal();
+        var prev = GUI.backgroundColor;
+        GUI.backgroundColor = new Color(0.65f, 0.85f, 1f);
+        if (GUILayout.Button("🩺 구현 체크리스트 열기", GUILayout.Height(26)))
+            PA_FeatureChecker.Open();
+        GUI.backgroundColor = new Color(1.0f, 0.7f, 0.7f);
+        if (GUILayout.Button("🐛 에러 트래커 열기", GUILayout.Height(26)))
+            PA_ErrorTracker.Open();
+        GUI.backgroundColor = prev;
+        EditorGUILayout.EndHorizontal();
+
         EditorGUILayout.LabelField(
             $"Scene: {SceneManager.GetActiveScene().name}    " +
             $"Mode: {(EditorApplication.isPlayingOrWillChangePlaymode ? "▶ Play" : "■ Edit")}    " +
