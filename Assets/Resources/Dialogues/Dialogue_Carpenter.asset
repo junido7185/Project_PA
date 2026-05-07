@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 166f054e70b4d524ca9aa5302e56c296, type: 3}
+  m_Name: Dialogue_Carpenter
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  label: "\uBAA9\uC218 \uAE30\uBCF8 \uB300\uC0AC"
+  topics:
+  - topic: 0
+    thinkingLines:
+    - "\uBAA9\uC7AC\uC758 \uACB0\uC744 \uB530\uB77C \uB2E4\uB4EC\uC5B4\uC57C \uB2E8\uB2E8\uD55C
+      \uAC00\uAD6C\uAC00 \uB41C\uB2E4."
+    - "\uC774\uBC88 \uC758\uC790\uB294 \uD558\uC911 \uBD84\uC0B0 \uC124\uACC4\uB97C
+      \uC801\uC6A9\uD588\uB2E4."
+    feelingLines:
+    - "\uB098\uBB34\uB294 \uC0B4\uC544\uC788\uB294 \uAC83 \uAC19\uC544\uC694. \uB2E4\uB4EC\uC744
+      \uB54C \uC774\uC57C\uAE30\uB97C \uB4E4\uC5B4\uC694."
+    - "\uC644\uC131\uB41C \uAC00\uAD6C\uB97C \uC190\uB2D8\uC774 \uAE30\uBED0\uD558\uBA74
+      \uADF8\uAC8C \uC81C\uC77C \uBCF4\uB78C\uCC28\uC694!"

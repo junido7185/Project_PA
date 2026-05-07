@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 602544596f140724bb760b01c2e961c1, type: 3}
+  m_Name: Candidate_Farmer
+  m_EditorClassIdentifier: Assembly-CSharp::NpcCandidateData
+  profile: {fileID: 11400000, guid: a8eb1fe829f42004890f63574349f7a1, type: 2}
+  specialty: 1
+  hireCost: 300
+  requiredTier: 0
+  spawnPrefab: {fileID: 0}
+  displayName: "\uB9C8\uC744 \uB18D\uBD80"
+  bio: "\uBD80\uC9C0\uB7F0\uD788 \uBC2D\uC744 \uC77C\uAD6C\uB294 \uB18D\uBD80. \uBD04\uACFC
+    \uC5EC\uB984\uC5D0 \uC0DD\uC0B0\uB7C9\uC774 \uC624\uB978\uB2E4."

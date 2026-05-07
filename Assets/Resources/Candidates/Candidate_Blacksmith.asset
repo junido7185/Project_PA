@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 602544596f140724bb760b01c2e961c1, type: 3}
+  m_Name: Candidate_Blacksmith
+  m_EditorClassIdentifier: Assembly-CSharp::NpcCandidateData
+  profile: {fileID: 11400000, guid: 7ad96cc0f6117e2499afcfb68e57c11f, type: 2}
+  specialty: 5
+  hireCost: 700
+  requiredTier: 0
+  spawnPrefab: {fileID: 0}
+  displayName: "\uB9C8\uC744 \uB300\uC7A5\uC7A5\uC774"
+  bio: "\uB300\uC7A5\uAC04\uC5D0\uC11C \uAC15\uCCA0 \uB3C4\uAD6C\uB97C \uB9CC\uB4E0\uB2E4.
+    \uD488\uC9C8\uC744 \uCD5C\uC6B0\uC120\uC2DC\uD55C\uB2E4."

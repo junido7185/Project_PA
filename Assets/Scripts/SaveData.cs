@@ -24,12 +24,35 @@ public class SaveData
     // 감사 시스템 (AuditService) — v2 추가
     public int lastAuditDay = 0;
 
+    // 친밀도 — v3 추가
+    public List<FriendshipRecord> friendshipData = new List<FriendshipRecord>();
+
+    // 채용 NPC 명단 — v3 추가
+    public List<HiredNpcRecord> hiredNpcs = new List<HiredNpcRecord>();
+
     // 건물 정보 리스트
     public List<BuildingSaveData> buildings = new List<BuildingSaveData>();
 
     // 인벤토리 · 핫바 (SlotSaveData.count == 0 이면 빈 칸)
     public List<SlotSaveData> inventorySlots = new List<SlotSaveData>();
     public List<SlotSaveData> hotbarSlots    = new List<SlotSaveData>();
+}
+
+// §4 FriendshipService 저장 DTO — FriendshipService.ForceSetPoints 로 복원한다.
+[System.Serializable]
+public class FriendshipRecord
+{
+    public string friendshipId;
+    public int    points;
+}
+
+// §4 HiringService 저장 DTO — candidateAssetName 으로 Resources.Load 해 복원한다.
+[System.Serializable]
+public class HiredNpcRecord
+{
+    public string candidateAssetName; // NpcCandidateData 에셋 파일명 (Candidates/ 하위)
+    public Vector3 spawnPosition;
+    public Quaternion spawnRotation;
 }
 
 // 인벤토리/핫바 한 칸을 직렬화한 DTO.

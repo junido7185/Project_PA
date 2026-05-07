@@ -140,6 +140,9 @@ public class HiringService : MonoBehaviour
         return true;
     }
 
+    /// <summary>저장용 — 현재 고용된 후보 목록을 반환한다.</summary>
+    public IReadOnlyCollection<NpcCandidateData> GetHiredCandidates() => _hired;
+
     /// <summary>디버그/치트: 고용 목록을 초기화한다 (세이브 로드 전 사용).</summary>
     public void ClearHired() => _hired.Clear();
 

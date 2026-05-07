@@ -21,7 +21,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 2;
+    private const int CurrentSaveVersion = 3;
 
     void Awake()
     {
@@ -88,6 +88,29 @@ public class SaveManager : MonoBehaviour
         // 5. 감사 시스템
         data.lastAuditDay = AuditService.Instance != null ? AuditService.Instance.LastAuditDay : 0;
 
+        // 6. 친밀도 — v3
+        if (FriendshipService.Instance != null)
+        {
+            data.friendshipData = new List<FriendshipRecord>();
+            foreach (var kv in FriendshipService.Instance.GetAllPoints())
+                data.friendshipData.Add(new FriendshipRecord { friendshipId = kv.Key, points = kv.Value });
+        }
+
+        // 7. 채용 NPC — v3 (spawnPrefab 이 있는 고용된 후보만)
+        data.hiredNpcs = new List<HiredNpcRecord>();
+        if (HiringService.Instance != null)
+        {
+            foreach (var cand in HiringService.Instance.GetHiredCandidates())
+            {
+                data.hiredNpcs.Add(new HiredNpcRecord
+                {
+                    candidateAssetName = cand.name, // SO 에셋 파일명
+                    spawnPosition      = Vector3.zero,
+                    spawnRotation      = Quaternion.identity
+                });
+            }
+        }
+
         // 버전 스탬프
         data.version = CurrentSaveVersion;
 
@@ -145,6 +168,25 @@ public class SaveManager : MonoBehaviour
         // 3-a. 감사 시스템 복구
         if (AuditService.Instance != null)
             AuditService.Instance.ForceSetLastAuditDay(data.lastAuditDay);
+
+        // 3-b. 친밀도 복구 — v3
+        if (FriendshipService.Instance != null && data.friendshipData != null)
+        {
+            FriendshipService.Instance.Clear();
+            foreach (var fr in data.friendshipData)
+                FriendshipService.Instance.ForceSetPoints(fr.friendshipId, fr.points);
+        }
+
+        // 3-c. 채용 NPC 재스폰 — v3 (spawnPrefab 연결 후 유효)
+        if (HiringService.Instance != null && data.hiredNpcs != null)
+        {
+            HiringService.Instance.ClearHired();
+            foreach (var hr in data.hiredNpcs)
+            {
+                var cand = Resources.Load<NpcCandidateData>($"Candidates/{hr.candidateAssetName}");
+                if (cand != null) HiringService.Instance.TryHire(cand, out _);
+            }
+        }
 
         // 3-b. 기존 건물 제거 — 레지스트리가 보유한 목록만 정확히 파괴한다.
         if (BuildingRegistry.Instance != null)
@@ -218,6 +260,15 @@ public class SaveManager : MonoBehaviour
             data.lastAuditDay = 0;
             data.version = 2;
             Debug.Log("💾 마이그레이션 v1→v2: 감사 시스템 필드 추가");
+        }
+
+        // v2 → v3: friendshipData, hiredNpcs 추가
+        if (data.version < 3)
+        {
+            if (data.friendshipData == null) data.friendshipData = new List<FriendshipRecord>();
+            if (data.hiredNpcs == null)      data.hiredNpcs      = new List<HiredNpcRecord>();
+            data.version = 3;
+            Debug.Log("💾 마이그레이션 v2→v3: 친밀도 + 채용 필드 추가");
         }
 
         return data;

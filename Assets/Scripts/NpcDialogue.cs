@@ -102,10 +102,16 @@ public class NpcDialogue : MonoBehaviour, IInteractable
 
     // -------- 출력 래퍼 (추후 UI 교체 지점) --------
 
-    // UI 스프린트 전까지는 Debug.Log. 이후 DialogueBubbleUI.Show(name, line) 로 교체 예정.
+    // §3 DialogueUI + FriendshipUI 연동
     private void ShowLine(string line, DialogueTopic topic)
     {
-        Debug.Log($"💬 [{DisplayName}] ({topic}) \"{line}\"");
+        if (DialogueUI.instance != null)
+            DialogueUI.instance.Show(DisplayName, line);
+        else
+            Debug.Log($"💬 [{DisplayName}] ({topic}) \"{line}\"");
+
+        if (!string.IsNullOrEmpty(friendshipId))
+            FriendshipUI.instance?.ShowForNpc(friendshipId);
     }
 
     private string DisplayName

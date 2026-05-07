@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 166f054e70b4d524ca9aa5302e56c296, type: 3}
+  m_Name: Dialogue_Miner
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  label: "\uAD11\uBD80 \uAE30\uBCF8 \uB300\uC0AC"
+  topics:
+  - topic: 0
+    thinkingLines:
+    - "\uAD11\uB9E5\uC774 \uC608\uC0C1\uBCF4\uB2E4 \uAE4A\uB354\uAD70. \uBD84\uC11D\uC774
+      \uD544\uC694\uD574."
+    - "\uCC44\uAD74 \uD6A8\uC728\uC744 \uB192\uC774\uB824\uBA74 \uB354 \uB098\uC740
+      \uB3C4\uAD6C\uAC00 \uD544\uC694\uD558\uB2E4."
+    feelingLines:
+    - "\uC624\uB298\uB3C4 \uBC18\uC9DD\uC774\uB294 \uAD11\uC11D\uC744 \uCC3E\uC558\uC5B4\uC694!
+      \uC6B4\uC774 \uC88B\uC740 \uB0A0\uC774\uC5D0\uC694."
+    - "\uAD11\uC0B0 \uAE4A\uC740 \uACF3\uC740 \uBB34\uC12D\uC9C0\uB9CC \uBCF4\uC11D\uC744
+      \uCC3E\uC73C\uBA74 \uB2E4 \uC78A\uD600\uC694."

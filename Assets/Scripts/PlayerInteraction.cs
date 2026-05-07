@@ -21,6 +21,27 @@ public class PlayerInteraction : MonoBehaviour
             PlayerInputHandler.Instance.OnInteractPressed -= TryInteract;
     }
 
+    // §3 InteractPromptUI — 매 프레임 근접 IInteractable 감지 → 프롬프트 갱신
+    void Update()
+    {
+        Vector3 origin    = transform.position + Vector3.up * 0.5f;
+        Vector3 direction = transform.forward;
+        RaycastHit hit;
+
+        if (Physics.SphereCast(origin, 0.5f, direction, out hit, interactDistance))
+        {
+            var go = hit.collider.gameObject;
+            IInteractable interactable = go.GetComponent<IInteractable>()
+                                      ?? go.GetComponentInParent<IInteractable>();
+            if (interactable != null)
+            {
+                InteractPromptUI.instance?.SetPrompt($"[Space] {interactable.GetInteractPrompt()}");
+                return;
+            }
+        }
+        InteractPromptUI.instance?.ClearPrompt();
+    }
+
     void TryInteract()
     {
         Vector3 origin    = transform.position + Vector3.up * 0.5f;

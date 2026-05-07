@@ -69,6 +69,9 @@ public class PlayerInputHandler : MonoBehaviour
     /// <summary>F9 — 로드</summary>
     public event Action OnLoad;
 
+    /// <summary>ESC — 일시정지 토글</summary>
+    public event Action OnPauseToggle;
+
     // -------- Unity 생명주기 --------
 
     void Awake()
@@ -101,8 +104,9 @@ public class PlayerInputHandler : MonoBehaviour
         if (kb.pKey.wasPressedThisFrame)      OnPhoneToggle?.Invoke(); // 📱 스마트폰
         if (kb.cKey.wasPressedThisFrame)      OnCraftToggle?.Invoke();
         if (kb.rKey.wasPressedThisFrame)      OnBuildRotate?.Invoke();
-        if (kb.f5Key.wasPressedThisFrame)     OnSave?.Invoke();
-        if (kb.f9Key.wasPressedThisFrame)     OnLoad?.Invoke();
+        if (kb.f5Key.wasPressedThisFrame)        OnSave?.Invoke();
+        if (kb.f9Key.wasPressedThisFrame)        OnLoad?.Invoke();
+        if (kb.escapeKey.wasPressedThisFrame)    OnPauseToggle?.Invoke();
 
         // -------- 핫바 숫자키 1~9 --------
         CheckDigitKey(kb.digit1Key, 0);
