@@ -301,8 +301,8 @@ public class PA_DevConsole : EditorWindow
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("🔗 Inspector 참조 다시 잇기", GUILayout.Height(28)))
             Action_RewireReferences();
-        if (GUILayout.Button("🧭 NavMesh Bake 안내", GUILayout.Height(28)))
-            Action_NavMeshHelp();
+        if (GUILayout.Button("🧭 NavMesh 자동 Bake", GUILayout.Height(28)))
+            Action_BakeNavMesh();
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.EndVertical();
@@ -707,6 +707,57 @@ public class PA_DevConsole : EditorWindow
         // 따라서 자동 수리 내부에서 동일 작업 수행 (allItems, candidates, dialogues 자동 연결).
         AutoFixAll();
         Log("🔗 참조 자동 연결");
+    }
+
+    // NavMesh 자동 Bake — Ground 의 NavMeshSurface 를 리플렉션으로 호출
+    void Action_BakeNavMesh()
+    {
+        try
+        {
+            var ground = GameObject.Find("Ground");
+            if (ground == null)
+            {
+                EditorUtility.DisplayDialog("NavMesh Bake 실패",
+                    "씬에 Ground 객체가 없습니다.\nDev Console > 모두 자동 구축 먼저 실행하세요.", "확인");
+                return;
+            }
+
+            // AI Navigation 패키지의 NavMeshSurface 타입 (리플렉션)
+            var surfaceType =
+                Type.GetType("Unity.AI.Navigation.NavMeshSurface, Unity.AI.Navigation");
+            if (surfaceType == null)
+            {
+                EditorUtility.DisplayDialog("AI Navigation 패키지 없음",
+                    "Window > Package Manager > Unity Registry > AI Navigation 설치 후 재시도.",
+                    "확인");
+                return;
+            }
+
+            var surface = ground.GetComponent(surfaceType);
+            if (surface == null)
+            {
+                surface = ground.AddComponent(surfaceType);
+                Debug.Log("[PA DevConsole] 🧭 Ground 에 NavMeshSurface 추가");
+            }
+
+            // BuildNavMesh() 메서드 리플렉션 호출
+            var bakeMethod = surfaceType.GetMethod("BuildNavMesh");
+            if (bakeMethod == null)
+            {
+                Action_NavMeshHelp();
+                return;
+            }
+            bakeMethod.Invoke(surface, null);
+
+            Log("🧭 NavMesh Bake 완료");
+            EditorUtility.DisplayDialog("NavMesh Bake 완료",
+                "NPC 들이 이제 이동할 수 있습니다.\n▶ Play 모드에서 확인하세요.", "확인");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"❌ NavMesh Bake 실패: {e}");
+            Action_NavMeshHelp();
+        }
     }
 
     void Action_NavMeshHelp()

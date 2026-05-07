@@ -56,14 +56,15 @@ public static class PA_TMPFontFixer
     [MenuItem("P.A. System/🔤 한글·이모지 폰트 자동 설정", priority = 7)]
     public static void Apply()
     {
-        if (!EditorUtility.DisplayDialog("🔤 한글 폰트 자동 설정",
+        if (!EditorUtility.DisplayDialog("🔤 한글 폰트 자동 설정 (v2)",
             "Windows 시스템 폰트를 가져와 한글·이모지 □ 박스 문제를 해결합니다.\n\n" +
             "처리 절차:\n" +
-            "  1. 맑은 고딕 (malgun.ttf) → Assets/Fonts/ 복사\n" +
-            "  2. Segoe UI Emoji (seguiemj.ttf) → Assets/Fonts/ 복사\n" +
-            "  3. Dynamic SDF 폰트 자산 2개 생성\n" +
-            "  4. LiberationSans SDF 의 fallback 으로 등록\n\n" +
-            "한 번만 실행하면 모든 TMP 텍스트에 자동 적용됩니다.\n" +
+            "  1. 깨진 기존 폰트 자산 자동 감지·삭제\n" +
+            "  2. 맑은 고딕 (malgun.ttf) → Assets/Fonts/ 복사\n" +
+            "  3. Segoe UI Emoji (seguiemj.ttf) → Assets/Fonts/ 복사\n" +
+            "  4. Dynamic SDF + Texture/Material sub-asset 영구 저장\n" +
+            "  5. LiberationSans SDF 의 fallback null 정리 + 재등록\n\n" +
+            "v1 의 sub-asset 누락 버그 패치됨. 안전하게 재실행하세요.\n" +
             "(약 5초 소요)",
             "적용", "취소")) return;
 
@@ -170,18 +171,36 @@ public static class PA_TMPFontFixer
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 2. Dynamic SDF 폰트 자산 생성
+    // 2. Dynamic SDF 폰트 자산 생성 (+ sub-asset 영구 저장)
+    //
+    //    ⚠ 핵심 함정 (2026-05-07 실측):
+    //    TMP_FontAsset.CreateFontAsset() 은 atlas Texture2D 와 Material 을
+    //    `new Texture2D()` / `new Material()` 로 메모리에 만들 뿐, 디스크에
+    //    저장하지 않는다. AssetDatabase.CreateAsset(fontAsset) 만 호출하면
+    //    다음 도메인 리로드 시 텍스처·머티리얼이 GC 되어 사라지고
+    //    `MissingReferenceException: Texture2D / Material has been destroyed`
+    //    가 매 프레임 폭주한다.
+    //
+    //    해결: AddObjectToAsset 으로 텍스처·머티리얼을 .asset 파일의
+    //    sub-asset 으로 등록 → AssetDatabase.SaveAssets 로 영구화.
+    //
     //    AtlasPopulationMode.Dynamic = 사용된 글리프만 런타임에 자동 추가.
     //    한글 11,172자를 미리 굽지 않으므로 atlas 가 작고 빠르다.
     // ──────────────────────────────────────────────────────────────────────────
     static TMP_FontAsset CreateDynamicSDF(string srcAssetPath, string destAssetPath)
     {
-        // 기존 자산이 있으면 그대로 반환 (재실행 호환)
+        // 기존 자산이 깨졌는지 검사 (Texture/Material null = sub-asset 누락)
         var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(destAssetPath);
         if (existing != null)
         {
-            Debug.Log($"  📁 이미 존재: {destAssetPath}");
-            return existing;
+            if (IsFontAssetHealthy(existing))
+            {
+                Debug.Log($"  📁 정상 자산 재사용: {destAssetPath}");
+                return existing;
+            }
+            // 깨진 자산은 삭제 후 재생성
+            Debug.LogWarning($"  🔧 깨진 자산 감지 — 삭제 후 재생성: {destAssetPath}");
+            AssetDatabase.DeleteAsset(destAssetPath);
         }
 
         var sourceFont = AssetDatabase.LoadAssetAtPath<Font>(srcAssetPath);
@@ -191,12 +210,9 @@ public static class PA_TMPFontFixer
             return null;
         }
 
-        // CreateFontAsset 시그니처:
-        //   (Font src, int samplingPx, int padding, GlyphRenderMode, int atlasW, int atlasH,
-        //    AtlasPopulationMode, bool enableMultiAtlasSupport)
         var fontAsset = TMP_FontAsset.CreateFontAsset(
             sourceFont,
-            samplingPointSize:    90,                                  // 권장값
+            samplingPointSize:    90,
             atlasPadding:         9,
             renderMode:           UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
             atlasWidth:           2048,
@@ -204,10 +220,52 @@ public static class PA_TMPFontFixer
             atlasPopulationMode:  AtlasPopulationMode.Dynamic,
             enableMultiAtlasSupport: true);
 
+        if (fontAsset == null)
+        {
+            Debug.LogError($"  ❌ TMP_FontAsset.CreateFontAsset 실패: {srcAssetPath}");
+            return null;
+        }
+
+        // 1) FontAsset 본체 저장
         AssetDatabase.CreateAsset(fontAsset, destAssetPath);
+
+        // 2) atlas Texture2D 들을 sub-asset 으로 추가 (다중 아틀라스 지원)
+        if (fontAsset.atlasTextures != null)
+        {
+            for (int i = 0; i < fontAsset.atlasTextures.Length; i++)
+            {
+                var tex = fontAsset.atlasTextures[i];
+                if (tex == null) continue;
+                tex.name = $"Atlas {i}";
+                if (!AssetDatabase.IsSubAsset(tex))
+                    AssetDatabase.AddObjectToAsset(tex, fontAsset);
+            }
+        }
+
+        // 3) Material 도 sub-asset 으로 추가
+        if (fontAsset.material != null && !AssetDatabase.IsSubAsset(fontAsset.material))
+        {
+            fontAsset.material.name = "Font Material";
+            AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
+        }
+
         EditorUtility.SetDirty(fontAsset);
-        Debug.Log($"  🔤 Dynamic SDF 생성: {destAssetPath}");
+        AssetDatabase.SaveAssets();           // ← 즉시 디스크 기록 (sub-asset 영구화)
+        AssetDatabase.ImportAsset(destAssetPath);
+
+        Debug.Log($"  🔤 Dynamic SDF 생성 + sub-asset 저장: {destAssetPath}");
         return fontAsset;
+    }
+
+    // 폰트 자산이 깨졌는지 검사 (Texture/Material 이 null/destroyed)
+    static bool IsFontAssetHealthy(TMP_FontAsset font)
+    {
+        if (font == null) return false;
+        if (font.material == null) return false;
+        if (font.atlasTextures == null || font.atlasTextures.Length == 0) return false;
+        // Unity == null 오버로드는 destroyed 객체도 true 로 판정 → 안전한 검사
+        if (font.atlasTextures[0] == null) return false;
+        return true;
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -228,6 +286,13 @@ public static class PA_TMPFontFixer
         if (defaultFont.fallbackFontAssetTable == null)
             defaultFont.fallbackFontAssetTable = new System.Collections.Generic.List<TMP_FontAsset>();
 
+        // 1) 깨진/null 엔트리 제거 (이전 PA_TMPFontFixer 가 만든 깨진 자산 참조 정리)
+        int removed = defaultFont.fallbackFontAssetTable.RemoveAll(f =>
+            f == null || !IsFontAssetHealthy(f));
+        if (removed > 0)
+            Debug.Log($"  🗑 깨진 fallback 엔트리 {removed}개 제거");
+
+        // 2) 새 자산 등록
         int n = 0;
         if (koSdf != null && !defaultFont.fallbackFontAssetTable.Contains(koSdf))
         {

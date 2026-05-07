@@ -142,6 +142,18 @@ public class PA_ErrorTracker : EditorWindow
                     "맑은 고딕을 동적 SDF 로 변환해 LiberationSans SDF 의 fallback 에 등록함. " +
                     "이모지는 SDF 한계로 단색 outline 만 표시될 수 있음.");
 
+        // ── TMP 깨진 폰트 자산 (sub-asset 누락 — 이전 버전 PA_TMPFontFixer 잔여) ─
+        if (msg.Contains("MissingReferenceException") &&
+            ((stack != null && stack.Contains("TMP_FontAsset")) ||
+             (stack != null && stack.Contains("TMP_MaterialManager")) ||
+             (stack != null && stack.Contains("TMPro.TMP_Text")) ||
+             msg.Contains("UnityEngine.Texture2D") ||
+             msg.Contains("UnityEngine.Material")))
+            return ("🔤 깨진 TMP 폰트 자산 (sub-asset 누락)",
+                    "메뉴 P.A. System > 🔤 한글·이모지 폰트 자동 설정 다시 실행. " +
+                    "깨진 자산 자동 감지·삭제·재생성 + Texture/Material 을 sub-asset 으로 영구 저장 (패치 v2). " +
+                    "재실행 후 폭주가 멈춥니다.");
+
         // ── Unity Hub 인증 (외부) ────────────────────────────────────────────
         if (msg.Contains("Unity ID to get auth code"))
             return ("Unity Hub 로그인 만료 (외부 이슈)",
