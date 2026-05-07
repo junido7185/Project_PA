@@ -111,8 +111,42 @@ public class PA_ErrorTracker : EditorWindow
     static bool _filterErrorsOnly = false; // OnLog 가 즉시 참조하기 위해 static
 
     // ── 패턴 분석 (자주 발생 에러 → 해결 힌트) ──────────────────────────────────
+    //
+    // 실측 데이터 기반 사전 (사용자 첫 덤프 = 2026-05-07):
+    //   • 스프라이트 미발견 — PA_UIBuilder fallback (정상)
+    //   • Folder not found — PA_DevConsole 의 Diagnose 버그 (수정됨)
+    //   • TMP 한글/이모지 폰트 누락 — PA_TMPFontFixer 로 해결
     static (string diagnosis, string hint) AnalyzePattern(string msg, string stack)
     {
+        // ── PA_UIBuilder 스프라이트 fallback (의도된 동작) ────────────────────
+        if (msg.Contains("스프라이트 미발견") || msg.Contains("Nano Banana"))
+            return ("✅ 정상 fallback — UI 빌더 의도된 동작",
+                    "Assets/Art/UI/ 폴더에 스프라이트 PNG 파일을 추가 후 재빌드하면 자동 적용. " +
+                    "현재는 컬러 플랫으로 임시 렌더링 중이므로 게임 동작에 지장 없음.");
+
+        // ── AssetDatabase 폴더 미존재 (이전 Dev Console 버그) ─────────────────
+        if (msg.Contains("Folder not found") && msg.Contains("ScriptableObjects"))
+            return ("Dev Console 폴더 미존재 검색 (수정됨)",
+                    "PA_DevConsole.cs 의 FindAssetsSafe 헬퍼로 패치됨. " +
+                    "재컴파일 후 사라지면 정상.");
+        if (msg.Contains("Folder not found"))
+            return ("AssetDatabase.FindAssets 가 없는 폴더를 검색",
+                    "코드에서 IsValidFolder 사전 체크 필요. 메시지의 경로 확인.");
+
+        // ── TMP 한글/이모지 폰트 누락 ─────────────────────────────────────────
+        if ((msg.Contains("was not found in the") && msg.Contains("font asset")) ||
+            msg.Contains("지원되지 않는 문자") ||
+            msg.Contains("LiberationSans SDF"))
+            return ("🔤 TMP 한글/이모지 폰트 누락",
+                    "메뉴 P.A. System > 🔤 한글·이모지 폰트 자동 설정 1회 실행. " +
+                    "맑은 고딕을 동적 SDF 로 변환해 LiberationSans SDF 의 fallback 에 등록함. " +
+                    "이모지는 SDF 한계로 단색 outline 만 표시될 수 있음.");
+
+        // ── Unity Hub 인증 (외부) ────────────────────────────────────────────
+        if (msg.Contains("Unity ID to get auth code"))
+            return ("Unity Hub 로그인 만료 (외부 이슈)",
+                    "Unity Hub 재시작 또는 Account 메뉴 재로그인. 게임 코드와 무관하므로 무시 가능.");
+
         // NullReferenceException — 어느 필드가 null 인지 추정
         if (msg.Contains("NullReferenceException"))
         {
@@ -337,14 +371,18 @@ public class PA_ErrorTracker : EditorWindow
     void DrawErrorRow(CapturedError e)
     {
         var prevBg = GUI.backgroundColor;
-        GUI.backgroundColor = e.Type switch
-        {
-            LogType.Exception => new Color(1f, 0.55f, 0.55f),
-            LogType.Error     => new Color(1f, 0.55f, 0.55f),
-            LogType.Assert    => new Color(1f, 0.7f, 0.4f),
-            LogType.Warning   => new Color(1f, 0.86f, 0.45f),
-            _                 => new Color(0.7f, 0.85f, 1f),
-        };
+        // 진단이 ✅ 로 시작하면 "정상 동작" 으로 회색 처리 (스프라이트 fallback 등)
+        bool isBenign = !string.IsNullOrEmpty(e.Diagnosis) && e.Diagnosis.StartsWith("✅");
+        GUI.backgroundColor = isBenign
+            ? new Color(0.75f, 0.85f, 0.75f)
+            : e.Type switch
+            {
+                LogType.Exception => new Color(1f, 0.55f, 0.55f),
+                LogType.Error     => new Color(1f, 0.55f, 0.55f),
+                LogType.Assert    => new Color(1f, 0.7f, 0.4f),
+                LogType.Warning   => new Color(1f, 0.86f, 0.45f),
+                _                 => new Color(0.7f, 0.85f, 1f),
+            };
 
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 

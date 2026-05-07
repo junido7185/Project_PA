@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04a0d4d4c1e88804e8a4aced10b21ad7, type: 3}
+  m_Name: NpcProfile_Mira
+  m_EditorClassIdentifier: Assembly-CSharp::NpcProfile
+  npcName: "\uBBF8\uB77C"
+  bio: "\uB9C8\uC744 \uCC3D\uACE0\uC9C0\uAE30. \uC2E4\uC6A9\uC801\uC774\uACE0 \uAF3C\uAF3C\uD558\uB2E4.
+    \uD2B9\uAC00 \uB3C4\uAD6C\uB294 \uC808\uB300 \uB193\uCE58\uC9C0 \uC54A\uB294\uB2E4."
+  traitEI: -0.6
+  traitSN: -0.5
+  traitTF: -0.4
+  traitJP: -0.6
+  workEfficiency: 1.1
+  socialWeight: 0.3
+  homeStayBias: 0.4
+  utilityConsumption: 1.4
+  luxuryConsumption: 0.7
+  priceSensitivity: 1.2

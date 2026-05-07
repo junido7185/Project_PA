@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: "Item_03_\uBC00"
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3
+  itemName: "\uBC00"
+  description: "\uC218\uD655\uD55C \uBC00. \uBE75\uC73C\uB85C \uAC00\uACF5\uD560
+    \uC218 \uC788\uB2E4."
+  icon: {fileID: 0}
+  maxStack: 64
+  model: {fileID: 0}
+  basePrice: 30
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

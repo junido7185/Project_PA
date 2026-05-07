@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: "Item_12_\uCCA0\uC81C_\uB3C4\uAD6C"
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 12
+  itemName: "\uCCA0\uC81C \uB3C4\uAD6C"
+  description: "\uCCA0\uAD34\uB85C \uB9CC\uB4E0 \uB3C4\uAD6C \uC138\uD2B8. S \uC131\uD5A5
+    NPC\uAC00 \uC120\uD638\uD55C\uB2E4."
+  icon: {fileID: 0}
+  maxStack: 8
+  model: {fileID: 0}
+  basePrice: 400
+  toolType: 0
+  category: 2
+  requiredTier: 1
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea4e6badc39f81841adbc55f19b5e5ab, type: 3}
+  m_Name: TierDef_Tier1
+  m_EditorClassIdentifier: Assembly-CSharp::TierDefinition
+  tier: 1
+  tierName: "\uC9C0\uC810\uC7A5"
+  description: "\uCD08\uAE30 \uB300\uCD9C 10,000G \uC0C1\uD658 \uAE30\uC900\uC73C\uB85C
+    \uC790\uB3D9 \uC2B9\uAE09."
+  requiredCumulativeRevenue: 10000
+  requiredReputation: 0
+  requiresManualApproval: 0
+  unlockDescription: "\uC7A1\uD654\uC810 \uAC74\uBB3C \uD5C8\uC6A9. \uC804\uBB38\uAC00
+    NPC 1\uBA85 \uCC44\uC6A9 \uAC00\uB2A5.\n(\uC2AC\uB86F \uC218\uB294 Tier0 \uC720\uC9C0
+    \u2014 Tier2\uC5D0\uC11C \uD655\uC7A5)"
+  shopSlotCount: 0
+  shopStageName: 

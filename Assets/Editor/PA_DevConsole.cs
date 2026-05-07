@@ -112,11 +112,14 @@ public class PA_DevConsole : EditorWindow
         EditorGUILayout.BeginHorizontal();
         var prev = GUI.backgroundColor;
         GUI.backgroundColor = new Color(0.65f, 0.85f, 1f);
-        if (GUILayout.Button("🩺 구현 체크리스트 열기", GUILayout.Height(26)))
+        if (GUILayout.Button("🩺 구현 체크리스트", GUILayout.Height(26)))
             PA_FeatureChecker.Open();
         GUI.backgroundColor = new Color(1.0f, 0.7f, 0.7f);
-        if (GUILayout.Button("🐛 에러 트래커 열기", GUILayout.Height(26)))
+        if (GUILayout.Button("🐛 에러 트래커", GUILayout.Height(26)))
             PA_ErrorTracker.Open();
+        GUI.backgroundColor = new Color(0.95f, 0.85f, 1.0f);
+        if (GUILayout.Button("🔤 한글 폰트", GUILayout.Height(26)))
+            PA_TMPFontFixer.Apply();
         GUI.backgroundColor = prev;
         EditorGUILayout.EndHorizontal();
 
@@ -434,12 +437,13 @@ public class PA_DevConsole : EditorWindow
         });
 
         // ── 데이터 에셋 ────────────────────────────────────────────────────
-        int itemCount = AssetDatabase.FindAssets("t:Item",       new[]{"Assets/Resources/Items"}).Length
-                      + AssetDatabase.FindAssets("t:Item",       new[]{"Assets/ScriptableObjects/Items"}).Length;
-        int recipeCnt = AssetDatabase.FindAssets("t:RecipeData", new[]{"Assets/Resources/Recipes"}).Length
-                      + AssetDatabase.FindAssets("t:RecipeData", new[]{"Assets/ScriptableObjects/Recipes"}).Length;
-        int candCnt   = AssetDatabase.FindAssets("t:NpcCandidateData",
-                            new[]{"Assets/Resources/Candidates"}).Length;
+        // ⚠ AssetDatabase.FindAssets 는 존재하지 않는 폴더를 받으면 경고를 출력한다.
+        //   FindAssetsSafe 헬퍼로 폴더 미존재 시 0 을 반환해 콘솔 스팸 방지.
+        int itemCount = FindAssetsSafe("t:Item",             "Assets/Resources/Items")
+                      + FindAssetsSafe("t:Item",             "Assets/ScriptableObjects/Items");
+        int recipeCnt = FindAssetsSafe("t:RecipeData",       "Assets/Resources/Recipes")
+                      + FindAssetsSafe("t:RecipeData",       "Assets/ScriptableObjects/Recipes");
+        int candCnt   = FindAssetsSafe("t:NpcCandidateData", "Assets/Resources/Candidates");
 
         rep.Items.Add(new DiagItem
         {
@@ -837,6 +841,14 @@ public class PA_DevConsole : EditorWindow
             if (a != null) list.Add(a);
         }
         return list;
+    }
+
+    // 폴더 미존재 시 AssetDatabase.FindAssets 가 콘솔 경고를 출력하는 문제 방지.
+    // IsValidFolder 사전 체크로 0 을 반환한다.
+    static int FindAssetsSafe(string filter, string folder)
+    {
+        if (!AssetDatabase.IsValidFolder(folder)) return 0;
+        return AssetDatabase.FindAssets(filter, new[] { folder }).Length;
     }
 
     // PA_DataBootstrapper 의 BootstrapAll() 은 private static 이므로 리플렉션 호출

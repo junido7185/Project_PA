@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04a0d4d4c1e88804e8a4aced10b21ad7, type: 3}
+  m_Name: NpcProfile_Arlo
+  m_EditorClassIdentifier: Assembly-CSharp::NpcProfile
+  npcName: "\uC544\uB97C\uB85C"
+  bio: "\uB9C8\uC744 \uB098\uBB34\uAFBC. \uB9D0\uC774 \uC801\uACE0 \uADFC\uBA74\uD558\uB2E4.
+    \uACC4\uC808 \uBCC0\uD654\uC5D0 \uBBFC\uAC10\uD558\uAC8C \uBC18\uC751\uD55C\uB2E4."
+  traitEI: -0.5
+  traitSN: -0.3
+  traitTF: -0.6
+  traitJP: 0.4
+  workEfficiency: 1.3
+  socialWeight: 0.2
+  homeStayBias: 0.3
+  utilityConsumption: 1.2
+  luxuryConsumption: 0.8
+  priceSensitivity: 1

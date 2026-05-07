@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
+  m_Name: "Recipe_\uC0DD\uC120\uAD6C\uC774"
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeData
+  recipeName: "\uC0DD\uC120 \uAD7D\uAE30"
+  icon: {fileID: 0}
+  description: "\uC0DD\uC120 1\uB9C8\uB9AC\uB97C \uAD6C\uC6CC \uC0DD\uC120\uAD6C\uC774
+    1\uAC1C\uB97C \uB9CC\uB4E0\uB2E4. \uD488\uC9C8 \uC0C1\uC2B9\uD3ED\uC774 \uD06C\uB2E4."
+  ingredients:
+  - item: {fileID: 11400000, guid: e50fcac4d57c8f5468f7ebef95ef21c3, type: 2}
+    count: 1
+  outputItem: {fileID: 11400000, guid: 30384b59cf3e96a43a9b23a0af335f10, type: 2}
+  outputCount: 1
+  baseOutputQuality: 1.3
+  ingredientQualityWeight: 0.4
+  requiredTier: 0
+  requiredWorkbench: 2
+  inputItem: {fileID: 0}
+  inputCount: 0
