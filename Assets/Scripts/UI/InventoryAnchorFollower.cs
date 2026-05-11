@@ -20,7 +20,7 @@ public class InventoryAnchorFollower : MonoBehaviour
     public Vector3 headBoneOffset = new Vector3(0f, 0.25f, 0f);
     [Tooltip("머리뼈 못 찾을 때: Player 루트 기준 오프셋 (캐릭터 전체 키 정도)")]
     public Vector3 worldOffset    = new Vector3(0f, 1.8f, 0f);
-    public Vector2 screenOffset   = new Vector2(0f, 40f);     // 추가 픽셀 보정
+    public Vector2 screenOffset   = new Vector2(0f, 140f);    // 핫바(높이 100)와 겹치지 않게 충분히 위로
 
     [Header("경계 처리")]
     public bool   clampToScreen = true;

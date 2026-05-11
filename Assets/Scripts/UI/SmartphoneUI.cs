@@ -15,6 +15,7 @@ public class SmartphoneUI : MonoBehaviour
     [Header("참조")]
     public RectTransform root;          // 이동 대상 (SmartphoneContainer 자신)
     public RectTransform hoverTrigger;  // 마우스 근접 감지 영역 (보통 root 와 동일)
+    public GameObject    homeScreen;    // 홈(앱 그리드) — 패널 진입 시 비활성/복귀 시 활성
     public GameObject[]  tabPanels;     // 4개 패널 (감사/채용/피드/설정)
     public Button[]      tabButtons;    // 4개 탭 버튼
 
@@ -43,6 +44,7 @@ public class SmartphoneUI : MonoBehaviour
     Coroutine _moveCo;
     int       _currentTab;
     Canvas    _canvas; // activePos 계산용 캔버스 참조
+    Color[]   _tabBaseColors;
 
     void Awake()
     {
@@ -56,12 +58,13 @@ public class SmartphoneUI : MonoBehaviour
     {
         // 초기 위치: 좌하단 숨김
         if (root != null) root.anchoredPosition = hiddenPos;
+        CacheTabButtonColors();
 
         // P 키 구독
         if (PlayerInputHandler.Instance != null)
             PlayerInputHandler.Instance.OnPhoneToggle += Toggle;
 
-        // 탭 버튼 콜백
+        // 탭 버튼 콜백 (앱 아이콘 클릭 → 해당 패널만 활성화)
         if (tabButtons != null)
         {
             for (int i = 0; i < tabButtons.Length; i++)
@@ -72,7 +75,52 @@ public class SmartphoneUI : MonoBehaviour
             }
         }
 
-        SelectTab(0);
+        // ⚠ v3 변경: SelectTab(0) 자동 호출 제거.
+        //   기존: Start 직후 AuditPanel 이 켜져 홈 그리드를 가렸음 (스크린샷 1 의 버그).
+        //   변경: 시작 시 모든 패널 비활성 → 홈 그리드만 노출. 사용자가 앱 아이콘 클릭 시
+        //         SelectTab(idx) 가 해당 패널을 띄움. 패널의 BackButton 이 닫음.
+        ReturnToHome();
+    }
+
+    // 모든 패널 비활성화 → 홈 화면(앱 그리드) 만 보이게
+    public void ReturnToHome()
+    {
+        if (tabPanels != null)
+            foreach (var p in tabPanels)
+                if (p != null) p.SetActive(false);
+        if (homeScreen != null) homeScreen.SetActive(true);
+        _currentTab = -1;
+        RestoreTabButtonColors();
+    }
+
+    void CacheTabButtonColors()
+    {
+        if (tabButtons == null)
+        {
+            _tabBaseColors = null;
+            return;
+        }
+
+        _tabBaseColors = new Color[tabButtons.Length];
+        for (int i = 0; i < tabButtons.Length; i++)
+        {
+            var img = tabButtons[i] != null ? tabButtons[i].GetComponent<Image>() : null;
+            _tabBaseColors[i] = img != null ? img.color : Color.white;
+        }
+    }
+
+    void RestoreTabButtonColors()
+    {
+        if (tabButtons == null) return;
+        if (_tabBaseColors == null || _tabBaseColors.Length != tabButtons.Length)
+            CacheTabButtonColors();
+
+        for (int i = 0; i < tabButtons.Length; i++)
+        {
+            var img = tabButtons[i] != null ? tabButtons[i].GetComponent<Image>() : null;
+            if (img != null && _tabBaseColors != null && i < _tabBaseColors.Length)
+                img.color = _tabBaseColors[i];
+        }
     }
 
     void OnDestroy()
@@ -101,6 +149,7 @@ public class SmartphoneUI : MonoBehaviour
     }
 
     // 📱 외부 토글 진입점 (P 키 or 버튼)
+    // 닫힐 때는 항상 홈으로 복귀시켜 다음 열기에서 깨끗한 상태 보장.
     public void Toggle()
     {
         _isOpen = !_isOpen;
@@ -117,7 +166,42 @@ public class SmartphoneUI : MonoBehaviour
         Vector2 target = _isOpen ? ComputeActivePos() : hiddenPos;
         StartMove(target, transitionTime);
 
-        // 커서 잠금 해제 (UI 조작 가능 상태)
+        // 닫힐 때: 홈 복귀 + 커서 정상 복구
+        if (!_isOpen)
+        {
+            ReturnToHome();
+        }
+
+        // 커서 잠금: 폰이 열려 있을 때만 해제 — 닫히면 항상 게임 상태로 복구
+        ApplyCursorState();
+    }
+
+    // 명시적 닫기 — UI 닫기 버튼/ESC 가 호출. 이미 닫혀있으면 noop.
+    public void Close()
+    {
+        if (!_isOpen) return;
+        Toggle();
+    }
+
+    // ESC 처리 — 패널이 열려 있으면 홈으로, 홈만 보이면 폰 자체를 닫는다.
+    public void OnEscape()
+    {
+        if (!_isOpen) return;
+        if (_currentTab >= 0)
+        {
+            // 앱 패널 → 홈 복귀
+            ReturnToHome();
+        }
+        else
+        {
+            // 홈 → 폰 닫기
+            Close();
+        }
+    }
+
+    // 닫힘 상태에서 게임 커서로 복구 (안전한 단일 진입점)
+    void ApplyCursorState()
+    {
         Cursor.lockState = _isOpen ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible   = _isOpen;
     }
@@ -142,6 +226,9 @@ public class SmartphoneUI : MonoBehaviour
     {
         if (tabPanels == null) return;
         _currentTab = Mathf.Clamp(index, 0, tabPanels.Length - 1);
+
+        // 홈 화면 비활성 — 패널이 아이콘 위에 겹쳐 보이는 시각 버그 방지
+        if (homeScreen != null) homeScreen.SetActive(false);
 
         for (int i = 0; i < tabPanels.Length; i++)
         {

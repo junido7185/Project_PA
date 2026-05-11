@@ -96,8 +96,12 @@ public class ClockHUD : MonoBehaviour
     {
         if (GameClock.Instance != null)
         {
-            GameClock.Instance.OnHourTick += OnHourTick;
-            GameClock.Instance.OnNewDay   += OnNewDay;
+            // ⚠ 변경: 기존엔 OnHourTick 만 구독해 HH:00 형식만 갱신됐다.
+            //   GameClock 에 OnMinuteTick 추가됐으므로 함께 구독해 HH:mm 이 매 게임-분
+            //   1회씩 자동 갱신된다 (Update 폴링 없이 이벤트 기반).
+            GameClock.Instance.OnHourTick   += OnHourTick;
+            GameClock.Instance.OnMinuteTick += OnMinuteTick;
+            GameClock.Instance.OnNewDay     += OnNewDay;
             Refresh(GameClock.Instance.CurrentHour, GameClock.Instance.CurrentDay,
                     GameClock.Instance.CurrentSeason);
         }
@@ -107,12 +111,21 @@ public class ClockHUD : MonoBehaviour
     {
         if (GameClock.Instance != null)
         {
-            GameClock.Instance.OnHourTick -= OnHourTick;
-            GameClock.Instance.OnNewDay   -= OnNewDay;
+            GameClock.Instance.OnHourTick   -= OnHourTick;
+            GameClock.Instance.OnMinuteTick -= OnMinuteTick;
+            GameClock.Instance.OnNewDay     -= OnNewDay;
         }
     }
 
     void OnHourTick(int hour)
+    {
+        if (GameClock.Instance != null)
+            Refresh(GameClock.Instance.CurrentHour, GameClock.Instance.CurrentDay,
+                    GameClock.Instance.CurrentSeason);
+    }
+
+    // 분 단위 갱신 — 매 게임-분 1회 호출
+    void OnMinuteTick(int minute)
     {
         if (GameClock.Instance != null)
             Refresh(GameClock.Instance.CurrentHour, GameClock.Instance.CurrentDay,

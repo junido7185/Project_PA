@@ -8,7 +8,14 @@ public class EquipmentSystem : MonoBehaviour
     void Start()
     {
         // ⭐ 인벤토리 이벤트 이름이 바뀌었을 수 있으니 다시 연결
-        Inventory.instance.onItemChangedCallback += RefreshEquipment;
+        if (Inventory.instance != null)
+            Inventory.instance.onItemChangedCallback += RefreshEquipment;
+    }
+
+    void OnDestroy()
+    {
+        if (Inventory.instance != null)
+            Inventory.instance.onItemChangedCallback -= RefreshEquipment;
     }
 
     // Inventory.cs에서 RefreshAllUI()가 호출될 때 같이 실행됨
@@ -18,13 +25,16 @@ public class EquipmentSystem : MonoBehaviour
         if (axeModel != null) axeModel.SetActive(false);
         if (pickaxeModel != null) pickaxeModel.SetActive(false);
 
-        // 2. 건설 모드 끄기
-        BuildManager buildMgr = GetComponent<BuildManager>();
-        if (buildMgr != null) buildMgr.StopBuildMode();
+        BuildManager buildMgr = BuildManager.instance;
 
-        // 3. 현재 든 아이템 확인
+        // 2. 현재 든 아이템 확인
+        if (Inventory.instance == null) return;
         Item item = Inventory.instance.GetSelectedItem();
-        if (item == null) return; 
+        if (item == null)
+        {
+            if (buildMgr != null) buildMgr.StopBuildMode();
+            return;
+        }
 
         // --- 도구 모델 켜기 ---
         if (item.toolType == ToolType.Axe && axeModel != null) axeModel.SetActive(true);
@@ -33,7 +43,12 @@ public class EquipmentSystem : MonoBehaviour
         // --- 건설 아이템이면 건설 모드 켜기 ---
         if (item.buildingToBuild != null && buildMgr != null)
         {
-            buildMgr.SetBuildMode(item.buildingToBuild);
+            if (buildMgr.currentBuilding != item.buildingToBuild)
+                buildMgr.SetBuildMode(item.buildingToBuild);
+        }
+        else if (buildMgr != null)
+        {
+            buildMgr.StopBuildMode();
         }
     }
     

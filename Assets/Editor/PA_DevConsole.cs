@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -305,6 +306,22 @@ public class PA_DevConsole : EditorWindow
             Action_BakeNavMesh();
         EditorGUILayout.EndHorizontal();
 
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("👥 NPC 크기/리그 보정", GUILayout.Height(28)))
+            Action_FixNpcPresentation();
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("🔤 Jalnan2 폰트 재적용", GUILayout.Height(28)))
+        { PA_TMPFontFixer.Apply(); Log("🔤 Jalnan2 폰트 재적용"); _report = Diagnose(); }
+        if (GUILayout.Button("🎨 슬롯 베이지 강화", GUILayout.Height(28)))
+        {
+            int n = BrightenSlotPrefab();
+            Log($"🎨 슬롯 프리팹 베이지 적용: {n}개");
+            _report = Diagnose();
+        }
+        EditorGUILayout.EndHorizontal();
+
         EditorGUILayout.EndVertical();
     }
 
@@ -490,6 +507,48 @@ public class PA_DevConsole : EditorWindow
             });
         }
 
+        var phone = UnityEngine.Object.FindFirstObjectByType<SmartphoneUI>();
+        int wiredPanels = phone != null && phone.tabPanels != null ? phone.tabPanels.Count(p => p != null) : 0;
+        int wiredButtons = phone != null && phone.tabButtons != null ? phone.tabButtons.Count(b => b != null) : 0;
+        rep.Items.Add(new DiagItem
+        {
+            Label = "Smartphone Apps",
+            Detail = phone == null ? "SmartphoneUI 없음" : $"패널 {wiredPanels}/4, 버튼 {wiredButtons}/4",
+            Status = phone != null && phone.homeScreen != null && wiredPanels == 4 && wiredButtons == 4
+                ? ItemStatus.OK
+                : ItemStatus.Warning,
+        });
+
+        var npcs = UnityEngine.Object.FindObjectsByType<NpcController>(FindObjectsSortMode.None);
+        int npcVisuals = npcs.Count(n => n != null && n.GetComponentInChildren<SkinnedMeshRenderer>(true) != null);
+        rep.Items.Add(new DiagItem
+        {
+            Label = "NPC Visual Assets",
+            Detail = $"{npcVisuals}/{npcs.Length} 모델 연결",
+            Status = npcs.Length == 0 ? ItemStatus.Warning :
+                npcVisuals == npcs.Length ? ItemStatus.OK : ItemStatus.Warning,
+        });
+
+        var avatarStats = GetNpcAvatarStats();
+        rep.Items.Add(new DiagItem
+        {
+            Label = "NPC Avatar/Rig",
+            Detail = $"{avatarStats.valid}/{avatarStats.total} Humanoid valid",
+            Status = avatarStats.total > 0 && avatarStats.valid == avatarStats.total
+                ? ItemStatus.OK
+                : ItemStatus.Warning,
+        });
+
+        var navSurfaceType = Type.GetType("Unity.AI.Navigation.NavMeshSurface, Unity.AI.Navigation");
+        var ground = GameObject.Find("Ground");
+        bool hasNavSurface = ground != null && navSurfaceType != null && ground.GetComponent(navSurfaceType) != null;
+        rep.Items.Add(new DiagItem
+        {
+            Label = "NavMeshSurface",
+            Detail = navSurfaceType == null ? "AI Navigation 패키지 없음" : hasNavSurface ? "Ground 연결됨" : "Ground 연결 필요",
+            Status = navSurfaceType != null && hasNavSurface ? ItemStatus.OK : ItemStatus.Warning,
+        });
+
         return rep;
     }
 
@@ -500,16 +559,17 @@ public class PA_DevConsole : EditorWindow
     // ── 한방 재구축 ───────────────────────────────────────────────────────
     void Action_FullRebuild()
     {
-        if (!EditorUtility.DisplayDialog("⚡ 모두 자동 구축",
+        if (!EditorUtility.DisplayDialog("⚡ 모두 자동 구축 (v3)",
             "다음 순서로 일괄 진행합니다:\n\n" +
             "  1. 씬 청소 (P.A. 생성 객체 삭제)\n" +
-            "  2. 데이터 자산 보완\n" +
-            "  3. 씬 자동 빌드\n" +
-            "  4. UI 자동 구축\n" +
-            "  5. Inspector 참조 자동 연결\n" +
-            "  6. 자동 수리 (TimeScale·중복·EventSystem)\n" +
-            "  7. 씬 검증\n\n" +
-            "약 3~5초 소요. 계속하시겠습니까?",
+            "  2. 데이터 부트스트랩\n" +
+            "  3. 누락 데이터 보완\n" +
+            "  4. 씬 자동 빌드\n" +
+            "  5. UI 자동 구축\n" +
+            "  6. 🔤 Jalnan2 한글 폰트 적용\n" +
+            "  7. 자동 수리 (TimeScale·EventSystem·슬롯 색상…)\n" +
+            "  8. 씬 검증\n\n" +
+            "약 5~8초 소요. 계속하시겠습니까?",
             "진행", "취소")) return;
 
         try
@@ -530,20 +590,25 @@ public class PA_DevConsole : EditorWindow
             Log("✅ 4/7 씬 빌드");
 
             PA_UIBuilder.BuildUISystem();
-            Log("✅ 5/7 UI 빌드");
+            Log("✅ 5/8 UI 빌드");
+
+            // ⚠ v3 신규 단계: Jalnan2 폰트를 모든 신규 TMP_Text 에 즉시 강제 적용
+            //   (UI 빌드 직후 → 한글 깨짐 방지)
+            PA_TMPFontFixer.Apply();
+            Log("✅ 6/8 한글 폰트 적용");
 
             AutoFixAll();
-            Log("✅ 6/7 자동 수리");
+            Log("✅ 7/8 자동 수리");
 
             PA_SceneValidator.Validate();
-            Log("✅ 7/7 씬 검증");
+            Log("✅ 8/8 씬 검증");
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             _report = Diagnose();
             EditorUtility.DisplayDialog("완료",
                 "모두 자동 구축 완료!\n\n" +
                 "다음으로:\n" +
-                "  • Hierarchy → Ground 선택 → NavMeshSurface > Bake\n" +
+                "  • 자동 수리 단계에서 NavMesh Bake 까지 함께 시도됨\n" +
                 "  • Play 버튼 누르고 WASD/I/P 키 테스트\n",
                 "확인");
         }
@@ -624,6 +689,7 @@ public class PA_DevConsole : EditorWindow
 
         // 4) 기타 싱글톤 중복 제거
         n += RemoveDuplicateSingletons(silent: true);
+        n += RemoveDuplicateNamedSceneObjects("[Services]", "PA_UIRoot", "AudioManager", "PA_RuntimeUI", "ShopPriceUI");
 
         // 5) HiringService.availableCandidates 자동 채움
         var hiring = UnityEngine.Object.FindFirstObjectByType<HiringService>();
@@ -654,6 +720,9 @@ public class PA_DevConsole : EditorWindow
             }
         }
 
+        // 6.5) UI_Slot 프리팹 베이지 강화 (스프라이트 미발견 시 어두워 보이는 문제 해결)
+        n += BrightenSlotPrefab();
+
         // 7) NpcDialogue 누락 dialogueData 자동 매칭
         var dialogues = UnityEngine.Object.FindObjectsByType<NpcDialogue>(FindObjectsSortMode.None);
         var dlgAssets = LoadAllAssets<DialogueData>("Assets/Resources/Dialogues");
@@ -671,6 +740,15 @@ public class PA_DevConsole : EditorWindow
                 n++;
             }
         }
+
+        n += EnsureEditorRuntimeServices();
+        n += EnsureSmartphoneAppWiring();
+        n += EnsureNpcModelImportSettings();
+        n += EnsureNpcAssetsAndHooks();
+        n += EnsurePlayerEditorHooks();
+
+        if (TryBakeNavMesh(showDialogs: false, log: Log, out bool navSurfaceAdded) && navSurfaceAdded)
+            n++;
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Debug.Log($"[PA AutoFix] 총 {n}개 수정");
@@ -710,6 +788,16 @@ public class PA_DevConsole : EditorWindow
     }
 
     // NavMesh 자동 Bake — Ground 의 NavMeshSurface 를 리플렉션으로 호출
+    void Action_FixNpcPresentation()
+    {
+        int n = 0;
+        n += EnsureNpcModelImportSettings();
+        n += EnsureNpcAssetsAndHooks();
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        Log($"NPC 크기/리그 보정: {n}개");
+        _report = Diagnose();
+    }
+
     void Action_BakeNavMesh()
     {
         try
@@ -832,13 +920,588 @@ public class PA_DevConsole : EditorWindow
     //  헬퍼
     // ══════════════════════════════════════════════════════════════════════
 
+    static int EnsureEditorRuntimeServices()
+    {
+        int changed = 0;
+        var services = EnsureRootObject("[Services]");
+
+        changed += EnsureSingleSceneComponent<EconomyService>(services);
+        changed += EnsureSingleSceneComponent<TierService>(services);
+        changed += EnsureSingleSceneComponent<GameClock>(services);
+        changed += EnsureSingleSceneComponent<ItemRegistry>(services);
+        changed += EnsureSingleSceneComponent<FriendshipService>(services);
+        changed += EnsureSingleSceneComponent<HiringService>(services);
+        changed += EnsureSingleSceneComponent<GridService>(services);
+        changed += EnsureSingleSceneComponent<PlayerInputHandler>(services);
+        changed += EnsureSingleSceneComponent<AuditService>(services);
+        changed += EnsureSingleSceneComponent<SalesLogManager>(services);
+        changed += EnsureSingleSceneComponent<SaveManager>(services);
+        changed += EnsureSingleSceneComponent<BuildingRegistry>(services);
+        changed += EnsureSingleSceneComponent<BuildManager>(services);
+        changed += EnsureSingleSceneComponent<GameManager>(services);
+        changed += EnsureSingleSceneComponent<ScreenFader>(services);
+
+        var existingAudio = UnityEngine.Object.FindFirstObjectByType<AudioManager>();
+        var audioRoot = existingAudio != null ? existingAudio.gameObject : EnsureRootObject("AudioManager");
+        changed += EnsureSingleSceneComponent<AudioManager>(audioRoot);
+
+        var uiRoot = GameObject.Find("PA_UIRoot");
+        if (uiRoot != null)
+        {
+            var runtimeUi = GameObject.Find("PA_RuntimeUI");
+            if (runtimeUi == null)
+            {
+                runtimeUi = new GameObject("PA_RuntimeUI");
+                runtimeUi.transform.SetParent(uiRoot.transform, false);
+                changed++;
+            }
+
+            changed += EnsureSingleSceneComponent<InteractPromptUI>(runtimeUi);
+            changed += EnsureSingleSceneComponent<DialogueUI>(runtimeUi);
+            changed += EnsureSingleSceneComponent<FriendshipUI>(runtimeUi);
+            changed += EnsureSingleSceneComponent<ClockHUD>(runtimeUi);
+            changed += EnsureSingleSceneComponent<CraftingUI>(runtimeUi);
+            changed += EnsureSingleSceneComponent<PauseManager>(runtimeUi);
+            changed += EnsureSingleSceneComponent<MoneyHUD>(runtimeUi);
+        }
+
+        var existingShopPrice = UnityEngine.Object.FindFirstObjectByType<ShopPriceUI>();
+        var shopPriceRoot = existingShopPrice != null
+            ? existingShopPrice.gameObject
+            : (GameObject.Find("ShopPriceUI") ?? new GameObject("ShopPriceUI"));
+        changed += EnsureSingleSceneComponent<ShopPriceUI>(shopPriceRoot);
+
+        return changed;
+    }
+
+    static int EnsureSmartphoneAppWiring()
+    {
+        int changed = 0;
+
+        changed += EnsurePanelApp<AuditResultUI>("AuditPanel");
+        changed += EnsurePanelApp<HiringUI>("HiringPanel");
+        changed += EnsurePanelApp<FeedUI>("FeedPanel");
+        changed += EnsurePanelApp<SettingsUI>("SettingsPanel");
+
+        var phone = UnityEngine.Object.FindFirstObjectByType<SmartphoneUI>();
+        if (phone == null) return changed;
+
+        var home = FindDescendant(phone.transform, "HomeScreen");
+        if (home != null && phone.homeScreen != home.gameObject)
+        {
+            phone.homeScreen = home.gameObject;
+            EditorUtility.SetDirty(phone);
+            changed++;
+        }
+
+        string[] panelNames = { "AuditPanel", "HiringPanel", "FeedPanel", "SettingsPanel" };
+        var panels = new GameObject[panelNames.Length];
+        var buttons = new UnityEngine.UI.Button[panelNames.Length];
+        bool needsPanelWrite = phone.tabPanels == null || phone.tabPanels.Length != panelNames.Length;
+        bool needsButtonWrite = phone.tabButtons == null || phone.tabButtons.Length != panelNames.Length;
+
+        for (int i = 0; i < panelNames.Length; i++)
+        {
+            panels[i] = FindDescendant(phone.transform, panelNames[i])?.gameObject;
+            var tile = FindDescendant(phone.transform, panelNames[i] + "_Tile");
+            buttons[i] = tile != null ? tile.GetComponentInChildren<UnityEngine.UI.Button>(true) : null;
+
+            if (!needsPanelWrite && panels[i] != phone.tabPanels[i]) needsPanelWrite = true;
+            if (!needsButtonWrite && buttons[i] != phone.tabButtons[i]) needsButtonWrite = true;
+        }
+
+        if (needsPanelWrite)
+        {
+            phone.tabPanels = panels;
+            EditorUtility.SetDirty(phone);
+            changed++;
+        }
+
+        if (needsButtonWrite)
+        {
+            phone.tabButtons = buttons;
+            EditorUtility.SetDirty(phone);
+            changed++;
+        }
+
+        return changed;
+    }
+
+    static int EnsurePanelApp<T>(string panelName) where T : Component
+    {
+        var panel = GameObject.Find(panelName);
+        if (panel == null) return 0;
+
+        int changed = 0;
+        var apps = panel.GetComponents<T>();
+        if (apps.Length == 0)
+        {
+            panel.AddComponent<T>();
+            changed++;
+        }
+        else if (apps.Length > 1)
+        {
+            for (int i = 1; i < apps.Length; i++)
+                UnityEngine.Object.DestroyImmediate(apps[i]);
+            changed += apps.Length - 1;
+        }
+
+        if (panelName == "AuditPanel")
+        {
+            var placeholder = panel.transform.Find("Placeholder");
+            if (placeholder != null)
+            {
+                UnityEngine.Object.DestroyImmediate(placeholder.gameObject);
+                changed++;
+            }
+        }
+
+        return changed;
+    }
+
+    static int EnsureNpcModelImportSettings()
+    {
+        int changed = 0;
+        foreach (string path in GetNpcModelPaths())
+        {
+            var importer = AssetImporter.GetAtPath(path) as ModelImporter;
+            if (importer == null) continue;
+
+            bool dirty = false;
+            if (importer.animationType != ModelImporterAnimationType.Human)
+            {
+                importer.animationType = ModelImporterAnimationType.Human;
+                dirty = true;
+            }
+
+            if (importer.avatarSetup != ModelImporterAvatarSetup.CreateFromThisModel)
+            {
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                dirty = true;
+            }
+
+            if (importer.optimizeGameObjects)
+            {
+                importer.optimizeGameObjects = false;
+                dirty = true;
+            }
+
+            if (importer.importCameras)
+            {
+                importer.importCameras = false;
+                dirty = true;
+            }
+
+            if (importer.importLights)
+            {
+                importer.importLights = false;
+                dirty = true;
+            }
+
+            if (dirty)
+            {
+                importer.SaveAndReimport();
+                changed++;
+            }
+        }
+
+        return changed;
+    }
+
+    static (int total, int valid) GetNpcAvatarStats()
+    {
+        int total = 0;
+        int valid = 0;
+
+        foreach (string path in GetNpcModelPaths())
+        {
+            if (!File.Exists(path)) continue;
+            total++;
+
+            var avatar = AssetDatabase.LoadAllAssetsAtPath(path)
+                .OfType<Avatar>()
+                .FirstOrDefault(a => a != null);
+            if (avatar != null && avatar.isHuman && avatar.isValid)
+                valid++;
+        }
+
+        return (total, valid);
+    }
+
+    static string[] GetNpcModelPaths()
+    {
+        return new[]
+        {
+            "Assets/Art/Character/C-02.fbx",
+            "Assets/Art/Character/C-03.fbx",
+            "Assets/Art/Character/C-04.fbx",
+            "Assets/Art/Character/C-05.fbx",
+            "Assets/Art/Character/C-06.fbx",
+            "Assets/Art/Character/C-07.fbx",
+            "Assets/Art/Character/C-08.fbx",
+            "Assets/Art/Character/C-09.fbx",
+        };
+    }
+
+    static int EnsureNpcAssetsAndHooks()
+    {
+        int changed = 0;
+        var dialogues = LoadAllAssets<DialogueData>("Assets/Resources/Dialogues");
+        var profiles = LoadAllAssets<NpcProfile>("Assets/ScriptableObjects/NPCs");
+
+        foreach (var npc in UnityEngine.Object.FindObjectsByType<NpcController>(FindObjectsSortMode.None))
+        {
+            if (npc.profile == null)
+            {
+                var profile = MatchProfile(profiles, npc.gameObject.name);
+                if (profile != null)
+                {
+                    npc.profile = profile;
+                    EditorUtility.SetDirty(npc);
+                    changed++;
+                }
+            }
+
+            var dialogue = npc.GetComponent<NpcDialogue>();
+            if (dialogue == null)
+            {
+                dialogue = npc.gameObject.AddComponent<NpcDialogue>();
+                changed++;
+            }
+
+            if (dialogue.dialogueData == null)
+            {
+                dialogue.dialogueData = MatchDialogue(dialogues, npc);
+                if (dialogue.dialogueData != null)
+                {
+                    EditorUtility.SetDirty(dialogue);
+                    changed++;
+                }
+            }
+
+            if (string.IsNullOrEmpty(dialogue.friendshipId))
+            {
+                dialogue.friendshipId = ResolveFriendshipId(npc);
+                EditorUtility.SetDirty(dialogue);
+                changed++;
+            }
+
+            if (npc.GetComponentInChildren<NpcBubbleUI>(true) == null)
+            {
+                var bubble = new GameObject("NpcBubbleUI", typeof(RectTransform), typeof(Canvas));
+                bubble.transform.SetParent(npc.transform, false);
+                bubble.AddComponent<NpcBubbleUI>();
+                changed++;
+            }
+
+            foreach (var bubble in npc.GetComponentsInChildren<NpcBubbleUI>(true))
+            {
+                Vector3 targetOffset = new Vector3(0f, 4.0f, 0f);
+                if (bubble.offset != targetOffset || bubble.transform.localPosition != targetOffset)
+                {
+                    bubble.offset = targetOffset;
+                    bubble.transform.localPosition = targetOffset;
+                    EditorUtility.SetDirty(bubble);
+                    changed++;
+                }
+            }
+
+            changed += EnsureSingleComponentOnObject<NpcPresentationNormalizer>(npc.gameObject);
+            var normalizer = npc.GetComponent<NpcPresentationNormalizer>();
+            if (normalizer != null)
+            {
+                if (normalizer.animationMode != NpcPresentationNormalizer.NpcAnimationMode.HumanoidProcedural)
+                {
+                    normalizer.animationMode = NpcPresentationNormalizer.NpcAnimationMode.HumanoidProcedural;
+                    EditorUtility.SetDirty(normalizer);
+                    changed++;
+                }
+
+                if (normalizer.animatorController != null)
+                {
+                    normalizer.animatorController = null;
+                    EditorUtility.SetDirty(normalizer);
+                    changed++;
+                }
+            }
+
+            changed += EnsureNpcModelVisual(npc);
+            if (NpcPresentationNormalizer.Normalize(npc.gameObject))
+            {
+                EditorUtility.SetDirty(npc.gameObject);
+                if (normalizer != null)
+                    EditorUtility.SetDirty(normalizer);
+                foreach (var animator in npc.GetComponentsInChildren<Animator>(true))
+                    EditorUtility.SetDirty(animator);
+                foreach (var procedural in npc.GetComponentsInChildren<NpcHumanoidProceduralAnimator>(true))
+                    EditorUtility.SetDirty(procedural);
+                changed++;
+            }
+        }
+
+        return changed;
+    }
+
+    static int EnsureNpcModelVisual(NpcController npc)
+    {
+        var existing = FindDescendant(npc.transform, "CharacterVisual");
+        int changed = 0;
+
+        if (existing == null && npc.GetComponentInChildren<SkinnedMeshRenderer>(true) == null)
+        {
+            string modelPath = ResolveNpcModelPath(npc);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            if (prefab != null)
+            {
+                var inst = PrefabUtility.InstantiatePrefab(prefab, npc.transform) as GameObject;
+                if (inst == null) inst = UnityEngine.Object.Instantiate(prefab, npc.transform);
+                inst.name = "CharacterVisual";
+                inst.transform.localPosition = Vector3.zero;
+                inst.transform.localRotation = Quaternion.identity;
+                inst.transform.localScale = Vector3.one * NpcPresentationNormalizer.VisualScale;
+                existing = inst.transform;
+                changed++;
+            }
+        }
+
+        if (existing != null)
+        {
+            var primitive = npc.transform.Find("Visual");
+            if (primitive != null && primitive.gameObject.activeSelf)
+            {
+                primitive.gameObject.SetActive(false);
+                changed++;
+            }
+        }
+
+        return changed;
+    }
+
+    static int EnsurePlayerEditorHooks()
+    {
+        int changed = 0;
+        var player = GameObject.FindGameObjectWithTag("Player") ?? GameObject.Find("Player");
+        if (player == null) return 0;
+
+        changed += EnsureSingleComponentOnObject<EquipmentSystem>(player);
+
+        var animator = player.GetComponentInChildren<Animator>(true);
+        if (animator != null)
+            changed += EnsureSingleComponentOnObject<PlayerFootIkStabilizer>(animator.gameObject);
+
+        var buildManager = UnityEngine.Object.FindFirstObjectByType<BuildManager>();
+        if (buildManager != null && buildManager.placementAnchor != player.transform)
+        {
+            buildManager.placementAnchor = player.transform;
+            EditorUtility.SetDirty(buildManager);
+            changed++;
+        }
+
+        return changed;
+    }
+
+    static int EnsureSingleSceneComponent<T>(GameObject preferredHost) where T : Component
+    {
+        var all = UnityEngine.Object.FindObjectsByType<T>(FindObjectsSortMode.None);
+        if (all.Length == 0)
+        {
+            preferredHost.AddComponent<T>();
+            EditorUtility.SetDirty(preferredHost);
+            return 1;
+        }
+
+        T keep = all.FirstOrDefault(c => c.gameObject == preferredHost) ?? all[0];
+        int removed = 0;
+        foreach (var comp in all)
+        {
+            if (comp == keep) continue;
+            UnityEngine.Object.DestroyImmediate(comp);
+            removed++;
+        }
+
+        return removed;
+    }
+
+    static int EnsureSingleComponentOnObject<T>(GameObject host) where T : Component
+    {
+        var comps = host.GetComponents<T>();
+        if (comps.Length == 0)
+        {
+            host.AddComponent<T>();
+            EditorUtility.SetDirty(host);
+            return 1;
+        }
+
+        int removed = 0;
+        for (int i = 1; i < comps.Length; i++)
+        {
+            UnityEngine.Object.DestroyImmediate(comps[i]);
+            removed++;
+        }
+
+        return removed;
+    }
+
+    static int RemoveDuplicateNamedSceneObjects(params string[] names)
+    {
+        int removed = 0;
+        var activeScene = SceneManager.GetActiveScene();
+
+        foreach (var name in names)
+        {
+            var matches = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Where(t => t != null && t.name == name && t.gameObject.scene == activeScene)
+                .Select(t => t.gameObject)
+                .Distinct()
+                .ToList();
+
+            if (matches.Count <= 1) continue;
+
+            var keep = matches.FirstOrDefault(HasRoleComponent) ?? matches[0];
+            foreach (var go in matches)
+            {
+                if (go == keep) continue;
+                UnityEngine.Object.DestroyImmediate(go);
+                removed++;
+            }
+        }
+
+        return removed;
+    }
+
+    static bool HasRoleComponent(GameObject go)
+    {
+        return go.GetComponent<EventSystem>() != null
+            || go.GetComponent<Canvas>() != null
+            || go.GetComponent<EconomyService>() != null
+            || go.GetComponent<AudioManager>() != null
+            || go.GetComponent<ShopPriceUI>() != null;
+    }
+
+    static GameObject EnsureRootObject(string name)
+    {
+        var go = GameObject.Find(name);
+        return go != null ? go : new GameObject(name);
+    }
+
+    static NpcProfile MatchProfile(List<NpcProfile> profiles, string objectName)
+    {
+        string key = CleanNpcKey(objectName);
+        return profiles.FirstOrDefault(p =>
+            p != null &&
+            (CleanNpcKey(p.name).Contains(key) ||
+             (!string.IsNullOrEmpty(p.npcName) && CleanNpcKey(p.npcName).Contains(key))));
+    }
+
+    static DialogueData MatchDialogue(List<DialogueData> dialogues, NpcController npc)
+    {
+        string key = CleanNpcKey(npc.profile != null ? npc.profile.name : npc.gameObject.name);
+        return dialogues.FirstOrDefault(d => d != null && CleanNpcKey(d.name).Contains(key));
+    }
+
+    static string ResolveFriendshipId(NpcController npc)
+    {
+        if (npc.profile != null && !string.IsNullOrEmpty(npc.profile.name))
+            return npc.profile.name;
+        if (npc.profile != null && !string.IsNullOrEmpty(npc.profile.npcName))
+            return npc.profile.npcName;
+        return npc.gameObject.name;
+    }
+
+    static string ResolveNpcModelPath(NpcController npc)
+    {
+        string key = CleanNpcKey(
+            (npc.profile != null ? npc.profile.name + " " + npc.profile.npcName : "") + " " + npc.gameObject.name);
+
+        if (key.Contains("lumber")) return "Assets/Art/Character/C-03.fbx";
+        if (key.Contains("miner")) return "Assets/Art/Character/C-04.fbx";
+        if (key.Contains("fisher")) return "Assets/Art/Character/C-05.fbx";
+        if (key.Contains("chef")) return "Assets/Art/Character/C-06.fbx";
+        if (key.Contains("blacksmith")) return "Assets/Art/Character/C-07.fbx";
+        if (key.Contains("tailor")) return "Assets/Art/Character/C-08.fbx";
+        if (key.Contains("carpenter")) return "Assets/Art/Character/C-09.fbx";
+        return "Assets/Art/Character/C-02.fbx";
+    }
+
+    static string CleanNpcKey(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        return value.ToLowerInvariant()
+            .Replace("npc_", "")
+            .Replace("profile_", "")
+            .Replace("dialogue_", "")
+            .Replace(" ", "")
+            .Replace("-", "")
+            .Replace("_", "");
+    }
+
+    static Transform FindDescendant(Transform root, string name)
+    {
+        if (root == null) return null;
+        if (root.name == name) return root;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var result = FindDescendant(root.GetChild(i), name);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    static bool TryBakeNavMesh(bool showDialogs, Action<string> log, out bool surfaceAdded)
+    {
+        surfaceAdded = false;
+        try
+        {
+            var ground = GameObject.Find("Ground");
+            if (ground == null)
+            {
+                if (showDialogs)
+                    EditorUtility.DisplayDialog("NavMesh Bake 실패", "씬에 Ground 객체가 없습니다.", "확인");
+                return false;
+            }
+
+            var surfaceType = Type.GetType("Unity.AI.Navigation.NavMeshSurface, Unity.AI.Navigation");
+            if (surfaceType == null)
+            {
+                if (showDialogs)
+                    EditorUtility.DisplayDialog("AI Navigation 패키지 없음",
+                        "Package Manager 에서 AI Navigation 패키지를 설치해야 자동 Bake 가 가능합니다.", "확인");
+                return false;
+            }
+
+            var surface = ground.GetComponent(surfaceType);
+            if (surface == null)
+            {
+                surface = ground.AddComponent(surfaceType);
+                surfaceAdded = true;
+            }
+
+            var bakeMethod = surfaceType.GetMethod("BuildNavMesh");
+            if (bakeMethod == null) return false;
+
+            bakeMethod.Invoke(surface, null);
+            EditorUtility.SetDirty(ground);
+            log?.Invoke("NavMesh baked");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[PA DevConsole] NavMesh bake failed: {e}");
+            return false;
+        }
+    }
+
     static int RemoveDuplicateSingletons(bool silent)
     {
         Type[] singletonTypes = {
             typeof(EconomyService), typeof(TierService), typeof(GameClock),
             typeof(ItemRegistry), typeof(FriendshipService), typeof(HiringService),
             typeof(GridService), typeof(AuditService), typeof(SaveManager),
-            typeof(BuildManager), typeof(BuildingRegistry),
+            typeof(BuildManager), typeof(BuildingRegistry), typeof(SalesLogManager),
+            typeof(GameManager), typeof(AudioManager), typeof(ScreenFader),
+            typeof(SmartphoneUI), typeof(InventoryUI), typeof(HotbarUI),
+            typeof(PauseManager), typeof(MoneyHUD), typeof(ShopPriceUI),
+            typeof(DialogueUI), typeof(ClockHUD), typeof(CraftingUI),
         };
 
         int total = 0;
@@ -879,6 +1542,50 @@ public class PA_DevConsole : EditorWindow
             Debug.Log("[PA AutoFix] [Services] 새로 생성");
         }
         services.AddComponent<PlayerInputHandler>();
+    }
+
+    // UI_Slot 프리팹의 Image 알파/컬러를 동물의 숲 베이지로 강화.
+    // 핫바 BG 가 비쳐서 어두워 보이는 시각 버그 해결 (스프라이트 미존재 시 fallback).
+    static int BrightenSlotPrefab()
+    {
+        const string SLOT_PATH = "Assets/Prefabs/UI_Slot.prefab";
+        if (!System.IO.File.Exists(SLOT_PATH)) return 0;
+
+        var root = PrefabUtility.LoadPrefabContents(SLOT_PATH);
+        if (root == null) return 0;
+
+        var inventorySlotSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/ui_inventory_slot.png");
+        bool changed = false;
+        foreach (var img in root.GetComponentsInChildren<UnityEngine.UI.Image>(true))
+        {
+            // 슬롯 본체만 (Icon/CountText 자식은 건드리지 않음)
+            if (img.gameObject.name != "UI_Slot") continue;
+            // 알파 1.0 + 베이지 #EFE4D0 강제
+            if (inventorySlotSprite != null && img.sprite != inventorySlotSprite)
+            {
+                img.sprite = inventorySlotSprite;
+                img.type = UnityEngine.UI.Image.Type.Simple;
+                img.preserveAspect = true;
+                changed = true;
+            }
+
+            var target = inventorySlotSprite != null
+                ? Color.white
+                : new Color(0.937f, 0.894f, 0.816f, 1f);
+            if (img.color != target)
+            {
+                img.color = target;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            PrefabUtility.SaveAsPrefabAsset(root, SLOT_PATH);
+            Debug.Log("[PA AutoFix] 🎨 UI_Slot 프리팹 베이지 컬러 적용");
+        }
+        PrefabUtility.UnloadPrefabContents(root);
+        return changed ? 1 : 0;
     }
 
     static List<T> LoadAllAssets<T>(string folder) where T : UnityEngine.Object

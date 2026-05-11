@@ -717,24 +717,28 @@ public static class PA_SceneAutoBuilder
         var cap = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         cap.name = "Visual";
         cap.transform.SetParent(go.transform);
-        cap.transform.localPosition = new Vector3(0f, 1f, 0f);
-        cap.transform.localScale    = Vector3.one * 0.9f;
+        cap.transform.localPosition = new Vector3(0f, NpcPresentationNormalizer.ColliderHeight * 0.5f, 0f);
+        cap.transform.localScale    = Vector3.one * (NpcPresentationNormalizer.ColliderHeight * 0.5f);
         UnityEngine.Object.DestroyImmediate(cap.GetComponent<CapsuleCollider>());
 
         // NavMeshAgent (NPC 이동 필수)
         var agent = go.AddComponent<NavMeshAgent>();
         agent.speed            = 2f;
-        agent.angularSpeed     = 120f;
-        agent.stoppingDistance = 0.1f;
-        agent.height           = 1.8f;
-        agent.radius           = 0.3f;
+        agent.angularSpeed     = 240f;
+        agent.stoppingDistance = 0.2f;
+        agent.height           = NpcPresentationNormalizer.AgentHeight;
+        agent.radius           = NpcPresentationNormalizer.AgentRadius;
         agent.baseOffset       = 0f;
 
         // CapsuleCollider (루트 — 상호작용 감지)
         var col = go.AddComponent<CapsuleCollider>();
-        col.center = new Vector3(0f, 0.9f, 0f);
-        col.height = 1.8f;
-        col.radius = 0.3f;
+        col.center = new Vector3(0f, NpcPresentationNormalizer.ColliderHeight * 0.5f, 0f);
+        col.height = NpcPresentationNormalizer.ColliderHeight;
+        col.radius = NpcPresentationNormalizer.ColliderRadius;
+
+        var normalizer = go.AddComponent<NpcPresentationNormalizer>();
+        normalizer.animationMode = NpcPresentationNormalizer.NpcAnimationMode.HumanoidProcedural;
+        normalizer.animatorController = null;
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -46,6 +46,12 @@ public class FriendshipService : MonoBehaviour
     // 해금된 레시피 집합
     private readonly HashSet<RecipeData> _unlockedRecipes = new HashSet<RecipeData>();
 
+    // 같은 NPC 와 같은 게임 날짜에 대화로 친밀도가 이미 올랐는지 추적.
+    // 하루 1회 제한 — 대화 자체는 계속 가능하되 점수 가산은 1회만.
+    // GameClock.CurrentDay 와 비교해 새 날이 되면 자연스럽게 풀림.
+    // ⚠ MVP 런타임 전용 — 저장/로드 미구현. SaveData 확장 필요(개발일지 메모 참고).
+    private readonly Dictionary<string, int> _lastDialogueDay = new Dictionary<string, int>();
+
     /// <summary>(id, oldLevel, newLevel) — UI/사운드/블루프린트 해금에 구독.</summary>
     public event Action<string, int, int> OnLevelChanged;
 
@@ -78,10 +84,28 @@ public class FriendshipService : MonoBehaviour
         return _points.TryGetValue(id, out int pts) ? pts : 0;
     }
 
-    /// <summary>대화 성공 시 호출 — 기본 포인트를 부여한다.</summary>
+    /// <summary>대화 성공 시 호출 — 기본 포인트를 부여한다.
+    /// ⚠ 하루 1회 제한: 같은 NPC 와 같은 GameClock.CurrentDay 안에 두 번째 호출부터는
+    /// 점수 가산이 스킵된다. 대화 자체(라인 출력)는 NpcDialogue 가 항상 진행.
+    /// 자정이 지나(GameClock.OnNewDay 발화) 다음 날이 되면 자동으로 다시 +N 가능.
+    /// </summary>
     public void AddDialoguePoints(string id)
     {
-        if (pointsPerDialogue != 0) AddPoints(id, pointsPerDialogue, "대화");
+        if (string.IsNullOrEmpty(id)) return;
+        if (pointsPerDialogue == 0) return;
+
+        // 현재 게임 날짜 조회 (GameClock 미존재 시 day=0 으로 안전하게 폴백)
+        int today = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 0;
+
+        if (_lastDialogueDay.TryGetValue(id, out int lastDay) && lastDay == today)
+        {
+            // 오늘 이미 가산됨 — 로그만 남기고 점수는 변경하지 않음
+            Debug.Log($"💬 친밀도 [{id}] 오늘({today}일차) 이미 +{pointsPerDialogue} 받음 — 가산 스킵");
+            return;
+        }
+
+        _lastDialogueDay[id] = today;
+        AddPoints(id, pointsPerDialogue, $"대화(Day {today})");
     }
 
     /// <summary>NPC 가 상점에서 구매 성공 시 호출.</summary>
@@ -158,6 +182,7 @@ public class FriendshipService : MonoBehaviour
         _points.Clear();
         _levels.Clear();
         _unlockedRecipes.Clear();
+        _lastDialogueDay.Clear();
     }
 
     // -------- 내부 --------

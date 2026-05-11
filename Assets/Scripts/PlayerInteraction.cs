@@ -2,7 +2,9 @@ using UnityEngine;
 
 public class PlayerInteraction : MonoBehaviour
 {
-    public float interactDistance = 2.0f;
+    public float interactDistance = 3.0f;
+    public float interactRadius = 0.75f;
+    public float interactOriginHeight = 1.0f;
     public LayerMask interactLayer;
     private Animator anim;
     public GameObject farmlandPrefab;
@@ -24,11 +26,11 @@ public class PlayerInteraction : MonoBehaviour
     // §3 InteractPromptUI — 매 프레임 근접 IInteractable 감지 → 프롬프트 갱신
     void Update()
     {
-        Vector3 origin    = transform.position + Vector3.up * 0.5f;
+        Vector3 origin    = GetInteractOrigin();
         Vector3 direction = transform.forward;
         RaycastHit hit;
 
-        if (Physics.SphereCast(origin, 0.5f, direction, out hit, interactDistance))
+        if (Physics.SphereCast(origin, interactRadius, direction, out hit, interactDistance))
         {
             var go = hit.collider.gameObject;
             IInteractable interactable = go.GetComponent<IInteractable>()
@@ -44,7 +46,7 @@ public class PlayerInteraction : MonoBehaviour
 
     void TryInteract()
     {
-        Vector3 origin    = transform.position + Vector3.up * 0.5f;
+        Vector3 origin    = GetInteractOrigin();
         Vector3 direction = transform.forward;
 
         Item heldItem = Inventory.instance.GetSelectedItem();
@@ -54,7 +56,7 @@ public class PlayerInteraction : MonoBehaviour
         RaycastHit hit;
         Debug.DrawRay(origin, direction * interactDistance, Color.red, 1.0f);
 
-        if (!Physics.SphereCast(origin, 0.5f, direction, out hit, interactDistance)) return;
+        if (!Physics.SphereCast(origin, interactRadius, direction, out hit, interactDistance)) return;
 
         GameObject hitObj = hit.collider.gameObject;
 
@@ -90,5 +92,10 @@ public class PlayerInteraction : MonoBehaviour
                 GetComponent<PlayerController>().SitDown(chair.sitPoint);
             }
         }
+    }
+
+    Vector3 GetInteractOrigin()
+    {
+        return transform.position + Vector3.up * interactOriginHeight;
     }
 }

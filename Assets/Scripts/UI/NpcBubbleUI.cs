@@ -11,7 +11,7 @@ using TMPro;
 public class NpcBubbleUI : MonoBehaviour
 {
     [Header("오프셋 (NPC 머리 위)")]
-    public Vector3 offset = new Vector3(0f, 2.2f, 0f);
+    public Vector3 offset = new Vector3(0f, 4.0f, 0f);
 
     [Header("직접 연결 (선택)")]
     public TextMeshProUGUI bubbleText;
@@ -101,8 +101,8 @@ public class NpcBubbleUI : MonoBehaviour
         else if (ratio <= 1.2f)  { emoji = "흠...";        bgColor = new Color(1f, 1f, 0.7f, 0.9f);   }
         else                     { emoji = "비싸긴 한데."; bgColor = new Color(1f, 0.85f, 0.6f, 0.9f); }
 
-        if (_bg != null) _bg.color = bgColor;
         Show(emoji, 2f);
+        if (_bg != null) _bg.color = bgColor;
     }
 
     public void HideBubble()

@@ -57,6 +57,11 @@ public class GameClock : MonoBehaviour
     /// <summary>정수 시각이 바뀔 때 발화. 파라미터: 새 시각(0~23).</summary>
     public event Action<int> OnHourTick;
 
+    /// <summary>분 단위가 바뀔 때 발화. 파라미터: 0~59 의 새 분(分).
+    /// 시계 UI(ClockHUD) 가 매 게임-분 단위로 표시 갱신을 받기 위해 추가.
+    /// 정수 분이 바뀔 때만 1회 발화하므로 매 프레임 폭주는 없다.</summary>
+    public event Action<int> OnMinuteTick;
+
     /// <summary>자정(00:00)을 지나 새 날이 시작될 때 발화. 파라미터: 새 일수.</summary>
     public event Action<int> OnNewDay;
 
@@ -64,6 +69,7 @@ public class GameClock : MonoBehaviour
     public event Action<Season> OnSeasonChanged;
 
     private int _prevHourInt;
+    private int _prevMinuteInt;
     private Season _prevSeason;
 
     // -------- Unity 생명주기 --------
@@ -75,6 +81,7 @@ public class GameClock : MonoBehaviour
 
         _currentHour = startHour;
         _prevHourInt = Mathf.FloorToInt(_currentHour);
+        _prevMinuteInt = Mathf.FloorToInt((_currentHour - _prevHourInt) * 60f);
         _prevSeason = ComputeSeason(_currentDay);
         _currentSeason = _prevSeason;
     }
@@ -113,6 +120,14 @@ public class GameClock : MonoBehaviour
             Debug.Log($"⏰ GameClock: {_currentDay}일 {hourInt:D2}:00");
             OnHourTick?.Invoke(hourInt);
         }
+
+        // 분 단위 이벤트 (정수 분이 바뀔 때만 1회) — ClockHUD 갱신 트리거
+        int minuteInt = Mathf.FloorToInt((_currentHour - hourInt) * 60f);
+        if (minuteInt != _prevMinuteInt)
+        {
+            _prevMinuteInt = minuteInt;
+            OnMinuteTick?.Invoke(minuteInt);
+        }
     }
 
     // -------- 공개 API --------
@@ -131,6 +146,7 @@ public class GameClock : MonoBehaviour
         _currentHour = Mathf.Clamp(hour, 0f, 23.99f);
         _currentDay  = Mathf.Max(1, day);
         _prevHourInt = Mathf.FloorToInt(_currentHour);
+        _prevMinuteInt = Mathf.FloorToInt((_currentHour - _prevHourInt) * 60f);
         _prevSeason  = ComputeSeason(_currentDay);
         _currentSeason = _prevSeason;
         Debug.Log($"💾 GameClock[{reason}]: Day {_currentDay} {GetTimeString()} ({_currentSeason})");

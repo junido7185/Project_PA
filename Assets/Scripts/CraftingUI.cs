@@ -33,8 +33,12 @@ public class CraftingUI : MonoBehaviour
 
     void Awake()
     {
+        if (instance != null && instance != this) { Destroy(gameObject); return; }
         instance = this;
         allRecipes = Resources.LoadAll<RecipeData>("Recipes");
+
+        if (craftingPanel == null || slotParent == null || slotPrefab == null)
+            BuildRuntimeUI();
     }
 
     void Start()
@@ -105,6 +109,7 @@ public class CraftingUI : MonoBehaviour
                                 || FriendshipService.Instance.IsRecipeUnlocked(recipe));
 
             GameObject newSlot = Instantiate(slotPrefab, slotParent);
+            newSlot.SetActive(true);
 
             // 라벨 — 첫 재료를 미리보기로 표시 (다중 재료는 첫 재료 + ⋯ 로 압축)
             TMP_Text slotText = newSlot.GetComponentInChildren<TMP_Text>();
@@ -162,5 +167,151 @@ public class CraftingUI : MonoBehaviour
         }
 
         return $"{lockMark}{recipe.recipeName}\n<size=80%>({ingredientText})</size>";
+    }
+
+    void BuildRuntimeUI()
+    {
+        Transform parent = ResolveUiParent();
+
+        craftingPanel = new GameObject("CraftingPanel", typeof(RectTransform), typeof(Image));
+        var panelRT = (RectTransform)craftingPanel.transform;
+        panelRT.SetParent(parent, false);
+        panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRT.pivot = new Vector2(0.5f, 0.5f);
+        panelRT.sizeDelta = new Vector2(560f, 640f);
+        panelRT.anchoredPosition = Vector2.zero;
+
+        var bg = craftingPanel.GetComponent<Image>();
+        bg.color = new Color(0.96f, 0.90f, 0.78f, 0.98f);
+
+        var titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var titleRT = (RectTransform)titleGO.transform;
+        titleRT.SetParent(craftingPanel.transform, false);
+        titleRT.anchorMin = new Vector2(0f, 1f);
+        titleRT.anchorMax = new Vector2(1f, 1f);
+        titleRT.pivot = new Vector2(0.5f, 1f);
+        titleRT.sizeDelta = new Vector2(0f, 52f);
+        titleRT.anchoredPosition = Vector2.zero;
+
+        var title = titleGO.GetComponent<TextMeshProUGUI>();
+        title.text = "제작";
+        title.fontSize = 26;
+        title.fontStyle = FontStyles.Bold;
+        title.alignment = TextAlignmentOptions.Center;
+        title.color = new Color(0.18f, 0.13f, 0.08f, 1f);
+        title.raycastTarget = false;
+
+        var closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        var closeRT = (RectTransform)closeGO.transform;
+        closeRT.SetParent(craftingPanel.transform, false);
+        closeRT.anchorMin = closeRT.anchorMax = new Vector2(1f, 1f);
+        closeRT.pivot = new Vector2(1f, 1f);
+        closeRT.sizeDelta = new Vector2(72f, 36f);
+        closeRT.anchoredPosition = new Vector2(-12f, -10f);
+        closeGO.GetComponent<Image>().color = new Color(0.22f, 0.18f, 0.14f, 0.9f);
+
+        var closeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var closeTextRT = (RectTransform)closeTextGO.transform;
+        closeTextRT.SetParent(closeGO.transform, false);
+        Stretch(closeTextRT);
+        var closeText = closeTextGO.GetComponent<TextMeshProUGUI>();
+        closeText.text = "닫기";
+        closeText.fontSize = 16;
+        closeText.fontStyle = FontStyles.Bold;
+        closeText.alignment = TextAlignmentOptions.Center;
+        closeText.color = Color.white;
+        closeText.raycastTarget = false;
+        closeGO.GetComponent<Button>().onClick.AddListener(ToggleUI);
+
+        var scrollGO = new GameObject("RecipeScroll", typeof(RectTransform), typeof(ScrollRect));
+        var scrollRT = (RectTransform)scrollGO.transform;
+        scrollRT.SetParent(craftingPanel.transform, false);
+        scrollRT.anchorMin = Vector2.zero;
+        scrollRT.anchorMax = Vector2.one;
+        scrollRT.offsetMin = new Vector2(18f, 18f);
+        scrollRT.offsetMax = new Vector2(-18f, -64f);
+
+        var viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        var viewportRT = (RectTransform)viewportGO.transform;
+        viewportRT.SetParent(scrollGO.transform, false);
+        Stretch(viewportRT);
+        viewportGO.GetComponent<Image>().color = Color.clear;
+        viewportGO.GetComponent<Mask>().showMaskGraphic = false;
+
+        var contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        var contentRT = (RectTransform)contentGO.transform;
+        contentRT.SetParent(viewportGO.transform, false);
+        contentRT.anchorMin = new Vector2(0f, 1f);
+        contentRT.anchorMax = new Vector2(1f, 1f);
+        contentRT.pivot = new Vector2(0.5f, 1f);
+        contentRT.sizeDelta = Vector2.zero;
+
+        var layout = contentGO.GetComponent<VerticalLayoutGroup>();
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.spacing = 8f;
+        layout.padding = new RectOffset(4, 4, 4, 4);
+        contentGO.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var scroll = scrollGO.GetComponent<ScrollRect>();
+        scroll.viewport = viewportRT;
+        scroll.content = contentRT;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+
+        slotParent = contentRT;
+        slotPrefab = CreateRuntimeSlotPrefab(craftingPanel.transform);
+        craftingPanel.SetActive(false);
+    }
+
+    GameObject CreateRuntimeSlotPrefab(Transform parent)
+    {
+        var go = new GameObject("RecipeSlot_RuntimePrefab", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+        go.transform.SetParent(parent, false);
+        go.SetActive(false);
+        go.GetComponent<Image>().color = new Color(0.22f, 0.18f, 0.14f, 0.92f);
+        go.GetComponent<LayoutElement>().preferredHeight = 68f;
+
+        var labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var labelRT = (RectTransform)labelGO.transform;
+        labelRT.SetParent(go.transform, false);
+        labelRT.anchorMin = Vector2.zero;
+        labelRT.anchorMax = Vector2.one;
+        labelRT.offsetMin = new Vector2(12f, 6f);
+        labelRT.offsetMax = new Vector2(-12f, -6f);
+
+        var label = labelGO.GetComponent<TextMeshProUGUI>();
+        label.fontSize = 17;
+        label.fontStyle = FontStyles.Bold;
+        label.alignment = TextAlignmentOptions.Center;
+        label.color = Color.white;
+        label.raycastTarget = false;
+
+        return go;
+    }
+
+    Transform ResolveUiParent()
+    {
+        var uiRoot = GameObject.Find("PA_UIRoot");
+        if (uiRoot != null) return uiRoot.transform;
+
+        var canvasGO = new GameObject("CraftingUI_Canvas",
+            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvas = canvasGO.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 90;
+        var scaler = canvasGO.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight = 0.5f;
+        return canvasGO.transform;
+    }
+
+    static void Stretch(RectTransform rt)
+    {
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
     }
 }

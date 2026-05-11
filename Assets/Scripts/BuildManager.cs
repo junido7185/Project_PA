@@ -9,6 +9,7 @@ public class BuildManager : MonoBehaviour
     public float gridSize    = 2.0f;
     public float buildDistance = 2.0f;
     public LayerMask obstacleLayer;
+    public Transform placementAnchor;
 
     [Header("상태")]
     public BuildingData currentBuilding;
@@ -43,11 +44,13 @@ public class BuildManager : MonoBehaviour
     {
         if (currentBuilding == null || ghostObject == null) return;
 
+        Transform anchor = ResolvePlacementAnchor();
+
         // 고스트 위치 갱신 (매 프레임)
-        Vector3 targetPos = transform.position + transform.forward * buildDistance;
+        Vector3 targetPos = anchor.position + anchor.forward * buildDistance;
         float x = Mathf.Round(targetPos.x / gridSize) * gridSize;
         float z = Mathf.Round(targetPos.z / gridSize) * gridSize;
-        ghostObject.transform.position = new Vector3(x, transform.position.y, z);
+        ghostObject.transform.position = new Vector3(x, anchor.position.y, z);
 
         CheckPlaceable(ghostObject.transform.position);
     }
@@ -128,7 +131,7 @@ public class BuildManager : MonoBehaviour
 
     void BuildIt()
     {
-        if (Inventory.instance == null || GameManager.instance == null) return;
+        if (Inventory.instance == null) return;
 
         Item heldItem = Inventory.instance.GetSelectedItem();
         if (heldItem == null || ghostObject == null) return;
@@ -170,5 +173,19 @@ public class BuildManager : MonoBehaviour
 
         if (!Inventory.instance.HasItems(heldItem, 1))
             StopBuildMode();
+    }
+
+    Transform ResolvePlacementAnchor()
+    {
+        if (placementAnchor != null) return placementAnchor;
+
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            placementAnchor = player.transform;
+            return placementAnchor;
+        }
+
+        return transform;
     }
 }

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python *)",
       "Bash(C:/Users/sdjsd/AppData/Local/Programs/Python/Python312/python.exe -m pip install python-pptx -q)",
-      "Bash(C:/Users/sdjsd/AppData/Local/Programs/Python/Python312/python.exe *)"
+      "Bash(C:/Users/sdjsd/AppData/Local/Programs/Python/Python312/python.exe *)",
+      "Bash(npm i *)"
     ]
   }
 }

@@ -161,6 +161,20 @@ public class ShopSlot : MonoBehaviour, IInteractable
             EconomyService.Instance.Deposit(paidAmount, $"Shop 판매[{buyerTag}]: {currentItem.data.itemName}");
         }
 
+        if (SalesLogManager.Instance != null && currentItem.data != null)
+        {
+            int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+            int hour = GameClock.Instance != null ? GameClock.Instance.CurrentHourInt : 0;
+            SalesLogManager.Instance.RecordSale(
+                currentItem.data.itemName,
+                currentItem.data.category.ToString(),
+                paidAmount,
+                currentItem.quality,
+                buyerTag,
+                day,
+                hour);
+        }
+
         currentItem = null;
         // displayPrice 유지 — 플레이어가 같은 품목을 재진열할 수 있게 가격 책정을 보존.
         return true;

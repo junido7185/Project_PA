@@ -79,6 +79,15 @@ public class NpcController : MonoBehaviour
     void Awake()
     {
         agent    = GetComponent<NavMeshAgent>();
+        var normalizer = GetComponent<NpcPresentationNormalizer>();
+        if (normalizer != null)
+        {
+            normalizer.animationMode = NpcPresentationNormalizer.NpcAnimationMode.HumanoidProcedural;
+            normalizer.animatorController = null;
+            NpcPresentationNormalizer.Normalize(gameObject);
+        }
+        else
+            NpcPresentationNormalizer.Normalize(gameObject);
         anim     = GetComponentInChildren<Animator>();
         _dialogue = GetComponent<NpcDialogue>();  // 있으면 대사 풀 연동, 없으면 null — 무해.
 
@@ -90,6 +99,7 @@ public class NpcController : MonoBehaviour
 
     void Start()
     {
+        if (_dialogue == null) _dialogue = GetComponent<NpcDialogue>();
         TryCacheShopReference();
         ChangeState(State.Idle);
     }
@@ -292,10 +302,17 @@ public class NpcController : MonoBehaviour
 
         if (result.willBuy)
         {
+            float reactionPrice = _currentSlotTarget.EffectiveDisplayPrice;
+            float reactionBasePrice = _currentSlotTarget.currentItem != null && _currentSlotTarget.currentItem.data != null
+                ? _currentSlotTarget.currentItem.data.basePrice
+                : reactionPrice;
+
             if (_currentSlotTarget.TryPurchaseByNpc(DisplayName, out int paid))
             {
                 Debug.Log($"🤖 {DisplayName}: 구매 성공! +{paid}G");
+                ShowBubbleReaction(true, reactionPrice, reactionBasePrice);
                 // 구매 직후 소감 대사 (DialogueData 가 연결된 NPC 만)
+                if (_dialogue == null) _dialogue = GetComponent<NpcDialogue>();
                 if (_dialogue != null) _dialogue.SpeakTopic(DialogueTopic.ShopBought);
                 // 친밀도 가산 — NpcDialogue.friendshipId 가 있는 경우에만 집계.
                 if (_dialogue != null
@@ -310,7 +327,14 @@ public class NpcController : MonoBehaviour
         }
         else
         {
+            float reactionPrice = _currentSlotTarget.EffectiveDisplayPrice;
+            float reactionBasePrice = _currentSlotTarget.currentItem != null && _currentSlotTarget.currentItem.data != null
+                ? _currentSlotTarget.currentItem.data.basePrice
+                : reactionPrice;
+            ShowBubbleReaction(false, reactionPrice, reactionBasePrice);
+
             // 패스 대사 — "가격이 너무 비싸" 또는 일반 잡담
+            if (_dialogue == null) _dialogue = GetComponent<NpcDialogue>();
             if (_dialogue != null) _dialogue.SpeakTopic(DialogueTopic.ShopTooExpensive);
         }
 
@@ -327,6 +351,13 @@ public class NpcController : MonoBehaviour
         _arrivedAtSlot = false;
         _browseTimer = 0f;
         ChangeState(State.Idle);
+    }
+
+    void ShowBubbleReaction(bool bought, float price, float basePrice)
+    {
+        var bubble = GetComponentInChildren<NpcBubbleUI>(true);
+        if (bubble != null)
+            bubble.ShowReaction(bought, price, basePrice);
     }
 
     // ---------- NpcScheduleController 공개 API ----------

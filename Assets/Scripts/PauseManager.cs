@@ -33,6 +33,21 @@ public class PauseManager : MonoBehaviour
 
     public void Toggle()
     {
+        // ESC 우선순위:
+        //   1) 스마트폰이 열려 있으면 → SmartphoneUI 가 처리 (앱 패널 → 홈, 홈 → 닫기)
+        //      그 동안에는 PauseManager 의 일시정지 토글을 무시한다.
+        //   2) 인벤토리 토글이 열려 있으면 → 닫기 (일시정지 진입 차단)
+        //   3) 그 외에는 정상 일시정지 토글
+        if (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen)
+        {
+            SmartphoneUI.instance.OnEscape();
+            return;
+        }
+        if (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf)
+        {
+            InventoryUI.instance.Toggle();
+            return;
+        }
         if (IsPaused) Resume(); else Pause();
     }
 

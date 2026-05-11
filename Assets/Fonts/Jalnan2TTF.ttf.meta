@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6d74e0a30725f0a4889a9d0724d11afa
+guid: 9adae146ba9a49345bab4b77a44ef2bb
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Malgun Gothic
+  - Jalnan 2 TTF
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

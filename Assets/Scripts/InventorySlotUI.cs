@@ -75,6 +75,11 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
             : (shiftHeld ? 1 : s.count);
 
         DragContext.draggedItem = s.item;
+        DragContext.draggedInstance = new ItemInstance(s.item, amount)
+        {
+            quality = s.instance != null ? s.instance.quality : 1f,
+            currentPrice = s.instance != null ? s.instance.currentPrice : 0
+        };
         DragContext.draggedCount = amount;
         DragContext.fromSlotIndex = index;
         DragContext.fromOwner = owner;
@@ -101,7 +106,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
     {
         if (dragIcon != null) Destroy(dragIcon);
 
-        if (DragContext.draggedItem != null && DragContext.draggedCount > 0)
+        if (DragContext.draggedInstance != null && DragContext.draggedInstance.count > 0)
         {
             ReturnToOriginalSlot();
         }
@@ -110,31 +115,33 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        if (DragContext.draggedItem == null) return;
+        if (DragContext.draggedInstance == null || DragContext.draggedInstance.data == null) return;
         var targetSlot = GetSlot();
 
         if (targetSlot.IsEmpty)
         {
-            targetSlot.Set(DragContext.draggedItem, DragContext.draggedCount);
+            targetSlot.SetInstance(DragContext.draggedInstance);
+            DragContext.draggedInstance = null;
         }
-        else if (targetSlot.item == DragContext.draggedItem)
+        else if (targetSlot.instance != null && targetSlot.instance.CanStackWith(DragContext.draggedInstance))
         {
             int space = targetSlot.item.maxStack - targetSlot.count;
-            int add = Mathf.Min(space, DragContext.draggedCount);
+            int add = Mathf.Min(space, DragContext.draggedInstance.count);
             targetSlot.AddCount(add);
-            DragContext.draggedCount -= add;
-            if (DragContext.draggedCount > 0) ReturnToOriginalSlot();
+            DragContext.draggedInstance.count -= add;
+            if (DragContext.draggedInstance.count > 0) ReturnToOriginalSlot();
         }
         else
         {
             // Swap — ItemInstance 참조 자체를 교환해 동적 상태(quality 등)를 보존한다.
             var orig = GetOriginalSlot();
             var targetInstance = targetSlot.instance;
-            targetSlot.Set(DragContext.draggedItem, DragContext.draggedCount);
+            targetSlot.SetInstance(DragContext.draggedInstance);
             orig.SetInstance(targetInstance);
+            DragContext.draggedInstance = null;
         }
 
-        DragContext.draggedItem = null; DragContext.draggedCount = 0;
+        DragContext.Clear();
         RefreshAllUIs();
     }
 
@@ -145,9 +152,17 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
     void ReturnToOriginalSlot()
     {
         var s = GetOriginalSlot();
-        if (s.IsEmpty) s.Set(DragContext.draggedItem, DragContext.draggedCount);
-        else if (s.item == DragContext.draggedItem) s.AddCount(DragContext.draggedCount);
-        DragContext.draggedItem = null;
+        if (DragContext.draggedInstance == null) return;
+
+        if (s.IsEmpty)
+        {
+            s.SetInstance(DragContext.draggedInstance);
+        }
+        else if (s.instance != null && s.instance.CanStackWith(DragContext.draggedInstance))
+        {
+            s.AddCount(DragContext.draggedInstance.count);
+        }
+        DragContext.Clear();
     }
     void RefreshAllUIs()
     {

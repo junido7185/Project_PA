@@ -128,6 +128,8 @@ public class DialogueUI : MonoBehaviour
     {
         yield return new WaitForSeconds(autoHide);
         if (_panel != null) _panel.SetActive(false);
+        // 친밀도 UI 도 함께 숨김 — 대화창이 사라질 때 잔류하지 않도록
+        if (FriendshipUI.instance != null) FriendshipUI.instance.Hide();
     }
 
     // Space 키 등으로 즉시 닫기
@@ -136,5 +138,7 @@ public class DialogueUI : MonoBehaviour
         if (_typingCoroutine != null) StopCoroutine(_typingCoroutine);
         if (_hideCoroutine   != null) StopCoroutine(_hideCoroutine);
         if (_panel != null) _panel.SetActive(false);
+        // 친밀도 UI 동기 숨김
+        if (FriendshipUI.instance != null) FriendshipUI.instance.Hide();
     }
 }

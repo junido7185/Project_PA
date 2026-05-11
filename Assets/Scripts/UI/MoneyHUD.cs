@@ -82,8 +82,9 @@ public class MoneyHUD : MonoBehaviour
         moneyTRT.offsetMax = new Vector2(-10, -4);
 
         moneyText            = moneyGO.GetComponent<TextMeshProUGUI>();
-        moneyText.text       = "💰 0 G";
-        moneyText.fontSize   = 22;
+        // ⚠ v3: 💰 이모지 → 텍스트 "G" (Jalnan2 SDF 호환)
+        moneyText.text       = "0 G";
+        moneyText.fontSize   = 24;
         moneyText.fontStyle  = FontStyles.Bold;
         moneyText.color      = new Color(1f, 0.93f, 0.4f); // 골드
         moneyText.alignment  = TextAlignmentOptions.Right;
@@ -133,7 +134,7 @@ public class MoneyHUD : MonoBehaviour
     void OnMoneyChanged(int amount)
     {
         if (moneyText != null)
-            moneyText.text = $"💰 {amount:N0} G";
+            moneyText.text = $"{amount:N0} G"; // §v3: 💰 이모지 제거 (Jalnan2 SDF 미지원)
     }
 
     // TierService.OnTierAdvanced 는 (oldTier, newTier) 시그니처
