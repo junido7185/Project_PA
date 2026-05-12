@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 2
   itemName: Carrot
-  description: 
+  description: Reliable spring crop and cooking ingredient.
   icon: {fileID: 0}
   maxStack: 99
   model: {fileID: 0}

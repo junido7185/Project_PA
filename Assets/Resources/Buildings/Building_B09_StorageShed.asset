@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+  m_Name: Building_B09_StorageShed
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingData
+  buildingName: "\uCC3D\uACE0"
+  price: 600
+  prefab: {fileID: 5712844496858115523, guid: 11b3c0aaa9dc1f84492dcbf1a2532498, type: 3}
+  requiredTier: 0

@@ -73,36 +73,48 @@ public class StorageUI : MonoBehaviour
     }
 
     // 상자에서 아이템 꺼내기
+    // §02 ItemInstance 보존: 원형(Item) 으로 다시 생성하지 않고, 보관함에 들어있던
+    // ItemInstance 를 통째로 인벤토리에 넘겨 quality / currentPrice 를 잃지 않는다.
     void OnClickTakeItem(int index)
     {
         if (currentBox == null) return;
+        if (index < 0 || index >= currentBox.items.Count) return;
 
         ItemInstance inst = currentBox.items[index];
         if (inst == null || inst.data == null) return;
 
-        // 인벤토리에 넣기 (원형 템플릿 기반)
-        Inventory.instance.AddItem(inst.data, inst.count);
-
-        // 상자에서 빼기
-        currentBox.RemoveItem(index);
+        bool added = Inventory.instance.AddInstance(inst);
+        if (added || inst.count <= 0)
+        {
+            currentBox.RemoveItem(index);
+        }
+        // 부분 적재 (가방 일부만 비어있어 일부 수량만 들어간 경우) 는 inst.count 가 0 이상으로 남는다.
+        // 현재 정책: 메모리 내 inst.count 가 줄어들었다면 보관함에는 남은 수량으로 유지된다.
 
         UpdateUI();
-        // 인벤토리 UI도 갱신
         Inventory.instance.RefreshAllUI();
     }
 
     // 상자에 아이템 넣기
+    // §02 ItemInstance 보존: 핫바에서 선택된 인스턴스를 직접 가져와 quality/currentPrice 를 살린다.
+    // 한 번에 1개만 분리한다 (정밀 split UI 가 없는 MVP 단계 — TODO: 13주차 stack split UI).
     public void OnClickStoreItem()
     {
         if (currentBox == null) return;
 
-        // ⭐ [수정] ItemData -> Item
-        Item heldItem = Inventory.instance.GetSelectedItem();
-        if (heldItem == null) return;
+        ItemInstance heldInst = Inventory.instance.GetSelectedInstance();
+        if (heldInst == null || heldInst.data == null) return;
 
-        if (currentBox.AddItem(heldItem))
+        // count=1 짜리 새 인스턴스로 분할 — 원본 메타(quality/currentPrice) 복사
+        var splitInst = new ItemInstance(heldInst.data, 1)
         {
-            Inventory.instance.RemoveItems(heldItem, 1);
+            quality      = heldInst.quality,
+            currentPrice = heldInst.currentPrice,
+        };
+
+        if (currentBox.AddInstance(splitInst))
+        {
+            Inventory.instance.RemoveItems(heldInst.data, 1);
             UpdateUI();
             Inventory.instance.RefreshAllUI();
         }

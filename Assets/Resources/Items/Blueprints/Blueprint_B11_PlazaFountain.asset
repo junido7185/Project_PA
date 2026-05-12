@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Blueprint_B11_PlazaFountain
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 1011
+  itemName: "\uC124\uACC4\uB3C4: \uAD11\uC7A5 \uC911\uC2EC \uC2DC\uC124"
+  description: "\uAD11\uC7A5 \uC911\uC2EC \uC2DC\uC124\uC744(\uB97C) \uAC74\uC124\uD558\uB294
+    \uD504\uB85C\uD1A0\uD0C0\uC785 \uC124\uACC4\uB3C4\uC785\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  maxStack: 99
+  model: {fileID: 5456403139020086769, guid: 3d460cb2839763446bb3c4d27479e132, type: 3}
+  basePrice: 0
+  toolType: 4
+  category: 4
+  requiredTier: 2
+  buildingToBuild: {fileID: 11400000, guid: f8888ae15e1d48c40b20356717ea3116, type: 2}
+  cropPrefab: {fileID: 0}

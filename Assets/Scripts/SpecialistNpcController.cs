@@ -76,6 +76,7 @@ public class SpecialistNpcController : MonoBehaviour
     private State _currentState;
     private float _idleTimer;
     private float _craftTimer;
+    private bool _restoredFromSave;
 
     // 현재 가공 중인 레시피 + 이번 방문에서 남은 연속 가공 횟수.
     private RecipeData _currentRecipe;
@@ -99,7 +100,8 @@ public class SpecialistNpcController : MonoBehaviour
     void Start()
     {
         TryCacheWorkbench();
-        ChangeState(State.Idle);
+        if (!_restoredFromSave)
+            ChangeState(State.Idle);
     }
 
     void Update()
@@ -257,6 +259,43 @@ public class SpecialistNpcController : MonoBehaviour
         _schedulePaused = false;
         _idleTimer = 0f;
         _debugLastAction = "스케줄에 의해 재개됨";
+    }
+
+    public string GetFsmState()
+    {
+        return _currentState.ToString();
+    }
+
+    public void RestoreFsmState(string stateName)
+    {
+        if (!System.Enum.TryParse(stateName, out State restoredState))
+            restoredState = State.Idle;
+
+        _schedulePaused = false;
+        _restoredFromSave = true;
+        _idleTimer = 0f;
+        TryCacheWorkbench();
+
+        if (restoredState == State.CraftingAtBench && _currentRecipe == null)
+        {
+            _currentRecipe = FindViableRecipe();
+            _remainingCrafts = Mathf.Max(1, _remainingCrafts);
+            if (_currentRecipe == null)
+                restoredState = State.Idle;
+        }
+
+        ChangeState(restoredState);
+
+        if (_agent == null || !_agent.isOnNavMesh) return;
+
+        if (restoredState == State.MovingToWorkbench && targetWorkbench != null)
+        {
+            _agent.SetDestination(targetWorkbench.transform.position);
+        }
+        else
+        {
+            _agent.ResetPath();
+        }
     }
 
     /// <summary>HiringService.InjectProfile() 에서 SendMessage 로 호출된다.</summary>

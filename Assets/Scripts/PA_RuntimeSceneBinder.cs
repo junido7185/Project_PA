@@ -38,7 +38,8 @@ public static class PA_RuntimeSceneBinder
         EnsureComponent<FriendshipService>(services);
         EnsureComponent<BuildingRegistry>(services);
         EnsureComponent<SalesLogManager>(services);
-        EnsureComponent<SaveManager>(services);
+        var save = EnsureComponent<SaveManager>(services);
+        EnsureSaveBuildingTypes(save);
         EnsureComponent<GameManager>(services);
         EnsureComponent<AudioManager>(EnsureSceneRoot("AudioManager"));
         EnsureComponent<ScreenFader>(services);
@@ -157,6 +158,17 @@ public static class PA_RuntimeSceneBinder
             .Where(i => i != null)
             .OrderBy(i => i.id)
             .ThenBy(i => i.itemName)
+            .ToList();
+    }
+
+    static void EnsureSaveBuildingTypes(SaveManager save)
+    {
+        if (save == null) return;
+        if (save.allBuildingTypes != null && save.allBuildingTypes.Count > 0) return;
+
+        save.allBuildingTypes = Resources.LoadAll<BuildingData>("Buildings")
+            .Where(b => b != null && b.prefab != null)
+            .OrderBy(b => b.prefab.name)
             .ToList();
     }
 

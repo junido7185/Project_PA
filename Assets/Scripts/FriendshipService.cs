@@ -173,8 +173,18 @@ public class FriendshipService : MonoBehaviour
         EvaluateBlueprints(id, level);
     }
 
+    /// <summary>Restore the last day that dialogue points were granted for this friendship id.</summary>
+    public void ForceSetLastDialogueDay(string id, int day)
+    {
+        if (string.IsNullOrEmpty(id) || day <= 0) return;
+        _lastDialogueDay[id] = day;
+    }
+
     /// <summary>저장용 — 전체 id→points 딕셔너리를 반환한다.</summary>
     public IReadOnlyDictionary<string, int> GetAllPoints() => _points;
+
+    /// <summary>Save-only view of the daily dialogue cooldown map.</summary>
+    public IReadOnlyDictionary<string, int> GetAllLastDialogueDays() => _lastDialogueDay;
 
     /// <summary>모든 친밀도/해금을 초기화 (씬 로드 직전).</summary>
     public void Clear()

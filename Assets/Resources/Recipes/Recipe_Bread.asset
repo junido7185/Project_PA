@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: BreadLoaf
   icon: {fileID: 0}
-  description: 
+  description: 3 Wheat -> 1 BreadLoaf
   ingredients:
   - item: {fileID: 11400000, guid: f09473d97a45ad04d9b309533695a0de, type: 2}
     count: 3
   outputItem: {fileID: 11400000, guid: 6026edae76ecd114e991bb8bb5f0e365, type: 2}
   outputCount: 1
   baseOutputQuality: 1.2
-  ingredientQualityWeight: 0.3
+  ingredientQualityWeight: 0.35
   requiredTier: 0
   requiredWorkbench: 2
   inputItem: {fileID: 0}

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 6
   itemName: IronBar
-  description: 
+  description: Refined metal with strong utility demand.
   icon: {fileID: 0}
   maxStack: 99
   model: {fileID: 0}

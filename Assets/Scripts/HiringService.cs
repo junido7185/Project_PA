@@ -34,6 +34,8 @@ public class HiringService : MonoBehaviour
 
     // 이미 고용한 후보 (중복 고용 방지).
     private readonly HashSet<NpcCandidateData> _hired = new HashSet<NpcCandidateData>();
+    private readonly Dictionary<NpcCandidateData, GameObject> _spawnedByCandidate = new Dictionary<NpcCandidateData, GameObject>();
+    private readonly Dictionary<NpcCandidateData, string> _hiredIds = new Dictionary<NpcCandidateData, string>();
 
     // 스폰 포인트 라운드 로빈 인덱스.
     private int _spawnRotationIdx = 0;
@@ -46,6 +48,20 @@ public class HiringService : MonoBehaviour
 
     /// <summary>특정 후보가 이미 고용되었는지.</summary>
     public bool IsHired(NpcCandidateData candidate) => candidate != null && _hired.Contains(candidate);
+
+    public struct HiredNpcRuntimeRecord
+    {
+        public string HiredNpcId;
+        public NpcCandidateData Candidate;
+        public GameObject Instance;
+
+        public HiredNpcRuntimeRecord(string hiredNpcId, NpcCandidateData candidate, GameObject instance)
+        {
+            HiredNpcId = hiredNpcId;
+            Candidate = candidate;
+            Instance = instance;
+        }
+    }
 
     // -------- Unity 생명주기 --------
 
@@ -133,7 +149,7 @@ public class HiringService : MonoBehaviour
         InjectProfile(spawnedNpc, candidate);
 
         // 6. 기록
-        _hired.Add(candidate);
+        RegisterHired(candidate, spawnedNpc, BuildHiredNpcId(candidate));
         Debug.Log($"📝 고용 완료: [{candidate.ResolveDisplayName()}] ({candidate.specialty}) -{candidate.hireCost}G");
 
         OnHired?.Invoke(candidate, spawnedNpc);
@@ -143,8 +159,87 @@ public class HiringService : MonoBehaviour
     /// <summary>저장용 — 현재 고용된 후보 목록을 반환한다.</summary>
     public IReadOnlyCollection<NpcCandidateData> GetHiredCandidates() => _hired;
 
+    /// <summary>Save-only snapshot containing candidate data and the spawned scene instance.</summary>
+    public List<HiredNpcRuntimeRecord> GetHiredRuntimeRecords()
+    {
+        var records = new List<HiredNpcRuntimeRecord>(_hired.Count);
+        foreach (var candidate in _hired)
+        {
+            if (candidate == null) continue;
+            _spawnedByCandidate.TryGetValue(candidate, out GameObject instance);
+            _hiredIds.TryGetValue(candidate, out string hiredNpcId);
+            records.Add(new HiredNpcRuntimeRecord(
+                string.IsNullOrEmpty(hiredNpcId) ? BuildHiredNpcId(candidate) : hiredNpcId,
+                candidate,
+                instance));
+        }
+        return records;
+    }
+
+    /// <summary>Restore a hired NPC without tier checks or money spending.</summary>
+    public bool RestoreHiredNpc(
+        NpcCandidateData candidate,
+        string hiredNpcId,
+        Vector3 position,
+        Quaternion rotation,
+        string objectName,
+        out GameObject spawnedNpc)
+    {
+        spawnedNpc = null;
+        if (candidate == null || candidate.spawnPrefab == null) return false;
+
+        if (_hired.Contains(candidate))
+        {
+            if (_spawnedByCandidate.TryGetValue(candidate, out spawnedNpc) && spawnedNpc != null)
+            {
+                spawnedNpc.transform.SetPositionAndRotation(position, rotation);
+                if (!string.IsNullOrEmpty(objectName)) spawnedNpc.name = objectName;
+                return true;
+            }
+
+            _hired.Remove(candidate);
+            _spawnedByCandidate.Remove(candidate);
+            _hiredIds.Remove(candidate);
+        }
+
+        spawnedNpc = Instantiate(candidate.spawnPrefab, position, rotation);
+        spawnedNpc.name = string.IsNullOrEmpty(objectName) ? candidate.ResolveDisplayName() : objectName;
+        InjectProfile(spawnedNpc, candidate);
+        RegisterHired(candidate, spawnedNpc, string.IsNullOrEmpty(hiredNpcId) ? BuildHiredNpcId(candidate) : hiredNpcId);
+        OnHired?.Invoke(candidate, spawnedNpc);
+        return true;
+    }
+
+    /// <summary>Restore a hired NPC at the configured spawn point.</summary>
+    public bool RestoreHiredNpc(
+        NpcCandidateData candidate,
+        string hiredNpcId,
+        string objectName,
+        out GameObject spawnedNpc)
+    {
+        Vector3 position = ResolveSpawnPosition();
+        Quaternion rotation = ResolveSpawnRotation();
+        return RestoreHiredNpc(candidate, hiredNpcId, position, rotation, objectName, out spawnedNpc);
+    }
+
     /// <summary>디버그/치트: 고용 목록을 초기화한다 (세이브 로드 전 사용).</summary>
-    public void ClearHired() => _hired.Clear();
+    public void ClearHired(bool destroySpawnedInstances = false)
+    {
+        if (destroySpawnedInstances)
+        {
+            var spawned = new List<GameObject>(_spawnedByCandidate.Values);
+            foreach (var go in spawned)
+            {
+                if (go == null) continue;
+                if (Application.isPlaying) Destroy(go);
+                else DestroyImmediate(go);
+            }
+        }
+
+        _hired.Clear();
+        _spawnedByCandidate.Clear();
+        _hiredIds.Clear();
+    }
 
     // -------- 내부: 프리팹 profile 주입 --------
 
@@ -170,6 +265,19 @@ public class HiringService : MonoBehaviour
         // SpecialistNpcController 는 Task #19 에서 추가. 컴파일 순서 문제를 피하기 위해
         // GetComponent<MonoBehaviour>() 로 받고 SendMessage 로 주입하면 리플렉션 없이 연결할 수 있다.
         npcGo.SendMessage("ApplySpecialty", candidate.specialty, SendMessageOptions.DontRequireReceiver);
+    }
+
+    private void RegisterHired(NpcCandidateData candidate, GameObject spawnedNpc, string hiredNpcId)
+    {
+        if (candidate == null) return;
+        _hired.Add(candidate);
+        _hiredIds[candidate] = string.IsNullOrEmpty(hiredNpcId) ? BuildHiredNpcId(candidate) : hiredNpcId;
+        if (spawnedNpc != null) _spawnedByCandidate[candidate] = spawnedNpc;
+    }
+
+    private string BuildHiredNpcId(NpcCandidateData candidate)
+    {
+        return candidate != null ? candidate.name : string.Empty;
     }
 
     // -------- 내부: 스폰 위치 해석 --------

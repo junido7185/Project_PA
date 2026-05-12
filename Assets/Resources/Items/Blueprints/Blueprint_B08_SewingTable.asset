@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Blueprint_B08_SewingTable
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 1008
+  itemName: "\uC124\uACC4\uB3C4: \uC7AC\uBD09 \uC2A4\uD14C\uC774\uC158"
+  description: "\uC7AC\uBD09 \uC2A4\uD14C\uC774\uC158\uC744(\uB97C) \uAC74\uC124\uD558\uB294
+    \uD504\uB85C\uD1A0\uD0C0\uC785 \uC124\uACC4\uB3C4\uC785\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  maxStack: 99
+  model: {fileID: 8902362288052024604, guid: b5aa163b0a36a9b48bc00dc2f5d26653, type: 3}
+  basePrice: 0
+  toolType: 4
+  category: 4
+  requiredTier: 1
+  buildingToBuild: {fileID: 11400000, guid: 1cfc8689d16e2734fb33cd3342a6fc15, type: 2}
+  cropPrefab: {fileID: 0}

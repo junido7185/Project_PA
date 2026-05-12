@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 7
   itemName: Plank
-  description: 
+  description: Processed wood for furniture and tools.
   icon: {fileID: 0}
   maxStack: 99
   model: {fileID: 0}

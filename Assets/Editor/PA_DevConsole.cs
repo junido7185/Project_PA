@@ -213,7 +213,21 @@ public class PA_DevConsole : EditorWindow
         EditorGUILayout.LabelField("🚀 원클릭 작업 (가장 자주 쓰는 버튼)", EditorStyles.boldLabel);
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-        // 큰 메인 버튼
+        // 🚀 NEW: 수직 슬라이스 + Demo Seed (5분 안에 플레이 가능 상태)
+        var sliceBtn = new GUIStyle(GUI.skin.button)
+        {
+            fontSize = 14,
+            fontStyle = FontStyle.Bold,
+            fixedHeight = 46,
+        };
+        GUI.backgroundColor = new Color(0.45f, 0.75f, 1.00f);
+        if (GUILayout.Button("🚀  수직 슬라이스 빌드  +  🌱 Demo Seed  (모두 자동 구축 → 50000G/Hotbar/Inventory/Shop 진열)", sliceBtn))
+            PA_VerticalSlice.Build();
+        GUI.backgroundColor = Color.white;
+
+        EditorGUILayout.Space(2);
+
+        // 큰 메인 버튼 (Demo Seed 없는 순수 빌드)
         var bigBtn = new GUIStyle(GUI.skin.button)
         {
             fontSize = 14,
@@ -225,6 +239,18 @@ public class PA_DevConsole : EditorWindow
         if (GUILayout.Button("🛠  모두 자동 구축 (Clean → Data → Scene → UI → Wire → Validate)", bigBtn))
             Action_FullRebuild();
         GUI.backgroundColor = Color.white;
+
+        // 🌱 Demo Seed 단독 실행
+        EditorGUILayout.Space(2);
+        EditorGUILayout.BeginHorizontal();
+        GUI.backgroundColor = new Color(0.85f, 1.00f, 0.65f);
+        if (GUILayout.Button("🌱 Demo Seed Only\n(테스트 데이터만 주입)", GUILayout.Height(40)))
+            PA_DemoSeed.ApplyMenu();
+        GUI.backgroundColor = new Color(0.65f, 0.85f, 1f);
+        if (GUILayout.Button("🔎 수직 슬라이스 검증\n(Shop·Workbench·NPC·Save·Item)", GUILayout.Height(40)))
+            PA_VerticalSlice.ValidateMenu();
+        GUI.backgroundColor = Color.white;
+        EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.HelpBox(
             "⌨ Ctrl+R 단축키. 처음이거나 씬이 망가졌을 때 이 버튼 하나만 누르면 됩니다.",
@@ -262,6 +288,9 @@ public class PA_DevConsole : EditorWindow
         DrawBuilderRow("4️⃣ UI 자동 구축",
             "Canvas/Hotbar/Inventory/Smartphone/Tooltip 재구성",
             () => SafeRun(PA_UIBuilder.BuildUISystem));
+        DrawBuilderRow("5️⃣ 빌딩 콘텐츠 통합",
+            "B01~B12 모델을 프리팹/BuildingData/설계도/씬 모델로 연결",
+            () => SafeRun(() => PA_ContentAutoIntegrator.BuildAll(showDialog: true)));
 
         EditorGUILayout.EndVertical();
     }
@@ -549,6 +578,63 @@ public class PA_DevConsole : EditorWindow
             Status = navSurfaceType != null && hasNavSurface ? ItemStatus.OK : ItemStatus.Warning,
         });
 
+        // ── 수직 슬라이스 검증 (Docs/06 §1) ────────────────────────────────
+        // ① Shop / ShopSlot — 진열 가능한 슬롯 수
+        var shops = UnityEngine.Object.FindObjectsByType<Shop>(FindObjectsSortMode.None);
+        int shopSlotTotal = shops.Sum(s => s.GetComponentsInChildren<ShopSlot>(true).Length);
+        rep.Items.Add(new DiagItem
+        {
+            Label  = "Shop · ShopSlot",
+            Detail = $"{shops.Length} Shop, {shopSlotTotal} 슬롯",
+            Status = shops.Length > 0 && shopSlotTotal >= 4 ? ItemStatus.OK :
+                     shops.Length > 0 ? ItemStatus.Warning : ItemStatus.Error,
+        });
+
+        // ② Workbench 종류 — Basic/Kitchen/Forge/SewingTable 4종 권장
+        var benches = UnityEngine.Object.FindObjectsByType<Workbench>(FindObjectsSortMode.None);
+        var benchTypes = benches.Select(b => b.workbenchType).Distinct().Count();
+        rep.Items.Add(new DiagItem
+        {
+            Label  = "Workbench 종류",
+            Detail = $"{benches.Length}개, {benchTypes}/4 타입",
+            Status = benchTypes >= 1 ? (benchTypes == 4 ? ItemStatus.OK : ItemStatus.Warning) : ItemStatus.Error,
+        });
+
+        // ③ SaveManager.allBuildingTypes — 12종 등록 권장
+        var save = UnityEngine.Object.FindFirstObjectByType<SaveManager>();
+        int btCount = save != null ? (save.allBuildingTypes?.Count ?? 0) : 0;
+        rep.Items.Add(new DiagItem
+        {
+            Label  = "Save.allBuildingTypes",
+            Detail = $"{btCount}/12",
+            Status = btCount >= 12 ? ItemStatus.OK : (btCount > 0 ? ItemStatus.Warning : ItemStatus.Error),
+        });
+
+        // ④ NPC NavMeshAgent 부착률
+        int withAgent = npcs.Count(n => n != null && n.GetComponent<UnityEngine.AI.NavMeshAgent>() != null);
+        rep.Items.Add(new DiagItem
+        {
+            Label  = "NPC NavMeshAgent",
+            Detail = npcs.Length == 0 ? "NPC 없음" : $"{withAgent}/{npcs.Length}",
+            Status = npcs.Length == 0 ? ItemStatus.Warning :
+                     withAgent == npcs.Length ? ItemStatus.OK : ItemStatus.Error,
+        });
+
+        // ⑤ NPC NavMesh 위 배치 (Bake 후 isOnNavMesh)
+        int onMesh = npcs.Count(n =>
+        {
+            if (n == null) return false;
+            var ag = n.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            return ag != null && ag.isOnNavMesh;
+        });
+        rep.Items.Add(new DiagItem
+        {
+            Label  = "NPC on NavMesh",
+            Detail = npcs.Length == 0 ? "NPC 없음" : $"{onMesh}/{npcs.Length}",
+            Status = npcs.Length == 0 ? ItemStatus.Warning :
+                     onMesh == npcs.Length ? ItemStatus.OK : ItemStatus.Warning,
+        });
+
         return rep;
     }
 
@@ -565,10 +651,11 @@ public class PA_DevConsole : EditorWindow
             "  2. 데이터 부트스트랩\n" +
             "  3. 누락 데이터 보완\n" +
             "  4. 씬 자동 빌드\n" +
-            "  5. UI 자동 구축\n" +
-            "  6. 🔤 Jalnan2 한글 폰트 적용\n" +
-            "  7. 자동 수리 (TimeScale·EventSystem·슬롯 색상…)\n" +
-            "  8. 씬 검증\n\n" +
+            "  5. 빌딩 콘텐츠 통합\n" +
+            "  6. UI 자동 구축\n" +
+            "  7. 🔤 Jalnan2 한글 폰트 적용\n" +
+            "  8. 자동 수리 (TimeScale·EventSystem·슬롯 색상…)\n" +
+            "  9. 씬 검증\n\n" +
             "약 5~8초 소요. 계속하시겠습니까?",
             "진행", "취소")) return;
 
@@ -578,30 +665,36 @@ public class PA_DevConsole : EditorWindow
             Log("─── 🛠 모두 자동 구축 시작 ───");
 
             CleanScene();
-            Log("✅ 1/7 씬 청소");
+            Log("✅ 1/9 씬 청소");
 
             PA_DataBootstrapper_BootstrapAll();
-            Log("✅ 2/7 데이터 부트스트랩");
+            Log("✅ 2/9 데이터 부트스트랩");
 
             PA_DataCreator.CreateAll();
-            Log("✅ 3/7 누락 데이터 보완");
+            Log("✅ 3/9 누락 데이터 보완");
 
             PA_SceneAutoBuilder.BuildFullScene();
-            Log("✅ 4/7 씬 빌드");
+            Log("✅ 4/9 씬 빌드");
+
+            PA_ContentAutoIntegrator.BuildAll(showDialog: false);
+            Log("✅ 5/9 빌딩 콘텐츠 통합");
+
+            PA_MapLayoutBuilder.Build(showDialog: false);
+            Log("✅ 5.5/9 맵 레이아웃 (Docs/08 §마을 레이아웃)");
 
             PA_UIBuilder.BuildUISystem();
-            Log("✅ 5/8 UI 빌드");
+            Log("✅ 6/9 UI 빌드");
 
             // ⚠ v3 신규 단계: Jalnan2 폰트를 모든 신규 TMP_Text 에 즉시 강제 적용
             //   (UI 빌드 직후 → 한글 깨짐 방지)
             PA_TMPFontFixer.Apply();
-            Log("✅ 6/8 한글 폰트 적용");
+            Log("✅ 7/9 한글 폰트 적용");
 
             AutoFixAll();
-            Log("✅ 7/8 자동 수리");
+            Log("✅ 8/9 자동 수리");
 
             PA_SceneValidator.Validate();
-            Log("✅ 8/8 씬 검증");
+            Log("✅ 9/9 씬 검증");
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             _report = Diagnose();
@@ -690,6 +783,7 @@ public class PA_DevConsole : EditorWindow
         // 4) 기타 싱글톤 중복 제거
         n += RemoveDuplicateSingletons(silent: true);
         n += RemoveDuplicateNamedSceneObjects("[Services]", "PA_UIRoot", "AudioManager", "PA_RuntimeUI", "ShopPriceUI");
+        n += PA_NpcDuplicateGuard.RepairGeneratedNpcDuplicates();
 
         // 5) HiringService.availableCandidates 자동 채움
         var hiring = UnityEngine.Object.FindFirstObjectByType<HiringService>();
@@ -746,9 +840,16 @@ public class PA_DevConsole : EditorWindow
         n += EnsureNpcModelImportSettings();
         n += EnsureNpcAssetsAndHooks();
         n += EnsurePlayerEditorHooks();
+        n += PA_ContentAutoIntegrator.RepairGeneratedContent(showDialog: false);
+
+        // 🗺 맵 레이아웃 자동 정렬 (Docs/08 §마을 레이아웃) — 멱등
+        n += PA_MapLayoutBuilder.Build(showDialog: false);
 
         if (TryBakeNavMesh(showDialogs: false, log: Log, out bool navSurfaceAdded) && navSurfaceAdded)
             n++;
+
+        // 🧭 NPC NavMeshAgent 자동 부착 + NavMesh 스냅 (Bake 후라야 의미 있음)
+        n += EnsureNpcNavmeshAgents();
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Debug.Log($"[PA AutoFix] 총 {n}개 수정");
@@ -1274,6 +1375,44 @@ public class PA_DevConsole : EditorWindow
             }
         }
 
+        return changed;
+    }
+
+    // 🧭 NPC 마다 NavMeshAgent 자동 부착 + Bake 된 NavMesh 위로 스냅.
+    // NavMeshSurface 가 Bake 되어 있을 때만 실제 스냅이 일어난다 (NavMesh.SamplePosition).
+    static int EnsureNpcNavmeshAgents()
+    {
+        int changed = 0;
+        var npcs = UnityEngine.Object.FindObjectsByType<NpcController>(FindObjectsSortMode.None);
+        foreach (var npc in npcs)
+        {
+            if (npc == null) continue;
+
+            var agent = npc.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent == null)
+            {
+                agent = npc.gameObject.AddComponent<UnityEngine.AI.NavMeshAgent>();
+                agent.height = 1.8f;
+                agent.radius = 0.4f;
+                agent.speed  = 2.5f;
+                agent.angularSpeed = 360f;
+                agent.acceleration = 8f;
+                EditorUtility.SetDirty(npc.gameObject);
+                changed++;
+            }
+
+            // NavMesh 스냅 (Bake 안 되어있으면 SamplePosition 이 false 반환 → 무시)
+            if (UnityEngine.AI.NavMesh.SamplePosition(
+                    npc.transform.position, out var hit, 5f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                if (Vector3.Distance(npc.transform.position, hit.position) > 0.1f)
+                {
+                    npc.transform.position = hit.position;
+                    EditorUtility.SetDirty(npc.transform);
+                    changed++;
+                }
+            }
+        }
         return changed;
     }
 

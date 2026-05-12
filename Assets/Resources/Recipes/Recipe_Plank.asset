@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: Plank
   icon: {fileID: 0}
-  description: 
+  description: 2 Wood -> 1 Plank
   ingredients:
   - item: {fileID: 11400000, guid: a059185af048eab4bb38e0a3b4b62602, type: 2}
     count: 2
   outputItem: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
   outputCount: 1
   baseOutputQuality: 1.2
-  ingredientQualityWeight: 0.3
+  ingredientQualityWeight: 0.22
   requiredTier: 0
   requiredWorkbench: 1
   inputItem: {fileID: 0}

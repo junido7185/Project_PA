@@ -570,6 +570,7 @@ public static class PA_SceneAutoBuilder
         Dictionary<WorkbenchType, Workbench> workbenches,
         Dictionary<string, Transform>        markers)
     {
+        PA_NpcDuplicateGuard.PrepareForSceneAutoBuild();
         var parent = new GameObject("[NPCs]");
 
         // 생산형 NPC (Farmer / Miner / Lumberjack)

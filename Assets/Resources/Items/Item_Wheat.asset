@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 1
   itemName: Wheat
-  description: 
+  description: Basic crop used for early cooking.
   icon: {fileID: 0}
   maxStack: 99
   model: {fileID: 0}

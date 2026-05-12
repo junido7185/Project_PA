@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 15
   itemName: "\uC528\uC557"
-  description: "\uC2EC\uC73C\uBA74 \uC791\uBB3C\uC774 \uC790\uB780\uB2E4."
+  description: "\uC791\uBB3C \uC7AC\uBC30\uB97C \uC2DC\uC791\uD558\uB294 \uAE30\uBCF8
+    \uC18C\uBAA8\uD488."
   icon: {fileID: 0}
   maxStack: 64
   model: {fileID: 0}

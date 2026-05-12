@@ -73,6 +73,7 @@ public class NpcController : MonoBehaviour
     private readonly HashSet<ShopSlot> _visitedSlots = new HashSet<ShopSlot>();
     private bool _arrivedAtSlot;
     private float _browseTimer;
+    private bool _restoredFromSave;
 
     private string DisplayName => profile != null && !string.IsNullOrEmpty(profile.npcName) ? profile.npcName : gameObject.name;
 
@@ -101,7 +102,8 @@ public class NpcController : MonoBehaviour
     {
         if (_dialogue == null) _dialogue = GetComponent<NpcDialogue>();
         TryCacheShopReference();
-        ChangeState(State.Idle);
+        if (!_restoredFromSave)
+            ChangeState(State.Idle);
     }
 
     void Update()
@@ -416,6 +418,43 @@ public class NpcController : MonoBehaviour
         if (shopLocation == null || _activeShop == null) return;
 
         BeginShoppingVisit();
+    }
+
+    public string GetFsmState()
+    {
+        return currentState.ToString();
+    }
+
+    public void RestoreFsmState(string stateName)
+    {
+        if (!System.Enum.TryParse(stateName, out State restoredState))
+            restoredState = State.Idle;
+
+        _schedulePaused = false;
+        _restoredFromSave = true;
+        _currentSlotTarget = null;
+        _visitedSlots.Clear();
+        _arrivedAtSlot = false;
+        _browseTimer = 0f;
+        idleTimer = 0f;
+
+        TryCacheShopReference();
+        ChangeState(restoredState);
+
+        if (agent == null || !agent.isOnNavMesh) return;
+
+        if (restoredState == State.MovingToShop && shopLocation != null)
+        {
+            agent.SetDestination(shopLocation.position);
+        }
+        else if (restoredState == State.BrowsingShop)
+        {
+            PickNextSlotToBrowse();
+        }
+        else
+        {
+            agent.ResetPath();
+        }
     }
 
     // ---------- 상태 전환 ----------

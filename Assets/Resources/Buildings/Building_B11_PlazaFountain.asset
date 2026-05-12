@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+  m_Name: Building_B11_PlazaFountain
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingData
+  buildingName: "\uAD11\uC7A5 \uC911\uC2EC \uC2DC\uC124"
+  price: 5000
+  prefab: {fileID: 5456403139020086769, guid: 3d460cb2839763446bb3c4d27479e132, type: 3}
+  requiredTier: 2

@@ -83,6 +83,7 @@ public class ProducerNpcController : MonoBehaviour
     private State _currentState;
     private float _idleTimer;
     private float _productionTimer;
+    private bool _restoredFromSave;
 
     // 작업 중 남은 생산량 (사이클당)
     private int _pendingProductionAmount;
@@ -105,7 +106,8 @@ public class ProducerNpcController : MonoBehaviour
     void Start()
     {
         TryCacheDropOffPoint();
-        ChangeState(State.Idle);
+        if (!_restoredFromSave)
+            ChangeState(State.Idle);
     }
 
     void Update()
@@ -374,6 +376,42 @@ public class ProducerNpcController : MonoBehaviour
         _schedulePaused = false;
         _idleTimer = 0f; // 즉시 틱 평가되지 않도록 타이머 리셋
         _debugLastAction = "스케줄에 의해 재개됨";
+    }
+
+    public string GetFsmState()
+    {
+        return _currentState.ToString();
+    }
+
+    public void RestoreFsmState(string stateName)
+    {
+        if (!System.Enum.TryParse(stateName, out State restoredState))
+            restoredState = State.Idle;
+
+        _schedulePaused = false;
+        _restoredFromSave = true;
+        _idleTimer = 0f;
+        TryCacheDropOffPoint();
+
+        if (restoredState == State.Working && _pendingProductionAmount <= 0)
+            _pendingProductionAmount = CalculateProductionAmount();
+
+        ChangeState(restoredState);
+
+        if (_agent == null || !_agent.isOnNavMesh) return;
+
+        if (restoredState == State.MovingToWorkspot && workSpot != null)
+        {
+            _agent.SetDestination(workSpot.position);
+        }
+        else if (restoredState == State.MovingToDropOff && dropOffPoint != null)
+        {
+            _agent.SetDestination(dropOffPoint.position);
+        }
+        else
+        {
+            _agent.ResetPath();
+        }
     }
 
     // -------- 상태 전환 --------

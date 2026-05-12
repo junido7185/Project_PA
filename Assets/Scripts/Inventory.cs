@@ -22,9 +22,22 @@ public class Inventory : MonoBehaviour
         if (instance != null) { Destroy(gameObject); return; }
         instance = this;
 
-        // 슬롯 초기화
-        slots = new List<InventorySlot>(new InventorySlot[size]);
-        for (int i = 0; i < size; i++) slots[i] = new InventorySlot();
+        // ⚠ Demo Seed/Editor 주입 보존: Edit 모드에서 미리 채워둔 slots 가
+        // Play 진입 시 새 List 로 덮어써져 사라지는 사고를 방지한다.
+        // size 와 일치하고 각 칸이 null 이 아니면 그대로 둔다.
+        EnsureSlots();
+    }
+
+    void EnsureSlots()
+    {
+        if (slots == null || slots.Count != size)
+        {
+            slots = new List<InventorySlot>(new InventorySlot[size]);
+            for (int i = 0; i < size; i++) slots[i] = new InventorySlot();
+            return;
+        }
+        for (int i = 0; i < size; i++)
+            if (slots[i] == null) slots[i] = new InventorySlot();
     }
 
     // ⭐ [호환 함수 1] 현재 손에 든(핫바에서 선택된) 아이템 원형(Item) 가져오기

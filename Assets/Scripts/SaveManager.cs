@@ -21,7 +21,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 3;
+    private const int CurrentSaveVersion = 4;
 
     void Awake()
     {
@@ -88,26 +88,20 @@ public class SaveManager : MonoBehaviour
         // 5. 감사 시스템
         data.lastAuditDay = AuditService.Instance != null ? AuditService.Instance.LastAuditDay : 0;
 
-        // 6. 친밀도 — v3
+        // 6. 친밀도 — v4
         if (FriendshipService.Instance != null)
         {
-            data.friendshipData = new List<FriendshipRecord>();
-            foreach (var kv in FriendshipService.Instance.GetAllPoints())
-                data.friendshipData.Add(new FriendshipRecord { friendshipId = kv.Key, points = kv.Value });
+            data.friendshipData = SerializeFriendship();
         }
 
-        // 7. 채용 NPC — v3 (spawnPrefab 이 있는 고용된 후보만)
+        // 7. 채용 NPC — v4 (id, transform, FSM state)
         data.hiredNpcs = new List<HiredNpcRecord>();
         if (HiringService.Instance != null)
         {
-            foreach (var cand in HiringService.Instance.GetHiredCandidates())
+            foreach (var runtime in HiringService.Instance.GetHiredRuntimeRecords())
             {
-                data.hiredNpcs.Add(new HiredNpcRecord
-                {
-                    candidateAssetName = cand.name, // SO 에셋 파일명
-                    spawnPosition      = Vector3.zero,
-                    spawnRotation      = Quaternion.identity
-                });
+                var record = SerializeHiredNpc(runtime);
+                if (record != null) data.hiredNpcs.Add(record);
             }
         }
 
@@ -151,6 +145,9 @@ public class SaveManager : MonoBehaviour
         }
 
         // 3. 인게임 시간 복구
+        // ⚠ Week11 검증: 마이그레이션 분기 바깥에서 무조건 호출되어야 v4 최신 세이브도 시간/일차가
+        //    복구된다. 만약 이 블록을 if (data.version < CurrentSaveVersion) 안으로 옮기면
+        //    저장 직후 로드한 사용자의 시간이 1일 7시로 리셋되는 회귀가 발생한다. 절대 옮기지 말 것.
         if (GameClock.Instance != null)
         {
             GameClock.Instance.ForceSet(data.gameHour, data.gameDay, "SaveManager.LoadGame");
@@ -169,24 +166,18 @@ public class SaveManager : MonoBehaviour
         if (AuditService.Instance != null)
             AuditService.Instance.ForceSetLastAuditDay(data.lastAuditDay);
 
-        // 3-b. 친밀도 복구 — v3
+        // 3-b. 친밀도 복구 — v4
         if (FriendshipService.Instance != null && data.friendshipData != null)
         {
             FriendshipService.Instance.Clear();
             foreach (var fr in data.friendshipData)
-                FriendshipService.Instance.ForceSetPoints(fr.friendshipId, fr.points);
-        }
-
-        // 3-c. 채용 NPC 재스폰 — v3 (spawnPrefab 연결 후 유효)
-        if (HiringService.Instance != null && data.hiredNpcs != null)
-        {
-            HiringService.Instance.ClearHired();
-            foreach (var hr in data.hiredNpcs)
             {
-                var cand = Resources.Load<NpcCandidateData>($"Candidates/{hr.candidateAssetName}");
-                if (cand != null) HiringService.Instance.TryHire(cand, out _);
+                FriendshipService.Instance.ForceSetPoints(fr.friendshipId, fr.points);
+                FriendshipService.Instance.ForceSetLastDialogueDay(fr.friendshipId, fr.lastDialogueDay);
             }
         }
+
+        // Hired NPCs are restored after buildings and inventory so FSM targets can be resolved.
 
         // 3-b. 기존 건물 제거 — 레지스트리가 보유한 목록만 정확히 파괴한다.
         if (BuildingRegistry.Instance != null)
@@ -232,6 +223,8 @@ public class SaveManager : MonoBehaviour
             Inventory.instance.RefreshAllUI();
         }
 
+        RestoreHiredNpcs(data.hiredNpcs);
+
         Debug.Log($"📂 로드 완료! (건물 {count}개, 인벤토리/핫바 복구)");
     }
 
@@ -271,7 +264,172 @@ public class SaveManager : MonoBehaviour
             Debug.Log("💾 마이그레이션 v2→v3: 친밀도 + 채용 필드 추가");
         }
 
+        // v3 → v4: friendship daily cooldown, hired NPC transform/FSM state.
+        if (data.version < 4)
+        {
+            if (data.friendshipData == null) data.friendshipData = new List<FriendshipRecord>();
+            foreach (var friendship in data.friendshipData)
+            {
+                if (friendship == null) continue;
+                if (friendship.lastDialogueDay < 0) friendship.lastDialogueDay = 0;
+            }
+
+            if (data.hiredNpcs == null) data.hiredNpcs = new List<HiredNpcRecord>();
+            foreach (var hired in data.hiredNpcs)
+            {
+                if (hired == null) continue;
+                if (string.IsNullOrEmpty(hired.hiredNpcId)) hired.hiredNpcId = hired.candidateAssetName;
+                if (string.IsNullOrEmpty(hired.activeFsm)) hired.activeFsm = "None";
+                if (string.IsNullOrEmpty(hired.consumerFsmState)) hired.consumerFsmState = "Idle";
+                if (string.IsNullOrEmpty(hired.producerFsmState)) hired.producerFsmState = "Idle";
+                if (string.IsNullOrEmpty(hired.specialistFsmState)) hired.specialistFsmState = "Idle";
+                hired.hasTransform = false;
+            }
+
+            data.version = 4;
+            Debug.Log("💾 마이그레이션 v3→v4: 친밀도 일일 제한 + 고용 NPC 상태 필드 추가");
+        }
+
         return data;
+    }
+
+    void RestoreHiredNpcs(List<HiredNpcRecord> hiredNpcs)
+    {
+        if (HiringService.Instance == null || hiredNpcs == null) return;
+
+        HiringService.Instance.ClearHired(true);
+        foreach (var hr in hiredNpcs)
+        {
+            if (hr == null || string.IsNullOrEmpty(hr.candidateAssetName)) continue;
+
+            var candidate = Resources.Load<NpcCandidateData>($"Candidates/{hr.candidateAssetName}");
+            if (candidate == null)
+            {
+                Debug.LogWarning($"⚠️ 고용 NPC 복구 실패: Candidates/{hr.candidateAssetName} 없음");
+                continue;
+            }
+
+            GameObject npc;
+            bool restored = hr.hasTransform
+                ? HiringService.Instance.RestoreHiredNpc(candidate, hr.hiredNpcId, hr.position, hr.rotation, hr.npcObjectName, out npc)
+                : HiringService.Instance.RestoreHiredNpc(candidate, hr.hiredNpcId, hr.npcObjectName, out npc);
+
+            if (restored) RestoreHiredNpcFsm(npc, hr);
+        }
+    }
+
+    List<FriendshipRecord> SerializeFriendship()
+    {
+        var records = new List<FriendshipRecord>();
+        var indexById = new Dictionary<string, FriendshipRecord>();
+
+        foreach (var kv in FriendshipService.Instance.GetAllPoints())
+        {
+            if (string.IsNullOrEmpty(kv.Key)) continue;
+            var record = new FriendshipRecord
+            {
+                friendshipId = kv.Key,
+                points = kv.Value,
+                lastDialogueDay = 0
+            };
+            records.Add(record);
+            indexById[kv.Key] = record;
+        }
+
+        foreach (var kv in FriendshipService.Instance.GetAllLastDialogueDays())
+        {
+            if (string.IsNullOrEmpty(kv.Key)) continue;
+            if (!indexById.TryGetValue(kv.Key, out FriendshipRecord record))
+            {
+                record = new FriendshipRecord
+                {
+                    friendshipId = kv.Key,
+                    points = FriendshipService.Instance.GetPoints(kv.Key)
+                };
+                records.Add(record);
+                indexById[kv.Key] = record;
+            }
+            record.lastDialogueDay = kv.Value;
+        }
+
+        return records;
+    }
+
+    HiredNpcRecord SerializeHiredNpc(HiringService.HiredNpcRuntimeRecord runtime)
+    {
+        if (runtime.Candidate == null) return null;
+
+        var record = new HiredNpcRecord
+        {
+            hiredNpcId = runtime.HiredNpcId,
+            candidateAssetName = runtime.Candidate.name,
+            npcObjectName = runtime.Instance != null ? runtime.Instance.name : runtime.Candidate.ResolveDisplayName(),
+            hasTransform = runtime.Instance != null,
+            position = runtime.Instance != null ? runtime.Instance.transform.position : Vector3.zero,
+            rotation = runtime.Instance != null ? runtime.Instance.transform.rotation : Quaternion.identity,
+            spawnPosition = runtime.Instance != null ? runtime.Instance.transform.position : Vector3.zero,
+            spawnRotation = runtime.Instance != null ? runtime.Instance.transform.rotation : Quaternion.identity,
+            activeFsm = "None",
+            consumerFsmState = "Idle",
+            producerFsmState = "Idle",
+            specialistFsmState = "Idle"
+        };
+
+        if (runtime.Instance != null)
+            CaptureHiredNpcFsm(runtime.Instance, record);
+
+        return record;
+    }
+
+    void CaptureHiredNpcFsm(GameObject npc, HiredNpcRecord record)
+    {
+        var consumer = npc.GetComponent<NpcController>();
+        if (consumer != null)
+        {
+            record.consumerFsmState = consumer.GetFsmState();
+            if (record.consumerFsmState != "Idle") record.activeFsm = "Consumer";
+        }
+
+        var producer = npc.GetComponent<ProducerNpcController>();
+        if (producer != null)
+        {
+            record.producerFsmState = producer.GetFsmState();
+            if (record.producerFsmState != "Idle") record.activeFsm = "Producer";
+        }
+
+        var specialist = npc.GetComponent<SpecialistNpcController>();
+        if (specialist != null)
+        {
+            record.specialistFsmState = specialist.GetFsmState();
+            if (record.specialistFsmState != "Idle") record.activeFsm = "Specialist";
+        }
+    }
+
+    void RestoreHiredNpcFsm(GameObject npc, HiredNpcRecord record)
+    {
+        if (npc == null || record == null) return;
+
+        var consumer = npc.GetComponent<NpcController>();
+        var producer = npc.GetComponent<ProducerNpcController>();
+        var specialist = npc.GetComponent<SpecialistNpcController>();
+
+        bool consumerActive = record.activeFsm == "Consumer";
+        bool producerActive = record.activeFsm == "Producer";
+        bool specialistActive = record.activeFsm == "Specialist";
+
+        if (consumer != null && !consumerActive)
+            consumer.RestoreFsmState(string.IsNullOrEmpty(record.consumerFsmState) ? "Idle" : record.consumerFsmState);
+        if (producer != null && !producerActive)
+            producer.RestoreFsmState(string.IsNullOrEmpty(record.producerFsmState) ? "Idle" : record.producerFsmState);
+        if (specialist != null && !specialistActive)
+            specialist.RestoreFsmState(string.IsNullOrEmpty(record.specialistFsmState) ? "Idle" : record.specialistFsmState);
+
+        if (consumer != null && consumerActive)
+            consumer.RestoreFsmState(string.IsNullOrEmpty(record.consumerFsmState) ? "Idle" : record.consumerFsmState);
+        if (producer != null && producerActive)
+            producer.RestoreFsmState(string.IsNullOrEmpty(record.producerFsmState) ? "Idle" : record.producerFsmState);
+        if (specialist != null && specialistActive)
+            specialist.RestoreFsmState(string.IsNullOrEmpty(record.specialistFsmState) ? "Idle" : record.specialistFsmState);
     }
 
     // -------- 슬롯 직렬화 헬퍼 --------

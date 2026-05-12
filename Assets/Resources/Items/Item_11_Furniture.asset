@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 11
   itemName: "\uBAA9\uC81C \uAC00\uAD6C"
-  description: "\uBAA9\uC7AC\uB85C \uC815\uC131\uAECF \uB9CC\uB4E0 \uAC00\uAD6C.
-    N \uC131\uD5A5 NPC\uAC00 \uC120\uD638\uD55C\uB2E4."
+  description: "\uC911\uBC18\uBD80 \uD574\uAE08\uC6A9 \uACE0\uB9C8\uC9C4 \uBAA9\uACF5
+    \uC0C1\uD488."
   icon: {fileID: 0}
   maxStack: 8
   model: {fileID: 0}
-  basePrice: 200
+  basePrice: 185
   toolType: 0
   category: 3
   requiredTier: 2

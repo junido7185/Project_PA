@@ -24,10 +24,10 @@ public class SaveData
     // 감사 시스템 (AuditService) — v2 추가
     public int lastAuditDay = 0;
 
-    // 친밀도 — v3 추가
+    // FriendshipService save data. Added in v3, expanded in v4 with lastDialogueDay.
     public List<FriendshipRecord> friendshipData = new List<FriendshipRecord>();
 
-    // 채용 NPC 명단 — v3 추가
+    // HiringService save data. Added in v3, expanded in v4 with transform and FSM state.
     public List<HiredNpcRecord> hiredNpcs = new List<HiredNpcRecord>();
 
     // 건물 정보 리스트
@@ -44,15 +44,29 @@ public class FriendshipRecord
 {
     public string friendshipId;
     public int    points;
+    public int    lastDialogueDay;
 }
 
-// §4 HiringService 저장 DTO — candidateAssetName 으로 Resources.Load 해 복원한다.
+// v4 HiringService DTO. candidateAssetName is loaded from Resources/Candidates.
 [System.Serializable]
 public class HiredNpcRecord
 {
-    public string candidateAssetName; // NpcCandidateData 에셋 파일명 (Candidates/ 하위)
+    public string hiredNpcId;
+    public string candidateAssetName;
+    public string npcObjectName;
+
+    public bool hasTransform;
+    public Vector3 position;
+    public Quaternion rotation;
+
+    // Legacy v3 names kept so old JSON can migrate without data loss.
     public Vector3 spawnPosition;
     public Quaternion spawnRotation;
+
+    public string activeFsm;
+    public string consumerFsmState;
+    public string producerFsmState;
+    public string specialistFsmState;
 }
 
 // 인벤토리/핫바 한 칸을 직렬화한 DTO.

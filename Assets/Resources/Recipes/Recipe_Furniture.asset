@@ -14,15 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uBAA9\uC81C \uAC00\uAD6C \uC81C\uC791"
   icon: {fileID: 0}
-  description: "\uBAA9\uC7AC 3\uAC1C\uB85C \uB9CC\uB4E0 \uAC00\uAD6C."
+  description: Tier 2 luxury woodcraft.
   ingredients:
   - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
     count: 3
   outputItem: {fileID: 11400000, guid: e6957135cb0b7aa4ab402488ab8ff835, type: 2}
   outputCount: 1
-  baseOutputQuality: 1.4
-  ingredientQualityWeight: 0.3
-  requiredTier: 0
+  baseOutputQuality: 1.35
+  ingredientQualityWeight: 0.35
+  requiredTier: 2
   requiredWorkbench: 1
   inputItem: {fileID: 0}
   inputCount: 0

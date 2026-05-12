@@ -14,17 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uC758\uB958 \uC81C\uC791"
   icon: {fileID: 0}
-  description: "\uBAA9\uC7AC+\uBC00\uB85C \uB9CC\uB4E0 \uC758\uB958."
+  description: Tier 2 tailoring product.
   ingredients:
-  - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
-    count: 1
   - item: {fileID: 11400000, guid: f09473d97a45ad04d9b309533695a0de, type: 2}
     count: 2
+  - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
+    count: 1
   outputItem: {fileID: 11400000, guid: b8021875c2aea3b45b73f27cf8a59787, type: 2}
   outputCount: 1
-  baseOutputQuality: 1.35
-  ingredientQualityWeight: 0.3
-  requiredTier: 0
+  baseOutputQuality: 1.28
+  ingredientQualityWeight: 0.45
+  requiredTier: 2
   requiredWorkbench: 4
   inputItem: {fileID: 0}
   inputCount: 0

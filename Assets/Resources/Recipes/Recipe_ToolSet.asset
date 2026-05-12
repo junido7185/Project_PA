@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uCCA0\uC81C \uB3C4\uAD6C \uC81C\uC791"
   icon: {fileID: 0}
-  description: "\uBAA9\uC7AC+\uCCA0\uAD34\uB85C \uB9CC\uB4E0 \uB3C4\uAD6C \uC138\uD2B8."
+  description: Tier 1 utility craft.
   ingredients:
   - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
     count: 1
@@ -22,9 +22,9 @@ MonoBehaviour:
     count: 2
   outputItem: {fileID: 11400000, guid: 3dd22e38a584f3047b67a84b133ba1c9, type: 2}
   outputCount: 1
-  baseOutputQuality: 1.5
+  baseOutputQuality: 1.32
   ingredientQualityWeight: 0.3
-  requiredTier: 0
+  requiredTier: 1
   requiredWorkbench: 3
   inputItem: {fileID: 0}
   inputCount: 0

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 12
   itemName: "\uCCA0\uC81C \uB3C4\uAD6C"
-  description: "\uCCA0\uAD34\uB85C \uB9CC\uB4E0 \uB3C4\uAD6C \uC138\uD2B8. S \uC131\uD5A5
-    NPC\uAC00 \uC120\uD638\uD55C\uB2E4."
+  description: "\uC2E4\uC6A9 \uC131\uD5A5 NPC\uAC00 \uC120\uD638\uD558\uB294 \uC911\uAC04
+    \uD2F0\uC5B4 \uC0C1\uD488."
   icon: {fileID: 0}
   maxStack: 8
   model: {fileID: 0}

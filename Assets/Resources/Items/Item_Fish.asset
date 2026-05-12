@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 8
   itemName: Fish
-  description: 
+  description: Fresh fish for cooking.
   icon: {fileID: 0}
   maxStack: 99
   model: {fileID: 0}

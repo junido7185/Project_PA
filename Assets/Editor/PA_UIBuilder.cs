@@ -1052,7 +1052,8 @@ public static class PA_UIBuilder
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(path));
-        if (!File.Exists(path))
+        bool shouldWrite = !File.Exists(path) || NeedsGeneratedSpriteRepair(path, width, height);
+        if (shouldWrite)
         {
             var texture = BuildRoundedTexture(width, height, radius, color, shadow);
             File.WriteAllBytes(path, texture.EncodeToPNG());
@@ -1063,6 +1064,38 @@ public static class PA_UIBuilder
         ConfigureSpriteImporter(path, border);
         AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
         return true;
+    }
+
+    static bool NeedsGeneratedSpriteRepair(string path, int expectedWidth, int expectedHeight)
+    {
+        try
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            bool loaded = texture.LoadImage(bytes);
+            if (!loaded)
+            {
+                UnityEngine.Object.DestroyImmediate(texture);
+                return true;
+            }
+
+            bool oversized = texture.width > expectedWidth * 2 || texture.height > expectedHeight * 2;
+            Color corner = texture.GetPixel(1, 1);
+            bool bakedCheckerboard = corner.a > 0.95f && Mathf.Abs(corner.r - corner.g) < 0.04f && Mathf.Abs(corner.g - corner.b) < 0.04f;
+            UnityEngine.Object.DestroyImmediate(texture);
+
+            if (oversized && bakedCheckerboard)
+            {
+                Debug.LogWarning($"🎨 UI 스프라이트 자동 수리: {path} — 투명 배경 대신 체크보드가 굳어 있어 폴백 스프라이트로 재생성합니다.");
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"🎨 UI 스프라이트 검사 실패: {path} — {ex.Message}");
+        }
+
+        return false;
     }
 
     static Texture2D BuildRoundedTexture(int width, int height, float radius, Color color, bool shadow)

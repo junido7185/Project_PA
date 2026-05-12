@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+  m_Name: Building_B05_Workbench
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingData
+  buildingName: "\uAE30\uBCF8 \uC791\uC5C5\uB300"
+  price: 350
+  prefab: {fileID: 5352970684488954671, guid: b37940e188613c94d8624abf4eddab3e, type: 3}
+  requiredTier: 0
