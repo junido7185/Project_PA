@@ -31,7 +31,6 @@ public static class PA_SceneAutoBuilder
     const string RECIPES = "Assets/Resources/Recipes";
 
     // ── 메뉴 엔트리 ───────────────────────────────────────────────────────────
-    [MenuItem("P.A. System/Build Full Scene", priority = 1)]
     public static void BuildFullScene()
     {
         if (!EditorUtility.DisplayDialog("P.A. 씬 자동 빌드",

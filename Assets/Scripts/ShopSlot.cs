@@ -1,29 +1,20 @@
+using TMPro;
 using UnityEngine;
 
-// 상점 내부의 진열대 한 칸.
-//
-// 설계 의도 (Docs/02 Process 4.0):
-// - 플레이어가 아이템을 진열하고 가격(DisplayPrice)을 책정하는 단위.
-// - NPC가 "이 한 칸"을 MBTI 기반으로 평가해 구매 결정을 내리는 단위.
-// - ShopSlot 은 GameObject 이므로 월드 위치를 가진다 → NPC 가 이 위치로 직접 걸어가서 평가한다.
-// - 부모 Shop 에 자동 등록되어 Shop.GetAvailableSlots() 로 조회된다.
-//
-// Inspector 사용법:
-// - 이 컴포넌트를 Collider 를 가진 GameObject 에 붙인다. (플레이어가 상호작용하려면 Collider 필수)
-// - Shop 컴포넌트를 가진 GameObject 의 자식(또는 하위 자손)으로 배치한다.
-// - displayPrice 는 런타임에 Inspector 로 조정 가능 (UI 없이도 가격 테스트 가능).
 public class ShopSlot : MonoBehaviour, IInteractable
 {
-    [Header("진열 상태")]
-    [Tooltip("현재 진열된 아이템 스택. null = 빈 진열대")]
-    public ItemInstance currentItem;
+    const string DisplayRootName = "ShopSlot_Display";
 
-    [Tooltip("플레이어가 책정한 진열 가격. 0 이면 basePrice 사용")]
+    [Header("진열 상태")]
+    public ItemInstance currentItem;
     public int displayPrice = 0;
+
+    [Header("프로토타입 표시")]
+    public Vector3 displayOffset = new Vector3(0f, 0.45f, 0f);
+    public float fallbackDisplayScale = 0.38f;
 
     public bool IsEmpty => currentItem == null || currentItem.count <= 0 || currentItem.data == null;
 
-    // 시스템이 실제로 사용할 유효 가격 — 책정가가 없으면 basePrice 로 폴백.
     public int EffectiveDisplayPrice
     {
         get
@@ -33,11 +24,27 @@ public class ShopSlot : MonoBehaviour, IInteractable
         }
     }
 
-    private Shop _parentShop;
+    string _claimedBy;
+    Shop _parentShop;
+
+    public bool IsClaimed => !string.IsNullOrEmpty(_claimedBy);
+    public bool IsClaimedBy(string buyerTag) => !string.IsNullOrEmpty(buyerTag) && _claimedBy == buyerTag;
+
+    public bool TryClaim(string buyerTag)
+    {
+        if (string.IsNullOrEmpty(buyerTag)) return false;
+        if (!string.IsNullOrEmpty(_claimedBy) && _claimedBy != buyerTag) return false;
+        _claimedBy = buyerTag;
+        return true;
+    }
+
+    public void ReleaseClaim(string buyerTag)
+    {
+        if (_claimedBy == buyerTag) _claimedBy = null;
+    }
 
     void Awake()
     {
-        // 부모 계층에서 Shop 을 찾아 자동 등록.
         _parentShop = GetComponentInParent<Shop>();
         if (_parentShop != null)
         {
@@ -45,19 +52,20 @@ public class ShopSlot : MonoBehaviour, IInteractable
         }
         else
         {
-            Debug.LogWarning($"⚠️ ShopSlot '{name}' 이 Shop 하위에 배치되지 않았습니다. NPC가 이 슬롯을 인식하지 못합니다.");
+            Debug.LogWarning($"ShopSlot '{name}' is not under a Shop. NPCs may not find this slot.");
         }
+    }
+
+    void Start()
+    {
+        RefreshDisplay();
     }
 
     void OnDestroy()
     {
         if (_parentShop != null)
-        {
             _parentShop.UnregisterSlot(this);
-        }
     }
-
-    // -------- IInteractable (플레이어 Space 키) --------
 
     public void Interact(GameObject interactor)
     {
@@ -67,116 +75,259 @@ public class ShopSlot : MonoBehaviour, IInteractable
         }
         else
         {
-            // §2 ShopPriceUI — 찬 슬롯은 가격 조정 UI 를 연다 (문라이터2 스타일)
             if (ShopPriceUI.instance != null)
                 ShopPriceUI.instance.Open(this);
             else
-                TryTakeBackToPlayer(); // UI 없을 때 폴백
+                TryTakeBackToPlayer();
         }
     }
 
     public string GetInteractPrompt()
     {
-        if (IsEmpty) return "진열하기";
-        return $"가격 조정 ({currentItem.data.itemName} / {EffectiveDisplayPrice}G)";
+        if (IsEmpty) return "판매대에 상품 진열";
+        return $"가격 확정/조정 ({currentItem.data.itemName} / {EffectiveDisplayPrice}G)";
     }
 
-    // 플레이어가 들고 있는 아이템 1개를 이 슬롯에 진열한다.
-    // ItemInstance 의 quality/currentPrice 메타를 보존한다.
-    private void TryStockFromPlayer()
+    void TryStockFromPlayer()
     {
-        if (Inventory.instance == null) return;
-
-        ItemInstance held = Inventory.instance.GetSelectedInstance();
-        if (held == null || held.data == null)
+        if (Inventory.instance == null)
         {
-            Debug.Log("🛒 진열할 아이템이 없습니다.");
+            Debug.LogWarning("ShopSlot: Inventory.instance가 없어 진열할 수 없습니다.");
             return;
         }
 
-        // 판매 불가 카테고리/도구 차단.
-        if (held.data.category == ItemCategory.Tool || held.data.toolType != ToolType.None)
+        if (!TryFindStockCandidate(out var sourceSlot, out var sourceInstance, out string sourceHint))
         {
-            Debug.Log($"🚫 {held.data.itemName} 은(는) 진열할 수 없습니다 (도구/판매 불가).");
+            Debug.LogWarning("ShopSlot: 핫바/가방에 진열 가능한 판매 아이템이 없습니다.");
             return;
         }
 
-        // 티어 잠금 확인 — 필요 티어에 도달하지 않으면 진열 불가.
-        if (TierService.Instance != null && !TierService.Instance.IsUnlocked(held.data.requiredTier))
-        {
-            Debug.Log($"🔒 {held.data.itemName} 은(는) Tier {held.data.requiredTier} 이상에서만 진열 가능합니다 " +
-                      $"(현재: Tier {TierService.Instance.CurrentTier})");
+        if (!CanStock(sourceInstance.data, logReason: true))
             return;
-        }
 
-        // 1개 차감 후 슬롯에 새 스택 생성 (메타 복사).
-        Inventory.instance.RemoveItems(held.data, 1);
-
-        currentItem = new ItemInstance(held.data, 1)
+        currentItem = new ItemInstance(sourceInstance.data, 1)
         {
-            quality = held.quality,
-            currentPrice = held.currentPrice
+            quality = sourceInstance.quality,
+            currentPrice = sourceInstance.currentPrice
         };
-        // 책정가가 설정되지 않았다면 basePrice 를 초기값으로.
-        if (displayPrice <= 0) displayPrice = held.data.basePrice;
 
-        Debug.Log($"🛒 진열: {held.data.itemName} @ {displayPrice}G");
+        sourceSlot.AddCount(-1);
+        if (displayPrice <= 0) displayPrice = currentItem.data.basePrice;
+
+        Inventory.instance.RefreshAllUI();
+        RefreshDisplay();
+        Debug.Log($"진열 완료: {currentItem.data.itemName} @ {displayPrice}G ({sourceHint})");
     }
 
-    // ShopPriceUI 에서 "회수" 버튼을 눌렀을 때 호출된다.
+    bool TryFindStockCandidate(out InventorySlot sourceSlot, out ItemInstance sourceInstance, out string sourceHint)
+    {
+        sourceSlot = null;
+        sourceInstance = null;
+        sourceHint = "";
+
+        var inv = Inventory.instance;
+        if (inv == null) return false;
+
+        InventorySlot selected = inv.hotbar != null ? inv.hotbar.GetSlot(inv.selectedHotbarIndex) : null;
+        if (IsUsableStockSlot(selected))
+        {
+            sourceSlot = selected;
+            sourceInstance = selected.instance;
+            sourceHint = $"hotbar {inv.selectedHotbarIndex + 1}";
+            return true;
+        }
+
+        if (TryFindFirstSellable(inv.hotbar != null ? inv.hotbar.slots : null, "hotbar", out sourceSlot, out sourceInstance, out sourceHint))
+            return true;
+
+        return TryFindFirstSellable(inv.slots, "inventory", out sourceSlot, out sourceInstance, out sourceHint);
+    }
+
+    bool TryFindFirstSellable(System.Collections.Generic.List<InventorySlot> slots, string owner,
+        out InventorySlot sourceSlot, out ItemInstance sourceInstance, out string sourceHint)
+    {
+        sourceSlot = null;
+        sourceInstance = null;
+        sourceHint = "";
+
+        if (slots == null) return false;
+
+        for (int i = 0; i < slots.Count; i++)
+        {
+            var slot = slots[i];
+            if (!IsUsableStockSlot(slot)) continue;
+
+            sourceSlot = slot;
+            sourceInstance = slot.instance;
+            sourceHint = $"{owner} {i + 1}";
+            return true;
+        }
+
+        return false;
+    }
+
+    bool IsUsableStockSlot(InventorySlot slot)
+    {
+        return slot != null
+            && !slot.IsEmpty
+            && slot.instance != null
+            && slot.instance.data != null
+            && CanStock(slot.instance.data, logReason: false);
+    }
+
+    bool CanStock(Item item, bool logReason)
+    {
+        if (item == null) return false;
+
+        if (item.category == ItemCategory.Tool || item.toolType != ToolType.None)
+        {
+            if (logReason) Debug.LogWarning($"{item.itemName}은(는) 도구라 판매대에 진열할 수 없습니다.");
+            return false;
+        }
+
+        if (TierService.Instance != null && !TierService.Instance.IsUnlocked(item.requiredTier))
+        {
+            if (logReason)
+                Debug.LogWarning($"{item.itemName}은(는) Tier {item.requiredTier} 이상에서만 진열 가능합니다.");
+            return false;
+        }
+
+        return true;
+    }
+
     public void RetrieveItem() => TryTakeBackToPlayer();
 
-    // 진열된 아이템을 회수해 플레이어 인벤토리로 돌려놓는다.
-    private void TryTakeBackToPlayer()
+    void TryTakeBackToPlayer()
     {
         if (Inventory.instance == null || currentItem == null || currentItem.data == null) return;
 
         bool added = Inventory.instance.AddInstance(currentItem);
         if (!added)
         {
-            Debug.Log("🚫 가방이 꽉 차서 회수할 수 없습니다.");
+            Debug.LogWarning("가방이 꽉 차서 회수할 수 없습니다.");
             return;
         }
 
-        Debug.Log($"🛒 회수: {currentItem.data.itemName}");
+        Debug.Log($"회수 완료: {currentItem.data.itemName}");
         currentItem = null;
-        // displayPrice 는 초기화하지 않음 — 플레이어가 같은 가격으로 재진열하려 할 수 있다.
+        RefreshDisplay();
     }
 
-    // -------- NPC 측 API --------
-
-    // NPC 가 이 슬롯을 구매할 때 호출한다.
-    // 성공 시 EconomyService 에 매출을 적립하고 슬롯을 비운다.
-    // paidAmount 는 실제로 지불된 금액(로그/UI용).
     public bool TryPurchaseByNpc(string buyerTag, out int paidAmount)
     {
         paidAmount = 0;
-        if (IsEmpty) return false;
+        if (string.IsNullOrEmpty(buyerTag)) return false;
+        if (!TryClaim(buyerTag)) return false;
 
-        int unitPrice = EffectiveDisplayPrice;
-        paidAmount = unitPrice * currentItem.count;
-
-        if (EconomyService.Instance != null)
+        try
         {
-            EconomyService.Instance.Deposit(paidAmount, $"Shop 판매[{buyerTag}]: {currentItem.data.itemName}");
+            if (IsEmpty) return false;
+
+            int unitPrice = EffectiveDisplayPrice;
+            paidAmount = unitPrice * currentItem.count;
+
+            if (EconomyService.Instance != null)
+                EconomyService.Instance.Deposit(paidAmount, $"Shop sale[{buyerTag}]: {currentItem.data.itemName}");
+
+            if (SalesLogManager.Instance != null && currentItem.data != null)
+            {
+                int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+                int hour = GameClock.Instance != null ? GameClock.Instance.CurrentHourInt : 0;
+                SalesLogManager.Instance.RecordSale(
+                    currentItem.data.itemName,
+                    currentItem.data.category.ToString(),
+                    paidAmount,
+                    currentItem.quality,
+                    buyerTag,
+                    day,
+                    hour);
+            }
+
+            currentItem = null;
+            RefreshDisplay();
+            return true;
+        }
+        finally
+        {
+            ReleaseClaim(buyerTag);
+        }
+    }
+
+    public void RefreshDisplay()
+    {
+        ClearDisplay();
+        if (IsEmpty) return;
+
+        var root = new GameObject(DisplayRootName);
+        root.transform.SetParent(transform, false);
+        root.transform.localPosition = displayOffset;
+        root.transform.localRotation = Quaternion.identity;
+
+        GameObject visual = null;
+        if (currentItem.data.model != null)
+        {
+            visual = Instantiate(currentItem.data.model, root.transform);
+            visual.name = "ItemModel";
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one * fallbackDisplayScale;
+        }
+        else
+        {
+            visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            visual.name = "ItemCube";
+            visual.transform.SetParent(root.transform, false);
+            visual.transform.localScale = Vector3.one * fallbackDisplayScale;
+            var renderer = visual.GetComponent<Renderer>();
+            if (renderer != null)
+                renderer.sharedMaterial = CreateDisplayMaterial(currentItem.data);
         }
 
-        if (SalesLogManager.Instance != null && currentItem.data != null)
-        {
-            int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
-            int hour = GameClock.Instance != null ? GameClock.Instance.CurrentHourInt : 0;
-            SalesLogManager.Instance.RecordSale(
-                currentItem.data.itemName,
-                currentItem.data.category.ToString(),
-                paidAmount,
-                currentItem.quality,
-                buyerTag,
-                day,
-                hour);
-        }
+        foreach (var col in visual.GetComponentsInChildren<Collider>(true))
+            DestroyUnityObject(col);
 
-        currentItem = null;
-        // displayPrice 유지 — 플레이어가 같은 품목을 재진열할 수 있게 가격 책정을 보존.
-        return true;
+        var labelGo = new GameObject("ItemLabel");
+        labelGo.transform.SetParent(root.transform, false);
+        labelGo.transform.localPosition = new Vector3(0f, 0.55f, 0f);
+        var label = labelGo.AddComponent<PrototypeWorldLabel>();
+        label.Set($"{currentItem.data.itemName}\n{EffectiveDisplayPrice}G", new Color(1f, 0.94f, 0.62f), 1.8f);
+    }
+
+    void ClearDisplay()
+    {
+        var existing = transform.Find(DisplayRootName);
+        if (existing != null)
+            DestroyUnityObject(existing.gameObject);
+    }
+
+    static Material CreateDisplayMaterial(Item item)
+    {
+        var shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = Shader.Find("Standard");
+
+        var mat = new Material(shader) { name = $"Mat_Display_{(item != null ? item.name : "Item")}" };
+        mat.color = ResolveDisplayColor(item);
+        return mat;
+    }
+
+    static Color ResolveDisplayColor(Item item)
+    {
+        if (item == null) return new Color(0.90f, 0.80f, 0.56f);
+
+        return item.category switch
+        {
+            ItemCategory.Raw => new Color(0.55f, 0.78f, 0.42f),
+            ItemCategory.Processed => new Color(0.95f, 0.66f, 0.42f),
+            ItemCategory.Utility => new Color(0.64f, 0.50f, 0.36f),
+            ItemCategory.Luxury => new Color(0.70f, 0.64f, 0.86f),
+            _ => new Color(0.90f, 0.80f, 0.56f)
+        };
+    }
+
+    static void DestroyUnityObject(Object obj)
+    {
+        if (obj == null) return;
+        if (Application.isPlaying) Destroy(obj);
+        else DestroyImmediate(obj);
     }
 }

@@ -91,7 +91,7 @@ public class Shop : MonoBehaviour, IInteractable
         var result = new List<ShopSlot>();
         foreach (var s in _slots)
         {
-            if (s != null && !s.IsEmpty && s.gameObject.activeSelf) result.Add(s);
+            if (s != null && !s.IsEmpty && !s.IsClaimed && s.gameObject.activeSelf) result.Add(s);
         }
         return result;
     }

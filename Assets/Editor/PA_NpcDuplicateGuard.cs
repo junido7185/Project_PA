@@ -25,7 +25,6 @@ public static class PA_NpcDuplicateGuard
         "Carpenter"
     };
 
-    [MenuItem("P.A. System/NPC/Repair Generated NPC Duplicates", priority = 35)]
     public static void RepairGeneratedNpcDuplicatesMenu()
     {
         int removed = RepairGeneratedNpcDuplicates();

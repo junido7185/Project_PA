@@ -20,6 +20,7 @@ public class ShopPriceUI : MonoBehaviour
     public static ShopPriceUI instance;
 
     public bool IsOpen { get; private set; }
+    public int ConfirmCount { get; private set; }
 
     // ── UI 참조 ─────────────────────────────────────────────────────────────────
     Canvas          _canvas;
@@ -290,6 +291,8 @@ public class ShopPriceUI : MonoBehaviour
     {
         if (_slot == null) { Close(); return; }
         _slot.displayPrice = _pendingPrice;
+        _slot.RefreshDisplay();
+        ConfirmCount++;
         Debug.Log($"🏷️ 가격 확정: {_slot.currentItem?.data?.itemName} @ {_pendingPrice}G");
         Close();
     }

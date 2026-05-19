@@ -30,7 +30,6 @@ using UnityEngine.SceneManagement;
 public class PA_DevConsole : EditorWindow
 {
     // ── 메뉴 진입 ─────────────────────────────────────────────────────────────
-    [MenuItem("P.A. System/⚡ Dev Console", priority = 0)]
     public static void Open()
     {
         var w = GetWindow<PA_DevConsole>("⚡ P.A. Dev Console");

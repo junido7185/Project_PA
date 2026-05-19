@@ -49,7 +49,6 @@ public static class PA_TMPFontFixer
     };
 
     // ── 메뉴 진입 ─────────────────────────────────────────────────────────────
-    [MenuItem("P.A. System/🔤 한글·이모지 폰트 자동 설정", priority = 7)]
     public static void Apply()
     {
         if (!EditorUtility.DisplayDialog("🔤 Jalnan2 한글 폰트 전면 적용 (v3)",

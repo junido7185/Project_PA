@@ -39,6 +39,7 @@ public class SmartphoneUI : MonoBehaviour
     public Color tabSelectedColor = new Color(0.96f, 0.84f, 0.43f, 1f); // #F5D76E
 
     public bool IsOpen => _isOpen;
+    public int CurrentTabIndex => _currentTab;
 
     bool      _isOpen;
     Coroutine _moveCo;

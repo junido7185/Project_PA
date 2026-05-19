@@ -65,7 +65,6 @@ public static class PA_DemoSeed
         ("Items/Item_Wheat",     10, 12),
     };
 
-    [MenuItem("P.A. System/🌱 Demo Seed Only", priority = -9)]
     public static void ApplyMenu()
     {
         int n = Apply();

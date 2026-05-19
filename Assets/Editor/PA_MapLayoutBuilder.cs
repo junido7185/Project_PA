@@ -94,12 +94,10 @@ public static class PA_MapLayoutBuilder
     };
 
     // ── 메뉴 진입점 ──────────────────────────────────────────────────────
-    [MenuItem("P.A. System/Map/Build Layout Map", priority = 40)]
     public static void BuildMenu() => Build(showDialog: true);
 
     public static void BuildBatch() => Build(showDialog: false);
 
-    [MenuItem("P.A. System/Map/Validate Layout Map", priority = 41)]
     public static void ValidateMenu()
     {
         var report = Validate();
@@ -107,7 +105,6 @@ public static class PA_MapLayoutBuilder
         EditorUtility.DisplayDialog("🗺 Map Layout 검증", string.Join("\n", report), "확인");
     }
 
-    [MenuItem("P.A. System/Map/Repair Layout Map", priority = 42)]
     public static void RepairMenu() => Build(showDialog: true);
 
     // ── 메인 빌드 ────────────────────────────────────────────────────────

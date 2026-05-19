@@ -19,13 +19,35 @@ public class Inventory : MonoBehaviour
 
     private void Awake()
     {
-        if (instance != null) { Destroy(gameObject); return; }
+        if (instance != null && instance != this)
+        {
+            bool thisIsPlayerInventory = IsPlayerObject(gameObject);
+            bool currentIsPlayerInventory = instance != null && IsPlayerObject(instance.gameObject);
+
+            if (thisIsPlayerInventory && !currentIsPlayerInventory)
+            {
+                Destroy(instance);
+            }
+            else
+            {
+                Destroy(this);
+                return;
+            }
+        }
+
         instance = this;
 
         // ⚠ Demo Seed/Editor 주입 보존: Edit 모드에서 미리 채워둔 slots 가
         // Play 진입 시 새 List 로 덮어써져 사라지는 사고를 방지한다.
         // size 와 일치하고 각 칸이 null 이 아니면 그대로 둔다.
         EnsureSlots();
+    }
+
+    static bool IsPlayerObject(GameObject go)
+    {
+        if (go == null) return false;
+        try { return go.CompareTag("Player"); }
+        catch { return false; }
     }
 
     void EnsureSlots()

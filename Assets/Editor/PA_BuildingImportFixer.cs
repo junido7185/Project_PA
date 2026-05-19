@@ -33,10 +33,8 @@ public static class PA_BuildingImportFixer
         };
     }
 
-    [MenuItem("P.A. System/Buildings/🏗 Fix FBX Import Settings", priority = 30)]
     public static void FixAllBuildingsMenu() => FixAllBuildings(silent: false);
 
-    [MenuItem("P.A. System/Buildings/🔄 Reset Auto-Run Flag", priority = 31)]
     public static void ResetAutoRunFlag()
     {
         EditorPrefs.DeleteKey(AUTO_KEY);

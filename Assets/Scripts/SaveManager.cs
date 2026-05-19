@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 // 역할:
 // - 게임 상태의 직렬화/역직렬화를 담당.
@@ -21,7 +22,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 4;
+    private const int CurrentSaveVersion = 6;
 
     void Awake()
     {
@@ -63,6 +64,14 @@ public class SaveManager : MonoBehaviour
         var playerGo = GameObject.FindGameObjectWithTag("Player");
         if (playerGo != null) data.playerPosition = playerGo.transform.position;
 
+        var firstDay = FindFirstObjectByType<PlayableDayScenarioController>();
+        if (firstDay != null)
+        {
+            data.playerName = firstDay.PlayerName;
+            data.selectedMapId = firstDay.SelectedMapId;
+            data.firstDayPrototypeStage = firstDay.CurrentStageIndex;
+        }
+
         // 3. 건물 정보 — 레지스트리가 가진 명시 목록을 직렬화한다.
         if (BuildingRegistry.Instance != null)
         {
@@ -84,6 +93,9 @@ public class SaveManager : MonoBehaviour
             if (Inventory.instance.hotbar != null)
                 data.hotbarSlots = SerializeSlots(Inventory.instance.hotbar.slots);
         }
+
+        // 4-a. ShopSlot 진열 상태 — v5
+        data.shopSlots = SerializeShopSlots();
 
         // 5. 감사 시스템
         data.lastAuditDay = AuditService.Instance != null ? AuditService.Instance.LastAuditDay : 0;
@@ -110,7 +122,7 @@ public class SaveManager : MonoBehaviour
 
         string json = JsonUtility.ToJson(data, true);
         await _repository.SaveAsync(SaveKey, json);
-        Debug.Log($"💾 저장 완료 (건물 {data.buildings.Count}개, 인벤토리 {data.inventorySlots.Count}칸, 핫바 {data.hotbarSlots.Count}칸)");
+        Debug.Log($"💾 저장 완료 (건물 {data.buildings.Count}개, 인벤토리 {data.inventorySlots.Count}칸, 핫바 {data.hotbarSlots.Count}칸, 진열대 {data.shopSlots.Count}칸)");
     }
 
     public async System.Threading.Tasks.Task LoadGameAsync()
@@ -152,6 +164,10 @@ public class SaveManager : MonoBehaviour
         {
             GameClock.Instance.ForceSet(data.gameHour, data.gameDay, "SaveManager.LoadGame");
         }
+
+        var firstDay = FindFirstObjectByType<PlayableDayScenarioController>();
+        if (firstDay != null)
+            firstDay.RestoreSavedSession(data.playerName, data.selectedMapId, data.firstDayPrototypeStage);
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -223,6 +239,8 @@ public class SaveManager : MonoBehaviour
             Inventory.instance.RefreshAllUI();
         }
 
+        DeserializeShopSlots(data.shopSlots);
+
         RestoreHiredNpcs(data.hiredNpcs);
 
         Debug.Log($"📂 로드 완료! (건물 {count}개, 인벤토리/핫바 복구)");
@@ -288,6 +306,24 @@ public class SaveManager : MonoBehaviour
 
             data.version = 4;
             Debug.Log("💾 마이그레이션 v3→v4: 친밀도 일일 제한 + 고용 NPC 상태 필드 추가");
+        }
+
+        // v4 → v5: ShopSlot stocked item/display price persistence.
+        if (data.version < 5)
+        {
+            if (data.shopSlots == null) data.shopSlots = new List<ShopSlotSaveData>();
+            data.version = 5;
+            Debug.Log("💾 마이그레이션 v4→v5: 상점 진열대 저장 필드 추가");
+        }
+
+        // v5 → v6: first-day prototype profile and selected map.
+        if (data.version < 6)
+        {
+            if (string.IsNullOrWhiteSpace(data.playerName)) data.playerName = "하늘";
+            if (string.IsNullOrWhiteSpace(data.selectedMapId)) data.selectedMapId = "green_bay";
+            data.firstDayPrototypeStage = Mathf.Clamp(data.firstDayPrototypeStage, 0, 6);
+            data.version = 6;
+            Debug.Log("💾 마이그레이션 v5→v6: 플레이어 이름/선택 맵/첫날 단계 필드 추가");
         }
 
         return data;
@@ -490,5 +526,118 @@ public class SaveManager : MonoBehaviour
             };
             slots[i].SetInstance(inst);
         }
+    }
+
+    List<ShopSlotSaveData> SerializeShopSlots()
+    {
+        var slots = GetOrderedShopSlots();
+        var result = new List<ShopSlotSaveData>(slots.Count);
+
+        for (int i = 0; i < slots.Count; i++)
+        {
+            ShopSlot slot = slots[i];
+            var record = new ShopSlotSaveData
+            {
+                slotIndex = i,
+                slotKey = BuildShopSlotKey(slot != null ? slot.transform : null),
+                occupied = slot != null && !slot.IsEmpty,
+                displayPrice = slot != null ? slot.displayPrice : 0
+            };
+
+            if (record.occupied && slot.currentItem != null && slot.currentItem.data != null)
+            {
+                record.itemId = slot.currentItem.data.id;
+                record.itemName = slot.currentItem.data.itemName;
+                record.count = slot.currentItem.count;
+                record.quality = slot.currentItem.quality;
+                record.currentPrice = slot.currentItem.currentPrice;
+            }
+
+            result.Add(record);
+        }
+
+        return result;
+    }
+
+    void DeserializeShopSlots(List<ShopSlotSaveData> saved)
+    {
+        if (saved == null || saved.Count == 0) return;
+
+        var slots = GetOrderedShopSlots();
+        var byKey = new Dictionary<string, ShopSlot>();
+        foreach (var slot in slots)
+        {
+            string key = BuildShopSlotKey(slot != null ? slot.transform : null);
+            if (!string.IsNullOrEmpty(key) && !byKey.ContainsKey(key)) byKey.Add(key, slot);
+        }
+
+        foreach (var record in saved)
+        {
+            if (record == null) continue;
+
+            ShopSlot slot = null;
+            if (!string.IsNullOrEmpty(record.slotKey))
+                byKey.TryGetValue(record.slotKey, out slot);
+
+            if (slot == null && record.slotIndex >= 0 && record.slotIndex < slots.Count)
+                slot = slots[record.slotIndex];
+
+            if (slot == null)
+            {
+                Debug.LogWarning($"❓ ShopSlot 복원 실패: index={record.slotIndex} key=\"{record.slotKey}\"");
+                continue;
+            }
+
+            slot.displayPrice = record.displayPrice;
+            if (!record.occupied || record.count <= 0)
+            {
+                slot.currentItem = null;
+                slot.RefreshDisplay();
+                continue;
+            }
+
+            Item item = ItemRegistry.Instance != null
+                ? ItemRegistry.Instance.Find(record.itemId, record.itemName)
+                : null;
+
+            if (item == null)
+            {
+                Debug.LogWarning($"❓ ShopSlot[{record.slotIndex}] 복원 실패: id={record.itemId} name=\"{record.itemName}\"");
+                slot.currentItem = null;
+                slot.RefreshDisplay();
+                continue;
+            }
+
+            slot.currentItem = new ItemInstance(item, record.count)
+            {
+                quality = record.quality,
+                currentPrice = record.currentPrice
+            };
+            slot.RefreshDisplay();
+        }
+    }
+
+    List<ShopSlot> GetOrderedShopSlots()
+    {
+        var slots = FindObjectsByType<ShopSlot>(FindObjectsSortMode.None).ToList();
+        slots.Sort((a, b) => string.CompareOrdinal(
+            BuildShopSlotKey(a != null ? a.transform : null),
+            BuildShopSlotKey(b != null ? b.transform : null)));
+        return slots;
+    }
+
+    string BuildShopSlotKey(Transform transform)
+    {
+        if (transform == null) return string.Empty;
+
+        var names = new List<string>();
+        Transform current = transform;
+        while (current != null)
+        {
+            names.Add(current.name.Replace("(Clone)", string.Empty).Trim());
+            current = current.parent;
+        }
+        names.Reverse();
+        return string.Join("/", names);
     }
 }

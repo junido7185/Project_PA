@@ -26,7 +26,6 @@ using UnityEngine;
 // ═══════════════════════════════════════════════════════════════════════════
 public class PA_FeatureChecker : EditorWindow
 {
-    [MenuItem("P.A. System/🩺 Implementation Checker", priority = 5)]
     public static void Open()
     {
         var w = GetWindow<PA_FeatureChecker>("🩺 구현 체크리스트");

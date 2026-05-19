@@ -19,7 +19,6 @@ public static class PA_DataBootstrapper
     const string ROOT = "Assets/ScriptableObjects";
 
     // ─────────────────────────────────────────────────────────
-    [MenuItem("P.A. System/Bootstrap All Data Assets")]
     static void BootstrapAll()
     {
         int created = 0;

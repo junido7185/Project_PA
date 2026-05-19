@@ -6,7 +6,6 @@ using UnityEditor;
 // 씬에서 필수 서비스 누락/중복, Inspector null 참조를 검사해 콘솔 경고를 출력한다.
 public static class PA_SceneValidator
 {
-    [MenuItem("P.A. System/Validate Scene", priority = 10)]
     public static void Validate()
     {
         int warnings = 0;

@@ -257,6 +257,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &3865506766927280734
 GameObject:
   m_ObjectHideFlags: 0
@@ -389,6 +391,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &5191053178780748370
 GameObject:
   m_ObjectHideFlags: 0
@@ -521,6 +525,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &6819783875850892047
 GameObject:
   m_ObjectHideFlags: 0
@@ -653,6 +659,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1001 &2264294387863403616
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -186,6 +186,7 @@ public class NpcController : MonoBehaviour
             return;
         }
 
+        ReleaseShoppingClaims();
         _visitedSlots.Clear();
         _currentSlotTarget = null;
         _arrivedAtSlot = false;
@@ -223,6 +224,7 @@ public class NpcController : MonoBehaviour
         // 슬롯이 다른 NPC 에게 이미 팔려 비었으면 다음 슬롯으로.
         if (_currentSlotTarget.IsEmpty)
         {
+            _currentSlotTarget.ReleaseClaim(DisplayName);
             _currentSlotTarget = null;
             PickNextSlotToBrowse();
             return;
@@ -293,6 +295,17 @@ public class NpcController : MonoBehaviour
     {
         if (_currentSlotTarget == null || _currentSlotTarget.IsEmpty)
         {
+            if (_currentSlotTarget != null) _currentSlotTarget.ReleaseClaim(DisplayName);
+            _currentSlotTarget = null;
+            PickNextSlotToBrowse();
+            return;
+        }
+
+        // §Week12 — 동시 구매 방지: 다른 NPC 가 이미 평가 중인 슬롯은 스킵.
+        // 같은 NPC 의 재진입은 허용 (TryClaim 이 idempotent).
+        if (!_currentSlotTarget.TryClaim(DisplayName))
+        {
+            Debug.Log($"🤖 {DisplayName}: 슬롯 {_currentSlotTarget.name} 은 다른 NPC 가 평가 중 — 스킵");
             _currentSlotTarget = null;
             PickNextSlotToBrowse();
             return;
@@ -340,7 +353,8 @@ public class NpcController : MonoBehaviour
             if (_dialogue != null) _dialogue.SpeakTopic(DialogueTopic.ShopTooExpensive);
         }
 
-        // 패스 — 다음 슬롯으로
+        // 패스 — 다음 슬롯으로 (Claim 해제)
+        if (_currentSlotTarget != null) _currentSlotTarget.ReleaseClaim(DisplayName);
         _currentSlotTarget = null;
         PickNextSlotToBrowse();
     }
@@ -348,11 +362,19 @@ public class NpcController : MonoBehaviour
     void EndShoppingVisit(string reason)
     {
         Debug.Log($"🤖 {DisplayName}: 쇼핑 종료 ({reason})");
+        // 점령했던 모든 슬롯의 Claim 해제 — 누락 방지
+        ReleaseShoppingClaims();
         _currentSlotTarget = null;
         _visitedSlots.Clear();
         _arrivedAtSlot = false;
         _browseTimer = 0f;
         ChangeState(State.Idle);
+    }
+
+    void ReleaseShoppingClaims()
+    {
+        if (_currentSlotTarget != null) _currentSlotTarget.ReleaseClaim(DisplayName);
+        foreach (var s in _visitedSlots) if (s != null) s.ReleaseClaim(DisplayName);
     }
 
     void ShowBubbleReaction(bool bought, float price, float basePrice)
@@ -378,6 +400,7 @@ public class NpcController : MonoBehaviour
             agent.ResetPath();
 
         // 쇼핑 세션 정리
+        ReleaseShoppingClaims();
         _currentSlotTarget = null;
         _visitedSlots.Clear();
         _arrivedAtSlot = false;
@@ -432,6 +455,7 @@ public class NpcController : MonoBehaviour
 
         _schedulePaused = false;
         _restoredFromSave = true;
+        ReleaseShoppingClaims();
         _currentSlotTarget = null;
         _visitedSlots.Clear();
         _arrivedAtSlot = false;

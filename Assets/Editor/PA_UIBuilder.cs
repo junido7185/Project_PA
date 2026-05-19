@@ -72,7 +72,6 @@ public static class PA_UIBuilder
     static readonly HashSet<string> _missingSprCache = new HashSet<string>();
 
     // ── 메뉴 엔트리 ───────────────────────────────────────────────────────────
-    [MenuItem("P.A. System/Build UI System", priority = 2)]
     public static void BuildUISystem()
     {
         if (!EditorUtility.DisplayDialog("P.A. UI 자동 구성",

@@ -11,6 +11,9 @@ public class SaveData
     // 플레이어 정보
     public int money;
     public Vector3 playerPosition;
+    public string playerName = "하늘";
+    public string selectedMapId = "green_bay";
+    public int firstDayPrototypeStage = 0;
 
     // 티어 시스템
     public int currentTier = 0;
@@ -36,6 +39,9 @@ public class SaveData
     // 인벤토리 · 핫바 (SlotSaveData.count == 0 이면 빈 칸)
     public List<SlotSaveData> inventorySlots = new List<SlotSaveData>();
     public List<SlotSaveData> hotbarSlots    = new List<SlotSaveData>();
+
+    // ShopSlot display state. Added in v5 so a saved playable-day demo restores stocked shelves.
+    public List<ShopSlotSaveData> shopSlots = new List<ShopSlotSaveData>();
 }
 
 // §4 FriendshipService 저장 DTO — FriendshipService.ForceSetPoints 로 복원한다.
@@ -79,6 +85,20 @@ public class SlotSaveData
     public int    count;       // 0 = 빈 칸
     public float  quality;
     public int    currentPrice;
+}
+
+[System.Serializable]
+public class ShopSlotSaveData
+{
+    public int slotIndex;
+    public string slotKey;
+    public bool occupied;
+    public int displayPrice;
+    public int itemId;
+    public string itemName;
+    public int count;
+    public float quality;
+    public int currentPrice;
 }
 
 [System.Serializable]

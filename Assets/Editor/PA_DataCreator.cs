@@ -12,7 +12,6 @@ public static class PA_DataCreator
     const string CANDS = "Assets/Resources/Candidates";
     const string DLGS = "Assets/Resources/Dialogues";
 
-    [MenuItem("P.A. System/Create Missing Data Assets", priority = 2)]
     public static void CreateAll()
     {
         EnsureDir("Assets", "Resources");

@@ -21,7 +21,6 @@ using UnityEngine.AI;
 //   P.A. System / 🌱 Demo Seed Only                      (PA_DemoSeed 가 등록)
 public static class PA_VerticalSlice
 {
-    [MenuItem("P.A. System/🚀 Build Vertical Slice + Demo Seed", priority = -10)]
     public static void Build()
     {
         bool ok = EditorUtility.DisplayDialog(
@@ -192,7 +191,6 @@ public static class PA_VerticalSlice
     // ──────────────────────────────────────────────────────────────────────
     //  검증 — 수직 슬라이스 핵심 항목 (DevConsole 진단을 보강)
     // ──────────────────────────────────────────────────────────────────────
-    [MenuItem("P.A. System/🔎 Validate Vertical Slice", priority = -8)]
     public static void ValidateMenu()
     {
         var report = ValidateAll();

@@ -36,7 +36,6 @@ public static class PA_Week11MilestoneValidator
     }
 
     // ── 메뉴 진입점 ──────────────────────────────────────────────────────
-    [MenuItem("P.A. System/Week 11/Build + Validate Milestone", priority = -5)]
     public static void BuildAndValidate()
     {
         if (!EditorUtility.DisplayDialog(
@@ -78,7 +77,6 @@ public static class PA_Week11MilestoneValidator
         }
     }
 
-    [MenuItem("P.A. System/Week 11/Validate Only", priority = -4)]
     public static void ValidateOnly() => ValidateAndReport();
 
     // ── 종합 검증 + 다이얼로그 ──────────────────────────────────────────
@@ -208,16 +206,16 @@ public static class PA_Week11MilestoneValidator
         var auditPanel  = GameObject.Find("AuditPanel");
         var feedPanel   = GameObject.Find("FeedPanel");
         var settPanel   = GameObject.Find("SettingsPanel");
-        list.Add(hiringPanel != null && hiringPanel.GetComponent<HiringUI>() != null
+        list.Add(hiringPanel != null && hiringPanel.GetComponentInChildren<HiringUI>(true) != null
             ? Pass(CAT, "HiringPanel ⊃ HiringUI", "OK")
             : Fail(CAT, "HiringPanel ⊃ HiringUI", "패널 또는 컴포넌트 누락"));
-        list.Add(auditPanel  != null && auditPanel.GetComponent<AuditResultUI>() != null
+        list.Add(auditPanel  != null && auditPanel.GetComponentInChildren<AuditResultUI>(true) != null
             ? Pass(CAT, "AuditPanel ⊃ AuditResultUI", "OK")
             : Warn(CAT, "AuditPanel ⊃ AuditResultUI", "누락"));
-        list.Add(feedPanel   != null && feedPanel.GetComponent<FeedUI>() != null
+        list.Add(feedPanel   != null && feedPanel.GetComponentInChildren<FeedUI>(true) != null
             ? Pass(CAT, "FeedPanel ⊃ FeedUI", "OK")
             : Warn(CAT, "FeedPanel ⊃ FeedUI", "누락"));
-        list.Add(settPanel   != null && settPanel.GetComponent<SettingsUI>() != null
+        list.Add(settPanel   != null && settPanel.GetComponentInChildren<SettingsUI>(true) != null
             ? Pass(CAT, "SettingsPanel ⊃ SettingsUI", "OK")
             : Warn(CAT, "SettingsPanel ⊃ SettingsUI", "누락"));
     }
@@ -286,7 +284,9 @@ public static class PA_Week11MilestoneValidator
         {
             // tierDefinitions 필드를 리플렉션으로 안전 조회 (이름 변동 대응)
             var f = typeof(TierService).GetField("tierDefinitions",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance);
             if (f != null)
             {
                 if (f.GetValue(tier) is System.Collections.IList l) tierDefs = l.Count;
@@ -418,12 +418,7 @@ public static class PA_Week11MilestoneValidator
 
         var npcs = UnityEngine.Object.FindObjectsByType<NpcController>(FindObjectsSortMode.None);
         int withAgent = npcs.Count(n => n != null && n.GetComponent<NavMeshAgent>() != null);
-        int onMesh = npcs.Count(n =>
-        {
-            if (n == null) return false;
-            var ag = n.GetComponent<NavMeshAgent>();
-            return ag != null && ag.isOnNavMesh;
-        });
+        int onMesh = npcs.Count(PA_SafeSceneRepair.IsNpcNavMeshReady);
         list.Add(npcs.Length == 0
             ? Warn(CAT, "NPC 부착률", "NPC 없음")
             : (withAgent == npcs.Length ? Pass(CAT, "NPC NavMeshAgent", $"{withAgent}/{npcs.Length}") : Fail(CAT, "NPC NavMeshAgent", $"{withAgent}/{npcs.Length}")));
@@ -448,7 +443,7 @@ public static class PA_Week11MilestoneValidator
         // SaveManager.cs 에서 const private 한 값이라 직접 못 봐도 SaveData 의 default version 으로 확인
         var dummy = new SaveData();
         // SaveData.version 기본값은 0 — 실제 SaveGame 은 CurrentSaveVersion 으로 강제 세팅
-        // 그래서 여기서는 SaveManager 의 SaveGame 이 호출됐을 때 v4 가 쓰여졌는지를 파일로 검사
+        // 그래서 여기서는 SaveManager 의 SaveGame 이 호출됐을 때 v6 가 쓰여졌는지를 파일로 검사
         string savePath = Path.Combine(Application.persistentDataPath, "savegame.json");
         if (File.Exists(savePath))
         {
@@ -456,9 +451,9 @@ public static class PA_Week11MilestoneValidator
             {
                 var json = File.ReadAllText(savePath);
                 var data = JsonUtility.FromJson<SaveData>(json);
-                list.Add(data.version == 4
+                list.Add(data.version == 6
                     ? Pass(CAT, "SaveData.version", $"v{data.version} (현재 스키마)")
-                    : Warn(CAT, "SaveData.version", $"v{data.version} — v4 마이그레이션 대상"));
+                    : Warn(CAT, "SaveData.version", $"v{data.version} — v6 마이그레이션 대상"));
             }
             catch { list.Add(Warn(CAT, "SaveData.version", "JSON 파싱 실패")); }
         }
@@ -480,6 +475,21 @@ public static class PA_Week11MilestoneValidator
         list.Add(hasHasTransform && hasFsm
             ? Pass(CAT, "HiredNpcRecord transform/FSM", "v4 필드 존재")
             : Fail(CAT, "HiredNpcRecord transform/FSM", $"hasTransform={hasHasTransform}, activeFsm={hasFsm}"));
+
+        // ShopSlotSaveData 필드 존재 (v5 추가)
+        bool hasShopSlotSave = typeof(SaveData).GetField("shopSlots") != null
+            && typeof(ShopSlotSaveData).GetField("displayPrice") != null
+            && typeof(ShopSlotSaveData).GetField("itemId") != null;
+        list.Add(hasShopSlotSave
+            ? Pass(CAT, "ShopSlotSaveData", "v5 필드 존재")
+            : Fail(CAT, "ShopSlotSaveData", "필드 누락 — v5 진열대 저장 손상"));
+
+        bool hasFirstDayProfile = typeof(SaveData).GetField("playerName") != null
+            && typeof(SaveData).GetField("selectedMapId") != null
+            && typeof(SaveData).GetField("firstDayPrototypeStage") != null;
+        list.Add(hasFirstDayProfile
+            ? Pass(CAT, "FirstDay profile", "v6 필드 존재")
+            : Fail(CAT, "FirstDay profile", "필드 누락 — v6 프로토타입 저장 손상"));
 
         // ISaveRepository + LocalJsonSaveRepository 타입 존재
         var iRepo = Type.GetType("ISaveRepository") ?? AppDomain.CurrentDomain.GetAssemblies()
@@ -505,8 +515,8 @@ public static class PA_Week11MilestoneValidator
                         @"if\s*\(\s*data\.version\s*<\s*CurrentSaveVersion\s*\)\s*\{[^}]*GameClock\.Instance\.ForceSet",
                         System.Text.RegularExpressions.RegexOptions.Singleline);
                 list.Add(gameClockOutsideMigration
-                    ? Pass(CAT, "GameClock.ForceSet on Load", "마이그레이션 외 호출 (v4 세이브도 시간 복구됨)")
-                    : Fail(CAT, "GameClock.ForceSet on Load", "마이그레이션 분기 안에서만 호출 — v4 시간 손실"));
+                    ? Pass(CAT, "GameClock.ForceSet on Load", "마이그레이션 외 호출 (v6 세이브도 시간 복구됨)")
+                    : Fail(CAT, "GameClock.ForceSet on Load", "마이그레이션 분기 안에서만 호출 — v6 시간 손실"));
             }
         }
         catch { /* 정적 분석 실패는 무시 */ }

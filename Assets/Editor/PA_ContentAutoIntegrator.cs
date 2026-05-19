@@ -39,7 +39,6 @@ public static class PA_ContentAutoIntegrator
         new("B12_TradePort",        "무역 항구 부두",  "B12_TradePort.fbx",        BuildingRole.Decor,     3, 25000, 1012, new Vector3(10.0f, 1.3f, 5.0f),  0),
     };
 
-    [MenuItem("P.A. System/Content/Build Functional Building Content", priority = 20)]
     public static void BuildAllFromMenu()
     {
         BuildAll(showDialog: true);
@@ -50,13 +49,11 @@ public static class PA_ContentAutoIntegrator
         BuildAll(showDialog: false);
     }
 
-    [MenuItem("P.A. System/Content/Validate Building Content", priority = 21)]
     public static void ValidateFromMenu()
     {
         ValidateContent(showDialog: true);
     }
 
-    [MenuItem("P.A. System/Content/Repair Building Content", priority = 22)]
     public static void RepairFromMenu()
     {
         RepairGeneratedContent(showDialog: true);

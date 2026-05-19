@@ -226,6 +226,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &1338877375416244090
 GameObject:
   m_ObjectHideFlags: 0
@@ -358,6 +360,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &1688920002141364613
 GameObject:
   m_ObjectHideFlags: 0
@@ -490,6 +494,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &1903320408768619200
 GameObject:
   m_ObjectHideFlags: 0
@@ -622,6 +628,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &1992303730969766233
 GameObject:
   m_ObjectHideFlags: 0
@@ -754,6 +762,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &6046813650188170584
 GameObject:
   m_ObjectHideFlags: 0
@@ -886,6 +896,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &6344327947069981899
 GameObject:
   m_ObjectHideFlags: 0
@@ -1018,6 +1030,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &6381773686569435444
 GameObject:
   m_ObjectHideFlags: 0
@@ -1150,6 +1164,8 @@ MonoBehaviour:
     quality: 0
     currentPrice: 0
   displayPrice: 0
+  displayOffset: {x: 0, y: 0.45, z: 0}
+  fallbackDisplayScale: 0.38
 --- !u!1 &7947144204959588322
 GameObject:
   m_ObjectHideFlags: 0

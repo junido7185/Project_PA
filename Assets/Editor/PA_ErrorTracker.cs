@@ -28,7 +28,6 @@ using UnityEngine;
 public class PA_ErrorTracker : EditorWindow
 {
     // ── 메뉴 진입 ─────────────────────────────────────────────────────────────
-    [MenuItem("P.A. System/🐛 Error Tracker", priority = 6)]
     public static void Open()
     {
         var w = GetWindow<PA_ErrorTracker>("🐛 에러 트래커");

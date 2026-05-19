@@ -12,6 +12,8 @@ TagManager:
   - Farmland
   - Ground
   - Crop
+  - Player
+  - MainCamera
   layers:
   - Default
   - TransparentFX

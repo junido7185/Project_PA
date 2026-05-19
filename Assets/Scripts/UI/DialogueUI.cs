@@ -10,6 +10,11 @@ public class DialogueUI : MonoBehaviour
 {
     public static DialogueUI instance;
 
+    // §Week12 — 시나리오/튜토리얼이 "대화창이 한 번이라도 열렸는가" 를 관찰할 수 있게 expose.
+    // _panel 은 private 이라 외부에서 활성 상태를 알기 어려워 추가.
+    public static bool IsOpen => instance != null
+        && instance._panel != null && instance._panel.activeInHierarchy;
+
     [Header("직접 연결 (선택)")]
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI bodyText;

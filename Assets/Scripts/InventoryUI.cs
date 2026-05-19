@@ -30,6 +30,14 @@ public class InventoryUI : MonoBehaviour
 
     void Start()
     {
+        BindRuntimeReferences();
+        if (inventory == null || hotbar == null || slotParent == null || slotPrefab == null)
+        {
+            Debug.LogWarning("InventoryUI: missing inventory, hotbar, slotParent, or slotPrefab.");
+            gameObject.SetActive(false);
+            return;
+        }
+
         slotUIs = new List<InventorySlotUI>();
         foreach (Transform child in slotParent) Destroy(child.gameObject);
 
@@ -50,6 +58,7 @@ public class InventoryUI : MonoBehaviour
 
     public void RefreshUI()
     {
+        BindRuntimeReferences();
         if (slotUIs == null || inventory == null) return;
         for (int i = 0; i < inventory.size; i++)
         {
@@ -84,5 +93,27 @@ public class InventoryUI : MonoBehaviour
             // 툴팁도 같이 꺼주기 (혹시 켜져있을까봐)
             if(tooltip != null) tooltip.Hide();
         }
+    }
+
+    void BindRuntimeReferences()
+    {
+        GameObject player = null;
+        try { player = GameObject.FindGameObjectWithTag("Player"); } catch { }
+
+        var playerInventory = player != null ? player.GetComponent<Inventory>() : null;
+        var playerHotbar = player != null ? player.GetComponent<Hotbar>() : null;
+
+        if (playerInventory != null)
+            inventory = playerInventory;
+        else if (inventory == null)
+            inventory = Inventory.instance != null ? Inventory.instance : FindAnyObjectByType<Inventory>();
+
+        if (playerHotbar != null)
+            hotbar = playerHotbar;
+        else if (hotbar == null)
+            hotbar = inventory != null && inventory.hotbar != null ? inventory.hotbar : FindAnyObjectByType<Hotbar>();
+
+        if (inventory != null && inventory.hotbar == null && hotbar != null)
+            inventory.hotbar = hotbar;
     }
 }

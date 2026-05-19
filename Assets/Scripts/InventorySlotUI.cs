@@ -10,6 +10,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
 {
     public Image icon;
     public TextMeshProUGUI countText;
+    public TextMeshProUGUI fallbackText;
 
     Inventory inventory;
     InventoryUI inventoryUI;
@@ -47,27 +48,88 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
 
     public InventorySlot GetSlot()
     {
-        return owner == SlotOwner.Inventory ? inventory.slots[index] : hotbar.slots[index];
+        if (owner == SlotOwner.Inventory)
+        {
+            if (inventory == null || inventory.slots == null || index < 0 || index >= inventory.slots.Count) return null;
+            return inventory.slots[index];
+        }
+
+        if (hotbar == null || hotbar.slots == null || index < 0 || index >= hotbar.slots.Count) return null;
+        return hotbar.slots[index];
     }
 
     public void SetSlot(InventorySlot slot)
     {
+        EnsureFallbackText();
+
         if (slot == null || slot.IsEmpty)
         {
-            icon.enabled = false; countText.text = "";
+            if (icon != null)
+            {
+                icon.enabled = false;
+                icon.sprite = null;
+                icon.color = Color.white;
+            }
+            if (countText != null) countText.text = "";
+            if (fallbackText != null) fallbackText.text = "";
         }
         else
         {
-            icon.enabled = true; icon.sprite = slot.item.icon;
-            countText.text = slot.count > 1 ? slot.count.ToString() : "";
+            bool hasIcon = slot.item.icon != null;
+            if (icon != null)
+            {
+                icon.enabled = true;
+                icon.sprite = slot.item.icon;
+                icon.color = hasIcon ? Color.white : new Color(0.92f, 0.82f, 0.58f, 0.95f);
+            }
+
+            if (fallbackText != null)
+            {
+                fallbackText.text = hasIcon ? "" : BuildFallbackLabel(slot);
+                fallbackText.enabled = !hasIcon;
+            }
+
+            if (countText != null)
+                countText.text = slot.count > 1 ? slot.count.ToString() : "";
         }
+    }
+
+    void EnsureFallbackText()
+    {
+        if (fallbackText != null) return;
+
+        var go = new GameObject("FallbackItemText", typeof(TextMeshProUGUI));
+        var rt = (RectTransform)go.transform;
+        rt.SetParent(transform, false);
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = new Vector2(4f, 4f);
+        rt.offsetMax = new Vector2(-4f, -4f);
+
+        fallbackText = go.GetComponent<TextMeshProUGUI>();
+        fallbackText.alignment = TextAlignmentOptions.Center;
+        fallbackText.fontSize = 14f;
+        fallbackText.fontStyle = FontStyles.Bold;
+        fallbackText.color = new Color(0.18f, 0.12f, 0.08f, 1f);
+        fallbackText.raycastTarget = false;
+        fallbackText.textWrappingMode = TextWrappingModes.Normal;
+        fallbackText.text = "";
+    }
+
+    static string BuildFallbackLabel(InventorySlot slot)
+    {
+        string name = slot?.item != null && !string.IsNullOrEmpty(slot.item.itemName)
+            ? slot.item.itemName
+            : "ITEM";
+        if (name.Length > 6) name = name.Substring(0, 6);
+        return name;
     }
 
     // --- 드래그 로직 ---
     public void OnBeginDrag(PointerEventData eventData)
     {
         var s = GetSlot();
-        if (s.IsEmpty) return;
+        if (s == null || s.IsEmpty) return;
 
         bool shiftHeld = Keyboard.current != null && Keyboard.current.shiftKey.isPressed;
         int amount = (eventData.button == PointerEventData.InputButton.Right)
@@ -86,7 +148,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
 
         s.AddCount(-amount);
 
-        Transform parentLayer = owner == SlotOwner.Inventory ? inventoryUI.dragLayer : hotbarUI.dragLayer;
+        Transform parentLayer = owner == SlotOwner.Inventory ? inventoryUI?.dragLayer : hotbarUI?.dragLayer;
+        if (parentLayer == null) parentLayer = transform.root;
         dragIcon = new GameObject("DragIcon");
         dragIcon.transform.SetParent(parentLayer, false);
         dragRT = dragIcon.AddComponent<RectTransform>();
@@ -169,6 +232,15 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
         if (inventoryUI != null) inventoryUI.RefreshUI();
         if (hotbarUI != null) hotbarUI.RefreshUI();
     }
-    public void OnPointerEnter(PointerEventData eventData) { if (GetSlot()?.item != null) tooltip.Show(GetSlot().item, eventData.position); }
-    public void OnPointerExit(PointerEventData eventData) { tooltip.Hide(); }
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        var slot = GetSlot();
+        if (slot?.item != null && tooltip != null)
+            tooltip.Show(slot.item, eventData.position);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (tooltip != null) tooltip.Hide();
+    }
 }
