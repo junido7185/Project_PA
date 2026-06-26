@@ -1,0 +1,25 @@
+﻿{
+    "status":  "BLOCKED_BY_DIRTY_GIT",
+    "projectRoot":  "C:\\Users\\sdjsd\\Desktop\\Unity\\Project_PA",
+    "expectedRoot":  "C:\\Users\\sdjsd\\Desktop\\Unity\\Project_PA",
+    "gitRoot":  "C:/Users/sdjsd/Desktop/Unity/Project_PA",
+    "dirtyGit":  true,
+    "missingUnityFolders":  [
+
+                            ],
+    "unityProcessCount":  0,
+    "unityProcesses":  [
+
+                       ],
+    "latestCrashReport":  "PROJECT_PA_CRASH_REPORT_20260625.md",
+    "policyPath":  "C:\\Users\\sdjsd\\Desktop\\Unity\\Project_PA\\Automation\\LoopEngineering\\loop-policy.json",
+    "policyValid":  true,
+    "policyMode":  "dry-run",
+    "referenceRootExists":  true,
+    "referenceGitStatus":  null,
+    "reasons":  [
+                    "Git working tree is dirty and policy requires a clean baseline.",
+                    "Crash report exists; review it before launch-heavy automation."
+                ],
+    "checkedAt":  "2026-06-26T14:02:48"
+}

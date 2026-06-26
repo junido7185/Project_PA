@@ -39,7 +39,7 @@ public class PlayableDayScenarioController : MonoBehaviour
     [Header("첫날 프로토타입")]
     public bool showStartupFlow = true;
     public bool autoCreateUI = true;
-    public Vector2 anchorOffset = new Vector2(0f, -90f);
+    public Vector2 anchorOffset = new Vector2(0f, -26f);
 
     public string PlayerName { get; private set; } = "하늘";
     public string SelectedMapId { get; private set; } = "green_bay";
@@ -76,6 +76,7 @@ public class PlayableDayScenarioController : MonoBehaviour
     int _baselineMoney;
     int _baselinePriceConfirmCount;
     int _randomNameIndex;
+    readonly List<string> _managementFeedback = new List<string>();
 
     static readonly string[] RandomNames =
     {
@@ -84,13 +85,13 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     static readonly Dictionary<Stage, string> Labels = new Dictionary<Stage, string>
     {
-        { Stage.TalkToNpc,       "1단계: 첫 이주자에게 다가가 [Space] 로 대화" },
-        { Stage.StockShopSlot,   "2단계: 빈 판매대 앞에서 [Space] 로 보급품 진열" },
-        { Stage.SetPrice,        "3단계: 진열한 판매대를 다시 [Space] 로 가격 확정" },
-        { Stage.WaitForPurchase, "4단계: 첫 손님이 구매할 때까지 기다리기" },
-        { Stage.OpenAuditApp,    "5단계: [P] 스마트폰을 열고 감사 앱 확인" },
-        { Stage.SaveProgress,    "6단계: [F5] 로 첫날 진행 저장" },
-        { Stage.Done,            "Day 1 목표 완료. 자유롭게 플레이하세요." },
+        { Stage.TalkToNpc,       "1단계: 첫 이주자에게 공급망 운영 브리핑 듣기" },
+        { Stage.StockShopSlot,   "2단계: NPC 생산물/보급품을 상점 경제에 진열" },
+        { Stage.SetPrice,        "3단계: 가격을 정해 고객 반응을 예측" },
+        { Stage.WaitForPurchase, "4단계: NPC 구매/거절 이유와 매출 변화 확인" },
+        { Stage.OpenAuditApp,    "5단계: [P] 스마트폰에서 감사/티어 목표 확인" },
+        { Stage.SaveProgress,    "6단계: [F5] 로 운영 기록 저장" },
+        { Stage.Done,            "Day 1 목표 완료. 결산을 보고 다음 운영 전략을 정하세요." },
     };
 
     void Awake()
@@ -185,6 +186,14 @@ public class PlayableDayScenarioController : MonoBehaviour
         _baselinePriceConfirmCount = ShopPriceUI.instance != null ? ShopPriceUI.instance.ConfirmCount : 0;
     }
 
+    public void RecordManagementFeedback(string feedback)
+    {
+        if (string.IsNullOrWhiteSpace(feedback)) return;
+        _managementFeedback.Add(feedback.Trim());
+        while (_managementFeedback.Count > 8)
+            _managementFeedback.RemoveAt(0);
+    }
+
     void BeginStartupFlow()
     {
         _timeScaleBeforeStartup = Time.timeScale;
@@ -221,6 +230,7 @@ public class PlayableDayScenarioController : MonoBehaviour
     {
         if (_flowPanel == null) return;
 
+        SetFlowBodyPresentation(summary: false);
         SetNameInputVisible(_startupStep == StartupStep.Name);
         SetMapButtonsVisible(_startupStep == StartupStep.MapSelect);
         if (_secondaryButton != null) _secondaryButton.gameObject.SetActive(false);
@@ -238,7 +248,7 @@ public class PlayableDayScenarioController : MonoBehaviour
             case StartupStep.Briefing:
                 SetFlowText(
                     "개척자 지원 본부",
-                    $"{PlayerName}님, 이번 무인도 프로젝트의 실패 원인은 자원 부족이 아니라 유통망 부재였습니다.\n당신의 임무는 섬에 첫 상점을 세우고, 주민이 머물 수 있는 경제를 만드는 것입니다.",
+                    $"{PlayerName}님, 이번 정착지의 문제는 자원 부족이 아니라 생산물의 흐름이 끊긴 것입니다.\n당신의 임무는 직접 모든 일을 하는 것이 아니라, NPC 생산물의 매입·진열·가격·판매를 관리해 경제 순환을 여는 것입니다.",
                     "임무 확인");
                 break;
             case StartupStep.MapSelect:
@@ -256,13 +266,13 @@ public class PlayableDayScenarioController : MonoBehaviour
             case StartupStep.Supplies:
                 SetFlowText(
                     "초기 지급 물품",
-                    "보급 상자에 상점 텐트 키트, 판매대, 나무, 돌, 빵, 당근, 판자가 지급되었습니다.\n첫 판매를 시작할 준비가 끝났습니다.",
+                    "보급 상자에 첫 판매용 상품과 상점 운영 키트가 지급되었습니다.\n이 물품은 단순 소모품이 아니라 첫 가격 실험과 고객 반응을 확인할 운영 자산입니다.",
                     "보급품 확인");
                 break;
             case StartupStep.Arrival:
                 SetFlowText(
                     $"{SelectedMapName} 도착",
-                    "첫 이주자가 상점 예정지 근처에서 기다리고 있습니다.\n대화 후 판매대에 물건을 올리고 가격을 정해 첫 거래를 성사시키세요.",
+                    "첫 이주자가 상점 예정지 근처에서 기다리고 있습니다.\n대화 후 상품을 진열하고 가격을 정해, NPC가 왜 구매하거나 거절하는지 확인하세요.",
                     "첫날 시작");
                 break;
         }
@@ -273,6 +283,32 @@ public class PlayableDayScenarioController : MonoBehaviour
         if (_flowTitle != null) _flowTitle.text = title;
         if (_flowBody != null) _flowBody.text = body;
         if (_primaryText != null) _primaryText.text = primary;
+    }
+
+    void SetFlowBodyPresentation(bool summary)
+    {
+        if (_flowBody == null) return;
+
+        var rt = (RectTransform)_flowBody.transform;
+        if (summary)
+        {
+            rt.anchoredPosition = new Vector2(0f, 28f);
+            rt.sizeDelta = new Vector2(810f, 360f);
+            _flowBody.fontSize = 18f;
+            _flowBody.lineSpacing = 0f;
+            _flowBody.alignment = TextAlignmentOptions.TopLeft;
+            _flowBody.textWrappingMode = TextWrappingModes.Normal;
+            _flowBody.overflowMode = TextOverflowModes.Ellipsis;
+            return;
+        }
+
+        rt.anchoredPosition = new Vector2(0f, 70f);
+        rt.sizeDelta = new Vector2(780f, 210f);
+        _flowBody.fontSize = 24f;
+        _flowBody.lineSpacing = 0f;
+        _flowBody.alignment = TextAlignmentOptions.TopLeft;
+        _flowBody.textWrappingMode = TextWrappingModes.Normal;
+        _flowBody.overflowMode = TextOverflowModes.Ellipsis;
     }
 
     void AdvanceStartupStep()
@@ -333,13 +369,13 @@ public class PlayableDayScenarioController : MonoBehaviour
     {
         return stage switch
         {
-            Stage.TalkToNpc => "1단계: 머리 위 '첫 이주자' 표식이 있는 NPC에게 다가가 [Space] 대화",
-            Stage.StockShopSlot => "2단계: 노란 '판매대 슬롯' 앞에서 [Space]를 누르면 핫바의 판매 아이템이 자동 진열됩니다",
-            Stage.SetPrice => "3단계: 상품이 올라간 같은 판매대에서 [Space] → 가격 확정",
-            Stage.WaitForPurchase => "4단계: NPC가 판매대까지 와서 구매할 때까지 잠시 기다리기",
-            Stage.OpenAuditApp => "5단계: [P] 스마트폰 열기 → 감사 앱 확인",
-            Stage.SaveProgress => "6단계: [F5]로 첫날 진행 저장",
-            Stage.Done => "Day 1 목표 완료. 결산을 확인하고 자유롭게 둘러보세요.",
+            Stage.TalkToNpc => "1단계: 첫 이주자에게 [Space] 대화 - NPC 생산물과 상점 운영 흐름을 확인하세요",
+            Stage.StockShopSlot => "2단계: 판매대 슬롯 앞 [Space] - 상품을 상점 경제에 진열하세요",
+            Stage.SetPrice => "3단계: 진열한 슬롯에서 [Space] - 가격을 정하고 예상 구매 반응을 확인하세요",
+            Stage.WaitForPurchase => "4단계: NPC 고객의 구매/거절 이유와 매출 변화를 관찰하세요",
+            Stage.OpenAuditApp => "5단계: [P] 스마트폰 - 감사 앱에서 Tier 0 운영 목표를 확인하세요",
+            Stage.SaveProgress => "6단계: [F5] 저장 - 오늘의 운영 기록을 보존하세요",
+            Stage.Done => "Day 1 목표 완료. 결산을 보고 다음 가격/재고 전략을 정하세요.",
             _ => "(목표 데이터 없음)"
         };
     }
@@ -434,10 +470,12 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     void ShowDaySummary()
     {
+        NpcBubbleUI.HideAll();
         _summaryShown = true;
         SetFlowVisible(true);
         SetNameInputVisible(false);
         SetMapButtonsVisible(false);
+        SetFlowBodyPresentation(summary: true);
 
         if (_startupPausedTime == false)
         {
@@ -467,21 +505,100 @@ public class PlayableDayScenarioController : MonoBehaviour
             ? FriendshipService.Instance.GetPoints("bori")
             : 0;
 
+        string feedbackSummary = BuildFeedbackSummary();
+        string nextAction = earnedToday > 0
+            ? "다음 행동: 잘 팔린 가격대를 기준으로 재고를 보충하고, 더 높은 가치의 가공품을 준비하세요."
+            : "다음 행동: 가격을 낮추거나 NPC 선호에 맞는 상품을 다시 진열하세요.";
+        string tierGoalSummary = BuildTierGoalSummary();
+        string villageSignalSummary = BuildVillageSignalSummary();
+
         SetFlowText(
             "Day 1 결산",
-            $"{PlayerName}님의 첫 개척일이 마무리되었습니다.\n\n" +
+            $"{PlayerName}님의 첫 운영일이 마무리되었습니다.\n\n" +
             $"선택 지도: {SelectedMapName}\n" +
             $"오늘 매출: {earnedToday} G\n" +
             $"현재 보유금: {money} G ({moneyDelta:+#;-#;0})\n" +
             $"판매한 상품: {salesToday} 개\n" +
             $"보리와의 친밀도: {boriPoints}\n\n" +
-            "📩 피드: 농부가 '내일부터 작물을 가져갈게요' 라고 남겼습니다.\n\n" +
-            "다음 감사 목표 (Tier 0 · 생존자)\n" +
-            "  • 총 매출 500G\n" +
-            "  • NPC 1명 이상과 대화\n" +
-            "  • 상품 3개 이상 판매\n" +
-            "  • 하루 종료 전 저장",
+            $"구매/거절 피드백:\n{feedbackSummary}\n\n" +
+            $"{nextAction}\n\n" +
+            $"Village direction:\n{villageSignalSummary}\n\n" +
+            $"{tierGoalSummary}\n" +
+            "운영 체크: 재고 보충, 가격 재조정, 저장 기록 확인",
             "계속 플레이");
+    }
+
+    string BuildFeedbackSummary()
+    {
+        if (_managementFeedback.Count == 0)
+            return "  • 아직 고객 판단 기록이 없습니다. 다음 손님 반응을 보고 가격을 조정하세요.";
+
+        int start = Math.Max(0, _managementFeedback.Count - 3);
+        var lines = new List<string>();
+        for (int i = start; i < _managementFeedback.Count; i++)
+            lines.Add($"  • {_managementFeedback[i]}");
+
+        return string.Join("\n", lines);
+    }
+
+    string BuildTierGoalSummary()
+    {
+        if (TierService.Instance == null)
+            return "다음 성장 목표\n  • 티어 서비스를 확인할 수 없습니다. 감사 앱에서 목표를 다시 확인하세요.";
+
+        int currentTier = TierService.Instance.CurrentTier;
+        var current = TierService.Instance.GetDefinition(currentTier);
+        var next = TierService.Instance.GetDefinition(currentTier + 1);
+
+        string currentName = current != null && !string.IsNullOrEmpty(current.tierName)
+            ? current.tierName
+            : $"Tier {currentTier}";
+
+        if (next == null)
+            return $"다음 성장 목표\n  • 현재 Tier {currentTier} · {currentName}: 최고 티어 운영 안정화 단계입니다.";
+
+        string nextName = string.IsNullOrEmpty(next.tierName) ? $"Tier {next.tier}" : next.tierName;
+        var lines = new List<string>
+        {
+            $"다음 성장 목표 (현재 Tier {currentTier} · {currentName} → Tier {next.tier} · {nextName})"
+        };
+
+        long revenue = EconomyService.Instance != null ? EconomyService.Instance.CumulativeRevenue : 0L;
+        if (next.requiredCumulativeRevenue > 0)
+        {
+            long remaining = next.requiredCumulativeRevenue - revenue;
+            if (remaining < 0) remaining = 0;
+            lines.Add($"  • 누적 매출 {revenue:N0}G / {next.requiredCumulativeRevenue:N0}G ({remaining:N0}G 남음)");
+        }
+
+        if (next.requiredReputation > 0)
+        {
+            int reputation = TierService.Instance.Reputation;
+            int remaining = next.requiredReputation - reputation;
+            if (remaining < 0) remaining = 0;
+            lines.Add($"  • 평판 {reputation} / {next.requiredReputation} ({remaining} 남음)");
+        }
+
+        if (next.requiresManualApproval)
+            lines.Add("  • 본사 감사 승인 필요");
+
+        if (lines.Count == 1)
+            lines.Add("  • 감사 앱에서 다음 운영 조건을 확인하세요.");
+
+        return string.Join("\n", lines);
+    }
+
+    string BuildVillageSignalSummary()
+    {
+        if (VillageChangeSignalController.Instance == null)
+            return "  Village signal is not available yet.";
+
+        VillageChangeSignalController.Instance.RefreshNow();
+        string summary = VillageChangeSignalController.Instance.GetLeadingSignalSummary();
+        if (string.IsNullOrWhiteSpace(summary) || summary.Contains("No village"))
+            return "  Sell products to reveal the first village-change signal.";
+
+        return $"  {summary}";
     }
 
     void CloseSummary()
@@ -512,8 +629,11 @@ public class PlayableDayScenarioController : MonoBehaviour
         bgRt.anchorMin = new Vector2(0.5f, 1f);
         bgRt.anchorMax = new Vector2(0.5f, 1f);
         bgRt.pivot = new Vector2(0.5f, 1f);
-        bgRt.anchoredPosition = anchorOffset;
-        bgRt.sizeDelta = new Vector2(860f, 86f);
+        Vector2 objectiveOffset = anchorOffset;
+        if (objectiveOffset.y < -48f)
+            objectiveOffset.y = -26f;
+        bgRt.anchoredPosition = objectiveOffset;
+        bgRt.sizeDelta = new Vector2(860f, 72f);
         bgGo.GetComponent<Image>().color = new Color(0.02f, 0.02f, 0.02f, 0.68f);
 
         var txtGo = new GameObject("ObjectiveText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -524,7 +644,7 @@ public class PlayableDayScenarioController : MonoBehaviour
         txtRt.offsetMin = new Vector2(20f, 8f);
         txtRt.offsetMax = new Vector2(-20f, -8f);
         objectiveText = txtGo.GetComponent<TextMeshProUGUI>();
-        objectiveText.fontSize = 24f;
+        objectiveText.fontSize = 21f;
         objectiveText.alignment = TextAlignmentOptions.Center;
         objectiveText.color = Color.white;
         objectiveText.raycastTarget = false;

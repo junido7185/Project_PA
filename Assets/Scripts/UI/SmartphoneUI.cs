@@ -154,6 +154,8 @@ public class SmartphoneUI : MonoBehaviour
     public void Toggle()
     {
         _isOpen = !_isOpen;
+        if (_isOpen)
+            NpcBubbleUI.HideAll();
 
         // 상호배타: 열릴 때 인벤토리가 열려있으면 강제로 닫는다.
         if (_isOpen

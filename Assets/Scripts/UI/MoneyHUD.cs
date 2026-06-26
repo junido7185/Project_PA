@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -17,6 +18,8 @@ public class MoneyHUD : MonoBehaviour
     public TextMeshProUGUI moneyText;
     [Tooltip("null 이면 Awake 에서 자동 생성")]
     public TextMeshProUGUI tierText;
+    [Tooltip("null 이면 Awake 에서 자동 생성")]
+    public TextMeshProUGUI tierGoalText;
 
     // ── 자동 생성된 오브젝트 (직접 연결 시 미사용) ──────────────────────────────
     Canvas _ownCanvas;
@@ -26,7 +29,7 @@ public class MoneyHUD : MonoBehaviour
         if (instance != null && instance != this) { Destroy(gameObject); return; }
         instance = this;
 
-        if (moneyText == null || tierText == null)
+        if (moneyText == null || tierText == null || tierGoalText == null)
             BuildHUD();
     }
 
@@ -65,7 +68,7 @@ public class MoneyHUD : MonoBehaviour
         hudRT.anchorMin        = new Vector2(1f, 1f);   // 우상단
         hudRT.anchorMax        = new Vector2(1f, 1f);
         hudRT.pivot            = new Vector2(1f, 1f);
-        hudRT.sizeDelta        = new Vector2(260, 70);
+        hudRT.sizeDelta        = new Vector2(360, 96);
         hudRT.anchoredPosition = new Vector2(-20, -20);
 
         var bgImg = hudGO.GetComponent<Image>();
@@ -78,8 +81,8 @@ public class MoneyHUD : MonoBehaviour
         moneyTRT.SetParent(hudGO.transform, false);
         moneyTRT.anchorMin = Vector2.zero;
         moneyTRT.anchorMax = Vector2.one;
-        moneyTRT.offsetMin = new Vector2(10, 36);  // 하단 절반
-        moneyTRT.offsetMax = new Vector2(-10, -4);
+        moneyTRT.offsetMin = new Vector2(12, 62);
+        moneyTRT.offsetMax = new Vector2(-12, -6);
 
         moneyText            = moneyGO.GetComponent<TextMeshProUGUI>();
         // ⚠ v3: 💰 이모지 → 텍스트 "G" (Jalnan2 SDF 호환)
@@ -96,8 +99,8 @@ public class MoneyHUD : MonoBehaviour
         tierTRT.SetParent(hudGO.transform, false);
         tierTRT.anchorMin = Vector2.zero;
         tierTRT.anchorMax = Vector2.one;
-        tierTRT.offsetMin = new Vector2(10, 4);
-        tierTRT.offsetMax = new Vector2(-10, -38);
+        tierTRT.offsetMin = new Vector2(12, 36);
+        tierTRT.offsetMax = new Vector2(-12, -34);
 
         tierText            = tierGO.GetComponent<TextMeshProUGUI>();
         tierText.text       = "Tier 0 · 생존자";
@@ -105,6 +108,23 @@ public class MoneyHUD : MonoBehaviour
         tierText.color      = new Color(0.8f, 0.8f, 0.8f);
         tierText.alignment  = TextAlignmentOptions.Right;
         tierText.raycastTarget = false;
+
+        var goalGO  = new GameObject("TierGoalText", typeof(TextMeshProUGUI));
+        var goalTRT = (RectTransform)goalGO.transform;
+        goalTRT.SetParent(hudGO.transform, false);
+        goalTRT.anchorMin = Vector2.zero;
+        goalTRT.anchorMax = Vector2.one;
+        goalTRT.offsetMin = new Vector2(12, 8);
+        goalTRT.offsetMax = new Vector2(-12, -60);
+
+        tierGoalText                  = goalGO.GetComponent<TextMeshProUGUI>();
+        tierGoalText.text             = "다음 목표 계산 중";
+        tierGoalText.fontSize         = 13;
+        tierGoalText.color            = new Color(0.70f, 0.92f, 0.76f);
+        tierGoalText.alignment        = TextAlignmentOptions.Right;
+        tierGoalText.overflowMode     = TextOverflowModes.Ellipsis;
+        tierGoalText.textWrappingMode = TextWrappingModes.NoWrap;
+        tierGoalText.raycastTarget    = false;
     }
 
     // ── 서비스 구독 ──────────────────────────────────────────────────────────────
@@ -113,7 +133,9 @@ public class MoneyHUD : MonoBehaviour
         if (EconomyService.Instance != null)
         {
             EconomyService.Instance.OnMoneyChanged += OnMoneyChanged;
+            EconomyService.Instance.OnCumulativeRevenueChanged += OnCumulativeRevenueChanged;
             OnMoneyChanged(EconomyService.Instance.Money); // 초기값 즉시 반영
+            OnCumulativeRevenueChanged(EconomyService.Instance.CumulativeRevenue);
         }
         if (TierService.Instance != null)
         {
@@ -125,7 +147,10 @@ public class MoneyHUD : MonoBehaviour
     void OnDestroy()
     {
         if (EconomyService.Instance != null)
+        {
             EconomyService.Instance.OnMoneyChanged -= OnMoneyChanged;
+            EconomyService.Instance.OnCumulativeRevenueChanged -= OnCumulativeRevenueChanged;
+        }
         if (TierService.Instance != null)
             TierService.Instance.OnTierAdvanced -= OnTierAdvanced;
     }
@@ -137,8 +162,14 @@ public class MoneyHUD : MonoBehaviour
             moneyText.text = $"{amount:N0} G"; // §v3: 💰 이모지 제거 (Jalnan2 SDF 미지원)
     }
 
+    void OnCumulativeRevenueChanged(long _) => RefreshTierGoalText();
+
     // TierService.OnTierAdvanced 는 (oldTier, newTier) 시그니처
-    void OnTierAdvanced(int oldTier, int newTier) => RefreshTierText(newTier);
+    void OnTierAdvanced(int oldTier, int newTier)
+    {
+        RefreshTierText(newTier);
+        RefreshTierGoalText();
+    }
 
     void RefreshTierText(int tier)
     {
@@ -151,5 +182,51 @@ public class MoneyHUD : MonoBehaviour
             if (def != null) tierName = def.tierName;
         }
         tierText.text = $"Tier {tier} · {tierName}";
+        RefreshTierGoalText();
+    }
+
+    void RefreshTierGoalText()
+    {
+        if (tierGoalText == null) return;
+
+        if (TierService.Instance == null)
+        {
+            tierGoalText.text = "다음 목표: 티어 서비스 확인";
+            return;
+        }
+
+        int currentTier = TierService.Instance.CurrentTier;
+        var next = TierService.Instance.GetDefinition(currentTier + 1);
+        if (next == null)
+        {
+            tierGoalText.text = "최고 티어 운영 중";
+            return;
+        }
+
+        string nextName = string.IsNullOrEmpty(next.tierName) ? $"Tier {next.tier}" : next.tierName;
+        var requirements = new List<string>();
+
+        if (next.requiredCumulativeRevenue > 0)
+        {
+            long revenue = EconomyService.Instance != null ? EconomyService.Instance.CumulativeRevenue : 0L;
+            long remaining = next.requiredCumulativeRevenue - revenue;
+            if (remaining < 0) remaining = 0;
+            requirements.Add($"매출 {remaining:N0}G 남음");
+        }
+
+        if (next.requiredReputation > 0)
+        {
+            int remaining = next.requiredReputation - TierService.Instance.Reputation;
+            if (remaining < 0) remaining = 0;
+            requirements.Add($"평판 {remaining} 남음");
+        }
+
+        if (next.requiresManualApproval)
+            requirements.Add("감사 승인 필요");
+
+        if (requirements.Count == 0)
+            requirements.Add("운영 조건 확인");
+
+        tierGoalText.text = $"다음: Tier {next.tier} {nextName} · {string.Join(" · ", requirements)}";
     }
 }

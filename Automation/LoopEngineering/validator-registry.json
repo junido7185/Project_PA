@@ -1,0 +1,161 @@
+{
+  "generatedAt": "2026-06-26",
+  "projectRoot": "C:/Users/sdjsd/Desktop/Unity/Project_PA",
+  "unityVersion": "6000.3.2f1",
+  "validators": [
+    {
+      "id": "core-slice-playability",
+      "executeMethod": "PA_CoreSlicePlayabilityValidator.RunCoreSlicePlayabilityValidation",
+      "sourceFile": "Assets/Editor/PA_CoreSlicePlayabilityValidator.cs",
+      "purpose": "Validate Day 1-3 player-facing HUD and hidden development overlays.",
+      "workflowTypes": ["gameplay", "ui-ux", "core-slice"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first failed HUD/overlay check.",
+      "humanFollowUp": "Confirm F10 toggle and Game view readability manually."
+    },
+    {
+      "id": "final-demo-route",
+      "executeMethod": "PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation",
+      "sourceFile": "Assets/Editor/PA_FinalDemoRouteValidator.cs",
+      "purpose": "Validate the Day 1 route: talk, stock, price, customer purchase, money change.",
+      "workflowTypes": ["gameplay", "demo-route", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop feature work and fix only the blocking route regression.",
+      "humanFollowUp": "Repeat the same route in Game view or executable."
+    },
+    {
+      "id": "day-night-shop-loop",
+      "executeMethod": "PA_DayNightShopLoopValidator.RunDayNightShopLoopValidation",
+      "sourceFile": "Assets/Editor/PA_DayNightShopLoopValidator.cs",
+      "purpose": "Validate day prep, shop open state, and settlement phase behavior.",
+      "workflowTypes": ["gameplay", "day-night", "shop-loop"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect phase/shop gate assumptions.",
+      "humanFollowUp": "Check whether day/night messaging is understandable."
+    },
+    {
+      "id": "long-play-progression",
+      "executeMethod": "PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation",
+      "sourceFile": "Assets/Editor/PA_LongPlayProgressionValidator.cs",
+      "purpose": "Validate Day 2-7 producer delivery, HUD goals, and Day 3 save/load state.",
+      "workflowTypes": ["long-play", "save-load", "producer-economy"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect long-play state or save hook changes.",
+      "humanFollowUp": "Manual Day 2-7 feel check remains required."
+    },
+    {
+      "id": "gathering-shop-gate",
+      "executeMethod": "PA_GatheringShopGateValidator.RunGatheringShopGateValidation",
+      "sourceFile": "Assets/Editor/PA_GatheringShopGateValidator.cs",
+      "purpose": "Validate daytime gathering points and Day 2+ shop-open purchase gate.",
+      "workflowTypes": ["gameplay", "daytime-activity", "shop-gate"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect gathering availability or customer gate behavior.",
+      "humanFollowUp": "Walk-to-gather distance and NPC pathing need real-input review."
+    },
+    {
+      "id": "customer-arrival",
+      "executeMethod": "PA_CustomerArrivalValidator.RunCustomerArrivalValidation",
+      "sourceFile": "Assets/Editor/PA_CustomerArrivalValidator.cs",
+      "purpose": "Validate customer invite pacing after the player opens the shop.",
+      "workflowTypes": ["npc", "shop-loop", "customer-flow"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect CustomerArrivalController sidecar behavior.",
+      "humanFollowUp": "Tune interval/cap only after Game view feel check."
+    },
+    {
+      "id": "customer-presentation",
+      "executeMethod": "PA_CustomerPresentationValidator.RunCustomerPresentationValidation",
+      "sourceFile": "Assets/Editor/PA_CustomerPresentationValidator.cs",
+      "purpose": "Validate customer preference and purchase-feedback presentation data.",
+      "workflowTypes": ["npc", "ui-ux", "customer-feedback"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect NPC profile data or presentation hooks.",
+      "humanFollowUp": "Confirm text length, Korean rendering, and screen readability."
+    },
+    {
+      "id": "customer-demand-insight",
+      "executeMethod": "PA_CustomerDemandInsightValidator.RunCustomerDemandInsightValidation",
+      "sourceFile": "Assets/Editor/PA_CustomerDemandInsightValidator.cs",
+      "purpose": "Validate demand signal generation after buy/pass outcomes.",
+      "workflowTypes": ["economy", "customer-demand", "ui-ux"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect observer hooks or demand signal data.",
+      "humanFollowUp": "Decide how signals become weekly trends."
+    },
+    {
+      "id": "customer-panel-layout",
+      "executeMethod": "PA_CustomerPanelLayoutValidator.RunCustomerPanelLayoutValidation",
+      "sourceFile": "Assets/Editor/PA_CustomerPanelLayoutValidator.cs",
+      "purpose": "Validate 1920x1080 layout bounds and panel overlap rules.",
+      "workflowTypes": ["ui-ux", "layout", "presentation"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and fix only the blocking overlap/readability issue.",
+      "humanFollowUp": "Subjective visual quality and font rendering still require manual review."
+    },
+    {
+      "id": "processing-chain",
+      "executeMethod": "PA_ProcessingChainValidator.RunProcessingChainValidation",
+      "sourceFile": "Assets/Editor/PA_ProcessingChainValidator.cs",
+      "purpose": "Validate an existing raw-to-processed value chain through crafting service.",
+      "workflowTypes": ["processing", "crafting", "economy"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect recipe data or processing advisor assumptions.",
+      "humanFollowUp": "Balance processing margins later."
+    },
+    {
+      "id": "village-change-signal",
+      "executeMethod": "PA_VillageChangeSignalValidator.RunVillageChangeSignalValidation",
+      "sourceFile": "Assets/Editor/PA_VillageChangeSignalValidator.cs",
+      "purpose": "Validate product-category village direction signal.",
+      "workflowTypes": ["village-growth", "settlement", "economy"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect category signal or settlement summary wiring.",
+      "humanFollowUp": "Confirm signal is understandable as village change, not random UI."
+    },
+    {
+      "id": "final-presentation-review",
+      "executeMethod": "PA_FinalPresentationReviewer.RunFinalPresentationReview",
+      "sourceFile": "Assets/Editor/PA_FinalPresentationReviewer.cs",
+      "purpose": "Capture/validate representative presentation screenshots.",
+      "workflowTypes": ["presentation", "screenshot", "visual-review"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect capture setup or camera marker references.",
+      "humanFollowUp": "Human approval required for final visual quality."
+    },
+    {
+      "id": "gathering-shop-review",
+      "executeMethod": "PA_GatheringShopReview.RunGatheringShopReview",
+      "sourceFile": "Assets/Editor/PA_GatheringShopReview.cs",
+      "purpose": "Capture review screenshots for daytime gathering and shop-gate flow.",
+      "workflowTypes": ["presentation", "daytime-activity", "screenshot"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect screenshot/camera assumptions.",
+      "humanFollowUp": "Human must judge placeholder visual quality."
+    },
+    {
+      "id": "prototype-firstday-play-smoke",
+      "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
+      "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",
+      "purpose": "Run a Prototype_FirstDay play smoke test from visual acceleration tooling.",
+      "workflowTypes": ["scene", "smoke-test", "visual-acceleration"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect scene/startup blockers.",
+      "humanFollowUp": "Use only after visual staging work is approved."
+    }
+  ]
+}

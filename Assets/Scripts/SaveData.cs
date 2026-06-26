@@ -22,6 +22,10 @@ public class SaveData
 
     // 인게임 시간 (GameClock)
     public float gameHour = 7f;   // 0~23.99
+    // Long-play progression sidecar state. Added in v7.
+    public int longPlayLastSupplyDay = 0;
+    public long longPlayDayStartRevenue = 0;
+    public int longPlayDayStartMoney = 0;
     public int   gameDay  = 1;    // 1 이상
 
     // 감사 시스템 (AuditService) — v2 추가
@@ -42,6 +46,11 @@ public class SaveData
 
     // ShopSlot display state. Added in v5 so a saved playable-day demo restores stocked shelves.
     public List<ShopSlotSaveData> shopSlots = new List<ShopSlotSaveData>();
+
+    // Daytime gathering / stock-prep completion. Added in v8 so a same-day gather does not
+    // reset on save/load (DayNightShopLoopController._prepCollectionDays).
+    public int dayPrepCollectedDay = 0;
+    public List<string> dayPrepCollectedActivities = new List<string>();
 }
 
 // §4 FriendshipService 저장 DTO — FriendshipService.ForceSetPoints 로 복원한다.

@@ -301,6 +301,19 @@ public class NpcController : MonoBehaviour
             return;
         }
 
+        // CDN-002 — 밤 영업 게이트: 가게가 손님에게 열려 있을 때만 구매를 진행한다.
+        // Day 1 튜토리얼은 DayNightShopLoopController 가 항상 열림으로 처리해 첫 판매 루트를 보존한다.
+        // 영업 전이면 오류가 아니라 자연스럽게 발길을 돌리고, 가끔 안내 말풍선을 띄운다.
+        var shopLoop = DayNightShopLoopController.Instance;
+        if (shopLoop != null && !shopLoop.IsShopOpenForCustomers)
+        {
+            MaybeShowShopClosedBubble();
+            if (_currentSlotTarget != null) _currentSlotTarget.ReleaseClaim(DisplayName);
+            _currentSlotTarget = null;
+            EndShoppingVisit("아직 영업 전");
+            return;
+        }
+
         // §Week12 — 동시 구매 방지: 다른 NPC 가 이미 평가 중인 슬롯은 스킵.
         // 같은 NPC 의 재진입은 허용 (TryClaim 이 idempotent).
         if (!_currentSlotTarget.TryClaim(DisplayName))
@@ -314,18 +327,29 @@ public class NpcController : MonoBehaviour
         PurchaseEvaluator.Result result = PurchaseEvaluator.Evaluate(profile, _currentSlotTarget, _rng);
         debugLastDecision = result.reason;
         Debug.Log($"🤖 {DisplayName} 평가 [{_currentSlotTarget.currentItem?.data?.itemName}]: {result.reason}");
+        string feedback = BuildPurchaseFeedback(result, _currentSlotTarget);
+        CustomerDemandInsightController.Instance?.RecordEvaluation(
+            result,
+            _currentSlotTarget.currentItem != null ? _currentSlotTarget.currentItem.data : null,
+            DisplayName,
+            _currentSlotTarget.EffectiveDisplayPrice);
+
+        // SPY-002 — 구매/거절 이유 + 마을 변화 연결을 플레이어용 패널에 기록(읽기 전용).
+        // willBuy/판매/돈/FSM 에 영향을 주지 않는다. demand insight 훅과 동일한 패턴.
+        PurchaseFeedbackPresentationController.Instance?.RecordDecision(
+            profile,
+            result,
+            _currentSlotTarget.currentItem != null ? _currentSlotTarget.currentItem.data : null,
+            _currentSlotTarget.EffectiveDisplayPrice,
+            DisplayName);
 
         if (result.willBuy)
         {
-            float reactionPrice = _currentSlotTarget.EffectiveDisplayPrice;
-            float reactionBasePrice = _currentSlotTarget.currentItem != null && _currentSlotTarget.currentItem.data != null
-                ? _currentSlotTarget.currentItem.data.basePrice
-                : reactionPrice;
-
             if (_currentSlotTarget.TryPurchaseByNpc(DisplayName, out int paid))
             {
                 Debug.Log($"🤖 {DisplayName}: 구매 성공! +{paid}G");
-                ShowBubbleReaction(true, reactionPrice, reactionBasePrice);
+                ShowBubbleMessage(feedback);
+                RecordScenarioFeedback(feedback);
                 // 구매 직후 소감 대사 (DialogueData 가 연결된 NPC 만)
                 if (_dialogue == null) _dialogue = GetComponent<NpcDialogue>();
                 if (_dialogue != null) _dialogue.SpeakTopic(DialogueTopic.ShopBought);
@@ -342,11 +366,8 @@ public class NpcController : MonoBehaviour
         }
         else
         {
-            float reactionPrice = _currentSlotTarget.EffectiveDisplayPrice;
-            float reactionBasePrice = _currentSlotTarget.currentItem != null && _currentSlotTarget.currentItem.data != null
-                ? _currentSlotTarget.currentItem.data.basePrice
-                : reactionPrice;
-            ShowBubbleReaction(false, reactionPrice, reactionBasePrice);
+            ShowBubbleMessage(feedback);
+            RecordScenarioFeedback(feedback);
 
             // 패스 대사 — "가격이 너무 비싸" 또는 일반 잡담
             if (_dialogue == null) _dialogue = GetComponent<NpcDialogue>();
@@ -377,11 +398,71 @@ public class NpcController : MonoBehaviour
         foreach (var s in _visitedSlots) if (s != null) s.ReleaseClaim(DisplayName);
     }
 
-    void ShowBubbleReaction(bool bought, float price, float basePrice)
+    string BuildPurchaseFeedback(PurchaseEvaluator.Result result, ShopSlot slot)
+    {
+        if (slot == null || slot.IsEmpty || slot.currentItem == null || slot.currentItem.data == null)
+            return $"{DisplayName}: 진열 상품을 다시 확인해야겠어요.";
+
+        var item = slot.currentItem.data;
+        int displayPrice = Mathf.Max(1, slot.EffectiveDisplayPrice);
+        int basePrice = Mathf.Max(1, item.basePrice);
+        float ratio = displayPrice / (float)basePrice;
+        int percent = Mathf.RoundToInt(result.probability * 100f);
+
+        string itemName = item.itemName;
+        string categoryHint = ResolveCategoryHint(item.category);
+
+        if (result.willBuy)
+        {
+            if (ratio <= 0.85f)
+                return $"{DisplayName}: 저렴해서 구매 ({percent}%)";
+            if (ratio <= 1.15f)
+                return $"{DisplayName}: 가격 적정, 구매 ({percent}%)";
+            return $"{DisplayName}: {categoryHint} 선호로 구매 ({percent}%)";
+        }
+
+        if (ratio >= 1.35f)
+            return $"{DisplayName}: 가격 높아 보류 ({percent}%)";
+
+        if (result.probability < 0.35f)
+            return $"{DisplayName}: 선호 낮아 보류 ({percent}%)";
+
+        return $"{DisplayName}: 고민 후 보류 ({percent}%)";
+    }
+
+    string ResolveCategoryHint(ItemCategory category)
+    {
+        return category switch
+        {
+            ItemCategory.Raw => "원자재 계열",
+            ItemCategory.Processed => "가공품 계열",
+            ItemCategory.Utility => "실용품 계열",
+            ItemCategory.Luxury => "선호 상품 계열",
+            ItemCategory.Tool => "도구 계열",
+            _ => "이 상품 계열"
+        };
+    }
+
+    void ShowBubbleMessage(string message)
     {
         var bubble = GetComponentInChildren<NpcBubbleUI>(true);
         if (bubble != null)
-            bubble.ShowReaction(bought, price, basePrice);
+            bubble.Show(message, 3f);
+    }
+
+    // CDN-002 — 영업 전 손님이 발길을 돌릴 때 가끔 보여주는 안내 말풍선(과도한 반복 방지).
+    float _nextClosedBubbleAt;
+    void MaybeShowShopClosedBubble()
+    {
+        if (Time.time < _nextClosedBubbleAt) return;
+        _nextClosedBubbleAt = Time.time + 6f;
+        ShowBubbleMessage($"{DisplayName}: 가게 열면 다시 올게요.");
+    }
+
+    void RecordScenarioFeedback(string message)
+    {
+        if (PlayableDayScenarioController.Instance != null)
+            PlayableDayScenarioController.Instance.RecordManagementFeedback(message);
     }
 
     // ---------- NpcScheduleController 공개 API ----------

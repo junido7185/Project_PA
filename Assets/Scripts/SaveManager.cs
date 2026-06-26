@@ -22,7 +22,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 6;
+    private const int CurrentSaveVersion = 8;
 
     void Awake()
     {
@@ -72,6 +72,15 @@ public class SaveManager : MonoBehaviour
             data.firstDayPrototypeStage = firstDay.CurrentStageIndex;
         }
 
+        var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
+        if (longPlay != null)
+            longPlay.WriteSaveFields(data);
+
+        // CDN/IL — 당일 채집(낮 재고 준비) 완료 상태 직렬화.
+        var dayLoop = DayNightShopLoopController.Instance ?? FindFirstObjectByType<DayNightShopLoopController>();
+        if (dayLoop != null)
+            dayLoop.WriteSaveFields(data);
+
         // 3. 건물 정보 — 레지스트리가 가진 명시 목록을 직렬화한다.
         if (BuildingRegistry.Instance != null)
         {
@@ -118,6 +127,8 @@ public class SaveManager : MonoBehaviour
         }
 
         // 버전 스탬프
+        data.version = CurrentSaveVersion;
+
         data.version = CurrentSaveVersion;
 
         string json = JsonUtility.ToJson(data, true);
@@ -168,6 +179,15 @@ public class SaveManager : MonoBehaviour
         var firstDay = FindFirstObjectByType<PlayableDayScenarioController>();
         if (firstDay != null)
             firstDay.RestoreSavedSession(data.playerName, data.selectedMapId, data.firstDayPrototypeStage);
+
+        var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
+        if (longPlay != null)
+            longPlay.RestoreSavedSession(data.longPlayLastSupplyDay, data.longPlayDayStartRevenue, data.longPlayDayStartMoney);
+
+        // CDN/IL — 당일 채집 완료 상태 복원(저장된 날과 현재 날이 같을 때만 유지).
+        var dayLoop = DayNightShopLoopController.Instance ?? FindFirstObjectByType<DayNightShopLoopController>();
+        if (dayLoop != null)
+            dayLoop.RestoreSavedState(data.dayPrepCollectedDay, data.dayPrepCollectedActivities);
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -324,6 +344,26 @@ public class SaveManager : MonoBehaviour
             data.firstDayPrototypeStage = Mathf.Clamp(data.firstDayPrototypeStage, 0, 6);
             data.version = 6;
             Debug.Log("💾 마이그레이션 v5→v6: 플레이어 이름/선택 맵/첫날 단계 필드 추가");
+        }
+
+        // v6 -> v7: long-play progression sidecar state.
+        if (data.version < 7)
+        {
+            data.longPlayLastSupplyDay = 0;
+            data.longPlayDayStartRevenue = 0L;
+            data.longPlayDayStartMoney = Mathf.Max(0, data.money);
+            data.version = 7;
+            Debug.Log("[SaveManager] Migration v6->v7: long-play progression fields added.");
+        }
+
+        // v7 -> v8: daytime gathering / stock-prep completion state.
+        if (data.version < 8)
+        {
+            data.dayPrepCollectedDay = 0;
+            if (data.dayPrepCollectedActivities == null)
+                data.dayPrepCollectedActivities = new List<string>();
+            data.version = 8;
+            Debug.Log("[SaveManager] Migration v7->v8: day-prep gathering fields added.");
         }
 
         return data;

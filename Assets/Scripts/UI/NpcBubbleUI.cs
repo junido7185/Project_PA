@@ -3,15 +3,15 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// §4 NpcBubbleUI — NPC 머리 위 WorldSpace 말풍선.
-// NPC GameObject 의 자식으로 배치한다. 빌보드(항상 카메라를 향함).
+// §4 NpcBubbleUI — NPC 머리 위 피드백 말풍선.
+// NPC GameObject 의 자식으로 배치한다. 화면 공간에서 NPC 위치를 따라가며 최종 시연 가독성을 보장한다.
 // Show(text, duration) — 일반 대사 말풍선.
 // ShowReaction(bought, price, basePrice) — CustomerReaction 통합 (구매결정 반응).
 [RequireComponent(typeof(Canvas))]
 public class NpcBubbleUI : MonoBehaviour
 {
     [Header("오프셋 (NPC 머리 위)")]
-    public Vector3 offset = new Vector3(0f, 4.0f, 0f);
+    public Vector3 offset = new Vector3(0f, 2.4f, 0f);
 
     [Header("직접 연결 (선택)")]
     public TextMeshProUGUI bubbleText;
@@ -19,45 +19,49 @@ public class NpcBubbleUI : MonoBehaviour
     Canvas   _canvas;
     Image    _bg;
     Coroutine _hideCoroutine;
+    RectTransform _rectTransform;
+    RectTransform _bubbleRoot;
 
     void Awake()
     {
         _canvas = GetComponent<Canvas>();
-        _canvas.renderMode    = RenderMode.WorldSpace;
-        _canvas.worldCamera   = Camera.main;
+        _canvas.renderMode    = RenderMode.ScreenSpaceOverlay;
+        _canvas.sortingOrder  = 260;
 
-        var rt          = GetComponent<RectTransform>();
-        rt.sizeDelta    = new Vector2(260f, 70f);
-        rt.localScale   = new Vector3(0.004f, 0.004f, 0.004f);
-        rt.localPosition = offset;
+        _rectTransform = GetComponent<RectTransform>();
+        _rectTransform.localScale   = Vector3.one;
 
         if (bubbleText == null) BuildBubble();
+        else _bubbleRoot = bubbleText.transform.parent as RectTransform;
+
+        UpdateScreenPosition();
         gameObject.SetActive(false);
     }
 
     void LateUpdate()
     {
-        // 빌보드 — 항상 카메라 방향을 바라봄
-        if (Camera.main != null)
-            transform.forward = Camera.main.transform.forward;
+        UpdateScreenPosition();
     }
 
     void BuildBubble()
     {
+        var rootGO = new GameObject("BubblePanel", typeof(RectTransform), typeof(Image));
+        rootGO.transform.SetParent(transform, false);
+        _bubbleRoot = (RectTransform)rootGO.transform;
+        _bubbleRoot.anchorMin = new Vector2(0.5f, 0.5f);
+        _bubbleRoot.anchorMax = new Vector2(0.5f, 0.5f);
+        _bubbleRoot.pivot = new Vector2(0.5f, 0.5f);
+        _bubbleRoot.sizeDelta = new Vector2(360f, 96f);
+
         // 배경
-        var bgGO = new GameObject("BubbleBG", typeof(Image));
-        bgGO.transform.SetParent(transform, false);
+        var bgGO = rootGO;
         var bgRT        = (RectTransform)bgGO.transform;
-        bgRT.anchorMin  = Vector2.zero;
-        bgRT.anchorMax  = Vector2.one;
-        bgRT.offsetMin  = Vector2.zero;
-        bgRT.offsetMax  = Vector2.zero;
         _bg             = bgGO.GetComponent<Image>();
         _bg.color       = new Color(1f, 1f, 1f, 0.92f);
 
         // 텍스트
         var textGO = new GameObject("BubbleText", typeof(TextMeshProUGUI));
-        textGO.transform.SetParent(transform, false);
+        textGO.transform.SetParent(rootGO.transform, false);
         var textRT     = (RectTransform)textGO.transform;
         textRT.anchorMin = Vector2.zero;
         textRT.anchorMax = Vector2.one;
@@ -65,9 +69,11 @@ public class NpcBubbleUI : MonoBehaviour
         textRT.offsetMax = new Vector2(-8f, -6f);
 
         bubbleText           = textGO.GetComponent<TextMeshProUGUI>();
-        bubbleText.fontSize  = 28; // WorldSpace 이므로 크게
+        bubbleText.fontSize  = 21;
         bubbleText.color     = new Color(0.1f, 0.1f, 0.1f);
         bubbleText.alignment = TextAlignmentOptions.Center;
+        bubbleText.textWrappingMode = TextWrappingModes.Normal;
+        bubbleText.overflowMode = TextOverflowModes.Ellipsis;
         bubbleText.raycastTarget = false;
     }
 
@@ -78,6 +84,7 @@ public class NpcBubbleUI : MonoBehaviour
         if (bubbleText != null) bubbleText.text = text;
         if (_bg != null) _bg.color = new Color(1f, 1f, 1f, 0.92f);
         gameObject.SetActive(true);
+        UpdateScreenPosition();
         RestartHide(duration);
     }
 
@@ -111,12 +118,44 @@ public class NpcBubbleUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    public static void HideAll()
+    {
+        foreach (var bubble in FindObjectsByType<NpcBubbleUI>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (bubble != null)
+                bubble.HideBubble();
+        }
+    }
+
     // ── 내부 ────────────────────────────────────────────────────────────────────
 
     void RestartHide(float delay)
     {
         if (_hideCoroutine != null) StopCoroutine(_hideCoroutine);
         _hideCoroutine = StartCoroutine(HideAfter(delay));
+    }
+
+    void UpdateScreenPosition()
+    {
+        if (_bubbleRoot == null || Camera.main == null) return;
+
+        Transform anchor = transform.parent != null ? transform.parent : transform;
+        Vector3 appliedOffset = offset;
+        if (appliedOffset.y > 3.0f)
+            appliedOffset.y = 2.4f;
+
+        Vector3 screen = Camera.main.WorldToScreenPoint(anchor.position + appliedOffset);
+        if (screen.z <= 0f) return;
+
+        float halfWidth = Mathf.Min(_bubbleRoot.rect.width * 0.5f, Screen.width * 0.45f);
+        float halfHeight = Mathf.Min(_bubbleRoot.rect.height * 0.5f, Screen.height * 0.45f);
+        screen.x = Mathf.Clamp(screen.x, halfWidth, Screen.width - halfWidth);
+        screen.y = Mathf.Clamp(screen.y, halfHeight, Screen.height - halfHeight);
+        screen.z = 0f;
+
+        _bubbleRoot.position = screen;
+        _bubbleRoot.rotation = Quaternion.identity;
+        _bubbleRoot.localScale = Vector3.one;
     }
 
     IEnumerator HideAfter(float delay)

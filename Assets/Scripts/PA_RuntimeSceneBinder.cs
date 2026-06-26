@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 // Project P.A. scene wiring safety net.
 // MainGame.unity is generated/edited often, so this binder guarantees the
@@ -16,6 +19,7 @@ public static class PA_RuntimeSceneBinder
         GameObject services = EnsureSceneRoot("[Services]");
         GameObject uiRoot = EnsureUiRoot();
 
+        EnsureNavMeshForNpcAgents();
         EnsureCoreServices(services);
         EnsureUiServices(uiRoot);
         EnsureSmartphoneApps();
@@ -38,6 +42,15 @@ public static class PA_RuntimeSceneBinder
         EnsureComponent<FriendshipService>(services);
         EnsureComponent<BuildingRegistry>(services);
         EnsureComponent<SalesLogManager>(services);
+        EnsureComponent<DayNightShopLoopController>(services);
+        EnsureComponent<LongPlayProgressionController>(services);
+        EnsureComponent<ProcessingOpportunityController>(services);
+        EnsureComponent<CustomerDemandInsightController>(services);
+        EnsureComponent<VillageChangeSignalController>(services);
+        EnsureComponent<CustomerPreferencePresentationController>(services);
+        EnsureComponent<PurchaseFeedbackPresentationController>(services);
+        EnsureComponent<CustomerArrivalController>(services);
+        EnsureComponent<CoreSlicePresentationMode>(services);
         var save = EnsureComponent<SaveManager>(services);
         EnsureSaveBuildingTypes(save);
         EnsureComponent<GameManager>(services);
@@ -116,6 +129,84 @@ public static class PA_RuntimeSceneBinder
             normalizer.animatorController = null;
             NpcPresentationNormalizer.Normalize(npc.gameObject);
         }
+    }
+
+    static void EnsureNavMeshForNpcAgents()
+    {
+        int surfaceCount = AddSceneNavMeshSurfaceData();
+        int agentCount = 0;
+        int enabledCount = 0;
+        int snappedCount = 0;
+        int onMeshCount = 0;
+
+        foreach (var npc in FindSceneComponents<NpcController>())
+        {
+            if (npc == null) continue;
+
+            var agent = npc.GetComponent<NavMeshAgent>();
+            if (agent == null) continue;
+
+            agentCount++;
+
+            if (NavMesh.SamplePosition(npc.transform.position, out var hit, 12f, NavMesh.AllAreas))
+            {
+                if (Vector3.Distance(npc.transform.position, hit.position) > 0.05f)
+                {
+                    npc.transform.position = hit.position;
+                    snappedCount++;
+                }
+            }
+
+            if (!agent.enabled)
+                agent.enabled = true;
+
+            if (!agent.enabled) continue;
+            enabledCount++;
+
+            if (!agent.isOnNavMesh && NavMesh.SamplePosition(npc.transform.position, out hit, 12f, NavMesh.AllAreas))
+            {
+                if (agent.Warp(hit.position))
+                    snappedCount++;
+            }
+
+            if (agent.isOnNavMesh)
+                onMeshCount++;
+        }
+
+        Debug.Log($"[PA RuntimeBinder] NavMesh/NPC agents ready: surfaces={surfaceCount}, agents={enabledCount}/{agentCount}, onMesh={onMeshCount}, snapped={snappedCount}");
+    }
+
+    static int AddSceneNavMeshSurfaceData()
+    {
+        Type surfaceType = Type.GetType("Unity.AI.Navigation.NavMeshSurface, Unity.AI.Navigation")
+            ?? Type.GetType("UnityEngine.AI.NavMeshSurface");
+        if (surfaceType == null) return 0;
+
+        MethodInfo addData = surfaceType.GetMethod("AddData", BindingFlags.Instance | BindingFlags.Public);
+        if (addData == null) return 0;
+
+        int count = 0;
+        foreach (var obj in Resources.FindObjectsOfTypeAll(surfaceType))
+        {
+            if (obj is not Component component) continue;
+            if (!IsSceneObject(component.gameObject)) continue;
+            if (!component.gameObject.activeInHierarchy) continue;
+
+            if (component is Behaviour behaviour && !behaviour.enabled)
+                continue;
+
+            try
+            {
+                addData.Invoke(component, null);
+                count++;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[PA RuntimeBinder] NavMeshSurface AddData failed on {component.name}: {e.Message}");
+            }
+        }
+
+        return count;
     }
 
     static void EnsurePlayerRuntimeHooks()

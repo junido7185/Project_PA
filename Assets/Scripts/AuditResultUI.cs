@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,9 +40,10 @@ public class AuditResultUI : MonoBehaviour
     {
         int tier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
         long revenue = EconomyService.Instance != null ? EconomyService.Instance.CumulativeRevenue : 0;
+        int reputation = TierService.Instance != null ? TierService.Instance.Reputation : 0;
 
         string tierName = "생존자";
-        long nextRequiredRevenue = 0;
+        TierDefinition nextDefinition = null;
 
         if (TierService.Instance != null)
         {
@@ -49,9 +51,7 @@ public class AuditResultUI : MonoBehaviour
             if (current != null && !string.IsNullOrEmpty(current.tierName))
                 tierName = current.tierName;
 
-            var next = TierService.Instance.GetDefinition(tier + 1);
-            if (next != null)
-                nextRequiredRevenue = next.requiredCumulativeRevenue;
+            nextDefinition = TierService.Instance.GetDefinition(tier + 1);
         }
 
         if (tierNameText != null)
@@ -60,18 +60,21 @@ public class AuditResultUI : MonoBehaviour
         if (revenueText != null)
             revenueText.text = $"누적 매출 {revenue:N0} G";
 
-        if (nextRequiredRevenue > 0)
+        if (nextDefinition != null)
         {
-            long remaining = System.Math.Max(0L, nextRequiredRevenue - revenue);
-            float progress = Mathf.Clamp01((float)revenue / nextRequiredRevenue);
+            float progress = CalculateNextTierProgress(nextDefinition, revenue, reputation);
+            string nextName = string.IsNullOrEmpty(nextDefinition.tierName)
+                ? $"Tier {nextDefinition.tier}"
+                : nextDefinition.tierName;
 
             if (revenueSlider != null) revenueSlider.value = progress;
-            if (nextTierText != null) nextTierText.text = $"다음 티어까지 {remaining:N0} G";
+            if (nextTierText != null)
+                nextTierText.text = $"다음: Tier {nextDefinition.tier} · {nextName} / {BuildNextTierRequirementText(nextDefinition, revenue, reputation)}";
         }
         else
         {
             if (revenueSlider != null) revenueSlider.value = 1f;
-            if (nextTierText != null) nextTierText.text = "최고 티어 달성";
+            if (nextTierText != null) nextTierText.text = "최고 티어 달성 · 운영 안정화 단계";
         }
 
         if (auditCountdownText != null && AuditService.Instance != null && GameClock.Instance != null)
@@ -82,6 +85,59 @@ public class AuditResultUI : MonoBehaviour
                 ? $"다음 감사까지 {remainingDays}일"
                 : "오늘 감사 예정";
         }
+    }
+
+    static float CalculateNextTierProgress(TierDefinition next, long revenue, int reputation)
+    {
+        if (next == null) return 1f;
+
+        float total = 0f;
+        int count = 0;
+
+        if (next.requiredCumulativeRevenue > 0)
+        {
+            total += Mathf.Clamp01((float)revenue / next.requiredCumulativeRevenue);
+            count++;
+        }
+
+        if (next.requiredReputation > 0)
+        {
+            total += Mathf.Clamp01(reputation / (float)next.requiredReputation);
+            count++;
+        }
+
+        if (next.requiresManualApproval)
+        {
+            total += 0f;
+            count++;
+        }
+
+        return count == 0 ? 1f : total / count;
+    }
+
+    static string BuildNextTierRequirementText(TierDefinition next, long revenue, int reputation)
+    {
+        if (next == null) return "다음 목표 없음";
+
+        var parts = new List<string>();
+        if (next.requiredCumulativeRevenue > 0)
+        {
+            long remaining = next.requiredCumulativeRevenue - revenue;
+            if (remaining < 0) remaining = 0;
+            parts.Add($"누적 매출 {remaining:N0}G 남음");
+        }
+
+        if (next.requiredReputation > 0)
+        {
+            int remaining = next.requiredReputation - reputation;
+            if (remaining < 0) remaining = 0;
+            parts.Add($"평판 {remaining} 남음");
+        }
+
+        if (next.requiresManualApproval)
+            parts.Add("감사 승인 필요");
+
+        return parts.Count > 0 ? string.Join(" · ", parts) : "운영 조건 확인";
     }
 
     void BuildLayout()
@@ -111,10 +167,11 @@ public class AuditResultUI : MonoBehaviour
 
         tierNameText = AddLabel(root.transform, "TierName", 28f, FontStyles.Bold, TextDark, 42f);
 
-        var progressCard = AddCard(root.transform, "RevenueCard", 116f);
+        var progressCard = AddCard(root.transform, "RevenueCard", 142f);
         revenueText = AddLabel(progressCard.transform, "RevenueText", 18f, FontStyles.Bold, TextDark, 28f);
         revenueSlider = AddSlider(progressCard.transform, "RevenueSlider");
-        nextTierText = AddLabel(progressCard.transform, "NextTierText", 17f, FontStyles.Bold, Fill, 28f);
+        nextTierText = AddLabel(progressCard.transform, "NextTierText", 15f, FontStyles.Bold, Fill, 46f);
+        nextTierText.textWrappingMode = TextWrappingModes.Normal;
 
         var auditCard = AddCard(root.transform, "AuditCard", 58f);
         auditCountdownText = AddLabel(auditCard.transform, "AuditCountdown", 18f, FontStyles.Bold, TextSoft, 34f);

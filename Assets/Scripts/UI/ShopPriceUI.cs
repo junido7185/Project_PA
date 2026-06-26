@@ -359,13 +359,13 @@ public class ShopPriceUI : MonoBehaviour
         float basePrice = _slot.currentItem.data.basePrice;
         float ratio     = basePrice > 0f ? (float)_pendingPrice / basePrice : 1f;
 
-        if      (ratio > 3.0f) { label = "😤 너무 비싸요! 아무도 안 사요";   color = C_ReactionBad;  fill = 0.05f; }
-        else if (ratio > 2.2f) { label = "😤 많이 비싸요";                   color = C_ReactionBad;  fill = 0.15f; }
-        else if (ratio > 1.8f) { label = "😐 좀 비싸네요";                   color = C_ReactionMid;  fill = 0.30f; }
-        else if (ratio > 1.4f) { label = "😊 약간 비싸지만 살 수도 있어요";  color = C_ReactionMid;  fill = 0.45f; }
-        else if (ratio > 1.0f) { label = "😊 적당한 가격이에요";             color = C_ReactionGood; fill = 0.60f; }
-        else if (ratio > 0.8f) { label = "😍 저렴해요! 잘 팔릴 거예요";      color = C_ReactionGood; fill = 0.78f; }
-        else                    { label = "😍 너무 저렴해요 — 수익이 줄어요"; color = C_ReactionGood; fill = 0.92f; }
+        if      (ratio > 3.0f) { label = "너무 비쌈 - 구매 거의 없음"; color = C_ReactionBad;  fill = 0.05f; }
+        else if (ratio > 2.2f) { label = "많이 비쌈";                  color = C_ReactionBad;  fill = 0.15f; }
+        else if (ratio > 1.8f) { label = "조금 비쌈";                  color = C_ReactionMid;  fill = 0.30f; }
+        else if (ratio > 1.4f) { label = "비싸지만 구매 가능";         color = C_ReactionMid;  fill = 0.45f; }
+        else if (ratio > 1.0f) { label = "적정가";                     color = C_ReactionGood; fill = 0.60f; }
+        else if (ratio > 0.8f) { label = "저렴함 - 판매 유리";         color = C_ReactionGood; fill = 0.78f; }
+        else                    { label = "너무 저렴 - 수익 낮음";      color = C_ReactionGood; fill = 0.92f; }
     }
 
     void SetCanvasActive(bool active)

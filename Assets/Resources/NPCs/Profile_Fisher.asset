@@ -21,6 +21,6 @@ MonoBehaviour:
   workEfficiency: 1.1
   socialWeight: 0.5
   homeStayBias: 0.3
-  utilityConsumption: 1
-  luxuryConsumption: 1
-  priceSensitivity: 1
+  utilityConsumption: 1.1
+  luxuryConsumption: 1.2
+  priceSensitivity: 0.9

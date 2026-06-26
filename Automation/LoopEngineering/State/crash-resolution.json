@@ -1,0 +1,24 @@
+{
+  "crashReportPath": "PROJECT_PA_CRASH_REPORT_20260625.md",
+  "status": "human_verified_d3d11_stable",
+  "verificationSource": "user-confirmed manual Unity stability check",
+  "verifiedDate": "2026-06-26",
+  "approvedGraphicsBackend": "D3D11",
+  "requiresForceD3D11": true,
+  "d3d12Status": "not approved / not verified",
+  "permittedAutomationScope": [
+    "Preflight checks may treat the 2026-06-25 crash report as reviewed only when this record is present and valid.",
+    "Bounded ticket automation may proceed only after the Git baseline is clean and Unity Editor is not already open.",
+    "Unity launch-heavy automation must stay on the approved D3D11 path."
+  ],
+  "remainingHumanChecks": [
+    "If Unity crashes again, inspect the newest Editor log before running more automation.",
+    "Do not treat D3D12 as fixed without a separate explicit verification pass.",
+    "Do not delete the crash report; keep it as the cause and workaround record."
+  ],
+  "notes": [
+    "User stated they manually launched Unity with the -force-d3d11 baseline and confirmed project opening and Play Mode stability.",
+    "This record does not claim D3D12 is resolved.",
+    "This record does not claim any unreported validator, build, or route result."
+  ]
+}

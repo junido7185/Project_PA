@@ -1,0 +1,176 @@
+# Project PA Context Index
+
+Use this file first. Pick the smallest context set needed for the task.
+
+## Always Read For Gameplay-Related Work
+
+- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
+- `PROJECT_PA_DESIGN_INTENT.md`
+- `PROJECT_PA_CURRENT_MILESTONE.md`
+- `PROJECT_PA_STATUS.md`
+- `PROJECT_PA_TODO.md`
+- `PROJECT_PA_SESSION_REPORT.md`
+
+## Gameplay Sprint
+
+Required:
+
+- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
+- `PROJECT_PA_DESIGN_INTENT.md`
+- `PROJECT_PA_MASTER_DEVELOPMENT_PLAN.md`
+- `PROJECT_PA_CURRENT_MILESTONE.md`
+- `PROJECT_PA_FULL_GAME_BACKLOG.md`
+- `PROJECT_PA_CORE_SLICE_PLAN.md`
+
+Validators:
+
+- `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation`
+- `PA_DayNightShopLoopValidator.RunDayNightShopLoopValidation`
+- `PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation`
+
+Human check: required for route feel, readability, and scene comprehension.
+
+Forbidden changes: Project_D, broad core rewrites, external packages, destructive Git.
+
+## UI / UX Sprint
+
+Required:
+
+- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
+- `PROJECT_PA_DESIGN_INTENT.md`
+- `PROJECT_PA_CORE_SLICE_PLAN.md`
+- `PROJECT_PA_STATUS.md`
+- `Docs/08_아트_및_씬_구성_가이드.md`
+
+Optional:
+
+- `Docs/CustomerPresentation/README.md`
+- `Docs/VisualTargets/VISUAL_TARGETS.md`
+
+Validators:
+
+- `PA_CustomerPanelLayoutValidator.RunCustomerPanelLayoutValidation`
+- `PA_CoreSlicePlayabilityValidator.RunCoreSlicePlayabilityValidation`
+- `PA_FinalPresentationReviewer.RunFinalPresentationReview`
+
+Human check: required for 1920x1080 readability and Korean font rendering.
+
+Forbidden changes: UI behavior rewrites, copied reference layouts, Project_D assets.
+
+## Art / Visual Sprint
+
+Required:
+
+- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
+- `PROJECT_PA_DESIGN_INTENT.md`
+- `Docs/08_아트_및_씬_구성_가이드.md`
+- `Docs/VisualTargets/VISUAL_TARGETS.md`
+
+Optional:
+
+- `PROJECT_PA_MIGRATION_PLAN.md`
+- `Docs/IslandLife/GATHERING_AND_SHOP_GATE.md`
+
+Validators:
+
+- `PA_FinalPresentationReviewer.RunFinalPresentationReview`
+- `PA_CoreSlicePlayabilityValidator.RunCoreSlicePlayabilityValidation`
+
+Human check: required for visual quality approval.
+
+Forbidden changes: Project_D copy/merge, commercial-game names/logos/exact UI, broad scene overwrite without backup.
+
+## NPC / Economy Sprint
+
+Required:
+
+- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
+- `PROJECT_PA_DESIGN_INTENT.md`
+- `Docs/02_경제_및_아이템_설계.md`
+- `Docs/03_NPC_및_AI_시스템.md`
+- `PROJECT_PA_FULL_GAME_BACKLOG.md`
+
+Validators:
+
+- `PA_CustomerPresentationValidator.RunCustomerPresentationValidation`
+- `PA_CustomerDemandInsightValidator.RunCustomerDemandInsightValidation`
+- `PA_CustomerArrivalValidator.RunCustomerArrivalValidation`
+- `PA_GatheringShopGateValidator.RunGatheringShopGateValidation`
+
+Human check: required for NPC role readability and customer-flow feel.
+
+Forbidden changes: broad `PurchaseEvaluator`, `EconomyService`, `NpcController`, save-schema changes without approval.
+
+## Save / Load Sprint
+
+Required:
+
+- `PROJECT_PA_DESIGN_INTENT.md`
+- `PROJECT_PA_MASTER_DEVELOPMENT_PLAN.md`
+- `PROJECT_PA_FULL_GAME_BACKLOG.md`
+- `PROJECT_PA_STATUS.md`
+
+Validators:
+
+- `PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation`
+- `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation`
+
+Human check: required for save schema approval before non-additive changes.
+
+Forbidden changes: deleting/migrating user saves without explicit approval.
+
+## Unity Crash Bug Sprint
+
+Required:
+
+- latest `PROJECT_PA_CRASH_REPORT_*.md`
+- `PROJECT_PA_STATUS.md`
+- `PROJECT_PA_SESSION_REPORT.md`
+- `Automation/LoopEngineering/progress.md`
+
+Validators:
+
+- run compile/load checks only after crash cause is classified
+
+Human check: required if crash persists or graphics API/driver changes are needed.
+
+Forbidden changes: repeated Unity launches without reading logs, batchmode while Editor is open.
+
+## Build / Package Sprint
+
+Required:
+
+- `README.md`
+- `PROJECT_PA_COMPLETION_PLAN.md`
+- `PROJECT_PA_STATUS.md`
+- `PROJECT_PA_SESSION_REPORT.md`
+
+Validators:
+
+- `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation`
+- executable human route check
+
+Human check: required for final package acceptance.
+
+Forbidden changes: include `Library`, `Temp`, `Logs`, `.git`, cache/generated folders in source package.
+
+## Documentation Sprint
+
+Required:
+
+- `PROJECT_PA_STATUS.md`
+- `PROJECT_PA_TODO.md`
+- `PROJECT_PA_SESSION_REPORT.md`
+- `Docs/07_개발일지.md`
+
+Optional:
+
+- files specific to the work being summarized
+
+Validators:
+
+- no Unity validator required unless docs describe a new validation result
+
+Human check: optional unless the doc becomes submission material.
+
+Forbidden changes: inventing validation results, changing gameplay files for documentation-only work.

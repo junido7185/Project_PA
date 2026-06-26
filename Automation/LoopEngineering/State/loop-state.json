@@ -1,0 +1,81 @@
+{
+  "ticketId": "BASELINE-001",
+  "status": "needs_human_review",
+  "goal": "Prepare a safe local Git checkpoint baseline and record the user-confirmed D3D11 stability approval for bounded ticket automation.",
+  "designReference": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "Docs/AgentWorkflow/CONTEXT_INDEX.md",
+    "Automation/LoopEngineering/loop-policy.json",
+    "PROJECT_PA_CRASH_REPORT_20260625.md"
+  ],
+  "allowedPaths": [
+    "Automation/LoopEngineering/BASELINE_COMMIT_REVIEW.md",
+    "Automation/LoopEngineering/loop-policy.json",
+    "Automation/LoopEngineering/State/crash-resolution.json",
+    "Automation/LoopEngineering/State/loop-state.json",
+    "Automation/LoopEngineering/progress.md",
+    "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1",
+    "PROJECT_PA_STATUS.md",
+    "PROJECT_PA_TODO.md",
+    "PROJECT_PA_SESSION_REPORT.md"
+  ],
+  "forbiddenPaths": [
+    "C:/Users/sdjsd/Desktop/Unity/Project_D/Project_D",
+    "Assets gameplay implementation changes",
+    "Assets scenes, prefabs, materials, and source assets",
+    "Packages/",
+    "ProjectSettings/",
+    "Git add/commit/push/reset/clean",
+    "Unity launch or batch validators"
+  ],
+  "validators": [
+    "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1"
+  ],
+  "preflightResult": {
+    "status": "BLOCKED_BY_DIRTY_GIT",
+    "dirtyGit": true,
+    "unityProcessCount": 0,
+    "latestCrashReport": "PROJECT_PA_CRASH_REPORT_20260625.md",
+    "crashResolutionValid": true,
+    "crashResolutionStatus": "human_verified_d3d11_stable",
+    "approvedGraphicsBackend": "D3D11",
+    "policyMode": "bounded-ticket-loop"
+  },
+  "d3d11Approval": {
+    "crashResolutionPath": "Automation/LoopEngineering/State/crash-resolution.json",
+    "status": "human_verified_d3d11_stable",
+    "verificationSource": "user-confirmed manual Unity stability check",
+    "approvedGraphicsBackend": "D3D11",
+    "requiresForceD3D11": true,
+    "d3d12Status": "not approved / not verified"
+  },
+  "screenshotEvidence": [],
+  "humanGates": [
+    "User must create or explicitly approve the local baseline checkpoint commit.",
+    "User must decide which review-group files, especially backups and SubmissionPackages, belong in the local baseline.",
+    "D3D12 remains not approved and not verified."
+  ],
+  "attemptCount": 1,
+  "repeatedFailureCount": 0,
+  "changedPaths": [
+    "Automation/LoopEngineering/BASELINE_COMMIT_REVIEW.md",
+    "Automation/LoopEngineering/loop-policy.json",
+    "Automation/LoopEngineering/State/crash-resolution.json",
+    "Automation/LoopEngineering/State/loop-state.json",
+    "Automation/LoopEngineering/progress.md",
+    "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1",
+    "PROJECT_PA_STATUS.md",
+    "PROJECT_PA_TODO.md",
+    "PROJECT_PA_SESSION_REPORT.md"
+  ],
+  "evidencePaths": [
+    "Automation/LoopEngineering/BASELINE_COMMIT_REVIEW.md",
+    "Automation/LoopEngineering/State/crash-resolution.json"
+  ],
+  "startedAt": "2026-06-26",
+  "stoppedAt": "2026-06-26",
+  "stopReason": "Local checkpoint commit still requires user review; preflight remains BLOCKED_BY_DIRTY_GIT until the baseline is committed or the working tree is clean.",
+  "implementationStarted": false,
+  "nextAction": "Use GitHub Desktop to stage the approved baseline files, leave excluded cache/log/build outputs unstaged, create a local checkpoint commit, then rerun preflight."
+}
