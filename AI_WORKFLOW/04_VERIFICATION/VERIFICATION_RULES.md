@@ -25,6 +25,12 @@
 - 핵심 검증기: `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation` (Day 1 루트), `PA_DayNightShopLoopValidator` (낮-밤 루프), `PA_LongPlayProgressionValidator` (Day 2~7), `PA_CoreSlicePlayabilityValidator` (코어 슬라이스).
 - Editor가 열려 있어 실행 불가면: "검증 보류 — Editor 열림"을 명시하고 Editor 메뉴 실행 방법을 안내.
 
+### B2. 씬 로드 확인 (씬/바인더/런타임 생성 관련 변경 시)
+
+- [ ] `Prototype_FirstDay.unity`가 에러 없이 로드되고 Play 모드 진입.
+- [ ] `PA_RuntimeSceneBinder`가 런타임 오브젝트를 정상 바인딩(플레이어/상점/NPC/HUD 생성 카운트 확인 — README 스모크 카운트 참고: player 1, shops 2, shop slots 8, NPCs 8 등).
+- [ ] 씬 직렬화를 건드리지 않았음을 확인(런타임 사이드카 패턴 유지). 씬 파일이 실제로 변경됐다면 사람 승인 필요.
+
 ### C. 상점 루프 확인 (상점·경제·NPC 관련 변경 시 전부)
 
 아래 체인이 끊기지 않았음을 확인한다:
@@ -53,11 +59,23 @@
 - [ ] 새 UI가 기존 HUD/상호작용을 가리지 않음
 - ⚠ 최종 가독성 판정은 **사람 몫** — AI는 "사람 확인 필요"로 표시
 
+## 2-B. 현재 BLOCKED 검증기 (2026-07-09 기준)
+
+아래 2종은 실행이 보류 중이다. Codex가 "통과"로 간주하면 안 되며, 실제 실행 결과가 나오기 전까지 **BLOCKED**로 취급한다 (`../05_LOGS/BUG_LOG.md`에 BLOCKED 항목 있음).
+
+| 검증기 | 상태 | 보류 사유 | 해제 방법 |
+|---|---|---|---|
+| `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation` | BLOCKED | Unity Editor 열림으로 batchmode 금지 | Editor 닫고 D3D11 batchmode, 또는 열린 Editor 메뉴에서 수동 실행 (Task 004) |
+| `PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation` | BLOCKED | 동일 | 동일 (Task 004, 084) |
+
+DECISION_REQUIRED: 두 검증기의 실행 방식(Editor 닫기 vs 메뉴 실행)은 사용자 미확정.
+
 ## 3. 검증 실패 시
 
-- 같은 검증기가 같은 이유로 2회 실패 → 중단, `../05_LOGS/BUG_LOG.md` 기록, 보고.
-- 컴파일 에러 2회 반복 → 동일.
+- 같은 검증기가 같은 이유로 **2회 실패 → 중단.** Codex는 세 번째 시도나 독단 수정을 하지 않고 `../05_LOGS/BUG_LOG.md`에 기록한 뒤 **사람 판단을 요청**한다.
+- 컴파일 에러 2회 반복 → 동일하게 중단·사람 요청.
 - Unity 크래시 아티팩트 발생 → 즉시 중단, 루트 크래시 리포트 규칙 확인, 새 크래시면 `PROJECT_PA_CRASH_REPORT_YYYYMMDD.md`를 **루트에** 생성 (preflight glob 규약).
+- 위험 파일 대규모 변경이 필요하면 중단·사람 승인.
 
 ## 4. 검증 결과 보고 양식
 
