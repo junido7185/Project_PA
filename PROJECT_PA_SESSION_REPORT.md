@@ -1160,3 +1160,78 @@ Status:
 
 - `needs_human_review`
 - User must create or explicitly accept the local checkpoint baseline before bounded ticket development resumes.
+
+## 2026-06-26 VC-001A Village Culture Visual Change
+
+Goal:
+
+- Make one sold product category create a small visible next-day market/plaza response.
+
+Implemented:
+
+- Added `Assets/Scripts/VillageCultureVisualController.cs`.
+- Added `Assets/Editor/PA_VillageCultureVisualValidator.cs`.
+- Reused existing sales data from `SalesLogManager` and category interpretation from the current Village Direction path.
+- Selected `Processed` because the default Day 1 route sells `BreadLoaf`.
+- Added runtime visual root `PA_VillageCulture_Processed`, built from Project_PA-owned Unity primitives/materials.
+- The visual is inactive at Day 1 start, remains inactive immediately after the sale, and activates on next `DayPreparation`.
+- Added a one-time non-debug hint when the visual appears.
+
+Function preservation:
+
+- No Project_D file was read for implementation, modified, copied, or merged.
+- No scene file was edited.
+- No Save schema field was added.
+- No package or ProjectSettings file was modified.
+- No core rewrite of shop, economy, NPC purchase, day/night, or save logic.
+
+Validation:
+
+- `PA_VillageCultureVisualValidator` passed.
+- `PA_FinalDemoRouteValidator` passed.
+- `PA_DayNightShopLoopValidator` passed.
+- `PA_VillageChangeSignalValidator` passed.
+- `PA_LongPlayProgressionValidator` passed.
+- `PA_CustomerPresentationValidator` passed.
+- `PA_CustomerPanelLayoutValidator` passed.
+
+Evidence:
+
+- `Logs/Codex_VC001A_VillageCultureVisual.log`
+- `Logs/Codex_VC001A_FinalDemoRouteRegression.log`
+- `Logs/Codex_VC001A_DayNightRegression.log`
+- `Logs/Codex_VC001A_VillageSignalRegression.log`
+- `Logs/Codex_VC001A_LongPlayRegression.log`
+- `Logs/Codex_VC001A_CustomerPresentationRegression.log`
+- `Logs/Codex_VC001A_CustomerPanelLayoutRegression.log`
+- `Logs/VillageCultureVisual/20260626_145257/vc001a_day1_default_no_change.png`
+- `Logs/VillageCultureVisual/20260626_145257/vc001a_after_processed_sale_same_day.png`
+- `Logs/VillageCultureVisual/20260626_145257/vc001a_day2_preparation_visual_active.png`
+
+Remaining:
+
+- Human visual quality review is still needed.
+- Future category variants should stay additive and should not become persistent unlocks until a deliberate village-culture save design exists.
+
+## Session 2026-07-09 - AI_WORKFLOW Operating Structure
+
+Goal: build the AI_WORKFLOW documentation structure so future Codex sessions can develop Project P.A. toward a completable full game, based on the `AI_DOC_CLEANUP_PLAN.md` audit.
+
+Completed:
+
+- Created `AI_WORKFLOW/` with 16 new documents: entry manual (`ONE_PAGE_WORKFLOW.md`), document map (`DOCS_INDEX.md`), identity set (`PROJECT_PA_IDENTITY.md`, `PROJECT_PA_GAME_LOOP.md`, `PROJECT_PA_SCOPE.md`), agent rules (`CODEX_WORKER_RULES.md`, `UNITY_CODING_RULES.md`, `AI_SLOP_PREVENTION.md`), verification rules, logs (`CHANGELOG_AI.md`, `BUG_LOG.md`, `DECISION_LOG.md`), handoff (`HANDOFF_FOR_CODEX.md`), full-game roadmap (Stage 0 MVP Stabilization through Stage 5 Release Candidate), tasks placeholder, and archive README.
+- Rewrote root `AGENTS.md` as a short entry guide; archived the 2026-06-26 version verbatim at `AI_WORKFLOW/99_ARCHIVE/old_docs/AGENTS_v1_20260626.md`.
+- Fixed the goal framing in documentation: full game completion is the target; the graduation demo is a stable subset (Stage 2), not the end state.
+
+Safety compliance:
+
+- No code/scene/prefab/asset/meta changes. No deletions. No pushes or commits.
+- Git preflight found an uncommitted VC-001A baseline (8 modified + 4 untracked files), so every planned `git mv` (Notion original plan doc, COMPLETION_PLAN, RELEASE_BACKLOG, crash report 20260624, two presentation docs) was deferred per the dirty-baseline gate. Pending list: `AI_WORKFLOW/00_START_HERE/DOCS_INDEX.md` section 7-B.
+- `Docs/01~08` and the latest crash report were not touched (frozen: code-comment section citations, preflight root glob).
+
+Next actions:
+
+1. Human: checkpoint commit for VC-001A + this documentation pass.
+2. Run the two deferred validators (Editor-closed batchmode on D3D11, or from the open Editor menu).
+3. Execute deferred document moves with reference updates in the same commit.
+4. Build `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md` after the human inputs listed in `AI_WORKFLOW/03_TASKS/README.md`.

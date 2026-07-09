@@ -278,7 +278,7 @@ Validation (all passed): new `PA_GatheringShopGateValidator` plus FinalRoute / D
 
 Still required: human play-feel pass (walk-to-gather distance, NPC pathing around forage cubes, night-open → customers arrive) and low-poly visual polish for the placeholder forage/sign cubes.
 
-## VC-001A Village Culture Visual Change - 2026-06-26 Gate Status
+## VC-001A Village Culture Visual Change - 2026-06-26
 
 Goal:
 
@@ -286,18 +286,25 @@ Goal:
 
 Current status:
 
-- Blocked before implementation.
-- Preflight required `READY_FOR_BOUNDED_TICKET_LOOP`.
-- Actual result was `BLOCKED_BY_DIRTY_GIT`.
-- No category was selected and no visual object/controller/scene change was created.
+- Implemented and validated.
+- Preflight returned `READY_FOR_BOUNDED_TICKET_LOOP`.
+- Selected category: `Processed`, based on the existing Day 1 `BreadLoaf` sale route and current Village Direction data.
+- Added `VillageCultureVisualController` and `PA_VillageCultureVisualValidator`.
+- Runtime visual root: `PA_VillageCulture_Processed`.
+- The visual is inactive at Day 1 start, remains inactive immediately after sale, and appears on next `DayPreparation`.
 
 Why it matters for this milestone:
 
-- The feature direction fits Milestone 1's "the village responds to shop outcomes" goal.
-- However, bounded-ticket automation must not begin while the dirty Git baseline and crash-report baseline are unresolved.
+- It moves Milestone 1 from text-only village direction toward a visible village response.
+- It keeps the reverse supply-chain identity intact: what the player sells becomes part of tomorrow's market space.
+- It remains additive: no Save schema, shop logic, economy logic, NPC purchase logic, scene file, ProjectSettings, or Project_D asset change.
 
-Resume condition:
+Validation:
 
-- Review and commit or explicitly accept the current dirty baseline.
-- Review `PROJECT_PA_CRASH_REPORT_20260625.md`.
-- Rerun preflight and continue VC-001A only after it reports `READY_FOR_BOUNDED_TICKET_LOOP`.
+- `PA_VillageCultureVisualValidator` passed.
+- Final demo route, day/night, village signal, long-play, customer presentation, and customer panel layout regressions passed.
+
+Remaining:
+
+- Human visual review should confirm that the primitive processed-goods prep corner is readable and pleasant enough.
+- Future category visuals can expand the same pattern for `Raw`, `Utility`, and `Luxury`.

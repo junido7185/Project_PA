@@ -285,13 +285,14 @@ Milestone 1 customer-type requirement is now met. Next safe steps:
 - Validation: `PA_GatheringShopGateValidator` + FinalRoute/DayNight/LongPlay/CustomerPresentation/Village/CustomerPanelLayout — all passed.
 - Docs/screenshots: `Docs/IslandLife/GATHERING_AND_SHOP_GATE.md`, `Logs/GatheringShopReview/20260624_141557/`.
 
-## VC-001A Village Culture Visual Change (blocked before implementation, 2026-06-26)
+## VC-001A Village Culture Visual Change (implemented, 2026-06-26)
 
 - Goal: implement one next-day plaza/market visual response from the previous day's sold product category.
 - Backlog fit: supports the village-growth and feedback-loop track by making sales categories visibly affect the market.
-- Current status: not implemented.
-- Gate result: preflight returned `BLOCKED_BY_DIRTY_GIT` instead of `READY_FOR_BOUNDED_TICKET_LOOP`.
-- Risk: implementing while the baseline is dirty would make it hard to separate new visual changes from existing uncommitted work.
-- Validation status: only preflight was run; no runtime validators or screenshots were produced.
-- Resume priority: medium-high after baseline acceptance, because it is a good small first bounded ticket for the village-culture feedback loop.
-- Resume condition: dirty Git baseline accepted/committed, crash baseline reviewed, preflight rerun and ready.
+- Current status: implemented and validated as the first one-category proof.
+- Selected category: `Processed`, using the existing Day 1 `BreadLoaf` sale route and current Village Direction data.
+- Result: `PA_VillageCulture_Processed` appears on the next `DayPreparation`, not immediately after the sale.
+- Risk status: low for core systems. The feature is additive and does not modify Save schema, scene files, shop/economy/NPC purchase logic, packages, ProjectSettings, or Project_D.
+- Validation status: VC-001A validator plus required regressions passed.
+- Evidence: `Docs/VillageCulture/VC-001A.md` and `Logs/VillageCultureVisual/20260626_145257/`.
+- Next backlog direction: add category variants for `Raw`, `Utility`, and `Luxury` only after human review confirms the first visual reads well.

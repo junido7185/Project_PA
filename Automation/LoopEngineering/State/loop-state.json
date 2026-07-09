@@ -1,40 +1,94 @@
 {
-  "ticketId": "BASELINE-001",
-  "status": "needs_human_review",
-  "goal": "Prepare a safe local Git checkpoint baseline and record the user-confirmed D3D11 stability approval for bounded ticket automation.",
+  "ticketId": "VC-001A",
+  "status": "passed",
+  "goal": "Implement one next-day plaza/market visual change driven by an actual sold product category.",
   "designReference": [
-    "AGENTS.md",
-    "CLAUDE.md",
+    "PROJECT_PA_CREATIVE_NORTH_STAR.md",
+    "PROJECT_PA_DESIGN_INTENT.md",
+    "PROJECT_PA_CURRENT_MILESTONE.md",
+    "PROJECT_PA_FULL_GAME_BACKLOG.md",
     "Docs/AgentWorkflow/CONTEXT_INDEX.md",
     "Automation/LoopEngineering/loop-policy.json",
-    "PROJECT_PA_CRASH_REPORT_20260625.md"
+    "Automation/LoopEngineering/State/crash-resolution.json"
   ],
   "allowedPaths": [
-    "Automation/LoopEngineering/BASELINE_COMMIT_REVIEW.md",
-    "Automation/LoopEngineering/loop-policy.json",
-    "Automation/LoopEngineering/State/crash-resolution.json",
-    "Automation/LoopEngineering/State/loop-state.json",
-    "Automation/LoopEngineering/progress.md",
-    "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1",
+    "Assets/Scripts/",
+    "Assets/Scripts/UI/",
+    "Assets/Editor/",
+    "Assets/Scenes/Prototype_FirstDay.unity",
+    "Assets/Scenes/_Backups/",
+    "Docs/VillageCulture/",
     "PROJECT_PA_STATUS.md",
     "PROJECT_PA_TODO.md",
-    "PROJECT_PA_SESSION_REPORT.md"
+    "PROJECT_PA_SESSION_REPORT.md",
+    "PROJECT_PA_CURRENT_MILESTONE.md",
+    "PROJECT_PA_FULL_GAME_BACKLOG.md",
+    "Automation/LoopEngineering/"
   ],
   "forbiddenPaths": [
     "C:/Users/sdjsd/Desktop/Unity/Project_D/Project_D",
-    "Assets gameplay implementation changes",
-    "Assets scenes, prefabs, materials, and source assets",
     "Packages/",
     "ProjectSettings/",
-    "Git add/commit/push/reset/clean",
-    "Unity launch or batch validators"
+    "Library/",
+    "Temp/",
+    "Logs/",
+    "Builds/",
+    "SubmissionPackages/",
+    "Save schema files",
+    "Git add/commit/push/reset/clean"
+  ],
+  "selectedCategory": "Processed",
+  "selectedCategoryBasis": [
+    "Default Day 1 route sells BreadLoaf.",
+    "BreadLoaf is an existing Project_PA Processed item.",
+    "ShopSlot.TryPurchaseByNpc already records category through SalesLogManager.",
+    "VillageChangeSignalController already reads recent category sales."
   ],
   "validators": [
-    "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1"
+    {
+      "name": "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1",
+      "status": "passed",
+      "result": "READY_FOR_BOUNDED_TICKET_LOOP"
+    },
+    {
+      "name": "PA_VillageCultureVisualValidator.RunVillageCultureVisualValidation",
+      "status": "passed",
+      "log": "Logs/Codex_VC001A_VillageCultureVisual.log"
+    },
+    {
+      "name": "PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation",
+      "status": "passed",
+      "log": "Logs/Codex_VC001A_FinalDemoRouteRegression.log"
+    },
+    {
+      "name": "PA_DayNightShopLoopValidator.RunDayNightShopLoopValidation",
+      "status": "passed",
+      "log": "Logs/Codex_VC001A_DayNightRegression.log"
+    },
+    {
+      "name": "PA_VillageChangeSignalValidator.RunVillageChangeSignalValidation",
+      "status": "passed",
+      "log": "Logs/Codex_VC001A_VillageSignalRegression.log"
+    },
+    {
+      "name": "PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation",
+      "status": "passed",
+      "log": "Logs/Codex_VC001A_LongPlayRegression.log"
+    },
+    {
+      "name": "PA_CustomerPresentationValidator.RunCustomerPresentationValidation",
+      "status": "passed",
+      "log": "Logs/Codex_VC001A_CustomerPresentationRegression.log"
+    },
+    {
+      "name": "PA_CustomerPanelLayoutValidator.RunCustomerPanelLayoutValidation",
+      "status": "passed",
+      "log": "Logs/Codex_VC001A_CustomerPanelLayoutRegression.log"
+    }
   ],
   "preflightResult": {
-    "status": "BLOCKED_BY_DIRTY_GIT",
-    "dirtyGit": true,
+    "status": "READY_FOR_BOUNDED_TICKET_LOOP",
+    "dirtyGit": false,
     "unityProcessCount": 0,
     "latestCrashReport": "PROJECT_PA_CRASH_REPORT_20260625.md",
     "crashResolutionValid": true,
@@ -42,40 +96,46 @@
     "approvedGraphicsBackend": "D3D11",
     "policyMode": "bounded-ticket-loop"
   },
-  "d3d11Approval": {
-    "crashResolutionPath": "Automation/LoopEngineering/State/crash-resolution.json",
-    "status": "human_verified_d3d11_stable",
-    "verificationSource": "user-confirmed manual Unity stability check",
-    "approvedGraphicsBackend": "D3D11",
-    "requiresForceD3D11": true,
-    "d3d12Status": "not approved / not verified"
-  },
-  "screenshotEvidence": [],
+  "screenshotEvidence": [
+    "Logs/VillageCultureVisual/20260626_145257/vc001a_day1_default_no_change.png",
+    "Logs/VillageCultureVisual/20260626_145257/vc001a_after_processed_sale_same_day.png",
+    "Logs/VillageCultureVisual/20260626_145257/vc001a_day2_preparation_visual_active.png"
+  ],
   "humanGates": [
-    "User must create or explicitly approve the local baseline checkpoint commit.",
-    "User must decide which review-group files, especially backups and SubmissionPackages, belong in the local baseline.",
+    "Human visual quality approval is still required after screenshots.",
     "D3D12 remains not approved and not verified."
   ],
   "attemptCount": 1,
   "repeatedFailureCount": 0,
   "changedPaths": [
-    "Automation/LoopEngineering/BASELINE_COMMIT_REVIEW.md",
-    "Automation/LoopEngineering/loop-policy.json",
-    "Automation/LoopEngineering/State/crash-resolution.json",
-    "Automation/LoopEngineering/State/loop-state.json",
-    "Automation/LoopEngineering/progress.md",
-    "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1",
+    "Assets/Scripts/VillageCultureVisualController.cs",
+    "Assets/Scripts/VillageCultureVisualController.cs.meta",
+    "Assets/Editor/PA_VillageCultureVisualValidator.cs",
+    "Assets/Editor/PA_VillageCultureVisualValidator.cs.meta",
+    "Docs/VillageCulture/VC-001A.md",
     "PROJECT_PA_STATUS.md",
     "PROJECT_PA_TODO.md",
-    "PROJECT_PA_SESSION_REPORT.md"
+    "PROJECT_PA_SESSION_REPORT.md",
+    "PROJECT_PA_CURRENT_MILESTONE.md",
+    "PROJECT_PA_FULL_GAME_BACKLOG.md",
+    "Automation/LoopEngineering/State/loop-state.json",
+    "Automation/LoopEngineering/progress.md"
   ],
   "evidencePaths": [
-    "Automation/LoopEngineering/BASELINE_COMMIT_REVIEW.md",
-    "Automation/LoopEngineering/State/crash-resolution.json"
+    "Logs/Codex_VC001A_VillageCultureVisual.log",
+    "Logs/Codex_VC001A_FinalDemoRouteRegression.log",
+    "Logs/Codex_VC001A_DayNightRegression.log",
+    "Logs/Codex_VC001A_VillageSignalRegression.log",
+    "Logs/Codex_VC001A_LongPlayRegression.log",
+    "Logs/Codex_VC001A_CustomerPresentationRegression.log",
+    "Logs/Codex_VC001A_CustomerPanelLayoutRegression.log",
+    "Logs/VillageCultureVisual/20260626_145257/vc001a_day1_default_no_change.png",
+    "Logs/VillageCultureVisual/20260626_145257/vc001a_after_processed_sale_same_day.png",
+    "Logs/VillageCultureVisual/20260626_145257/vc001a_day2_preparation_visual_active.png"
   ],
   "startedAt": "2026-06-26",
   "stoppedAt": "2026-06-26",
-  "stopReason": "Local checkpoint commit still requires user review; preflight remains BLOCKED_BY_DIRTY_GIT until the baseline is committed or the working tree is clean.",
-  "implementationStarted": false,
-  "nextAction": "Use GitHub Desktop to stage the approved baseline files, leave excluded cache/log/build outputs unstaged, create a local checkpoint commit, then rerun preflight."
+  "stopReason": null,
+  "implementationStarted": true,
+  "nextAction": "Human reviews the processed-goods market visual, then a future ticket can add Raw, Utility, and Luxury variants."
 }

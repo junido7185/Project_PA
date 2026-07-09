@@ -122,3 +122,66 @@ Append-only log for guarded automation and dry-run loop work.
   - `git clean`
 - Status: `needs_human_review`
 - Next action: user creates the local checkpoint commit in GitHub Desktop, then reruns preflight.
+
+## 2026-06-26 - VC-001A Started
+
+- Time: 2026-06-26
+- Ticket ID: VC-001A
+- Work type: bounded implementation ticket
+- Requested work: implement one next-day plaza/market visual change driven by an actual sold product category.
+- Preflight result: `READY_FOR_BOUNDED_TICKET_LOOP`
+- Git baseline: clean
+- Unity process count: 0
+- Crash resolution: `human_verified_d3d11_stable`
+- Approved graphics backend: D3D11
+- Implementation rule: use only existing Project_PA sales/category/Village Direction data; no Save schema change; no Project_D access/copy; no ProjectSettings change.
+- Initial changed paths:
+  - `Automation/LoopEngineering/State/loop-state.json`
+  - `Automation/LoopEngineering/progress.md`
+- Next action: inspect `VillageChangeSignalController`, `SalesLogManager`, item categories, day/night transition, and scene layout before editing runtime visuals.
+
+## 2026-06-26 - VC-001A Completed
+
+- Time: 2026-06-26
+- Ticket ID: VC-001A
+- Status: passed
+- Implemented:
+  - `Assets/Scripts/VillageCultureVisualController.cs`
+  - `Assets/Editor/PA_VillageCultureVisualValidator.cs`
+- Selected category: `Processed`
+- Basis:
+  - Default Day 1 route sells `BreadLoaf`.
+  - `BreadLoaf` is an existing `Processed` item.
+  - Existing `SalesLogManager` and `VillageChangeSignalController` already expose the category signal.
+- Runtime behavior:
+  - `PA_VillageCulture_Processed` exists at runtime and is inactive at Day 1 start.
+  - A Processed sale creates a pending visual change.
+  - The visual does not appear immediately after sale.
+  - The visual appears during the next `DayPreparation`.
+  - The hint appears once and does not show debug/probability/system-code text.
+- Validation passed:
+  - `PA_VillageCultureVisualValidator.RunVillageCultureVisualValidation`
+  - `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation`
+  - `PA_DayNightShopLoopValidator.RunDayNightShopLoopValidation`
+  - `PA_VillageChangeSignalValidator.RunVillageChangeSignalValidation`
+  - `PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation`
+  - `PA_CustomerPresentationValidator.RunCustomerPresentationValidation`
+  - `PA_CustomerPanelLayoutValidator.RunCustomerPanelLayoutValidation`
+- Evidence:
+  - `Logs/Codex_VC001A_VillageCultureVisual.log`
+  - `Logs/Codex_VC001A_FinalDemoRouteRegression.log`
+  - `Logs/Codex_VC001A_DayNightRegression.log`
+  - `Logs/Codex_VC001A_VillageSignalRegression.log`
+  - `Logs/Codex_VC001A_LongPlayRegression.log`
+  - `Logs/Codex_VC001A_CustomerPresentationRegression.log`
+  - `Logs/Codex_VC001A_CustomerPanelLayoutRegression.log`
+  - `Logs/VillageCultureVisual/20260626_145257/vc001a_day1_default_no_change.png`
+  - `Logs/VillageCultureVisual/20260626_145257/vc001a_after_processed_sale_same_day.png`
+  - `Logs/VillageCultureVisual/20260626_145257/vc001a_day2_preparation_visual_active.png`
+- Preserved:
+  - No Project_D copy/edit.
+  - No Save schema change.
+  - No scene file edit.
+  - No package or ProjectSettings edit.
+  - No Git add/commit/push/reset/clean.
+- Remaining human gate: visual quality approval for the primitive processed-goods corner.

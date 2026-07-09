@@ -1058,36 +1058,60 @@ Next:
 
 - User should inspect `Automation/LoopEngineering/BASELINE_COMMIT_REVIEW.md`, stage approved groups manually, verify `git diff --cached --stat`, then make a local baseline commit if desired.
 
-## 2026-06-26 VC-001A Preflight Block
+## 2026-06-26 VC-001A Village Culture Visual Change
 
 Scope:
 
-- Attempted to start bounded ticket VC-001A: one next-day plaza/market visual change based on sold product category.
-- Followed the loop policy requirement to run preflight before any implementation.
-- No scene, gameplay code, UI, asset, ProjectSettings, Project_D, package, commit, or push work was performed for this ticket.
+- Implemented one next-day plaza/market visual response from an existing sold product category.
+- Chosen category: `Processed`, because the current Day 1 route sells `BreadLoaf` and existing `VillageChangeSignalController` reads `Processed` from `SalesLogManager`.
+- Used only Project_PA runtime primitives/materials; no Project_D asset, scene, material, prefab, or script was copied.
 
-Preflight result:
+Implementation:
 
-- Required result: `READY_FOR_BOUNDED_TICKET_LOOP`
-- Actual result: `BLOCKED_BY_DIRTY_GIT`
-- Project root and Git root were correct.
-- Unity process count was 0.
-- `PROJECT_PA_CRASH_REPORT_20260625.md` remains part of the human crash-baseline gate.
+- Added `Assets/Scripts/VillageCultureVisualController.cs`.
+- Added `Assets/Editor/PA_VillageCultureVisualValidator.cs`.
+- Runtime object: `PA_VillageCultureVisualController`.
+- Visual object: `PA_VillageCulture_Processed`.
+- Day 1 start: visual inactive.
+- After Processed sale: pending next-day change, visual still inactive.
+- Next `DayPreparation`: processed-goods prep corner becomes visible near the market hub and a one-time hint appears.
 
-VC-001A status:
+Preserved systems:
 
-- Implementation status: blocked before implementation.
-- Category selection: not started.
-- Visual response object/controller: not created.
-- Validators beyond preflight: not run.
-- Screenshot evidence: not generated.
-- Tracking docs updated: `Automation/LoopEngineering/State/loop-state.json`, `Automation/LoopEngineering/progress.md`, and `Docs/VillageCulture/VC-001A.md`.
+- No Save schema change.
+- No scene file edit.
+- No package or ProjectSettings edit.
+- No core rewrite of `Shop`, `ShopSlot`, `ShopPriceUI`, `Inventory`, `EconomyService`, `PurchaseEvaluator`, `NpcController`, `SaveManager`, or day/night logic.
+
+Validation:
+
+- `PA_VillageCultureVisualValidator` passed.
+- `PA_FinalDemoRouteValidator` passed.
+- `PA_DayNightShopLoopValidator` passed.
+- `PA_VillageChangeSignalValidator` passed.
+- `PA_LongPlayProgressionValidator` passed.
+- `PA_CustomerPresentationValidator` passed.
+- `PA_CustomerPanelLayoutValidator` passed.
+
+Evidence:
+
+- Logs:
+  - `Logs/Codex_VC001A_VillageCultureVisual.log`
+  - `Logs/Codex_VC001A_FinalDemoRouteRegression.log`
+  - `Logs/Codex_VC001A_DayNightRegression.log`
+  - `Logs/Codex_VC001A_VillageSignalRegression.log`
+  - `Logs/Codex_VC001A_LongPlayRegression.log`
+  - `Logs/Codex_VC001A_CustomerPresentationRegression.log`
+  - `Logs/Codex_VC001A_CustomerPanelLayoutRegression.log`
+- Screenshots:
+  - `Logs/VillageCultureVisual/20260626_145257/vc001a_day1_default_no_change.png`
+  - `Logs/VillageCultureVisual/20260626_145257/vc001a_after_processed_sale_same_day.png`
+  - `Logs/VillageCultureVisual/20260626_145257/vc001a_day2_preparation_visual_active.png`
 
 Next:
 
-- Review and commit or explicitly accept the dirty Git baseline.
-- Review the D3D11 crash repair baseline from `PROJECT_PA_CRASH_REPORT_20260625.md`.
-- Rerun preflight and only continue VC-001A if it reports `READY_FOR_BOUNDED_TICKET_LOOP`.
+- Human visual review should judge whether the primitive processed-goods corner reads clearly enough.
+- Future village-culture work can add category variants for `Raw`, `Utility`, and `Luxury` using the same next-day activation rule.
 
 ## 2026-06-26 BASELINE-001 Bounded Ticket Loop Baseline Preparation
 
@@ -1134,3 +1158,11 @@ Next:
 
 - User should use GitHub Desktop to stage the approved baseline files and create a local checkpoint commit.
 - After the working tree is clean and Unity is closed, rerun preflight. It can become `READY_FOR_BOUNDED_TICKET_LOOP` only if the D3D11 crash-resolution record remains valid.
+
+## 2026-07-09 AI Workflow Structure Pass
+
+- Created `AI_WORKFLOW/` operating-document structure (00_START_HERE, 01_IDENTITY, 02_AGENT_RULES, 03_TASKS, 04_VERIFICATION, 05_LOGS, 06_HANDOFF, 07_FULL_GAME_ROADMAP, 99_ARCHIVE/old_docs).
+- Rewrote root `AGENTS.md` as a short entry guide; previous version preserved at `AI_WORKFLOW/99_ARCHIVE/old_docs/AGENTS_v1_20260626.md`.
+- Fixed the development goal in documentation: the target is a completable full game, not a submission-only prototype (`AI_WORKFLOW/01_IDENTITY/PROJECT_PA_SCOPE.md`).
+- No code, scene, prefab, asset, or meta changes. No file deletion. No `git mv` moves: working tree still has uncommitted VC-001A changes, so all planned document moves stay deferred (`AI_WORKFLOW/00_START_HERE/DOCS_INDEX.md` section 7-B).
+- Docs/01~08 remain frozen in place (code comments cite them by section number). Latest crash report stays in root (preflight glob).

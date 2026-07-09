@@ -706,20 +706,27 @@ After changes, update PROJECT_PA_STATUS.md, PROJECT_PA_TODO.md, PROJECT_PA_SESSI
 - [ ] Human reviews dirty Git baseline before any implementation loop.
 - [ ] Human reviews/accepts `PROJECT_PA_CRASH_REPORT_20260625.md` as the current graphics-crash baseline.
 
-## VC-001A Village Culture Visual Change (blocked, 2026-06-26)
+## VC-001A Village Culture Visual Change (implemented, 2026-06-26)
 
 - [x] Read shared Project_PA loop/design context before implementation.
 - [x] Run `Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1`.
-- [x] Record blocked state in `Automation/LoopEngineering/State/loop-state.json`.
-- [x] Add blocked ticket note at `Docs/VillageCulture/VC-001A.md`.
-- [ ] Resolve dirty Git baseline gate.
-- [ ] Review/accept `PROJECT_PA_CRASH_REPORT_20260625.md` as the D3D11 crash-repair baseline.
-- [ ] Rerun preflight until it reports `READY_FOR_BOUNDED_TICKET_LOOP`.
-- [ ] After the gate is ready, implement one additive next-day market/plaza visual response from an existing sold category.
+- [x] Confirm preflight returned `READY_FOR_BOUNDED_TICKET_LOOP`.
+- [x] Select an actual existing Day 1 sold category: `Processed` from `BreadLoaf`.
+- [x] Add `VillageCultureVisualController` as a read-only sales observer.
+- [x] Add runtime visual root `PA_VillageCulture_Processed`.
+- [x] Keep Day 1 start visual inactive.
+- [x] Keep visual inactive immediately after sale.
+- [x] Activate visual only on the next `DayPreparation`.
+- [x] Show a one-time non-debug hint.
+- [x] Add `PA_VillageCultureVisualValidator`.
+- [x] Run VC-001A validation and required regressions.
+- [x] Update `Docs/VillageCulture/VC-001A.md`.
+- [ ] Human visual review: confirm the primitive processed-goods prep corner is readable and placed well.
+- [ ] Future ticket: add `Raw`, `Utility`, and `Luxury` visual variants after the one-category rule is approved.
 
 Implementation note:
 
-- VC-001A did not start because preflight returned `BLOCKED_BY_DIRTY_GIT`. Do not select a product category or modify scene/code/assets for this ticket until the bounded-ticket loop gate is ready.
+- VC-001A uses existing `SalesLogManager` and `VillageChangeSignalController` data only. It does not add Save fields and does not change shop/economy/NPC purchase behavior.
 
 ## BASELINE-001 Bounded Ticket Loop Baseline Preparation (2026-06-26)
 
@@ -741,3 +748,14 @@ Current status:
 
 - `needs_human_review`
 - Preflight is still `BLOCKED_BY_DIRTY_GIT` until the user creates or otherwise accepts the baseline checkpoint.
+
+## AI Workflow Structure - 2026-07-09
+
+Status: documentation pass complete; moves deferred.
+
+- [x] Create `AI_WORKFLOW/` structure and operating documents (identity, rules, verification, logs, handoff, roadmap).
+- [x] Rewrite root `AGENTS.md` as entry guide (old version archived).
+- [x] Record deferred archive moves in `AI_WORKFLOW/00_START_HERE/DOCS_INDEX.md` section 7-B.
+- [ ] Human: checkpoint commit including VC-001A work (blocks moves and loop automation).
+- [ ] After clean baseline: execute deferred document moves (merge -> git mv -> reference updates in the same commit, per `AI_DOC_CLEANUP_PLAN.md` section 5/9).
+- [ ] Build `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md` (needs inputs listed in `AI_WORKFLOW/03_TASKS/README.md`).
