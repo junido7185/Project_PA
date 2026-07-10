@@ -56,3 +56,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 코드/씬/에셋 변경: 없음.
 - 검증: README Demo Route 10단계와 `PlayableDayScenarioController`, `PA_RuntimeSceneBinder`, `ShopSlot`, `ShopPriceUI`, `NpcController`, `PurchaseEvaluator`, `EconomyService`, `SalesLogManager`, `SaveManager`, `SmartphoneUI`, `AuditResultUI` 진입점을 텍스트로 대조. Unity/Play Mode/빌드/테스트는 실행하지 않음.
 - 비고: 다음 작업 후보는 Task 003(컴파일 기준선 기록). 작업 전부터 `SubmissionPackages/*.zip` 2개 삭제 상태가 있었으며 이번 커밋에는 포함하지 않는다.
+
+## 2026-07-10 — Codex — Task 003 컴파일 기준선 기록
+
+- 작업: `dotnet build Assembly-CSharp.csproj --nologo`를 실행하고 현재 컴파일 기준선을 `AI_WORKFLOW/03_TASKS/BASELINE_COMPILE.md`에 기록.
+- 변경 파일: `AI_WORKFLOW/03_TASKS/BASELINE_COMPILE.md`, `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md`, `AI_WORKFLOW/03_TASKS/DONE_TASKS.md`, `AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md`, `AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md`.
+- 코드/씬/에셋 변경: 없음.
+- 검증: `dotnet build` exit code 0, 경고 1개(`CS8785 AttributeBasedFieldGenerator`), 오류 0개. Unity/Play Mode/검증기는 실행하지 않음.
+- 비고: Task 001~003 완료 시점이라 `HANDOFF_FOR_CODEX.md`의 우선순위를 갱신. 작업 전부터 `SubmissionPackages/*.zip` 2개 삭제 상태가 있었으며 이번 커밋에는 포함하지 않는다.

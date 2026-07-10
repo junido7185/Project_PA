@@ -1,12 +1,12 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
-최종 갱신: 2026-07-10 (Codex Task 001 프로젝트 구조 인덱스 완료)
+최종 갱신: 2026-07-10 (Codex Task 003 컴파일 기준선 기록 완료)
 규칙: **3~5개 작업마다** 이 문서의 "현재 상태"와 "우선순위"를 갱신한다. (`CODEX_HANDOFF_PROMPT` 사용)
 
-## 0. Codex 첫 실행이라면 (중요)
+## 0. Codex 첫 실행 상태
 
-- 아직 Codex를 실전 투입한 적이 없다. **첫 실행은 `../00_START_HERE/CODEX_FIRST_RUN_PLAYBOOK.md`를 따른다.**
-- **첫날은 Bootstrap + Task 001~003(문서·조사)까지만.** 기능 구현(Task 008 이후)은 첫날 금지.
+- Codex 첫 실행의 권장 안전 구간인 Task 001~003은 완료됐다.
+- **첫날은 Bootstrap + Task 001~003(문서·조사)까지만** 권장되어 있었으므로, 기능 구현(Task 008 이후)은 사람 판단 후 진행한다.
 - 7일 가동 계획: `../07_FULL_GAME_ROADMAP/CODEX_FIRST_7_DAYS_PLAN.md`.
 - 사용자 미확정 항목: `../00_START_HERE/DECISION_REQUIRED_FOR_USER.md` (첫 기능 작업 전 #3 검증기 실행 방식, #5 하루 작업 수만 확정하면 충분).
 - **3~5개 작업마다 HANDOFF 갱신 / 5~10개마다 사람 검수 / 실패 2회 시 사람 판단 / Demo Lock 이후 새 기능 금지 / Full Game 확장은 Vertical Slice 안정화 이후에만.**
@@ -31,14 +31,15 @@
 
 ## 3. 현재 작업 우선순위 (2026-07-10 기준)
 
-Git은 **clean baseline**(커밋 `53fd115` 이후 프리플라이트 문서 추가). 4회차 프리플라이트 검수 통과 — 상세 `../00_START_HERE/AI_WORKFLOW_FINAL_AUDIT.md`.
+Codex Task 001~003 완료. Task 003 컴파일 기준선: `dotnet build Assembly-CSharp.csproj --nologo` exit code 0, 경고 1개(`CS8785 AttributeBasedFieldGenerator`), 오류 0개.
 
-1. **[Codex] Task 002** — 현재 데모 플로우 문서화. Task 001에서 작성한 `../03_TASKS/PROJECT_CODE_INDEX.md`를 참고해 `Prototype_FirstDay.unity` Day 1 루트와 코드 진입점을 대조.
-2. **[Codex] Task 003** — 컴파일 기준선 기록. 문서만, 실제 실행 결과 또는 보류 사유를 기록.
-3. **[사람+Codex] Task 004** — 보류 검증기 2종 실행 방식 결정(`DECISION_REQUIRED_FOR_USER` #3) 후 실행.
-4. **[Codex] Task 005~007** — 위험 파일 목록 / git 정책 / 저장 스키마 조사.
-5. **[Codex→사람] Task 008~016** — MVP Stabilization(기존 시스템 회귀 확인 + 버그 1개 + 완료 판정).
-6. 이후 Phase 2(Shop Core) 진입.
+주의: 현재 워킹트리에는 Codex 작업 전부터 `SubmissionPackages/Project_PA_Source_20260620.zip`, `SubmissionPackages/Project_PA_Windows_20260620.zip` 삭제 상태가 남아 있다. Codex Task 커밋에는 포함하지 않았다.
+
+1. **[사람+Codex] Task 004** — 보류 검증기 2종 실행 방식 결정(`DECISION_REQUIRED_FOR_USER` #3) 후 실행. 사람 승인 필요.
+2. **[Codex] Task 005** — 위험 파일 목록 확정. Task 004 승인이 없으면 큐 규칙에 따라 다음 승인 불필요 작업으로 진행 가능.
+3. **[Codex] Task 006~007** — dirty git 작업 정책 / 저장 스키마 조사.
+4. **[Codex→사람] Task 008~016** — MVP Stabilization(기존 시스템 회귀 확인 + 버그 1개 + 완료 판정).
+5. 이후 Phase 2(Shop Core) 진입.
 
 미확정(사용자 결정 대기, `DECISION_REQUIRED_FOR_USER.md`): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간 / 하루 작업 수.
 
