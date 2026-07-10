@@ -40,3 +40,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
   - `HANDOFF_FOR_CODEX.md` §0 첫 실행 안내 추가, 우선순위 날짜 갱신.
 - 판정: AI_WORKFLOW는 **Codex 투입 가능**. 첫 실행(Bootstrap + Task 001~003)은 지금 바로 안전.
 - 코드/씬/에셋 변경: 없음. Docs/01~08 이동·수정 없음. 최신 크래시 리포트 이동 없음.
+
+## 2026-07-10 — Codex — Task 001 프로젝트 구조 인덱스 작성
+
+- 작업: `Assets/Scripts/**/*.cs` 전체를 시스템별로 분류해 `AI_WORKFLOW/03_TASKS/PROJECT_CODE_INDEX.md` 신규 작성.
+- 변경 파일: `AI_WORKFLOW/03_TASKS/PROJECT_CODE_INDEX.md`, `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md`, `AI_WORKFLOW/03_TASKS/DONE_TASKS.md`, `AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md`, `AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md`.
+- 코드/씬/에셋 변경: 없음.
+- 검증: `Assets/Scripts` 실제 `.cs` 파일 수 100개와 인덱스 분류 항목 100개를 대조. 문서 작업이므로 컴파일/Unity 검증은 실행하지 않음.
+- 비고: 다음 작업 후보는 Task 002(현재 데모 플로우 문서화).

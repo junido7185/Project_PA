@@ -48,7 +48,7 @@
 
 ## Task 001 - 프로젝트 구조 인덱스 작성
 
-상태: TODO
+상태: DONE
 단계: Phase 0. Baseline & Safety
 난이도: XS
 예상 Codex 실행 횟수: 1

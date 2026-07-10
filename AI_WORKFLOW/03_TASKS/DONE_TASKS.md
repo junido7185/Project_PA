@@ -4,6 +4,7 @@
 
 | Task ID | 완료 날짜 | 수정 파일 | 검증 결과 | 커밋 해시 | 남은 위험 | 다음 작업 |
 |---|---|---|---|---|---|---|
+| Task 001 | 2026-07-10 | `AI_WORKFLOW/03_TASKS/PROJECT_CODE_INDEX.md`, `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md`, `AI_WORKFLOW/03_TASKS/DONE_TASKS.md`, `AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md`, `AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md` | 문서 생성. `Assets/Scripts` 실제 `.cs` 100개와 인덱스 항목 100개 대조. 컴파일/Unity 검증 해당 없음. | 미커밋 | 코드/씬/에셋 미검증. 역할 요약 중 일부는 추정 표시 유지. | Task 002 |
 | — | — | (아직 없음) | — | — | — | Task 001 |
 
 ## 기록 규칙
