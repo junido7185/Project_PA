@@ -5,6 +5,7 @@
 
 ## 기본 운영 루프
 
+0. **처음 Codex를 돌린다면** — 먼저 `CODEX_FIRST_RUN_PLAYBOOK.md`를 읽고 그 순서(안전 시운전)를 따른다.
 1. **CODEX_BOOTSTRAP_PROMPT** — 프로젝트를 처음 맡았을 때(또는 오랜만에 복귀). 코드 수정 없이 구조/위험 파일/데모 흐름만 파악.
 2. **CODEX_REPEAT_PROMPT** — 평소 반복 개발. `TASK_QUEUE.md`의 TODO 첫 작업 1개만 수행.
 3. **CODEX_VERIFY_PROMPT** — 직전 작업 결과를 코드 수정 없이 검증.

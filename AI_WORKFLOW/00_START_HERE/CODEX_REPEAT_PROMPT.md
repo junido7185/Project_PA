@@ -13,6 +13,7 @@
 2. `AI_WORKFLOW/00_START_HERE/ONE_PAGE_WORKFLOW.md`
 3. `AI_WORKFLOW/02_AGENT_RULES/` 3종 (작업자/Unity 코딩/슬롭 방지)
 4. `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md` — 상태 TODO이고 선행 작업이 모두 DONE인 가장 위 작업 1개 선택
+   - 그 작업이 `사람 승인 필요: YES`인데 승인 기록이 없으면: **착수하지 말고 승인 요청만 보고**한 뒤, 그다음 승인 불필요(NO) TODO 작업을 선택한다.
 5. `AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md` — 선택한 작업을 여기에 복사
 6. `AI_WORKFLOW/04_VERIFICATION/VERIFICATION_RULES.md`
 

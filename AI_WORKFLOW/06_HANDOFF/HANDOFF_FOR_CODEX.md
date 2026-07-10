@@ -1,7 +1,15 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
-최종 갱신: 2026-07-09 (작업 큐 + 프롬프트 세트 + 타임라인 구축 세션)
+최종 갱신: 2026-07-10 (Codex 투입 전 최종 프리플라이트 + 첫 실행 패키지 세션)
 규칙: **3~5개 작업마다** 이 문서의 "현재 상태"와 "우선순위"를 갱신한다. (`CODEX_HANDOFF_PROMPT` 사용)
+
+## 0. Codex 첫 실행이라면 (중요)
+
+- 아직 Codex를 실전 투입한 적이 없다. **첫 실행은 `../00_START_HERE/CODEX_FIRST_RUN_PLAYBOOK.md`를 따른다.**
+- **첫날은 Bootstrap + Task 001~003(문서·조사)까지만.** 기능 구현(Task 008 이후)은 첫날 금지.
+- 7일 가동 계획: `../07_FULL_GAME_ROADMAP/CODEX_FIRST_7_DAYS_PLAN.md`.
+- 사용자 미확정 항목: `../00_START_HERE/DECISION_REQUIRED_FOR_USER.md` (첫 기능 작업 전 #3 검증기 실행 방식, #5 하루 작업 수만 확정하면 충분).
+- **3~5개 작업마다 HANDOFF 갱신 / 5~10개마다 사람 검수 / 실패 2회 시 사람 판단 / Demo Lock 이후 새 기능 금지 / Full Game 확장은 Vertical Slice 안정화 이후에만.**
 
 ## 1. 읽을 문서 순서
 
@@ -21,17 +29,17 @@
 
 **목표는 프로토타입이 아니라 완성 게임이다.** 졸업 시연(Stage 2)은 완성 게임의 부분집합. 일회용 코드·하드코딩·저장 미지원으로 때우지 않는다.
 
-## 3. 현재 작업 우선순위 (2026-07-09 기준)
+## 3. 현재 작업 우선순위 (2026-07-10 기준)
 
-Git은 **clean baseline**(커밋 `8e79c0c`). 이동 게이트 해제됨.
+Git은 **clean baseline**(커밋 `53fd115` 이후 프리플라이트 문서 추가). 4회차 프리플라이트 검수 통과 — 상세 `../00_START_HERE/AI_WORKFLOW_FINAL_AUDIT.md`.
 
-1. **[Codex] Task 001~003** — 프로젝트 구조 인덱스 / 데모 플로우 / 컴파일 기준선. 문서만, 위험 없음, **지금 바로 시작 가능.**
-2. **[사람+Codex] Task 004** — 보류 검증기 2종 실행 방식 결정(DECISION_REQUIRED) 후 실행.
+1. **[Codex] Task 001~003** — 프로젝트 구조 인덱스 / 데모 플로우 / 컴파일 기준선. 문서만, 위험 없음, **첫 실행으로 지금 바로 시작 가능** (`CODEX_FIRST_RUN_PLAYBOOK`).
+2. **[사람+Codex] Task 004** — 보류 검증기 2종 실행 방식 결정(`DECISION_REQUIRED_FOR_USER` #3) 후 실행.
 3. **[Codex] Task 005~007** — 위험 파일 목록 / git 정책 / 저장 스키마 조사.
 4. **[Codex→사람] Task 008~016** — MVP Stabilization(기존 시스템 회귀 확인 + 버그 1개 + 완료 판정).
 5. 이후 Phase 2(Shop Core) 진입.
 
-미확정(사용자 결정 대기): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간.
+미확정(사용자 결정 대기, `DECISION_REQUIRED_FOR_USER.md`): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간 / 하루 작업 수.
 
 ## 4. 위험 파일 (수정 전 반드시 규칙 확인)
 

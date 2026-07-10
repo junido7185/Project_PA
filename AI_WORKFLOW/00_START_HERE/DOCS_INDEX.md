@@ -39,6 +39,8 @@ Project_PA/
 | 6 | `PROJECT_PA_TODO.md` (최신 섹션만) | 진행 중 체크리스트 |
 | 7 | 작업 유형별 추가 문서 | `Docs/AgentWorkflow/CONTEXT_INDEX.md` 라우팅을 따름 |
 
+Codex 실행 관련: 첫 실행은 `CODEX_FIRST_RUN_PLAYBOOK.md`, 상황별 프롬프트 선택은 `PROMPT_LIBRARY.md`, 사용자 미확정 항목은 `DECISION_REQUIRED_FOR_USER.md` 참조 (모두 `00_START_HERE/`).
+
 작업 종료 시 갱신: `AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md`, `PROJECT_PA_STATUS.md`, `PROJECT_PA_TODO.md`, `PROJECT_PA_SESSION_REPORT.md`, `Docs/07_개발일지.md` (+루프 작업이면 `Automation/LoopEngineering/progress.md`, `State/loop-state.json`).
 
 ## 3. 작업 유형별 문서 (요약)
