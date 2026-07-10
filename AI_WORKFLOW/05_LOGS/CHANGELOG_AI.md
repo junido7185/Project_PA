@@ -48,3 +48,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 코드/씬/에셋 변경: 없음.
 - 검증: `Assets/Scripts` 실제 `.cs` 파일 수 100개와 인덱스 분류 항목 100개를 대조. 문서 작업이므로 컴파일/Unity 검증은 실행하지 않음.
 - 비고: 다음 작업 후보는 Task 002(현재 데모 플로우 문서화).
+
+## 2026-07-10 — Codex — Task 002 현재 데모 플로우 문서화
+
+- 작업: `README.md`의 Demo Route 10단계와 실제 Day 1 코드 진입점을 대조해 `AI_WORKFLOW/03_TASKS/DEMO_FLOW.md` 신규 작성.
+- 변경 파일: `AI_WORKFLOW/03_TASKS/DEMO_FLOW.md`, `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md`, `AI_WORKFLOW/03_TASKS/DONE_TASKS.md`, `AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md`.
+- 코드/씬/에셋 변경: 없음.
+- 검증: README Demo Route 10단계와 `PlayableDayScenarioController`, `PA_RuntimeSceneBinder`, `ShopSlot`, `ShopPriceUI`, `NpcController`, `PurchaseEvaluator`, `EconomyService`, `SalesLogManager`, `SaveManager`, `SmartphoneUI`, `AuditResultUI` 진입점을 텍스트로 대조. Unity/Play Mode/빌드/테스트는 실행하지 않음.
+- 비고: 다음 작업 후보는 Task 003(컴파일 기준선 기록). 작업 전부터 `SubmissionPackages/*.zip` 2개 삭제 상태가 있었으며 이번 커밋에는 포함하지 않는다.

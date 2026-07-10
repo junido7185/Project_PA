@@ -83,7 +83,7 @@ Project P.A.와의 연결:
 
 ## Task 002 - 현재 데모 플로우 문서화
 
-상태: TODO
+상태: DONE
 단계: Phase 0
 난이도: XS
 예상 Codex 실행 횟수: 1
