@@ -1276,3 +1276,29 @@ Next actions:
 - 증거: Before `Logs/DemoViewShots/before_20260712_164931.png` → After `Logs/DemoViewShots/after5_20260712_223953.png` (동일 카메라/해상도/시간).
 - 회귀: FinalRoute(`paid=30G`) / DayNight(`sellableInventory=10`) / PanelLayout 통과 (`Logs/Fable_VisualPass2_*.log`).
 - 잔여(사람 확인): 조명 어둑함(시스템 미수정), 러그/파빙 가시성, 하단 기존 갈색 플랫폼, 분수 벤치 품질.
+
+---
+
+# Session 2026-07-13 — Visual Demo Integration Pass v3 Final Presentation Lock
+
+## 재개와 결과
+
+- Fable 사용량 제한으로 중단된 `after_final2` 직전부터 재개했다.
+- Final Locked Screenshot: `Logs/DemoViewShots/after_locked_20260713_002356.png`.
+- 15시대 따뜻한 조명, 기존 에셋 실모델 소품, 광장 소품, NPC 손님 2명, 좌우 HUD 톤을 실제 플레이 카메라에서 확인했다.
+- 첫 `after_final2`는 에셋 재임포트 직후 런타임 머티리얼이 검게 캡처됐으나 코드 수정 없는 1회 재실행에서 재현되지 않았다.
+
+## 검증
+
+- dotnet build: 런타임/에디터 오류 0.
+- FinalDemoRoute: PASS, `stocked=BreadLoaf`, `paid=30G`.
+- DayNightShopLoop: PASS, `sellableInventory=10`.
+- CustomerPanelLayout: PASS, 화면 내 배치 및 비겹침.
+- CoreSlicePlayability: PASS, F10 기본 OFF와 ON/OFF 복구.
+- FinalPresentationReviewer: PASS, 5장 캡처 및 Day 1 요약 410/418.
+
+## 판정과 남은 확인
+
+- 냉정한 판정: **조건부 발표용**.
+- 이유: 기능 루프와 발표 증거는 안정적이나 중앙 상점 primitive 실루엣, 분홍 스마트폰 UI, 넓은 좌측 컬럼이 남는다.
+- 사람 1회 확인: 실제 Editor Game View와 Final Locked Screenshot의 일치, 폰트/겹침/검은 머티리얼 미재현.

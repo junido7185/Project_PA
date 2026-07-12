@@ -790,3 +790,14 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [ ] 사람: After 스크린샷(`Logs/DemoViewShots/after5_*.png`) vs 실기기 Game view 대조, 러그/파빙 가시성, 조명 톤 판단.
 - [ ] 다음: 조명 커브(15시대 밝기) 조정 검토 — DayNightVisual 수정은 승인 필요.
 - [ ] 다음: 하단 중앙 기존 갈색 플랫폼 정체 확인 및 정리.
+
+## Visual Demo Integration Pass v3 Final Lock - 2026-07-13
+
+- [x] `after_final2` 캡처 실행 및 실제 이미지 확인.
+- [x] 첫 캡처의 검은 머티리얼 아티팩트 확인 후 코드 수정 없이 1회 재캡처.
+- [x] `after_locked_20260713_002356.png`를 Final Locked Screenshot으로 확정.
+- [x] 런타임/에디터 컴파일 오류 0 확인.
+- [x] 핵심 검증기 5종 D3D11 batchmode PASS.
+- [x] Final Lock 문서 5종 및 종료 기록 갱신.
+- [ ] 사람: 실제 Editor Game View와 Final Locked Screenshot 일치, 한국어 폰트, 검은 머티리얼 미재현을 1회 확인.
+- [ ] 발표 후: 정식 상점 메시 교체, HUD 스타일 통합, NPC 쇼핑 애니메이션 연결.

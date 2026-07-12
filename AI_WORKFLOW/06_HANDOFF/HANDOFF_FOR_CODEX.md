@@ -1,6 +1,6 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
-최종 갱신: 2026-07-12 (Fable 5 Visual Demo Integration Pass 완료)
+최종 갱신: 2026-07-13 (Visual Demo Integration Pass v3 Final Lock 완료)
 규칙: **3~5개 작업마다** 이 문서의 "현재 상태"와 "우선순위"를 갱신한다. (`CODEX_HANDOFF_PROMPT` 사용)
 
 ## 0. Codex 첫 실행 상태
@@ -29,16 +29,16 @@
 
 **목표는 프로토타입이 아니라 완성 게임이다.** 졸업 시연(Stage 2)은 완성 게임의 부분집합. 일회용 코드·하드코딩·저장 미지원으로 때우지 않는다.
 
-## 3. 현재 작업 우선순위 (2026-07-12 기준)
+## 3. 현재 작업 우선순위 (2026-07-13 기준)
 
-2026-07-12 Fable 5 가 Visual Demo Integration Pass 를 완료했다 (`AI_WORKFLOW/09_FINAL_FABLE_SPRINT/` 5종 문서 참조). placeholder 큐브 드레싱 + 광장 소품 + HUD 한국어 통일 + Day 요약 잘림 수복. 검증기 6종(D3D11 batchmode) 전부 통과 — **기존 BLOCKED 2종(FinalDemoRoute/LongPlay)도 Editor 닫힘 상태에서 실제 실행·통과됨** (`Logs/Fable_VisualPass_*.log`).
+Visual Demo Integration Pass v3를 실제 캡처·검증·문서까지 잠갔다. Final Locked Screenshot은 `Logs/DemoViewShots/after_locked_20260713_002356.png`. 핵심 검증기 5종이 D3D11 batchmode Exit 0/PASS이며 판정은 **조건부 발표용**이다. 상세는 `09_FINAL_FABLE_SPRINT/FINAL_PRESENTATION_LOCK_REPORT.md`.
 
-주의: 워킹트리에는 (1) 이전부터 있던 `SubmissionPackages/*.zip` 삭제 상태 2건, (2) 2026-07-12 Visual Pass 변경(신규 스크립트 1+meta, 수정 6, 문서 11)이 커밋 대기 중이다. 커밋은 사용자 승인 필요.
+주의: `SubmissionPackages/*.zip` 삭제 2건은 사용자 소유 변경이므로 복구/stage 금지. Visual v3 의도 변경만 체크포인트 커밋 대상이다.
 
-1. **[사람] Visual Pass v2 시각 확인** — 같은 날 저녁 실제 Game View 기준 v2 재작업 완료. Before `Logs/DemoViewShots/before_20260712_164931.png` vs After `after5_20260712_223953.png` 비교 후, 실기기에서 조명 톤·러그/파빙 가시성 확인 (`09_FINAL_FABLE_SPRINT/VISUAL_POLISH_REPORT.md` v2 섹션). 캡처 재실행: `PA_DemoViewCapture` 메뉴 또는 batchmode.
-2. **[사람] 체크포인트 커밋** — VC-001A + Visual Pass 포함 클린 baseline 확보 (loop 자동화 해제 조건).
-3. **[Codex] 채집 작물 실모델 교체** — 아이콘 빌보드 옆 색 구체를 `Item.model` 로 교체 (런타임만으로 가능, S).
-4. **[Codex→사람 승인] Nature Pack 식생 정적 배치 에디터 툴** — 씬 백업 + NavMesh 재베이크 (M).
+1. **[사람/발표 전 필수]** 실제 Editor Game View와 Final Locked Screenshot 일치, 한국어 폰트, 검은 머티리얼 미재현을 1회 확인.
+2. **[발표 후 1순위]** 상점 중앙 primitive 실루엣을 기존 승인 에셋 범위의 정식 잡화점 부스 메시로 교체.
+3. **[발표 후 2순위]** 스마트폰·좌측 정보 컬럼을 목재/크림 HUD로 통합하고 중복 정보 축소.
+4. **[발표 후 3순위]** 기존 NPC FSM에 쇼핑 idle/상품 보기 애니메이션 연결.
 5. 이후 기존 TASK_QUEUE Phase 진행 재개.
 
 미확정(사용자 결정 대기, `DECISION_REQUIRED_FOR_USER.md`): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간 / 하루 작업 수.
@@ -81,7 +81,7 @@
 
 - Unity 자동 실행은 **D3D11 전용**(D3D12 크래시 이력, 미승인).
 - Unity Editor 열려 있으면 batchmode 금지.
-- 보류 검증기 2종(`PA_FinalDemoRouteValidator`, `PA_LongPlayProgressionValidator`)은 BLOCKED — `VERIFICATION_RULES.md` §2-B.
+- `PA_FinalDemoRouteValidator`는 2026-07-13에도 D3D11 batchmode 통과했다. `VERIFICATION_RULES.md` §2-B의 BLOCKED 표기는 오래된 문서 상태이므로 다음 문서 정리 태스크에서 동기화가 필요하다.
 - 자동 루프는 dry-run 정책 + 클린 baseline 필요(`Automation/LoopEngineering/loop-policy.json`).
 - PowerShell 스크립트 직접 실행은 정책에 막힐 수 있음 → `-ExecutionPolicy Bypass -File`.
 

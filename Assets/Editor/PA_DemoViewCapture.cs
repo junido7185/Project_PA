@@ -155,7 +155,8 @@ public static class PA_DemoViewCapture
             }
 
             _step++;
-            _nextStepAt = EditorApplication.timeSinceStartup + 2.5;
+            // v3 — 손님 NPC 가 판매대에 도착할 시간을 확보 (스테이징 후 이동 시간).
+            _nextStepAt = EditorApplication.timeSinceStartup + 4.5;
         }
         catch (Exception ex)
         {
@@ -184,7 +185,58 @@ public static class PA_DemoViewCapture
         if (GameClock.Instance != null)
             GameClock.Instance.ForceSet(15.25f, 1, "PA_DemoViewCapture");
 
+        // v3 — ForceSet 은 OnHourTick 을 발화하지 않아 조명이 시작 시각(새벽)에 머무는
+        // 캡처 아티팩트가 있었다. 강제 시각에 맞춰 태양/앰비언트를 즉시 재적용한다.
+        foreach (var visual in Object.FindObjectsByType<DayNightVisual>(FindObjectsSortMode.None))
+            visual.ApplyHour(15);
+
         // 주의: 카메라를 마커로 옮기지 않는다 — 실제 플레이 카메라 프레이밍 그대로 캡처한다.
+
+        LogLightingDiagnostics();
+    }
+
+    // v3 — 조명/포그/앰비언트 실측 + 하단 갈색 플랫폼 정체 확인용 진단.
+    static void LogLightingDiagnostics()
+    {
+        var sun = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+        foreach (var l in sun)
+        {
+            if (l.type != LightType.Directional) continue;
+            Debug.Log($"[DemoViewDiag] DirLight '{l.name}' color={l.color} intensity={l.intensity:0.00} "
+                + $"rot={l.transform.rotation.eulerAngles} shadows={l.shadows} hasVisual={(l.GetComponent<DayNightVisual>() != null)}");
+        }
+
+        Debug.Log($"[DemoViewDiag] fog={RenderSettings.fog} fogColor={RenderSettings.fogColor} fogMode={RenderSettings.fogMode} "
+            + $"fogDensity={RenderSettings.fogDensity:0.0000} fogStart={RenderSettings.fogStartDistance:0.0} fogEnd={RenderSettings.fogEndDistance:0.0}");
+        Debug.Log($"[DemoViewDiag] ambientMode={RenderSettings.ambientMode} ambientLight={RenderSettings.ambientLight} "
+            + $"ambientIntensity={RenderSettings.ambientIntensity:0.00} ambientSky={RenderSettings.ambientSkyColor} skybox={(RenderSettings.skybox != null ? RenderSettings.skybox.name : "null")}");
+
+        // 플레이어 남쪽(화면 하단)의 갈색 플랫폼 정체 확인.
+        var player = GameObject.FindGameObjectWithTag("Player") ?? GameObject.Find("Player");
+        if (player != null)
+        {
+            for (int i = 2; i <= 8; i += 2)
+            {
+                Vector3 probe = player.transform.position - player.transform.forward * i + Vector3.up * 5f;
+                if (Physics.Raycast(probe, Vector3.down, out var hit, 15f))
+                    Debug.Log($"[DemoViewDiag] probe back {i}m → '{hit.collider.gameObject.name}' at y={hit.point.y:0.00} (root={hit.collider.transform.root.name})");
+            }
+
+            // 콜라이더 없는 시각 전용 오브젝트까지 포함 — 플레이어 남쪽 박스 안 렌더러 나열.
+            Vector3 c = player.transform.position;
+            var boxMin = new Vector3(c.x - 9f, -2f, c.z - 12f);
+            var boxMax = new Vector3(c.x + 9f, 3f, c.z - 1.5f);
+            int listed = 0;
+            foreach (var r in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+            {
+                if (r == null || !r.enabled) continue;
+                Vector3 b = r.bounds.center;
+                if (b.x < boxMin.x || b.x > boxMax.x || b.z < boxMin.z || b.z > boxMax.z || b.y < boxMin.y || b.y > boxMax.y) continue;
+                if (r.bounds.size.x < 1.5f && r.bounds.size.z < 1.5f) continue; // 큰 판만
+                Debug.Log($"[DemoViewDiag] south renderer '{r.gameObject.name}' (root={r.transform.root.name}) center={b} size={r.bounds.size}");
+                if (++listed >= 8) break;
+            }
+        }
     }
 
     static void CapturePlayCamera()

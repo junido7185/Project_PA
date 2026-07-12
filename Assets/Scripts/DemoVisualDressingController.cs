@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 
 // Visual Demo Integration Pass v2 — 데모 장면 코지 드레싱 사이드카.
 //
@@ -56,7 +57,13 @@ public class DemoVisualDressingController : MonoBehaviour
     bool _plazaDressed;
     bool _zonesDressed;
     bool _signageTidied;
+    bool _shoppersStaged;
     float _nextRefreshAt;
+    // v3 — 데모 시작 60초 동안 카운터 앞 손님 그림을 유지하기 위한 재스테이징 기록.
+    readonly List<NpcController> _stagedNpcs = new List<NpcController>();
+    readonly List<Vector3> _stagedSpots = new List<Vector3>();
+    Vector3 _stagedFacing = Vector3.forward;
+    float _shopperHoldUntil;
     readonly HashSet<string> _dressedPrepIds = new HashSet<string>();
     readonly HashSet<int> _dressedSlotIds = new HashSet<int>();
     readonly List<Transform> _billboards = new List<Transform>();
@@ -107,6 +114,106 @@ public class DemoVisualDressingController : MonoBehaviour
         DressGroundZones(shop);
         DressPlaza(shop);
         TidySignage();
+        StageShoppers(shop);
+    }
+
+    // ── v3: NPC 쇼핑 연출 — Day 1 낮에 손님 2명이 판매대 앞으로 오게 한다.
+    // 기존 FSM(Idle→MovingToShop→BrowsingShop)을 그대로 재사용한다. 재작성 없음.
+    void StageShoppers(Shop shop)
+    {
+        if (_shoppersStaged)
+        {
+            HoldStagedShoppers();
+            return;
+        }
+        if (Time.timeSinceLevelLoad < 2.0f) return; // 씬 바인더/NavMesh 안정화 대기
+
+        if (GameClock.Instance != null && GameClock.Instance.CurrentDay != 1) { _shoppersStaged = true; return; }
+
+        var slots = FindDemoSlots(shop);
+        if (slots.Count == 0) return;
+
+        PlazaFrame frame = ResolvePlazaFrame(slots, shop.transform.position);
+        Vector3[] spots =
+        {
+            frame.slotsCenter + frame.frontDir * 1.6f - frame.rowDir * 0.8f,
+            frame.slotsCenter + frame.frontDir * 2.6f + frame.rowDir * 1.4f
+        };
+
+        int staged = 0;
+        foreach (var npc in FindObjectsByType<NpcController>(FindObjectsSortMode.None))
+        {
+            if (npc == null || npc.currentState != NpcController.State.Idle) continue;
+            // 첫 이주자(튜토리얼 대화 NPC)는 제자리 유지.
+            if (npc.name.Contains("Bori") || npc.name.Contains("FirstSettler")) continue;
+
+            var agent = npc.GetComponent<NavMeshAgent>();
+            if (agent == null || !agent.isActiveAndEnabled) continue;
+
+            Vector3 spot = GroundAt(spots[staged], frame.groundY);
+            if (NavMesh.SamplePosition(spot, out var hit, 3f, NavMesh.AllAreas))
+                agent.Warp(hit.position);
+
+            // 첫 손님: 카운터 앞에 서서 상품을 바라봄 (Idle 유지 → 잠시 머무는 그림).
+            // 둘째 손님: 기존 FSM 으로 상점 접근 → 둘러보기 (움직임이 있는 그림).
+            npc.transform.rotation = Quaternion.LookRotation(-frame.frontDir, Vector3.up);
+            if (staged == 1)
+                npc.currentState = NpcController.State.MovingToShop;
+
+            _stagedNpcs.Add(npc);
+            _stagedSpots.Add(GroundAt(spots[staged], frame.groundY));
+            staged++;
+            if (staged >= 2) break;
+        }
+
+        if (staged > 0)
+        {
+            _shoppersStaged = true;
+            _stagedFacing = -frame.frontDir;
+            _shopperHoldUntil = Time.timeSinceLevelLoad + 60f;
+            Debug.Log($"🛍️ [DemoDressing] 손님 연출: NPC {staged}명을 판매대 앞으로 스테이징");
+        }
+    }
+
+    // 스테이징된 손님이 Idle 배회로 카운터를 떠나면 60초 동안은 다시 데려온다.
+    // (실제 쇼핑 상태 MovingToShop/BrowsingShop 이면 개입하지 않는다.)
+    void HoldStagedShoppers()
+    {
+        if (Time.timeSinceLevelLoad > _shopperHoldUntil) return;
+
+        for (int i = 0; i < _stagedNpcs.Count; i++)
+        {
+            var npc = _stagedNpcs[i];
+            if (npc == null || npc.currentState != NpcController.State.Idle) continue;
+
+            if (Vector3.Distance(npc.transform.position, _stagedSpots[i]) < 2.0f)
+            {
+                npc.transform.rotation = Quaternion.LookRotation(_stagedFacing, Vector3.up);
+                continue;
+            }
+
+            var agent = npc.GetComponent<NavMeshAgent>();
+            if (agent == null || !agent.isActiveAndEnabled) continue;
+            agent.Warp(_stagedSpots[i]);
+            npc.transform.rotation = Quaternion.LookRotation(_stagedFacing, Vector3.up);
+        }
+    }
+
+    // ── v3: 실모델 소품 로드/배치 (PA_DemoPropBaker 가 구운 Resources 프리팹) ──
+    static GameObject LoadProp(string propName)
+    {
+        return Resources.Load<GameObject>($"PA_DemoProps/{propName}");
+    }
+
+    GameObject PlaceProp(Transform parent, string propName, Vector3 position, float yRotation, float scale)
+    {
+        var prefab = LoadProp(propName);
+        if (prefab == null) return null;
+
+        var instance = Instantiate(prefab, position, Quaternion.Euler(0f, yRotation, 0f), parent);
+        instance.name = $"PA_DemoDressing_{propName}";
+        instance.transform.localScale = Vector3.one * scale;
+        return instance;
     }
 
     void EnsureRoot()
@@ -329,9 +436,9 @@ public class DemoVisualDressingController : MonoBehaviour
         // 4-0) 광장 베이스 플레이트 — 갈색 맨땅이 화면의 절반을 차지하는 것이
         // 테스트맵 인상의 최대 원인이므로, 판매대 앞(플레이어 쪽) 광장 전체를 밝은 석재 톤으로 덮는다.
         // 플레이어 시작 지점 뒤까지 커버하도록 깊이를 넉넉히 잡는다 (after4: 하단에 흙 노출).
-        Vector3 plazaCenter = GroundAt(frame.slotsCenter + frame.frontDir * 5.5f, frame.groundY);
+        Vector3 plazaCenter = GroundAt(frame.slotsCenter + frame.frontDir * 7.0f, frame.groundY);
         var basePlate = CreatePart(zones.transform, PrimitiveType.Cube, "PlazaBasePlate",
-            plazaCenter + Vector3.up * 0.006f, new Vector3(30f, 0.012f, 30f),
+            plazaCenter + Vector3.up * 0.006f, new Vector3(34f, 0.012f, 38f),
             new Color(0.60f, 0.55f, 0.46f, 1f), worldSpace: true);
         basePlate.transform.rotation = frontRot;
 
@@ -349,7 +456,8 @@ public class DemoVisualDressingController : MonoBehaviour
         deckTrim.transform.rotation = deck.transform.rotation;
 
         // 4-2) 카운터 앞 러그 — 손님이 서는 자리를 따뜻한 판매 공간으로 구획.
-        Vector3 rugCenter = GroundAt(frame.slotsCenter + frame.frontDir * 2.5f, frame.groundY) + Vector3.up * 0.055f;
+        // (씬의 경로 비주얼 메시가 물리 지면보다 높아 얇은 판이 묻힘 → 여유 오프셋)
+        Vector3 rugCenter = GroundAt(frame.slotsCenter + frame.frontDir * 2.5f, frame.groundY) + Vector3.up * 0.14f;
         var rug = CreatePart(zones.transform, PrimitiveType.Cube, "HubRug",
             rugCenter, new Vector3(4.6f, 0.03f, 2.2f), RugWarm, worldSpace: true);
         rug.transform.rotation = frontRot;
@@ -362,7 +470,7 @@ public class DemoVisualDressingController : MonoBehaviour
                 Vector3 tilePos = frame.slotsCenter
                     + frame.frontDir * (4.0f + r * 1.05f)
                     + frame.rowDir * (c * 1.05f);
-                tilePos = GroundAt(tilePos, frame.groundY) + Vector3.up * 0.040f;
+                tilePos = GroundAt(tilePos, frame.groundY) + Vector3.up * 0.125f;
                 var tile = CreatePart(zones.transform, PrimitiveType.Cube, $"Paver_{r}_{c}",
                     tilePos, new Vector3(0.95f, 0.025f, 0.95f), ((r + c) & 1) == 0 ? PaverA : PaverB,
                     worldSpace: true);
@@ -423,20 +531,24 @@ public class DemoVisualDressingController : MonoBehaviour
             GroundAt(showcasePos, frame.groundY),
             Quaternion.LookRotation(frontDir, Vector3.up));
 
-        // 5-2) 화단 — 열린 광장 위 (판매대 행 양끝은 씬 배치 박스에 가려짐 → 러그/파빙 옆으로).
+        // 5-2) 화단 — 플레이어 주변 확실히 빈 광장 위 (카운터 옆은 씬 대형 상자에 가려졌음).
+        Vector3 playerAnchor = slotsCenter + frontDir * 15.0f; // 대략 플레이어 초기 위치권
+        var playerGo = GameObject.FindGameObjectWithTag("Player") ?? GameObject.Find("Player");
+        if (playerGo != null) playerAnchor = playerGo.transform.position;
+
         Vector3[] planterSpots =
         {
-            slotsCenter + frontDir * 1.2f - rowDir * 3.2f,
-            slotsCenter + frontDir * 1.2f + rowDir * 3.2f,
-            slotsCenter + frontDir * 5.2f - rowDir * 3.0f,
-            slotsCenter + frontDir * 5.2f + rowDir * 3.0f
+            playerAnchor - frontDir * 3.5f - rowDir * 2.4f,   // 플레이어 앞 왼쪽 (카운터 방향)
+            playerAnchor - frontDir * 3.5f + rowDir * 2.6f,   // 플레이어 앞 오른쪽
+            playerAnchor + frontDir * 1.5f - rowDir * 3.6f,   // 플레이어 뒤 왼쪽
+            playerAnchor + frontDir * 1.0f + rowDir * 3.8f    // 플레이어 뒤 오른쪽
         };
         for (int i = 0; i < planterSpots.Length; i++)
             CreatePlanter(plaza.transform, GroundAt(planterSpots[i], frame.groundY), i);
 
-        // 5-3) 가로등 — 러그 양옆 열린 자리 (저녁 영업의 따뜻한 톤, 시야 안).
-        CreateLanternPost(plaza.transform, GroundAt(slotsCenter + frontDir * 3.0f - rowDir * 3.4f, frame.groundY));
-        CreateLanternPost(plaza.transform, GroundAt(slotsCenter + frontDir * 3.0f + rowDir * 3.4f, frame.groundY));
+        // 5-3) 가로등 — 플레이어~카운터 동선 양옆 열린 자리 (저녁 영업의 따뜻한 톤).
+        CreateLanternPost(plaza.transform, GroundAt(playerAnchor - frontDir * 5.5f - rowDir * 2.0f, frame.groundY));
+        CreateLanternPost(plaza.transform, GroundAt(playerAnchor - frontDir * 5.0f + rowDir * 2.3f, frame.groundY));
 
         // 5-4) 궤짝 더미 + 통 — 준비 매트 위 (빈 매트가 아니라 물류 코너로 읽히게).
         if (supportCrate != null)
@@ -451,7 +563,7 @@ public class DemoVisualDressingController : MonoBehaviour
             CreateCrateStack(plaza.transform, GroundAt(showcasePos + rowDir * 2.2f, frame.groundY));
         }
 
-        // 5-5) 분수 벤치 — 분수가 있으면 광장 중심으로 유지.
+        // 5-5) 분수 벤치 + 개구리 의자 — 분수가 있으면 광장 중심으로 유지.
         GameObject fountain = GameObject.Find("B11_PlazaFountain_Static") ?? GameObject.Find("B11_PlazaFountain");
         if (fountain != null)
         {
@@ -462,10 +574,52 @@ public class DemoVisualDressingController : MonoBehaviour
                 Vector3 pos = GroundAt(fountain.transform.position + dir * 2.6f, frame.groundY);
                 CreateBench(plaza.transform, pos, Quaternion.LookRotation(-dir, Vector3.up));
             }
+
+            // 코지 시그니처 소품 — 분수 옆 개구리 의자 (프로젝트 내부 실모델 재사용).
+            Vector3 chairDir = Quaternion.Euler(0f, 200f, 0f) * Vector3.forward;
+            var chair = PlaceProp(plaza.transform, "Prop_FroggyChair",
+                GroundAt(fountain.transform.position + chairDir * 3.0f, frame.groundY), 20f, 1.0f);
+            if (chair != null)
+                chair.transform.rotation = Quaternion.LookRotation(-chairDir, Vector3.up);
         }
 
+        // 5-6) v3 실모델 식생 레이어 — Nature Pack 프리팹으로 광장 프레이밍.
+        //      after7 보정: 나무는 카메라 프레임 안(행 ±7.5m)으로, 풀/밀/통나무는 스케일 축소.
+        PlaceProp(plaza.transform, "Prop_TreeA",
+            GroundAt(slotsCenter - rowDir * 7.5f - frontDir * 1.5f, frame.groundY), 15f, 0.85f);
+        PlaceProp(plaza.transform, "Prop_TreeB",
+            GroundAt(slotsCenter + rowDir * 8.5f + frontDir * 2.0f, frame.groundY), 160f, 0.75f);
+        PlaceProp(plaza.transform, "Prop_TreeBirch",
+            GroundAt(slotsCenter - rowDir * 6.5f + frontDir * 9.5f, frame.groundY), 80f, 0.75f);
+        PlaceProp(plaza.transform, "Prop_TreeA",
+            GroundAt(slotsCenter + rowDir * 7.0f + frontDir * 10.0f, frame.groundY), 230f, 0.7f);
+
+        PlaceProp(plaza.transform, "Prop_Bush",
+            GroundAt(slotsCenter - rowDir * (rowHalf + 2.6f) + frontDir * 0.4f, frame.groundY), 40f, 0.9f);
+        PlaceProp(plaza.transform, "Prop_BushBerries",
+            GroundAt(slotsCenter + rowDir * (rowHalf + 2.8f) + frontDir * 0.8f, frame.groundY), 120f, 0.9f);
+        PlaceProp(plaza.transform, "Prop_Rock",
+            GroundAt(showcasePos - rowDir * 3.2f, frame.groundY), 70f, 0.9f);
+        PlaceProp(plaza.transform, "Prop_Stump",
+            GroundAt(showcasePos + frontDir * 2.6f + rowDir * 1.0f, frame.groundY), 10f, 0.85f);
+        PlaceProp(plaza.transform, "Prop_WoodLog",
+            GroundAt(showcasePos + frontDir * 2.2f - rowDir * 1.6f, frame.groundY), 285f, 0.65f);
+
+        // 풀/밀 포기 — 광장 가장자리에 생활감 (Grass_2 원본이 갈대급이라 강하게 축소).
+        float[] grassRow = { -8.5f, -6.0f, 6.5f, 8.0f, -4.5f, 5.5f };
+        float[] grassFront = { 6.5f, 9.5f, 7.0f, 10.0f, 11.5f, 12.0f };
+        for (int i = 0; i < grassRow.Length; i++)
+            PlaceProp(plaza.transform, "Prop_Grass",
+                GroundAt(slotsCenter + rowDir * grassRow[i] + frontDir * grassFront[i], frame.groundY),
+                i * 57f, 0.4f + 0.04f * (i % 3));
+        PlaceProp(plaza.transform, "Prop_Wheat",
+            GroundAt(slotsCenter - rowDir * 7.5f + frontDir * 12.5f, frame.groundY), 30f, 0.55f);
+        PlaceProp(plaza.transform, "Prop_Wheat",
+            GroundAt(slotsCenter + rowDir * 8.5f + frontDir * 13.0f, frame.groundY), 140f, 0.55f);
+
         _plazaDressed = true;
-        Debug.Log("🪑 [DemoDressing] 광장 소품 완료: 쇼케이스/화단 4/가로등 2/궤짝/벤치");
+        Vector3 planterProbe = GroundAt(planterSpots[0], frame.groundY);
+        Debug.Log($"🪑 [DemoDressing] 광장 소품 완료 — planter0={planterProbe}, lanternL={GroundAt(slotsCenter + frontDir * 3.0f - rowDir * 3.4f, frame.groundY)}, showcase={GroundAt(showcasePos, frame.groundY)}");
     }
 
     // 상품 쇼케이스: 나무 진열대 + 아이템 아이콘 5종 + 작물 더미.
@@ -525,9 +679,21 @@ public class DemoVisualDressingController : MonoBehaviour
             new Vector3(0f, 0.16f, 0f), new Vector3(0.62f, 0.32f, 0.62f), WoodDark);
         CreatePart(planter.transform, PrimitiveType.Cube, "Soil",
             new Vector3(0f, 0.30f, 0f), new Vector3(0.54f, 0.06f, 0.54f), PlanterSoil);
+
+        // v3 — 꽃은 primitive 구체 대신 Nature Pack 실모델 사용 (베이크 프리팹 없으면 구체 폴백).
+        var flowers = LoadProp("Prop_Flowers");
+        if (flowers != null)
+        {
+            var instance = Instantiate(flowers, planter.transform);
+            instance.name = "Flowers_Model";
+            instance.transform.localPosition = new Vector3(0f, 0.33f, 0f);
+            instance.transform.localRotation = Quaternion.Euler(0f, index * 83f, 0f);
+            instance.transform.localScale = Vector3.one * 0.85f;
+            return;
+        }
+
         CreatePart(planter.transform, PrimitiveType.Sphere, "Leaf",
             new Vector3(0f, 0.42f, 0f), Vector3.one * 0.34f, LeafGreen);
-
         Color flower = FlowerColors[index % FlowerColors.Length];
         CreatePart(planter.transform, PrimitiveType.Sphere, "Flower_A",
             new Vector3(-0.12f, 0.52f, 0.08f), Vector3.one * 0.14f, flower);
@@ -589,6 +755,8 @@ public class DemoVisualDressingController : MonoBehaviour
         // 보급 상자/텐트 키트가 원색 박스로 읽히지 않도록 목재 톤으로 통일.
         RecolorSceneProp("Support_Crate", CrateWood);
         RecolorSceneProp("Shop_Tent_Kit", WoodLight);
+        // v3 — 화면 하단의 도착 부두 마커(콜라이더 없는 시각물)를 목재 부두 톤으로 통일.
+        RecolorSceneProp("Arrival_Pier_Marker", WoodLight);
 
         if (touchedSign)
         {

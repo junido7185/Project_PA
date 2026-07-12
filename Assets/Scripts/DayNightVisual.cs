@@ -19,6 +19,14 @@ public class DayNightVisual : MonoBehaviour
     [Header("최대 강도")]
     public float maxIntensity = 1.2f;
 
+    // v3 Final Presentation Lock — 청회색 skybox 앰비언트가 코지 톤을 죽이는 문제 보정.
+    // Trilight 앰비언트를 시간대에 맞춰 구동한다 (낮=따뜻한 크림, 밤=어두운 남색 유지).
+    [Header("앰비언트(주변광) 온도 보정 — v3")]
+    public bool driveAmbient = true;
+    public Gradient ambientSkyGradient;
+    public Gradient ambientEquatorGradient;
+    public Gradient ambientGroundGradient;
+
     void Awake()
     {
         if (directionalLight == null)
@@ -31,6 +39,45 @@ public class DayNightVisual : MonoBehaviour
         // 기본 강도 커브 — 낮은 환하고 밤은 어두움
         if (intensityCurve == null || intensityCurve.length == 0)
             intensityCurve = BuildDefaultIntensityCurve();
+
+        // v3 — 앰비언트 그라디언트 기본값
+        if (ambientSkyGradient == null || ambientSkyGradient.colorKeys.Length == 0)
+            ambientSkyGradient = BuildGradient(
+                new Color(0.10f, 0.12f, 0.20f),   // 자정
+                new Color(0.50f, 0.44f, 0.42f),   // 06h
+                new Color(0.64f, 0.68f, 0.76f),   // 12h
+                new Color(0.58f, 0.44f, 0.40f),   // 18h
+                new Color(0.10f, 0.12f, 0.20f));  // 24h
+        if (ambientEquatorGradient == null || ambientEquatorGradient.colorKeys.Length == 0)
+            ambientEquatorGradient = BuildGradient(
+                new Color(0.08f, 0.09f, 0.14f),
+                new Color(0.52f, 0.42f, 0.36f),
+                new Color(0.82f, 0.76f, 0.66f),   // 낮 — 따뜻한 크림 (코지 핵심)
+                new Color(0.78f, 0.54f, 0.38f),
+                new Color(0.08f, 0.09f, 0.14f));
+        if (ambientGroundGradient == null || ambientGroundGradient.colorKeys.Length == 0)
+            ambientGroundGradient = BuildGradient(
+                new Color(0.05f, 0.05f, 0.08f),
+                new Color(0.30f, 0.24f, 0.20f),
+                new Color(0.48f, 0.41f, 0.33f),
+                new Color(0.38f, 0.28f, 0.22f),
+                new Color(0.05f, 0.05f, 0.08f));
+    }
+
+    static Gradient BuildGradient(Color midnight, Color dawn, Color noon, Color dusk, Color midnightEnd)
+    {
+        var g = new Gradient();
+        g.SetKeys(
+            new[]
+            {
+                new GradientColorKey(midnight, 0.00f),
+                new GradientColorKey(dawn, 0.25f),
+                new GradientColorKey(noon, 0.50f),
+                new GradientColorKey(dusk, 0.75f),
+                new GradientColorKey(midnightEnd, 1.00f),
+            },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+        return g;
     }
 
     void Start()
@@ -48,7 +95,8 @@ public class DayNightVisual : MonoBehaviour
             GameClock.Instance.OnHourTick -= ApplyHour;
     }
 
-    void ApplyHour(int hour)
+    // v3 — 캡처 툴/검증기가 GameClock.ForceSet 후 즉시 재적용할 수 있도록 public.
+    public void ApplyHour(int hour)
     {
         if (directionalLight == null) return;
 
@@ -60,6 +108,15 @@ public class DayNightVisual : MonoBehaviour
         // 태양 고도: 정오(12h)에 최고, 자정(0h/24h)에 최저
         float sunAngle   = (hour / 24f) * 360f - 90f; // -90° 오프셋 → 정오에 90°(천정)
         transform.rotation = Quaternion.Euler(sunAngle, -30f, 0f);
+
+        // v3 — 따뜻한 Trilight 앰비언트 (밤은 기존처럼 어둡게 유지).
+        if (driveAmbient)
+        {
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = ambientSkyGradient.Evaluate(t);
+            RenderSettings.ambientEquatorColor = ambientEquatorGradient.Evaluate(t);
+            RenderSettings.ambientGroundColor = ambientGroundGradient.Evaluate(t);
+        }
     }
 
     static Gradient BuildDefaultGradient()

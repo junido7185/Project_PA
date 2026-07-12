@@ -72,7 +72,7 @@ public class MoneyHUD : MonoBehaviour
         hudRT.anchoredPosition = new Vector2(-20, -20);
 
         var bgImg = hudGO.GetComponent<Image>();
-        bgImg.color         = new Color(0f, 0f, 0f, 0.45f); // 반투명 검정
+        bgImg.color         = new Color(0f, 0f, 0f, 0.55f); // v3 — 좌우 HUD 투명도 통일
         bgImg.raycastTarget = false;
 
         // ── 재화 텍스트 ────────────────────────────────────────────────────────

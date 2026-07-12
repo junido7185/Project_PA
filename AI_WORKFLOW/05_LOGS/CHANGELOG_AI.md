@@ -78,3 +78,12 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 변경 파일: `Assets/Editor/PA_DemoViewCapture.cs`(+meta, 신규 캡처 툴) / `DemoVisualDressingController.cs`(실측 지오메트리 전면 개정) / `CoreSlicePresentationMode.cs`(숨김 목록 확장) / `PlayableDayScenarioController.cs`(한 줄 목표+퀘스트 패널) / `DayNightShopLoopController.cs`(패널 좌측 이동, prep 이름 한국어) / `DaytimeStockPrepPoint.cs`(라벨 소형) / `Assets/Resources/Items/Item_{BreadLoaf,Carrot,Fish,Wheat,Ore,IronBar}.asset`(icon 참조만).
 - 검증: dotnet build 0 오류. FinalRoute(`paid=30G`)/DayNight(`sellableInventory=10`)/PanelLayout 통과 — `Logs/Fable_VisualPass2_*.log`. Before `Logs/DemoViewShots/before_20260712_164931.png` → After `after5_20260712_223953.png`.
 - 비고: Shop 원점(슬롯 부모) 방향 앵커 금지 — `PlazaFrame` 실측(슬롯 행+플레이어) 사용. 물리 지면 y=-0.5 (시각 지면과 상이) — 얇은 바닥 소품은 오프셋 계층 필수. 잔여: 조명 톤/러그 가시성 사람 확인.
+
+## 2026-07-13 — Codex — Visual Demo Integration Pass v3 Final Presentation Lock
+
+- 작업: Fable 세션의 중단 지점(`after_final2` 직전)부터 재개해 실제 Game View 캡처, 검증기 5종, 최종 문서, 냉정한 판정을 완료.
+- Final Locked Screenshot: `Logs/DemoViewShots/after_locked_20260713_002356.png`.
+- 시각 변경: 15시대 따뜻한 Trilight 조명, 기존 Nature Pack 실모델 소품 베이크/배치, 광장·NPC 2명 스테이징, Clock/Money HUD 폭·투명도 통일. 씬/프리팹/저장/경제·NPC 코어 무변경.
+- 검증: 런타임/에디터 dotnet build 오류 0. D3D11 batchmode 5종 전부 Exit 0/PASS — FinalRoute(`paid=30G`), DayNight(`sellableInventory=10`), CustomerPanelLayout, CoreSlice(F10 OFF/ON/OFF), FinalPresentation(요약 410/418, 캡처 5장).
+- 판정: **조건부 발표용**. 중앙 상점 primitive 실루엣과 UI 스타일 격차는 사람 확인 및 발표 후 개선 필요.
+- 비고: 첫 `after_final2`는 에셋 재임포트 직후 검은 런타임 머티리얼 캡처 아티팩트가 발생했으나, 코드 수정 없는 1회 재실행에서 재현되지 않았다. 사용자 소유 `SubmissionPackages/*.zip` 삭제 2건은 변경·stage하지 않음.

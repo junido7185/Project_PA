@@ -1227,3 +1227,12 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 
 - 조명이 어둑함(15:30 청회색) — DayNightVisual 커브는 미수정. 러그/파빙 가시성, 하단 기존 갈색 플랫폼 정체, 분수 벤치 품질 확인.
 - 상세: `AI_WORKFLOW/09_FINAL_FABLE_SPRINT/VISUAL_POLISH_REPORT.md` v2 섹션.
+
+## 2026-07-13 Visual Demo Integration Pass v3 — Final Presentation Lock
+
+- Final Locked Screenshot: `Logs/DemoViewShots/after_locked_20260713_002356.png` (2560×1440, Day 1 15:42, UI 포함).
+- 상태: 조명·실모델 소품·광장/NPC 스테이징·좌우 HUD 통일 완료. 메인 씬/프리팹/저장/경제·NPC 코어 무변경.
+- 컴파일: 런타임/에디터 오류 0 (기존 CS8785/CS0414 경고만).
+- 검증: FinalDemoRoute, DayNightShopLoop, CustomerPanelLayout, CoreSlicePlayability, FinalPresentationReviewer 전부 D3D11 batchmode Exit 0/PASS.
+- 판정: **조건부 발표용**. 실제 화면은 기능과 루프가 읽히지만 중앙 상점 primitive 실루엣과 UI 스타일 불일치가 남는다.
+- 사람 확인: 실제 Editor Game View가 Final Locked Screenshot과 동일하고 폰트·UI·머티리얼 이상이 없는지 1회 확인.

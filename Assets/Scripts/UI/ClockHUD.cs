@@ -51,11 +51,12 @@ public class ClockHUD : MonoBehaviour
         rt.anchorMin        = new Vector2(0f, 1f);
         rt.anchorMax        = new Vector2(0f, 1f);
         rt.pivot            = new Vector2(0f, 1f);
-        rt.sizeDelta        = new Vector2(200, 70);
+        // v3 — 좌측 정보 컬럼(시계/페이즈/퀘스트) 폭·투명도 통일.
+        rt.sizeDelta        = new Vector2(340, 70);
         rt.anchoredPosition = new Vector2(20, -20);
 
         var bg   = hudGO.GetComponent<Image>();
-        bg.color = new Color(0f, 0f, 0f, 0.45f);
+        bg.color = new Color(0f, 0f, 0f, 0.55f);
         bg.raycastTarget = false;
 
         // 시각 텍스트 (상단)
