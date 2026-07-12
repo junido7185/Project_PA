@@ -759,3 +759,34 @@ Status: documentation pass complete; moves deferred.
 - [ ] Human: checkpoint commit including VC-001A work (blocks moves and loop automation).
 - [ ] After clean baseline: execute deferred document moves (merge -> git mv -> reference updates in the same commit, per `AI_DOC_CLEANUP_PLAN.md` section 5/9).
 - [ ] Build `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md` (needs inputs listed in `AI_WORKFLOW/03_TASKS/README.md`).
+
+## Visual Demo Integration Pass - 2026-07-12
+
+Status: 구현·검증 완료. 사람 시각 확인 대기.
+
+- [x] 채집 포인트 5곳 placeholder 큐브를 궤짝+작물+아이템 아이콘 빌보드로 드레싱 (`DemoVisualDressingController`, 런타임 전용).
+- [x] 영업 간판 기둥/걸이대/랜턴 드레싱.
+- [x] 광장 소품 보강: 분수 벤치 3, 화단 4, 가로등 2, 궤짝 더미/통 (렌더러 전용, NavMesh 무영향).
+- [x] HUD 문구 한국어 통일 (`DayNightShopLoopController`, `DaytimeStockPrepPoint`) + 검증기 키워드 1줄 동기화.
+- [x] Day 요약 본문 잘림(410/360) 수복 — 요약 상태 본문 810x418 확장.
+- [x] 검증: dotnet build 0 오류 + 검증기 6종 통과 (DayNight/FinalRoute/Presentation/GatheringReview/CoreSlice/LongPlay, D3D11 batchmode).
+- [x] `AI_WORKFLOW/09_FINAL_FABLE_SPRINT/` 문서 5종 작성.
+- [ ] 사람: Editor Game view 에서 광장 드레싱 전경·한국어 폰트·F10 토글 확인.
+- [ ] 다음: 채집 포인트 작물 구체를 `Item.model` 실제 모델로 교체 (런타임만으로 가능).
+- [ ] 다음(승인 필요): Nature Pack 식생 정적 배치 에디터 툴 (씬 백업 + NavMesh 재베이크).
+- [ ] 다음: Day 요약 "Village direction" 제목 한국어화 (+FinalRoute 검증기 1줄 동기화).
+
+## Visual Demo Integration Pass v2 (실제 Game View 기준) - 2026-07-12 저녁
+
+Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. 사람 시각 확인 대기.
+
+- [x] 실제 플레이 카메라 Before/After 캡처 툴 (`PA_DemoViewCapture`) + before/after5 캡처.
+- [x] 씬 저장 `Guide_*` 디버그 라벨 + SUPPLY/PRICE/SALE 스테이징 라벨 기본 숨김 (F10 토글로만).
+- [x] 광장 베이스 플레이트(30x30)로 갈색 맨땅 제거 + 데크/러그/파빙/매트 오프셋 계층화.
+- [x] 상단 목표 한 줄 + 좌측 퀘스트 체크리스트 패널 + 페이즈 스트립 좌측 이동.
+- [x] Item 아이콘 6종 연결 → 핫바/쇼케이스 실제 아이콘.
+- [x] 판매대 카운터/가격판, 쇼케이스 상품 5종, 간판 "코지 잡화점".
+- [x] 회귀: FinalRoute(`paid=30G`) / DayNight / PanelLayout 통과.
+- [ ] 사람: After 스크린샷(`Logs/DemoViewShots/after5_*.png`) vs 실기기 Game view 대조, 러그/파빙 가시성, 조명 톤 판단.
+- [ ] 다음: 조명 커브(15시대 밝기) 조정 검토 — DayNightVisual 수정은 승인 필요.
+- [ ] 다음: 하단 중앙 기존 갈색 플랫폼 정체 확인 및 정리.

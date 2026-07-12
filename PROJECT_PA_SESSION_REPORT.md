@@ -1235,3 +1235,44 @@ Next actions:
 2. Run the two deferred validators (Editor-closed batchmode on D3D11, or from the open Editor menu).
 3. Execute deferred document moves with reference updates in the same commit.
 4. Build `AI_WORKFLOW/03_TASKS/TASK_QUEUE.md` after the human inputs listed in `AI_WORKFLOW/03_TASKS/README.md`.
+
+
+---
+
+# Session 2026-07-12 — Visual Demo Integration Pass (Claude Fable 5)
+
+## Goal
+
+기능 추가가 아니라 시각 통합: 기존 구현/에셋을 연결·배치·문구 정리해서 5분 데모가 "완성된 코지 상점 게임"으로 보이게 한다.
+
+## Completed Work
+
+- 신규 런타임 사이드카 `DemoVisualDressingController` — 채집 포인트 5곳/영업 간판 placeholder 큐브 드레싱 + 광장 소품(벤치 3·화단 4·가로등 2·궤짝/통). 씬 파일 무수정, 렌더러 전용.
+- HUD 문구 한국어 통일 (`DayNightShopLoopController`, `DaytimeStockPrepPoint`) — 로직 무변경, 표시 문자열만.
+- Day 요약 본문 잘림 수복 (기존 문제, 410px 본문 vs 360px 영역 → 418px 확장).
+- `AI_WORKFLOW/09_FINAL_FABLE_SPRINT/` 5종 문서: 폴리시 리포트 / 장면 배치 계획 / UI 상태표 / 5분 루트 / 시각 격차·placeholder 계획.
+
+## Verification
+
+- dotnet build 런타임+에디터 0 오류.
+- 검증기 6종 D3D11 batchmode 전부 통과: DayNightShopLoop(`sellableInventory=10`), FinalDemoRoute(`paid=30G`), FinalPresentationReviewer(재실행, 410/418), GatheringShopReview(캡처 5장), CoreSlicePlayability, LongPlayProgression(`money=4633G` 불변).
+- 로그: `Logs/Fable_VisualPass_*.log`, 캡처: `Logs/FinalPresentation/20260712_161412/`, `Logs/GatheringShopReview/20260712_161528/`.
+- 기존 BLOCKED 2종(FinalDemoRoute/LongPlay)이 Editor 닫힘 상태 D3D11 batchmode 로 실제 실행·통과됨.
+
+## Not Verified (human)
+
+- 광장 드레싱 전경의 주관적 품질(자동 캡처가 카운터 클로즈업 위주), 실기기 한국어 폰트, F10 토글 리허설.
+
+## Git
+
+- 시작: `master`, 기존 dirty 2건(SubmissionPackages zip 삭제 표시)만 존재.
+- 종료: 위 2건 + 이번 작업 파일(신규 스크립트/meta, 수정 6, 문서 11)만 변경. 커밋/푸시 없음(승인 대기).
+
+
+## v2 재작업 (같은 날 저녁) — 실제 Game View 불합격 → Before/After 기준 재작업
+
+- 사용자 판정: v1 은 검증기 통과였을 뿐 실제 Game View 는 테스트맵 인상 그대로 (디버그 라벨/원시 큐브/맨땅/UI 겹침).
+- 재작업: 실측 지오메트리(`PlazaFrame`) 기반 광장 베이스 플레이트 + 구획, `Guide_*` 라벨 숨김, 좌측 퀘스트 패널 + 상단 한 줄, 아이콘 6종 연결, 판매대 카운터/쇼케이스/간판 한국어화.
+- 증거: Before `Logs/DemoViewShots/before_20260712_164931.png` → After `Logs/DemoViewShots/after5_20260712_223953.png` (동일 카메라/해상도/시간).
+- 회귀: FinalRoute(`paid=30G`) / DayNight(`sellableInventory=10`) / PanelLayout 통과 (`Logs/Fable_VisualPass2_*.log`).
+- 잔여(사람 확인): 조명 어둑함(시스템 미수정), 러그/파빙 가시성, 하단 기존 갈색 플랫폼, 분수 벤치 품질.

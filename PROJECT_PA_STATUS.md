@@ -1166,3 +1166,64 @@ Next:
 - Fixed the development goal in documentation: the target is a completable full game, not a submission-only prototype (`AI_WORKFLOW/01_IDENTITY/PROJECT_PA_SCOPE.md`).
 - No code, scene, prefab, asset, or meta changes. No file deletion. No `git mv` moves: working tree still has uncommitted VC-001A changes, so all planned document moves stay deferred (`AI_WORKFLOW/00_START_HERE/DOCS_INDEX.md` section 7-B).
 - Docs/01~08 remain frozen in place (code comments cite them by section number). Latest crash report stays in root (preflight glob).
+
+## 2026-07-12 Visual Demo Integration Pass (Fable 5)
+
+Scope:
+
+- 새 시스템 없이 기존 구현·에셋을 연결/배치/문구 정리해 데모 화면을 "완성된 코지 상점 게임"으로 통합.
+- 씬 파일·프리팹·저장 스키마·경제/NPC 코어 무변경. Project_D 미접근, 패키지 추가 없음, 커밋/푸시 없음.
+
+Implemented:
+
+- `Assets/Scripts/DemoVisualDressingController.cs` (신규, VC-001A 런타임 사이드카 패턴):
+  - 채집 포인트 5곳: placeholder 큐브 → 나무 궤짝 + 아이템 색 작물 + 실제 아이템 아이콘 빌보드.
+  - 영업 간판: 나무 기둥/걸이대/발광 랜턴 드레싱.
+  - 광장: 분수 둘레 벤치 3, 동선 화단 4, 가로등 2, 상점 옆 궤짝/통. 전부 렌더러 전용(콜라이더 제거).
+- HUD 문구 한국어 통일: `DayNightShopLoopController`(페이즈/영업 상태/활동 결과), `DaytimeStockPrepPoint`(프롬프트/라벨).
+- Day 요약 본문 잘림 수복: Village direction 섹션 추가 후 본문 410px > 영역 360px 였던 기존 문제 → 요약 상태 본문 810x418 로 확장 (`PlayableDayScenarioController`).
+- `PA_RuntimeSceneBinder` 등록 1줄, `PA_DayNightShopLoopValidator` 성공 키워드 1줄 동기화("prepared"→"낮 준비 완료"), `Assembly-CSharp.csproj` include 1줄.
+
+Verification (Editor 닫힘 + D3D11 batchmode, 전부 통과):
+
+- dotnet build 런타임/에디터 0 오류 (기존 CS8785 경고만).
+- `PA_DayNightShopLoopValidator` — `Logs/Fable_VisualPass_DayNightValidation.log` (`sellableInventory=10`).
+- `PA_FinalDemoRouteValidator` — `Logs/Fable_VisualPass_FinalRouteRegression.log` (`stocked=BreadLoaf, paid=30G`). 기존 BLOCKED 상태였던 검증기가 실제 실행·통과됨.
+- `PA_FinalPresentationReviewer` — 1차 실행에서 기존 요약 잘림(410/360) 검출 → 수복 후 재실행 통과 (410/418). 캡처 5장: `Logs/FinalPresentation/20260712_161412/`.
+- `PA_GatheringShopReview` — 캡처 5장: `Logs/GatheringShopReview/20260712_161528/`.
+- `PA_CoreSlicePlayabilityValidator` — 통과.
+- `PA_LongPlayProgressionValidator` — 통과 (`money=4633G` 기준선 불변). 기존 BLOCKED 검증기 실행·통과.
+
+Documents:
+
+- 신규: `AI_WORKFLOW/09_FINAL_FABLE_SPRINT/` 5종 (VISUAL_POLISH_REPORT, DEMO_SCENE_LAYOUT_PLAN, DEMO_UI_STATUS, DEMO_5_MINUTE_ROUTE, VISUAL_GAP_AND_PLACEHOLDER_PLAN).
+
+Still required (human):
+
+- 광장 드레싱(벤치/화단/가로등) 전경의 주관적 배치 품질을 Editor Game view 에서 확인 (자동 캡처는 카운터 클로즈업 위주).
+- 한국어 폰트 실기기 확인, F10 개발 오버레이 토글 리허설.
+
+## 2026-07-12 (저녁) Visual Demo Integration Pass v2 — 실제 Game View 기준 재작업
+
+Scope:
+
+- v1 이 실제 플레이 화면 기준으로 불합격 판정을 받아, 판정 기준을 "같은 플레이 카메라 Before/After 스크린샷"으로 바꿔 재작업.
+- Before: `Logs/DemoViewShots/before_20260712_164931.png` / After: `Logs/DemoViewShots/after5_20260712_223953.png` (2560x1440, Day 1 15:30 동일 조건).
+
+Implemented:
+
+- 신규 `Assets/Editor/PA_DemoViewCapture.cs` — 실제 추적 카메라 그대로 UI 포함 캡처하는 Before/After 툴 (PA_SHOT_LABEL 환경변수로 라벨).
+- 갈색 맨땅 제거: `DemoVisualDressingController` 에 광장 베이스 플레이트(30x30 석재 톤) + 판매 데크/러그/파빙/준비 매트. 지오메트리는 Shop 원점이 아니라 실측(`PlazaFrame`: 슬롯 행 방향 + 슬롯 중심→플레이어 방향 + 물리 지면 y=-0.5) 기준.
+- 씬 저장 디버그 라벨 7종+ (`Guide_*`: "0. 플레이어 WASD…" 등) 과 SUPPLY/PRICE/SALE 스테이징 라벨을 `CoreSlicePresentationMode` 기본 숨김에 추가 (F10 으로만 표시).
+- 상단 중앙 UI 정리: 목표 한 줄(780x44)만 유지, 페이즈 스트립 좌측 컬럼 이동, 좌측 퀘스트 체크리스트 패널(✓/▶/○) 신설 (`PlayableDayScenarioController.BuildQuestPanel`).
+- `Item.icon` 6종 데이터 연결 (Free RPG Icons: 빵13/당근9/생선1/밀19/광석4/철괴5) → 핫바/쇼케이스/채집 아이콘 실물화.
+- 판매대 슬롯 4개 카운터+가격판 드레싱, 상품 쇼케이스(5종), "MANAGEMENT HUB"→"코지 잡화점" 런타임 교체, 채집 포인트 이름 한국어("텃밭 바구니"/"생산자 납품함") + 라벨 소형화.
+
+Verification (전부 통과):
+
+- dotnet build 0 오류. `PA_FinalDemoRouteValidator`(`paid=30G`) / `PA_DayNightShopLoopValidator`(`sellableInventory=10`) / `PA_CustomerPanelLayoutValidator` — `Logs/Fable_VisualPass2_*.log`.
+
+Still required (human, After 스크린샷 기준 잔여 문제):
+
+- 조명이 어둑함(15:30 청회색) — DayNightVisual 커브는 미수정. 러그/파빙 가시성, 하단 기존 갈색 플랫폼 정체, 분수 벤치 품질 확인.
+- 상세: `AI_WORKFLOW/09_FINAL_FABLE_SPRINT/VISUAL_POLISH_REPORT.md` v2 섹션.

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 2
   itemName: Carrot
   description: Reliable spring crop and cooking ingredient.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 33ba85d5fc7cbab4a9dcd8dc35e31542, type: 3}
   maxStack: 99
   model: {fileID: 0}
   basePrice: 12

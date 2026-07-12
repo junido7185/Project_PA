@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 6
   itemName: IronBar
   description: Refined metal with strong utility demand.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a938c2dc75e47c7469ce644250a6c8fa, type: 3}
   maxStack: 99
   model: {fileID: 0}
   basePrice: 40

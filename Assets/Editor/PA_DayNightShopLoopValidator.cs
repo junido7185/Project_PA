@@ -154,7 +154,8 @@ public static class PA_DayNightShopLoopValidator
             Require(controller.TryCollectDayPrepStock(prepPoints[0], null), "first day prep stock interaction succeeds");
             int after = CountSellableItems();
             Require(after > before, "first day prep stock increases sellable inventory");
-            Require(controller.LastActivityResult.Contains("prepared"), "day prep result explains prepared stock");
+            // Visual Demo Integration Pass — HUD 문구 한국어화에 맞춰 성공 키워드를 동기화한다.
+            Require(controller.LastActivityResult.Contains("낮 준비 완료"), "day prep result explains prepared stock");
 
             int afterSecondTry = CountSellableItems();
             Require(!controller.TryCollectDayPrepStock(prepPoints[0], null), "same day prep point can only be collected once per day");

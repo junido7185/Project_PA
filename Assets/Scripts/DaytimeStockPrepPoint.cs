@@ -52,15 +52,15 @@ public class DaytimeStockPrepPoint : MonoBehaviour, IInteractable
     public string GetInteractPrompt()
     {
         if (DayNightShopLoopController.Instance == null)
-            return $"{displayName}: unavailable";
+            return $"{displayName}: 이용 불가";
 
         if (_collected)
-            return $"{displayName}: collected today";
+            return $"{displayName}: 오늘 준비 완료";
 
         if (!DayNightShopLoopController.Instance.IsDayPrepPointAvailable(this))
-            return $"{displayName}: day prep only";
+            return $"{displayName}: 낮에만 채집 가능";
 
-        return $"{displayName}: prepare shop stock";
+        return $"{displayName}: 재고 준비하기";
     }
 
     void CacheVisuals()
@@ -97,8 +97,9 @@ public class DaytimeStockPrepPoint : MonoBehaviour, IInteractable
 
         if (_label != null)
         {
-            string status = _collected ? "ready" : "prep stock";
-            _label.Set($"{displayName}\n{status}", _collected ? new Color(0.70f, 0.80f, 0.72f) : new Color(1f, 0.95f, 0.72f), 1.3f);
+            // v2 — 플로팅 텍스트 최소화: 한 줄 + 소형 (디버그 느낌 제거).
+            string status = _collected ? "오늘 완료" : "채집 가능";
+            _label.Set($"{displayName} · {status}", _collected ? new Color(0.70f, 0.80f, 0.72f) : new Color(1f, 0.95f, 0.72f), 0.95f);
         }
     }
 }

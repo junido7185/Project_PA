@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 5
   itemName: BreadLoaf
   description: Starter processed food with a steady margin.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 58d0bdc848524e54284c9e7725053d7c, type: 3}
   maxStack: 99
   model: {fileID: 0}
   basePrice: 30

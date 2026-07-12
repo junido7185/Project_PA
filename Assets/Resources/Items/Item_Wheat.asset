@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 1
   itemName: Wheat
   description: Basic crop used for early cooking.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4529ec1f96075cf43abd428185f25409, type: 3}
   maxStack: 99
   model: {fileID: 0}
   basePrice: 10

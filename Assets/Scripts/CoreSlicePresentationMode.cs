@@ -35,12 +35,20 @@ public class CoreSlicePresentationMode : MonoBehaviour
         "PA_CustomerApproach_Label",
         "PA_Reinvestment_Label",
         "PA_ScreenshotCameraMarker_MarketHub",
-        "PA_EconomicRoleBadge"
+        "PA_EconomicRoleBadge",
+        // Visual Demo Integration Pass v2 — 시장 허브의 영어 스테이징 라벨(SUPPLY/PRICE/SALE)은
+        // 발표 화면에서 디버그 텍스트로 읽히므로 기본 숨김 (F10 개발 오버레이로만 표시).
+        "PA_Supply_Label",
+        "PA_Process_Label",
+        "PA_Sale_Label"
     };
 
     static readonly string[] DevelopmentWorldPrefixes =
     {
-        "PA_PathStep_"
+        "PA_PathStep_",
+        // v2 — 씬에 저장된 튜토리얼 안내 라벨(0. 플레이어 / 1. 첫 이주자 / 2. 판매대 슬롯 ...)은
+        // 좌측 퀘스트 패널과 상호작용 프롬프트가 같은 정보를 주므로 기본 숨김.
+        "Guide_"
     };
 
     bool _developmentOverlaysVisible;

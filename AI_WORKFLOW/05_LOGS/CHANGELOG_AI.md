@@ -64,3 +64,17 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 코드/씬/에셋 변경: 없음.
 - 검증: `dotnet build` exit code 0, 경고 1개(`CS8785 AttributeBasedFieldGenerator`), 오류 0개. Unity/Play Mode/검증기는 실행하지 않음.
 - 비고: Task 001~003 완료 시점이라 `HANDOFF_FOR_CODEX.md`의 우선순위를 갱신. 작업 전부터 `SubmissionPackages/*.zip` 2개 삭제 상태가 있었으며 이번 커밋에는 포함하지 않는다.
+
+## 2026-07-12 — Claude (Fable 5) — Visual Demo Integration Pass
+
+- 작업: 데모 시각 통합. placeholder 큐브(채집 5곳/간판) 코지 드레싱 + 광장 소품 보강(벤치/화단/가로등/궤짝) + HUD 문구 한국어 통일 + Day 요약 본문 잘림 수복. 전부 런타임 사이드카, 씬 파일 무수정.
+- 변경 파일: `Assets/Scripts/DemoVisualDressingController.cs`(+meta, 신규) / `PA_RuntimeSceneBinder.cs`(등록 1줄) / `DayNightShopLoopController.cs`·`DaytimeStockPrepPoint.cs`(표시 문자열만) / `UI/PlayableDayScenarioController.cs`(요약 본문 810x418) / `Assets/Editor/PA_DayNightShopLoopValidator.cs`(키워드 1줄) / `Assembly-CSharp.csproj`(include 1줄) / `AI_WORKFLOW/09_FINAL_FABLE_SPRINT/` 5종 신규 / 루트 기록 4종 + 본 문서 append.
+- 검증 결과: dotnet build 0 오류. D3D11 batchmode — PA_DayNightShopLoopValidator·PA_FinalDemoRouteValidator(`paid=30G`)·PA_FinalPresentationReviewer(410/418)·PA_GatheringShopReview·PA_CoreSlicePlayabilityValidator·PA_LongPlayProgressionValidator(`money=4633G`) 전부 통과. 로그 `Logs/Fable_VisualPass_*.log`.
+- 비고: 기존 BLOCKED 검증기 2종(FinalDemoRoute/LongPlay)이 Editor 닫힘 상태에서 실제 실행·통과됨. PresentationReviewer 1차 실패(410/360)는 이번 변경이 아닌 6/21 Village direction 섹션 추가로 인한 기존 잘림 — 요약 상태 본문 확장으로 수복 후 재통과. 광장 드레싱의 주관적 품질은 사람 확인 필요.
+
+## 2026-07-12 (저녁) — Claude (Fable 5) — Visual Demo Integration Pass v2 (실제 Game View 기준)
+
+- 작업: v1 불합격(실제 플레이 화면 기준) 재작업. 광장 베이스 플레이트로 맨땅 제거, 씬 저장 `Guide_*` 디버그 라벨/스테이징 라벨 기본 숨김, 상단 한 줄+좌측 퀘스트 패널, Item 아이콘 6종 연결, 판매대 카운터/쇼케이스/간판 한국어화. 판정 기준: 동일 카메라 Before/After 스크린샷.
+- 변경 파일: `Assets/Editor/PA_DemoViewCapture.cs`(+meta, 신규 캡처 툴) / `DemoVisualDressingController.cs`(실측 지오메트리 전면 개정) / `CoreSlicePresentationMode.cs`(숨김 목록 확장) / `PlayableDayScenarioController.cs`(한 줄 목표+퀘스트 패널) / `DayNightShopLoopController.cs`(패널 좌측 이동, prep 이름 한국어) / `DaytimeStockPrepPoint.cs`(라벨 소형) / `Assets/Resources/Items/Item_{BreadLoaf,Carrot,Fish,Wheat,Ore,IronBar}.asset`(icon 참조만).
+- 검증: dotnet build 0 오류. FinalRoute(`paid=30G`)/DayNight(`sellableInventory=10`)/PanelLayout 통과 — `Logs/Fable_VisualPass2_*.log`. Before `Logs/DemoViewShots/before_20260712_164931.png` → After `after5_20260712_223953.png`.
+- 비고: Shop 원점(슬롯 부모) 방향 앵커 금지 — `PlazaFrame` 실측(슬롯 행+플레이어) 사용. 물리 지면 y=-0.5 (시각 지면과 상이) — 얇은 바닥 소품은 오프셋 계층 필수. 잔여: 조명 톤/러그 가시성 사람 확인.

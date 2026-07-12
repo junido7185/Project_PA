@@ -35,6 +35,8 @@ public class PlayableDayScenarioController : MonoBehaviour
     [Header("UI 연결 (자동 생성 가능)")]
     public TextMeshProUGUI objectiveText;
     public Canvas guideCanvas;
+    // Visual Demo Integration Pass v2 — 좌측 퀘스트 패널 (상단 중앙은 현재 단계 한 줄만 유지).
+    public TextMeshProUGUI questListText;
 
     [Header("첫날 프로토타입")]
     public bool showStartupFlow = true;
@@ -292,8 +294,10 @@ public class PlayableDayScenarioController : MonoBehaviour
         var rt = (RectTransform)_flowBody.transform;
         if (summary)
         {
-            rt.anchoredPosition = new Vector2(0f, 28f);
-            rt.sizeDelta = new Vector2(810f, 360f);
+            // Visual Demo Integration Pass — 요약 본문이 마을 변화/피드백 섹션 추가로 길어져
+            // 제목 아래~버튼 위 사이 여백을 전부 사용하도록 확장 (410px 본문 수용).
+            rt.anchoredPosition = new Vector2(0f, -9f);
+            rt.sizeDelta = new Vector2(810f, 418f);
             _flowBody.fontSize = 18f;
             _flowBody.lineSpacing = 0f;
             _flowBody.alignment = TextAlignmentOptions.TopLeft;
@@ -360,9 +364,39 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     void RefreshLabel()
     {
-        if (objectiveText == null) return;
-        string label = GetStageLabel(Current);
-        objectiveText.text = $"{PlayerName} · {SelectedMapName}\n{label}";
+        // v2 — 상단 중앙은 현재 단계 한 줄만. 이름/지도와 단계 목록은 좌측 퀘스트 패널이 담당.
+        if (objectiveText != null)
+            objectiveText.text = GetStageLabel(Current);
+
+        RefreshQuestList();
+    }
+
+    // v2 — 좌측 퀘스트 패널: 완료(✓)/진행(▶)/대기(○) 체크리스트.
+    void RefreshQuestList()
+    {
+        if (questListText == null) return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"<color=#FFE9B8><b>{PlayerName} · {SelectedMapName}</b></color>");
+
+        Stage[] order =
+        {
+            Stage.TalkToNpc, Stage.StockShopSlot, Stage.SetPrice,
+            Stage.WaitForPurchase, Stage.OpenAuditApp, Stage.SaveProgress
+        };
+
+        foreach (var stage in order)
+        {
+            bool done = (int)Current > (int)stage;
+            bool current = Current == stage;
+            string label = Labels.TryGetValue(stage, out var text) ? text : stage.ToString();
+
+            if (done) sb.AppendLine($"<color=#8FCF9A>✓ {label}</color>");
+            else if (current) sb.AppendLine($"<color=#FFFFFF>▶ {label}</color>");
+            else sb.AppendLine($"<color=#9A968C>○ {label}</color>");
+        }
+
+        questListText.text = sb.ToString().TrimEnd();
     }
 
     static string GetStageLabel(Stage stage)
@@ -633,7 +667,8 @@ public class PlayableDayScenarioController : MonoBehaviour
         if (objectiveOffset.y < -48f)
             objectiveOffset.y = -26f;
         bgRt.anchoredPosition = objectiveOffset;
-        bgRt.sizeDelta = new Vector2(860f, 72f);
+        // v2 — 상단 중앙은 현재 단계 한 줄만 (기존 2줄 72px → 1줄 44px).
+        bgRt.sizeDelta = new Vector2(780f, 44f);
         bgGo.GetComponent<Image>().color = new Color(0.02f, 0.02f, 0.02f, 0.68f);
 
         var txtGo = new GameObject("ObjectiveText", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -641,13 +676,51 @@ public class PlayableDayScenarioController : MonoBehaviour
         var txtRt = txtGo.GetComponent<RectTransform>();
         txtRt.anchorMin = Vector2.zero;
         txtRt.anchorMax = Vector2.one;
-        txtRt.offsetMin = new Vector2(20f, 8f);
-        txtRt.offsetMax = new Vector2(-20f, -8f);
+        txtRt.offsetMin = new Vector2(20f, 6f);
+        txtRt.offsetMax = new Vector2(-20f, -6f);
         objectiveText = txtGo.GetComponent<TextMeshProUGUI>();
-        objectiveText.fontSize = 21f;
+        objectiveText.fontSize = 19f;
         objectiveText.alignment = TextAlignmentOptions.Center;
         objectiveText.color = Color.white;
         objectiveText.raycastTarget = false;
+        objectiveText.textWrappingMode = TextWrappingModes.NoWrap;
+        objectiveText.overflowMode = TextOverflowModes.Ellipsis;
+
+        BuildQuestPanel(canvasGo.transform);
+    }
+
+    // v2 — 좌측 퀘스트 패널 (ClockHUD/페이즈 스트립 아래, 좌측 컬럼 정렬).
+    void BuildQuestPanel(Transform parent)
+    {
+        var panelGo = new GameObject("DemoQuestPanel", typeof(RectTransform), typeof(Image));
+        panelGo.transform.SetParent(parent, false);
+        var rt = panelGo.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.anchoredPosition = new Vector2(20f, -184f);
+        rt.sizeDelta = new Vector2(340f, 172f);
+
+        var bg = panelGo.GetComponent<Image>();
+        bg.color = new Color(0.02f, 0.02f, 0.02f, 0.55f);
+        bg.raycastTarget = false;
+
+        var txtGo = new GameObject("QuestListText", typeof(RectTransform), typeof(TextMeshProUGUI));
+        txtGo.transform.SetParent(panelGo.transform, false);
+        var txtRt = txtGo.GetComponent<RectTransform>();
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = new Vector2(12f, 8f);
+        txtRt.offsetMax = new Vector2(-12f, -8f);
+
+        questListText = txtGo.GetComponent<TextMeshProUGUI>();
+        questListText.fontSize = 12.5f;
+        questListText.alignment = TextAlignmentOptions.TopLeft;
+        questListText.color = Color.white;
+        questListText.raycastTarget = false;
+        questListText.textWrappingMode = TextWrappingModes.NoWrap;
+        questListText.overflowMode = TextOverflowModes.Ellipsis;
+        questListText.lineSpacing = 6f;
     }
 
     void BuildFlowUI()

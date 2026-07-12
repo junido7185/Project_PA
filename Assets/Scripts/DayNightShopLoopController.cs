@@ -40,7 +40,7 @@ public class DayNightShopLoopController : MonoBehaviour
     PADayNightPhase _phase;
     int _observedDay = -1;
     readonly Dictionary<string, int> _prepCollectionDays = new Dictionary<string, int>();
-    string _lastActivityResult = "Day prep: find the stock basket and prepare goods before opening shop.";
+    string _lastActivityResult = "낮 준비: 채집 포인트를 찾아 오늘 밤 팔 물건을 준비하세요.";
     readonly List<DaytimeStockPrepPoint> _prepPoints = new List<DaytimeStockPrepPoint>();
     Canvas _canvas;
 
@@ -123,7 +123,7 @@ public class DayNightShopLoopController : MonoBehaviour
         _observedDay = day;
         _playerOpenedShopToday = false;
         _openedShopDay = -1;
-        _lastActivityResult = "New day: prepare goods before the night shop opens.";
+        _lastActivityResult = "새로운 아침: 밤 영업 전에 팔 물건을 준비하세요.";
         RefreshState(force: true);
         RefreshPrepPoints();
     }
@@ -207,15 +207,15 @@ public class DayNightShopLoopController : MonoBehaviour
         if (_phase != PADayNightPhase.DayPreparation)
         {
             _lastActivityResult = IsShopOpen
-                ? "Shop is open: sell current stock before gathering more."
-                : "Stock prep is only available during daytime preparation.";
+                ? "지금은 영업 시간: 채집은 내일 낮에 다시 할 수 있어요."
+                : "재고 준비는 낮 시간에만 할 수 있어요.";
             RefreshUI();
             return false;
         }
 
         if (IsPrepActivityCollectedToday(activityId))
         {
-            _lastActivityResult = "This daytime prep activity is already complete today.";
+            _lastActivityResult = "이 채집 활동은 오늘 이미 완료했어요.";
             RefreshUI();
             return false;
         }
@@ -229,7 +229,7 @@ public class DayNightShopLoopController : MonoBehaviour
 
         if (item == null)
         {
-            _lastActivityResult = "Day prep failed: stock item data is missing.";
+            _lastActivityResult = "낮 준비 실패: 재고 아이템 데이터가 없어요.";
             RefreshUI();
             Debug.LogWarning("[DayNightShopLoop] Could not load prep stock item.");
             return false;
@@ -245,13 +245,13 @@ public class DayNightShopLoopController : MonoBehaviour
         bool added = Inventory.instance != null && Inventory.instance.AddInstance(instance);
         if (!added)
         {
-            _lastActivityResult = $"Day prep blocked: inventory full for {item.itemName}.";
+            _lastActivityResult = $"낮 준비 중단: 인벤토리가 가득 찼어요 ({item.itemName}).";
             RefreshUI();
             return false;
         }
 
         _prepCollectionDays[activityId] = CurrentDay;
-        _lastActivityResult = $"Day prep complete: prepared {item.itemName} x{count} for tonight's shop.";
+        _lastActivityResult = $"낮 준비 완료: {item.itemName} x{count} — 오늘 밤 진열할 수 있어요!";
         Debug.Log($"[DayNightShopLoop] {_lastActivityResult}");
         RefreshPrepPoints();
         RefreshUI();
@@ -323,7 +323,7 @@ public class DayNightShopLoopController : MonoBehaviour
                 "PA_DaytimeStockPrepPoint_GardenBasket",
                 prepItemResourcePath,
                 prepItemCount,
-                "Garden Prep Basket",
+                "텃밭 바구니",
                 ResolvePrepPointPosition(0),
                 new Vector3(0.95f, 0.55f, 0.95f),
                 new Color(0.95f, 0.68f, 0.34f, 1f)));
@@ -334,7 +334,7 @@ public class DayNightShopLoopController : MonoBehaviour
                 "PA_DaytimeStockPrepPoint_ProducerBox",
                 secondaryPrepItemResourcePath,
                 secondaryPrepItemCount,
-                "Producer Drop Box",
+                "생산자 납품함",
                 ResolvePrepPointPosition(1),
                 new Vector3(1.05f, 0.48f, 0.82f),
                 new Color(0.40f, 0.66f, 0.92f, 1f)));
@@ -528,24 +528,24 @@ public class DayNightShopLoopController : MonoBehaviour
         {
             string phaseName = _phase switch
             {
-                PADayNightPhase.DayPreparation => "Day Prep",
-                PADayNightPhase.ShopOpen => "Night Shop Open",
-                PADayNightPhase.Settlement => "Settlement",
-                _ => "Day Loop"
+                PADayNightPhase.DayPreparation => "낮 준비",
+                PADayNightPhase.ShopOpen => "밤 영업 시간",
+                PADayNightPhase.Settlement => "정산",
+                _ => "하루 루프"
             };
 
             // CDN-002 — 손님 구매 게이트 상태를 명확히 표시한다.
             string shopState;
             if (IsShopOpenForCustomers)
-                shopState = IsTutorialAlwaysOpen ? "Shop: OPEN (튜토리얼 영업 중)" : "Shop: OPEN (손님 구매 가능)";
+                shopState = IsTutorialAlwaysOpen ? "상점: 영업 중 (튜토리얼)" : "상점: 영업 중 (손님 구매 가능)";
             else if (CanPlayerOpenShop)
-                shopState = "Shop: 간판에서 영업 시작 가능";
+                shopState = "상점: 간판에서 영업 시작 가능";
             else if (_phase == PADayNightPhase.Settlement)
-                shopState = "Shop: 영업 종료 (오늘 정산)";
+                shopState = "상점: 영업 종료 (오늘 정산)";
             else
-                shopState = "Shop: 준비 중 (낮 채집/진열 후 밤에 영업)";
+                shopState = "상점: 준비 중 (낮 채집·진열 후 밤에 영업)";
 
-            phaseText.text = $"Day {CurrentDay} {TimeLabel(CurrentHour)} - {phaseName}\n{shopState}";
+            phaseText.text = $"{CurrentDay}일차 {TimeLabel(CurrentHour)} · {phaseName}\n{shopState}";
         }
 
         if (activityText != null)
@@ -572,25 +572,27 @@ public class DayNightShopLoopController : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = 0.5f;
 
+        // Visual Demo Integration Pass v2 — 상단 중앙 겹침 해소: 페이즈 스트립을
+        // 좌측 컬럼(ClockHUD 아래)으로 옮기고 컴팩트하게 줄인다.
         var panel = new GameObject("DayNightShopLoopPanel", typeof(RectTransform), typeof(Image));
         panel.transform.SetParent(canvasGo.transform, false);
         var rt = (RectTransform)panel.transform;
-        rt.anchorMin = new Vector2(0.5f, 1f);
-        rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(0f, -106f);
-        rt.sizeDelta = new Vector2(520f, 68f);
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.anchoredPosition = new Vector2(20f, -100f);
+        rt.sizeDelta = new Vector2(340f, 76f);
 
         var bg = panel.GetComponent<Image>();
         bg.color = new Color(0.06f, 0.07f, 0.06f, 0.55f);
         bg.raycastTarget = false;
 
         phaseText = CreateText(panel.transform, "DayNightPhaseText",
-            new Vector2(12f, -7f), new Vector2(496f, 32f), 16f, FontStyles.Bold);
+            new Vector2(12f, -7f), new Vector2(316f, 38f), 13f, FontStyles.Bold);
         phaseText.color = new Color(1f, 0.94f, 0.72f, 1f);
 
         activityText = CreateText(panel.transform, "DayNightActivityText",
-            new Vector2(12f, -42f), new Vector2(496f, 22f), 12f, FontStyles.Normal);
+            new Vector2(12f, -48f), new Vector2(316f, 22f), 11f, FontStyles.Normal);
         activityText.color = new Color(0.78f, 0.92f, 0.82f, 1f);
     }
 

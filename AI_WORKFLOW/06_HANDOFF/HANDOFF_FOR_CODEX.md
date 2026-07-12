@@ -1,6 +1,6 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
-최종 갱신: 2026-07-10 (Codex Task 003 컴파일 기준선 기록 완료)
+최종 갱신: 2026-07-12 (Fable 5 Visual Demo Integration Pass 완료)
 규칙: **3~5개 작업마다** 이 문서의 "현재 상태"와 "우선순위"를 갱신한다. (`CODEX_HANDOFF_PROMPT` 사용)
 
 ## 0. Codex 첫 실행 상태
@@ -29,17 +29,17 @@
 
 **목표는 프로토타입이 아니라 완성 게임이다.** 졸업 시연(Stage 2)은 완성 게임의 부분집합. 일회용 코드·하드코딩·저장 미지원으로 때우지 않는다.
 
-## 3. 현재 작업 우선순위 (2026-07-10 기준)
+## 3. 현재 작업 우선순위 (2026-07-12 기준)
 
-Codex Task 001~003 완료. Task 003 컴파일 기준선: `dotnet build Assembly-CSharp.csproj --nologo` exit code 0, 경고 1개(`CS8785 AttributeBasedFieldGenerator`), 오류 0개.
+2026-07-12 Fable 5 가 Visual Demo Integration Pass 를 완료했다 (`AI_WORKFLOW/09_FINAL_FABLE_SPRINT/` 5종 문서 참조). placeholder 큐브 드레싱 + 광장 소품 + HUD 한국어 통일 + Day 요약 잘림 수복. 검증기 6종(D3D11 batchmode) 전부 통과 — **기존 BLOCKED 2종(FinalDemoRoute/LongPlay)도 Editor 닫힘 상태에서 실제 실행·통과됨** (`Logs/Fable_VisualPass_*.log`).
 
-주의: 현재 워킹트리에는 Codex 작업 전부터 `SubmissionPackages/Project_PA_Source_20260620.zip`, `SubmissionPackages/Project_PA_Windows_20260620.zip` 삭제 상태가 남아 있다. Codex Task 커밋에는 포함하지 않았다.
+주의: 워킹트리에는 (1) 이전부터 있던 `SubmissionPackages/*.zip` 삭제 상태 2건, (2) 2026-07-12 Visual Pass 변경(신규 스크립트 1+meta, 수정 6, 문서 11)이 커밋 대기 중이다. 커밋은 사용자 승인 필요.
 
-1. **[사람+Codex] Task 004** — 보류 검증기 2종 실행 방식 결정(`DECISION_REQUIRED_FOR_USER` #3) 후 실행. 사람 승인 필요.
-2. **[Codex] Task 005** — 위험 파일 목록 확정. Task 004 승인이 없으면 큐 규칙에 따라 다음 승인 불필요 작업으로 진행 가능.
-3. **[Codex] Task 006~007** — dirty git 작업 정책 / 저장 스키마 조사.
-4. **[Codex→사람] Task 008~016** — MVP Stabilization(기존 시스템 회귀 확인 + 버그 1개 + 완료 판정).
-5. 이후 Phase 2(Shop Core) 진입.
+1. **[사람] Visual Pass v2 시각 확인** — 같은 날 저녁 실제 Game View 기준 v2 재작업 완료. Before `Logs/DemoViewShots/before_20260712_164931.png` vs After `after5_20260712_223953.png` 비교 후, 실기기에서 조명 톤·러그/파빙 가시성 확인 (`09_FINAL_FABLE_SPRINT/VISUAL_POLISH_REPORT.md` v2 섹션). 캡처 재실행: `PA_DemoViewCapture` 메뉴 또는 batchmode.
+2. **[사람] 체크포인트 커밋** — VC-001A + Visual Pass 포함 클린 baseline 확보 (loop 자동화 해제 조건).
+3. **[Codex] 채집 작물 실모델 교체** — 아이콘 빌보드 옆 색 구체를 `Item.model` 로 교체 (런타임만으로 가능, S).
+4. **[Codex→사람 승인] Nature Pack 식생 정적 배치 에디터 툴** — 씬 백업 + NavMesh 재베이크 (M).
+5. 이후 기존 TASK_QUEUE Phase 진행 재개.
 
 미확정(사용자 결정 대기, `DECISION_REQUIRED_FOR_USER.md`): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간 / 하루 작업 수.
 
