@@ -1236,3 +1236,11 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 검증: FinalDemoRoute, DayNightShopLoop, CustomerPanelLayout, CoreSlicePlayability, FinalPresentationReviewer 전부 D3D11 batchmode Exit 0/PASS.
 - 판정: **조건부 발표용**. 실제 화면은 기능과 루프가 읽히지만 중앙 상점 primitive 실루엣과 UI 스타일 불일치가 남는다.
 - 사람 확인: 실제 Editor Game View가 Final Locked Screenshot과 동일하고 폰트·UI·머티리얼 이상이 없는지 1회 확인.
+
+## 2026-07-13 Completion Matrix Sync
+
+- 기준 커밋 `9898f6a`에서 Task 001~085를 실제 구현/검증 증거로 재판정했다.
+- 집계: DONE 21 / PARTIAL 26 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20.
+- Core Loop의 개별 연결은 검증됐지만 Persistence Lock은 미완이다. v8이 돈·인벤토리·핫바·진열·가격·NPC FSM·Day Prep을 저장하도록 구현돼 있으나 실제 저장소 왕복 증거가 없다.
+- 다음: Task 007 저장 스키마 확정 → Task 011 안전한 저장 왕복 검증 → Task 018 진열 수량 표시.
+- 상세: `AI_WORKFLOW/03_TASKS/CURRENT_COMPLETION_MATRIX.md`.

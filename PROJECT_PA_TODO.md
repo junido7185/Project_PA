@@ -801,3 +801,13 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] Final Lock 문서 5종 및 종료 기록 갱신.
 - [ ] 사람: 실제 Editor Game View와 Final Locked Screenshot 일치, 한국어 폰트, 검은 머티리얼 미재현을 1회 확인.
 - [ ] 발표 후: 정식 상점 메시 교체, HUD 스타일 통합, NPC 쇼핑 애니메이션 연결.
+
+## Full Game Completion Phase 0 Sync - 2026-07-13
+
+- [x] Task 001~085를 코드·데이터·Git·검증 증거로 재판정.
+- [x] CURRENT_COMPLETION_MATRIX 생성.
+- [x] TASK_QUEUE/DONE_TASKS와 오래된 검증 BLOCKED 기록 동기화.
+- [x] 다음 Persistence 우선 스프린트 3개 선정.
+- [ ] Task 007 — 저장 스키마 현황 확정.
+- [ ] Task 011 — 실제 저장소 왕복 검증.
+- [ ] Task 018 — 가격 패널 진열 수량 표시.

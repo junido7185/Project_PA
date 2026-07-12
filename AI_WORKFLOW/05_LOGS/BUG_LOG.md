@@ -26,9 +26,10 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 해결: 사용자가 `-force-d3d11` 실행으로 안정성 수동 확인. D3D11이 승인된 baseline.
 - 잔여 규칙: **D3D12 미승인.** 자동 Unity 실행은 D3D11에서만. 상세: 루트 `PROJECT_PA_CRASH_REPORT_20260625.md` (이동 금지 — preflight glob 대상), `Automation/LoopEngineering/State/crash-resolution.json`.
 
-## [BLOCKED] 2026-06-26 — 배치 검증기 2종 실행 보류
+## [RESOLVED] 2026-06-26 — 배치 검증기 2종 실행 보류
 
 - 증상: `PA_FinalDemoRouteValidator`, `PA_LongPlayProgressionValidator` 배치 실행 불가.
 - 원인: Unity Editor가 같은 프로젝트로 열려 있어 batchmode 금지 규칙에 걸림.
-- 필요한 판단: 사람이 Editor를 닫고 재실행을 허용하거나, 열린 Editor 메뉴에서 수동 실행.
+- 해결: Editor가 닫힌 상태에서 D3D11 batchmode로 두 검증기를 실행했다. `PA_FinalDemoRouteValidator`는 2026-07-13에도 `paid=30G`로 재통과했고, `PA_LongPlayProgressionValidator`는 2026-07-12 `money=4633G` 기준선으로 통과했다.
+- 증거: `Logs/Fable_V3_FinalDemoRoute.log`, `Logs/Fable_VisualPass_LongPlayRegression.log`.
 - 관련 파일: `PROJECT_PA_TODO.md` Day 1-3 스프린트 미완 항목.

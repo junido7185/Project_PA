@@ -1,6 +1,6 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
-최종 갱신: 2026-07-13 (Visual Demo Integration Pass v3 Final Lock 완료)
+최종 갱신: 2026-07-13 (Full Game Completion Phase 0 동기화)
 규칙: **3~5개 작업마다** 이 문서의 "현재 상태"와 "우선순위"를 갱신한다. (`CODEX_HANDOFF_PROMPT` 사용)
 
 ## 0. Codex 첫 실행 상태
@@ -31,15 +31,15 @@
 
 ## 3. 현재 작업 우선순위 (2026-07-13 기준)
 
-Visual Demo Integration Pass v3를 실제 캡처·검증·문서까지 잠갔다. Final Locked Screenshot은 `Logs/DemoViewShots/after_locked_20260713_002356.png`. 핵심 검증기 5종이 D3D11 batchmode Exit 0/PASS이며 판정은 **조건부 발표용**이다. 상세는 `09_FINAL_FABLE_SPRINT/FINAL_PRESENTATION_LOCK_REPORT.md`.
+Task 001~085를 기준 커밋 `9898f6a`의 실제 증거로 동기화했다. 집계는 DONE 21 / PARTIAL 26 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20. 상세는 `../03_TASKS/CURRENT_COMPLETION_MATRIX.md`.
 
 주의: `SubmissionPackages/*.zip` 삭제 2건은 사용자 소유 변경이므로 복구/stage 금지. Visual v3 의도 변경만 체크포인트 커밋 대상이다.
 
-1. **[사람/발표 전 필수]** 실제 Editor Game View와 Final Locked Screenshot 일치, 한국어 폰트, 검은 머티리얼 미재현을 1회 확인.
-2. **[발표 후 1순위]** 상점 중앙 primitive 실루엣을 기존 승인 에셋 범위의 정식 잡화점 부스 메시로 교체.
-3. **[발표 후 2순위]** 스마트폰·좌측 정보 컬럼을 목재/크림 HUD로 통합하고 중복 정보 축소.
-4. **[발표 후 3순위]** 기존 NPC FSM에 쇼핑 idle/상품 보기 애니메이션 연결.
-5. 이후 기존 TASK_QUEUE Phase 진행 재개.
+1. **Task 007** — Save v8 필드/마이그레이션을 `SAVE_SCHEMA.md`로 확정.
+2. **Task 011** — 사용자 세이브를 보호하는 실제 저장소 왕복 검증.
+3. **Task 018** — 기존 ShopSlot 데이터를 가격 패널에 수량으로 표시.
+4. 사람 승인 대기: Task 055/057 저장 스키마 확장, Task 068 통합 판정.
+5. 발표 전 사람 확인은 `09_FINAL_FABLE_SPRINT/FINAL_HUMAN_CHECKLIST.md` 유지.
 
 미확정(사용자 결정 대기, `DECISION_REQUIRED_FOR_USER.md`): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간 / 하루 작업 수.
 

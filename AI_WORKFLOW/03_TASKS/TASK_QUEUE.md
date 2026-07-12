@@ -143,7 +143,7 @@ Project P.A.와의 연결:
 
 ## Task 004 - 보류 검증기 실행 방식 결정 및 실행
 
-상태: TODO
+상태: DONE
 단계: Phase 0
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -171,7 +171,7 @@ Project P.A.와의 연결:
 
 ## Task 005 - 위험 파일 목록 확정
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 0
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -195,7 +195,7 @@ Project P.A.와의 연결: 완성 게임 — 안전 개발 기반.
 
 ## Task 006 - dirty git 작업 정책 정리
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 0
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -219,7 +219,7 @@ Project P.A.와의 연결: 완성 게임 — 안전.
 
 ## Task 007 - 저장 스키마 현황 조사 문서
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 0
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -247,7 +247,7 @@ Project P.A.와의 연결: 저장 — 완성 게임의 지속성 기반.
 
 ## Task 008 - 플레이어 이동/상호작용 회귀 확인
 
-상태: TODO
+상태: DONE
 단계: Phase 1. MVP Stabilization
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -274,7 +274,7 @@ Project P.A.와의 연결: 낮 생활 — 이동/상호작용은 모든 활동�
 
 ## Task 009 - 인벤토리/핫바 회귀 확인
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 1
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -296,7 +296,7 @@ Project P.A.와의 연결: 낮 생활 + 상점 운영 — 재고 준비의 핵�
 
 ## Task 010 - 상점 진열/가격 흐름 회귀 확인
 
-상태: TODO
+상태: DONE
 단계: Phase 1
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -318,7 +318,7 @@ Project P.A.와의 연결: 상점 운영 — 핵심 루프.
 
 ## Task 011 - 저장/불러오기 왕복 확인
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 1
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -343,7 +343,7 @@ Project P.A.와의 연결: 저장 — 완성 게임 지속성.
 
 ## Task 012 - D3D12 크래시 회피 가드 문서화
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 1
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -367,7 +367,7 @@ Project P.A.와의 연결: 안정화.
 
 ## Task 013 - 콘솔 경고/에러 목록 스냅샷
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 1
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -389,7 +389,7 @@ Project P.A.와의 연결: 안정화.
 
 ## Task 014 - 데모 안정성 스모크 체크리스트 작성
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 1
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -411,7 +411,7 @@ Project P.A.와의 연결: 시연 + 안정화.
 
 ## Task 015 - 첫 발견 버그 1개 수정 (있을 경우)
 
-상태: TODO
+상태: DONE
 단계: Phase 1
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -433,7 +433,7 @@ Project P.A.와의 연결: 안정화.
 
 ## Task 016 - MVP Stabilization 완료 판정 기록
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 1
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -459,7 +459,7 @@ Project P.A.와의 연결: 안정화 → Stage 0 완료.
 
 ## Task 017 - 상품 카테고리 enum 정리/문서화
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 2. Shop Core
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -525,7 +525,7 @@ Project P.A.와의 연결: 상점 운영.
 
 ## Task 020 - 영업 시작/종료 상태 명확화
 
-상태: TODO
+상태: DONE
 단계: Phase 2
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -547,7 +547,7 @@ Project P.A.와의 연결: 상점 운영(밤 영업 게이트).
 
 ## Task 021 - 영업 결과 요약(정산) 항목 점검·보강
 
-상태: TODO
+상태: DONE
 단계: Phase 2
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -569,7 +569,7 @@ Project P.A.와의 연결: 상점 운영 + 마을 변화(정산이 다음날로 
 
 ## Task 022 - 수익 계산 로그 투명화
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 2
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -635,7 +635,7 @@ Project P.A.와의 연결: 상점 운영 + 마을 변화(테마→트렌드).
 
 ## Task 025 - 상품 가격 프리셋/추천가 표시
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 2
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -657,7 +657,7 @@ Project P.A.와의 연결: 상점 운영(가격 결정 보조).
 
 ## Task 026 - Shop Core 검증기 점검
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 2
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -683,7 +683,7 @@ Project P.A.와의 연결: 상점 운영 검증.
 
 ## Task 027 - NPC 선호 카테고리 표시 강화
 
-상태: TODO
+상태: DONE
 단계: Phase 3. NPC Purchase Behavior
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -705,7 +705,7 @@ Project P.A.와의 연결: 상점 운영(손님 이해).
 
 ## Task 028 - 구매 확률 힌트 가독성 개선
 
-상태: TODO
+상태: DONE
 단계: Phase 3
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -727,7 +727,7 @@ Project P.A.와의 연결: 상점 운영.
 
 ## Task 029 - 비싼 가격 거절 대사 다양화
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 3
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -749,7 +749,7 @@ Project P.A.와의 연결: 상점 운영(손님 반응 읽힘).
 
 ## Task 030 - 희귀품 요청 손님 힌트
 
-상태: TODO
+상태: DONE
 단계: Phase 3
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -793,7 +793,7 @@ Project P.A.와의 연결: 상점 운영(손님 계층).
 
 ## Task 032 - 영업 중 손님 흐름 조사 문서
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 3
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -815,7 +815,7 @@ Project P.A.와의 연결: 상점 운영.
 
 ## Task 033 - 손님 유입 속도 튜닝 노출
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 3
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -837,7 +837,7 @@ Project P.A.와의 연결: 상점 운영(밤의 붐빔).
 
 ## Task 034 - 구매/거절 통계 집계 로그
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 3
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -859,7 +859,7 @@ Project P.A.와의 연결: 상점 운영 + 마을 변화(통계).
 
 ## Task 035 - NPC Purchase 검증기 회귀
 
-상태: TODO
+상태: DONE
 단계: Phase 3
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -885,7 +885,7 @@ Project P.A.와의 연결: 상점 운영 검증.
 
 ## Task 036 - 낮 활동 구조 조사 문서
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 4. Daytime Life Loop
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -907,7 +907,7 @@ Project P.A.와의 연결: 낮 생활 → 상점 재고.
 
 ## Task 037 - 채집 포인트 재사용성 점검
 
-상태: TODO
+상태: DONE
 단계: Phase 4
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -952,7 +952,7 @@ DECISION_REQUIRED: Vertical Slice 두 번째 낮 활동 = 낚시(임시 기본�
 
 ## Task 039 - 낚시 상호작용 포인트 (낚시 2/5)
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 4
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -996,7 +996,7 @@ Project P.A.와의 연결: 낮 생활(코지 감각).
 
 ## Task 041 - 낚시 결과가 상점 재고로 연결 (낚시 4/5)
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 4
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1018,7 +1018,7 @@ Project P.A.와의 연결: 낮 생활 → 상점 운영(핵심 연결).
 
 ## Task 042 - 낚시 검증기/스모크 추가 (낚시 5/5)
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 4
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -1084,7 +1084,7 @@ Project P.A.와의 연결: 낮 생활 + 상점 운영(수요).
 
 ## Task 045 - 낮 활동 결과→재고 연결 요약 갱신
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 4
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -1110,7 +1110,7 @@ Project P.A.와의 연결: 낮 생활 → 상점 운영.
 
 ## Task 046 - 카테고리별 판매 통계 조사
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 5. Village Trend System
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -1132,7 +1132,7 @@ Project P.A.와의 연결: 마을 변화(핵심 차별점).
 
 ## Task 047 - 트렌드 점수(낚시/캠핑/가구) 데이터 설계
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 5
 난이도: M
 예상 Codex 실행 횟수: 1
@@ -1154,7 +1154,7 @@ Project P.A.와의 연결: 마을 변화.
 
 ## Task 048 - 트렌드 점수 누적 구현 (읽기 신호)
 
-상태: TODO
+상태: DONE
 단계: Phase 5
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -1176,7 +1176,7 @@ Project P.A.와의 연결: 마을 변화.
 
 ## Task 049 - 조건 달성 시 마을 변화 트리거 (표시)
 
-상태: TODO
+상태: DONE
 단계: Phase 5
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -1198,7 +1198,7 @@ Project P.A.와의 연결: 마을 변화(핵심 차별점).
 
 ## Task 050 - 주민 행동 변화(간단) 표시
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 5
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -1220,7 +1220,7 @@ Project P.A.와의 연결: 마을 변화 + NPC 생활.
 
 ## Task 051 - 시설 해금 신호(표시) 연결
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 5
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1264,7 +1264,7 @@ Project P.A.와의 연결: 마을 변화(핵심 차별점 강화).
 
 ## Task 053 - Village Trend 검증기/스모크 추가
 
-상태: TODO
+상태: DONE
 단계: Phase 5
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -1312,7 +1312,7 @@ Project P.A.와의 연결: 저장 + 마을 변화 지속성.
 
 ## Task 055 - 판매 통계 저장 구현
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 6
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -1334,7 +1334,7 @@ Project P.A.와의 연결: 저장.
 
 ## Task 056 - 상점 상태 저장 확인
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 6
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1356,7 +1356,7 @@ Project P.A.와의 연결: 저장 + 상점 운영.
 
 ## Task 057 - 마을 변화 상태 저장
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 6
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -1378,7 +1378,7 @@ Project P.A.와의 연결: 마을 변화 지속성(핵심 차별점의 영속화
 
 ## Task 058 - NPC 상태 저장 회귀 확인
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 6
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1422,7 +1422,7 @@ Project P.A.와의 연결: 저장 안정성.
 
 ## Task 060 - 저장 버전 관리 정책 문서
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 6
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -1448,7 +1448,7 @@ Project P.A.와의 연결: 저장 안정성.
 
 ## Task 061 - 5분 시연 루트 대본 작성
 
-상태: TODO
+상태: DONE
 단계: Phase 7. Graduation Demo Milestone
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -1470,7 +1470,7 @@ Project P.A.와의 연결: 시연(Graduation Demo).
 
 ## Task 062 - 데모 안정화 버그 스윕
 
-상태: TODO
+상태: DONE
 단계: Phase 7
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -1492,7 +1492,7 @@ Project P.A.와의 연결: 시연 안정화.
 
 ## Task 063 - 발표용 체크리스트 작성
 
-상태: TODO
+상태: DONE
 단계: Phase 7
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -1514,7 +1514,7 @@ Project P.A.와의 연결: 시연.
 
 ## Task 064 - Windows 빌드 생성·실행 리허설
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 7
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1536,7 +1536,7 @@ Project P.A.와의 연결: 시연.
 
 ## Task 065 - 발표 중 실패 대비 플랜
 
-상태: TODO
+상태: DONE
 단계: Phase 7
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -1558,7 +1558,7 @@ Project P.A.와의 연결: 시연 안정성.
 
 ## Task 066 - Demo Lock 기준 정의
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 7
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -1580,7 +1580,7 @@ Project P.A.와의 연결: 시연.
 
 ## Task 067 - Graduation Demo 완료 판정 기록
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 7
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -1606,7 +1606,7 @@ Project P.A.와의 연결: 시연 → Stage 2 완료.
 
 ## Task 068 - 1일 완전 루프 통합 점검
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 8. Vertical Slice
 난이도: L
 예상 Codex 실행 횟수: 3
@@ -1628,7 +1628,7 @@ Project P.A.와의 연결: 낮 생활 + 상점 운영 + 마을 변화(핵심 재
 
 ## Task 069 - 낚시 대표 루프 강화
 
-상태: TODO
+상태: BLOCKED
 단계: Phase 8
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -1650,7 +1650,7 @@ Project P.A.와의 연결: 낮 생활(낚시 대표 루프) + 마을 변화.
 
 ## Task 070 - 보조 루프(캠핑/가구 중 1) 설계
 
-상태: TODO
+상태: BLOCKED
 단계: Phase 8
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -1672,7 +1672,7 @@ Project P.A.와의 연결: 상점 운영 + 마을 변화(보조 재미).
 
 ## Task 071 - Vertical Slice 재미 체감 점검(사람)
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 8
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -1694,7 +1694,7 @@ Project P.A.와의 연결: 핵심 재미 검증.
 
 ## Task 072 - Vertical Slice 완료 판정
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 8
 난이도: XS
 예상 Codex 실행 횟수: 1
@@ -1722,7 +1722,7 @@ Project P.A.와의 연결: Stage 1(Vertical Slice) 완료.
 
 ## Task 073 - 계절/날씨 시스템 확장 설계
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9. Full Game Completion
 난이도: L
 예상 Codex 실행 횟수: 2
@@ -1744,7 +1744,7 @@ Project P.A.와의 연결: 완성 게임(장기 지속).
 
 ## Task 074 - 추가 주민 데이터 확장
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1766,7 +1766,7 @@ Project P.A.와의 연결: NPC 생활 확장.
 
 ## Task 075 - 추가 상품군 확장
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1788,7 +1788,7 @@ Project P.A.와의 연결: 상점 운영 확장.
 
 ## Task 076 - 가게 확장 1단계 구현
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: L
 예상 Codex 실행 횟수: 3
@@ -1810,7 +1810,7 @@ Project P.A.와의 연결: 성장(작은 좌판→상점).
 
 ## Task 077 - 마을 시설 확장(시각) 1종
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: L
 예상 Codex 실행 횟수: 3
@@ -1832,7 +1832,7 @@ Project P.A.와의 연결: 마을 변화(핵심 차별점 확장).
 
 ## Task 078 - 낚시 대회 이벤트 구현
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: L
 예상 Codex 실행 횟수: 3
@@ -1854,7 +1854,7 @@ Project P.A.와의 연결: 마을 변화 + 낮 생활(낚시 대표 루프).
 
 ## Task 079 - 지역 확장(항구 상점) 설계
 
-상태: TODO
+상태: BLOCKED
 단계: Phase 9
 난이도: M
 예상 Codex 실행 횟수: 1
@@ -1876,7 +1876,7 @@ Project P.A.와의 연결: 완성 게임(지역 확장) + 낚시 차별점.
 
 ## Task 080 - 밸런싱 1차 패스
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: L
 예상 Codex 실행 횟수: 3
@@ -1898,7 +1898,7 @@ Project P.A.와의 연결: 완성 게임(밸런스).
 
 ## Task 081 - 튜토리얼/온보딩 보강
 
-상태: TODO
+상태: BLOCKED
 단계: Phase 9
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1920,7 +1920,7 @@ Project P.A.와의 연결: 완성 게임(접근성).
 
 ## Task 082 - 접근성(폰트/가독성) 점검
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: S
 예상 Codex 실행 횟수: 1
@@ -1942,7 +1942,7 @@ Project P.A.와의 연결: 완성 게임(접근성).
 
 ## Task 083 - 사운드(BGM/SFX) 연결 점검
 
-상태: TODO
+상태: BLOCKED
 단계: Phase 9
 난이도: M
 예상 Codex 실행 횟수: 2
@@ -1964,7 +1964,7 @@ Project P.A.와의 연결: 완성 게임(연출).
 
 ## Task 084 - 장기 플레이 QA(Day 30+) 회귀
 
-상태: TODO
+상태: BLOCKED
 단계: Phase 9
 난이도: L
 예상 Codex 실행 횟수: 3
@@ -1986,7 +1986,7 @@ Project P.A.와의 연결: 완성 게임(장기 안정성).
 
 ## Task 085 - 출시 후보 안정화 체크리스트
 
-상태: TODO
+상태: DECISION_REQUIRED
 단계: Phase 9
 난이도: S
 예상 Codex 실행 횟수: 1

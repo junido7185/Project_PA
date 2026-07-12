@@ -59,16 +59,16 @@
 - [ ] 새 UI가 기존 HUD/상호작용을 가리지 않음
 - ⚠ 최종 가독성 판정은 **사람 몫** — AI는 "사람 확인 필요"로 표시
 
-## 2-B. 현재 BLOCKED 검증기 (2026-07-09 기준)
+## 2-B. 과거 BLOCKED 검증기 해소 (2026-07-13 동기화)
 
-아래 2종은 실행이 보류 중이다. Codex가 "통과"로 간주하면 안 되며, 실제 실행 결과가 나오기 전까지 **BLOCKED**로 취급한다 (`../05_LOGS/BUG_LOG.md`에 BLOCKED 항목 있음).
+2026-06-26 당시 Editor가 열려 있어 보류됐던 2종은 Editor를 닫고 D3D11 batchmode로 실제 실행해 해소됐다.
 
-| 검증기 | 상태 | 보류 사유 | 해제 방법 |
-|---|---|---|---|
-| `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation` | BLOCKED | Unity Editor 열림으로 batchmode 금지 | Editor 닫고 D3D11 batchmode, 또는 열린 Editor 메뉴에서 수동 실행 (Task 004) |
-| `PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation` | BLOCKED | 동일 | 동일 (Task 004, 084) |
+| 검증기 | 현재 상태 | 최신 증거 |
+|---|---|---|
+| `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation` | PASS | `Logs/Fable_V3_FinalDemoRoute.log` — BreadLoaf, paid=30G |
+| `PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation` | PASS | `Logs/Fable_VisualPass_LongPlayRegression.log` — money=4633G 기준선 |
 
-DECISION_REQUIRED: 두 검증기의 실행 방식(Editor 닫기 vs 메뉴 실행)은 사용자 미확정.
+D3D12는 여전히 미승인이다. 자동 Unity 실행은 계속 `-force-d3d11`을 사용한다.
 
 ## 3. 검증 실패 시
 

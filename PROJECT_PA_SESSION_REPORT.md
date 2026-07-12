@@ -1302,3 +1302,13 @@ Next actions:
 - 냉정한 판정: **조건부 발표용**.
 - 이유: 기능 루프와 발표 증거는 안정적이나 중앙 상점 primitive 실루엣, 분홍 스마트폰 UI, 넓은 좌측 컬럼이 남는다.
 - 사람 1회 확인: 실제 Editor Game View와 Final Locked Screenshot의 일치, 폰트/겹침/검은 머티리얼 미재현.
+
+---
+
+# Session 2026-07-13 — Full Game Completion Phase 0 Sync
+
+- `/goal` 기준선을 `9898f6a`로 등록하고 85개 Task를 실제 증거로 감사했다.
+- 기존 큐의 완료 표시는 실제 구현보다 뒤처져 있었다. FinalRoute/LongPlay 보류는 이미 해소됐고, 고객 프레젠테이션·마을 변화·발표 문서 등 다수 작업이 구현돼 있었다.
+- 최종 집계: DONE 21 / PARTIAL 26 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20.
+- 가장 큰 완성 병목은 Persistence: v8 저장 코드 범위는 넓지만 실제 저장소 왕복 검증이 없다.
+- 다음 스프린트: Task 007, Task 011, Task 018. Phase 0에서는 코드·씬·프리팹·SO를 변경하지 않았다.

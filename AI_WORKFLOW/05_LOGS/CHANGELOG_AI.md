@@ -87,3 +87,12 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 검증: 런타임/에디터 dotnet build 오류 0. D3D11 batchmode 5종 전부 Exit 0/PASS — FinalRoute(`paid=30G`), DayNight(`sellableInventory=10`), CustomerPanelLayout, CoreSlice(F10 OFF/ON/OFF), FinalPresentation(요약 410/418, 캡처 5장).
 - 판정: **조건부 발표용**. 중앙 상점 primitive 실루엣과 UI 스타일 격차는 사람 확인 및 발표 후 개선 필요.
 - 비고: 첫 `after_final2`는 에셋 재임포트 직후 검은 런타임 머티리얼 캡처 아티팩트가 발생했으나, 코드 수정 없는 1회 재실행에서 재현되지 않았다. 사용자 소유 `SubmissionPackages/*.zip` 삭제 2건은 변경·stage하지 않음.
+
+## 2026-07-13 — Codex — Phase 0 현재 구현/TASK_QUEUE 증거 동기화
+
+- 작업: 커밋 `9898f6a`의 코드·씬/프리팹 목록·SO 데이터·Git 이력·검증 로그를 Task 001~085 완료 조건과 대조했다.
+- 결과: DONE 21 / PARTIAL 26 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20.
+- 신규: `CURRENT_COMPLETION_MATRIX.md`, `NEXT_COMPLETION_SPRINT.md`.
+- 동기화: `TASK_QUEUE.md`, `DONE_TASKS.md`, `VERIFICATION_RULES.md`, `BUG_LOG.md`. 2026-06-26 보류 검증기 2종을 실제 PASS 증거에 따라 RESOLVED로 변경했다.
+- 다음 스프린트: Task 007 → Task 011 → Task 018. 가장 큰 병목은 저장 v8 코드의 실제 저장소 왕복 증거 부재.
+- 코드/씬/프리팹/SO 변경 없음. 사용자 ZIP 삭제 2건은 그대로 제외.
