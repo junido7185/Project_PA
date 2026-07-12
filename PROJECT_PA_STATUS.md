@@ -1256,3 +1256,9 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 사용자 save 대신 `Logs/SaveRoundTrip/20260713_010249`를 사용해 실제 SaveManager v8 왕복 PASS.
 - 돈·누적매출·위치·시간/일차·인벤토리·핫바·진열 아이템/수량/가격·Day Prep·Day 1 단계가 복원됐다.
 - Save 런타임 코드와 스키마는 변경하지 않았다. FinalRoute/DayNight 회귀 PASS.
+
+### Task 018 완료
+
+- 가격 설정 패널이 현재 ShopSlot의 실제 진열 수량을 `아이템 · 재고 N개`로 표시한다.
+- 동일 카메라 Before/After를 확보했고 FinalPresentation/FinalRoute/DayNight/PanelLayout이 모두 PASS했다.
+- 판매·구매·저장 로직 무변경.

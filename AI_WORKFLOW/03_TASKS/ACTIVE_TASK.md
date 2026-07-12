@@ -9,46 +9,46 @@
 
 ## 현재 작업
 
-- **Task ID**: Task 011
-- **작업명**: 저장/불러오기 왕복 확인
-- **Phase / 난이도**: Phase 1 / M
+- **Task ID**: Task 018
+- **작업명**: 상점 슬롯 재고 수량 표시
+- **Phase / 난이도**: Phase 2 / S
 - **사람 승인 필요**: NO
 
 ## 목표
 
-- 사용자 save를 보호하면서 실제 SaveManager v8 저장소 왕복을 검증한다.
+- 가격 설정 패널에서 현재 ShopSlot의 실제 진열 수량을 읽을 수 있게 한다.
 
 ## 수정 예정 파일 (작업 전 확정)
 
-- `Assets/Editor/PA_SaveRoundTripValidator.cs`, validator registry 및 Task 기록 문서
+- `Assets/Scripts/UI/ShopPriceUI.cs`, `Assets/Editor/PA_FinalPresentationReviewer.cs`, 기록 문서
 
 ## 수정 금지 파일 (위험 파일)
 
-- `SaveData.cs`, `SaveManager.cs`, 저장소 코드, 사용자 save, 씬/프리팹은 수정하지 않는다.
+- `ShopSlot` 판매 로직, Economy/Purchase 계산, 씬/프리팹/SO는 수정하지 않는다.
 
 ---
 
 ## 작업 전 보고 (구현 시작 전 작성)
 
 - 사전 점검: 경로/Git루트 확인 [x], `git status` 확인 [x], Unity Editor 닫힘 [x], D3D11 [x]
-- 접근 방법 (기존 시스템 재사용 여부): 실제 SaveManager API와 customRoot LocalJsonSaveRepository 재사용
-- 건드리지 않을 것 (보존 선언): 사용자 save·저장 스키마·씬·프리팹·SO
-- 검증 방법 예고: 격리 저장소 왕복 + FinalRoute + DayNight
+- 접근 방법 (기존 시스템 재사용 여부): `_slot.currentItem.count`를 기존 ItemNameTxt에 표시
+- 건드리지 않을 것 (보존 선언): 판매/구매/저장 로직·씬·프리팹·SO
+- 검증 방법 예고: 동일 카메라 Before/After + Presentation/FinalRoute/DayNight/PanelLayout
 
 ## 작업 후 보고 (구현 완료 후 작성)
 
-- 실제 수정한 파일: 신규 Editor 검증기, registry, 기록 문서
-- 한 것 / 안 한 것: 실제 v8 왕복 검증 추가, 저장 런타임 코드는 무변경
+- 실제 수정한 파일: ShopPriceUI 표시 1곳, FinalPresentation assertion 1곳, 기록 문서
+- 한 것 / 안 한 것: 현재 슬롯 수량 표시만 추가, 판매 수학 무변경
 - 기존 데모 흐름 유지 확인: FinalRoute/DayNight PASS
 
 ## 검증 결과 (VERIFICATION_RULES.md 양식)
 
 - 컴파일: 런타임/에디터 오류 0
-- 검증기: SaveRoundTrip/FinalRoute/DayNight 모두 Exit 0 PASS
+- 검증기: FinalPresentation/FinalRoute/DayNight/PanelLayout 모두 Exit 0 PASS
 - 상점 루프: [해당 항목/해당 없음]
-- 저장/로드: 돈 1234, 매출 5678, 인벤토리 4, 핫바 3, 진열 2@77G 및 진행 상태 복원 PASS
+- 저장/로드: 스키마 무변경, Task 011 기준 유지
 - 마을 변화: [결과/해당 없음]
-- 확인 못 한 것: 판매 이력·마을 변화 상태는 현재 스키마 대상이 아님
+- 확인 못 한 것: 최종 한국어 가독성은 사람 확인
 
 ## 실패 시
 

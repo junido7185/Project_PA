@@ -109,3 +109,10 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 실제 v8 JSON 왕복 PASS: 돈 1234, 누적매출 5678, 플레이어 위치, Day 2 09:30, 인벤토리 4, 핫바 3, ShopSlot 2개@77G, Day Prep activity, Day 1 이름/단계 복원.
 - SaveManager/SaveData/씬/프리팹/SO 무변경. validator registry에 등록.
 - 회귀: 런타임/에디터 컴파일 오류 0, FinalRoute `paid=30G`, DayNight `sellableInventory=10` PASS.
+
+## 2026-07-13 — Codex — Task 018 가격 패널 진열 수량 표시
+
+- `ShopPriceUI`의 기존 아이템 이름 줄에 실제 `ShopSlot.currentItem.count`를 사용해 `BreadLoaf · 재고 1개` 형식으로 표시했다.
+- 별도 재고 모델·새 패널·판매 수학 변경 없음. FinalPresentation에 수량 assertion을 추가했다.
+- Before: `Logs/FinalPresentation/20260713_002627/02_shop_price_ui.png`; After: `Logs/FinalPresentation/20260713_010817/02_shop_price_ui.png`.
+- 컴파일 오류 0. FinalPresentation/FinalRoute/DayNight/PanelLayout 모두 PASS.

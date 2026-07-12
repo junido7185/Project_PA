@@ -31,13 +31,13 @@
 
 ## 3. 현재 작업 우선순위 (2026-07-13 기준)
 
-Task 001~085 동기화 후 Task 007과 011을 완료했다. 현재 집계는 DONE 23 / PARTIAL 24 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20. Save v8 실제 격리 저장소 왕복이 PASS해 Persistence 기본선이 잠겼다.
+Task 001~085 동기화 후 Task 007, 011, 018을 완료했다. 현재 집계는 DONE 24 / PARTIAL 24 / TODO 11 / BLOCKED 6 / DECISION_REQUIRED 20. Save v8 실제 왕복과 가격 패널 재고 수량 표시가 잠겼다.
 
 주의: `SubmissionPackages/*.zip` 삭제 2건은 사용자 소유 변경이므로 복구/stage 금지. Visual v3 의도 변경만 체크포인트 커밋 대상이다.
 
-1. **Task 018** — 기존 ShopSlot 데이터를 가격 패널에 수량으로 표시.
-2. Task 055/057은 판매 통계·마을 변화 저장 확장이라 사람 승인 필요.
-3. Save 증거: `Logs/Task011_SaveRoundTrip.log`, `../03_TASKS/SAVE_SCHEMA.md`.
+1. **Task 019** — 품절 상태 표시(승인 불필요, ShopSlot 수학 무변경).
+2. **Task 034** — 구매/거절 일일 통계의 실제 누락 범위 재확인.
+3. Task 055/057은 판매 통계·마을 변화 저장 확장이라 사람 승인 필요.
 4. 사람 승인 대기: Task 055/057 저장 스키마 확장, Task 068 통합 판정.
 5. 발표 전 사람 확인은 `09_FINAL_FABLE_SPRINT/FINAL_HUMAN_CHECKLIST.md` 유지.
 

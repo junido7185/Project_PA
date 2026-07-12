@@ -9,7 +9,7 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 23 | 24 | 12 | 6 | 20 | 85 |
+| 24 | 24 | 11 | 6 | 20 | 85 |
 
 ## Task별 판정
 
@@ -32,7 +32,7 @@
 | 015 | DONE | Visual pass의 요약 잘림·화면 결함 수정 | FinalPresentation 410/418 PASS | 새 버그는 별도 Task | 조건부 |
 | 016 | DECISION_REQUIRED | Stage 0 증거 다수 | 자동 검증 통과, 저장 왕복/사람 가독성 미완 | 사람의 MVP Stabilization 판정 필요 | YES |
 | 017 | PARTIAL | `Item.cs` ItemCategory, Village signal 의미표 | 코드 enum 대조 | `PRODUCT_CATEGORIES.md` 미작성 | NO |
-| 018 | TODO | ShopSlot count는 데이터로 존재 | 수량 UI 증거 없음 | 가격 패널에 진열 수량 표시 | NO |
+| 018 | DONE | `ShopPriceUI.cs`, FinalPresentation assertion | 동일 카메라 Before/After + FinalPresentation/FinalRoute/DayNight/PanelLayout PASS | 다중 슬롯 합계가 아닌 현재 슬롯 수량 표시 | NO |
 | 019 | TODO | `ShopSlot.IsEmpty` 존재 | 품절 UI 증거 없음 | 재고 0 상태 표시 | NO |
 | 020 | DONE | `DayNightShopLoopController` 한국어 페이즈/HUD | DayNight PASS | 없음 | NO |
 | 021 | DONE | Day 요약: 매출·판매 수·피드백·다음 목표 | FinalPresentation 410/418 PASS | `Village direction` 한국어화 후보 | NO |

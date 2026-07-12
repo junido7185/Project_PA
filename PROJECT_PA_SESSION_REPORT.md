@@ -1324,3 +1324,10 @@ Next actions:
 - 실제 SaveManager API를 격리 LocalJsonSaveRepository에 연결한 전용 검증기를 추가했다.
 - v8 JSON 생성·변조·로드 후 돈/매출/위치/시간/인벤토리/핫바/상점/Day Prep/Day 1 진행 복원을 확인했다.
 - 사용자 save와 저장 스키마는 건드리지 않았다. 컴파일·FinalRoute·DayNight도 PASS.
+
+## Task 018
+
+- 가격 UI의 아이템 이름 줄에 현재 슬롯 재고 수량을 추가했다.
+- Before/After 동일 카메라 캡처에서 `BreadLoaf` → `BreadLoaf · 재고 1개` 변화를 확인했다.
+- 첫 캡처는 재컴파일 직후 검은 런타임 머티리얼 아티팩트가 있었고, 코드 수정 없는 1회 재실행에서 해소됐다.
+- Presentation/FinalRoute/DayNight/PanelLayout 전부 PASS.

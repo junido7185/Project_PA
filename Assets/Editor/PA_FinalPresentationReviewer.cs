@@ -219,6 +219,10 @@ public static class PA_FinalPresentationReviewer
         _reviewSlot.Interact(player.gameObject);
         var priceUi = FindObject<ShopPriceUI>("ShopPriceUI");
         Require(priceUi.IsOpen, "ShopPriceUI opens for stocked item");
+
+        var itemName = GameObject.Find("ItemNameTxt")?.GetComponent<TextMeshProUGUI>();
+        Require(itemName != null && itemName.text.Contains("재고 1개"),
+            "ShopPriceUI shows the stocked quantity");
     }
 
     static void ShowNpcFeedbackReview()

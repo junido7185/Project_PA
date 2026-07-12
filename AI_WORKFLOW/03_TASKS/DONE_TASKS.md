@@ -4,6 +4,7 @@
 
 | Task ID | 완료 날짜 | 수정 파일 | 검증 결과 | 커밋 해시 | 남은 위험 | 다음 작업 |
 |---|---|---|---|---|---|---|
+| Task 018 | 2026-07-13 | `ShopPriceUI.cs`, `PA_FinalPresentationReviewer.cs`, 기록 문서 | 재고 1개 assertion + Presentation/FinalRoute/DayNight/PanelLayout PASS | 이번 작업 커밋 | 현재 슬롯 수량만 표시 | Task 019 |
 | Task 011 | 2026-07-13 | `PA_SaveRoundTripValidator.cs`, registry, 기록 문서 | 격리 v8 저장소 왕복 PASS + FinalRoute/DayNight PASS | 이번 작업 커밋 | 판매/마을 변화는 스키마 미포함 | Task 018 |
 | Task 007 | 2026-07-13 | `SAVE_SCHEMA.md` 및 작업 기록 | SaveData 최상위 필드·DTO·v0→v8 마이그레이션 이름 대조 | 이번 작업 커밋 | 실제 저장소 왕복 미검증 | Task 011 |
 | Task 065 | 2026-07-13 | `DEMO_5_MINUTE_ROUTE.md`, Final Presentation 캡처 | 실패 대비 스크린샷 전환 경로 확인 | `9898f6a` | 백업 녹화본은 사람 준비 | Task 064 |

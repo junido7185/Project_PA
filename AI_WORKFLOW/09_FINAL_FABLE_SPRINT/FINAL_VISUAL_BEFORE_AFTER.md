@@ -32,3 +32,9 @@ Before부터 Final Locked까지 실제 추적 카메라, UI 포함, 2560×1440�
 - 좌측 정보 컬럼은 화면 면적을 많이 차지한다.
 - 하단 분홍 스마트폰 UI는 목재·크림 HUD 팔레트와 일치하지 않는다.
 - 식생은 배치됐지만 환경 전체의 밀도와 레이어링은 제한적이다.
+
+## Task 018 가격 패널 Before/After (동일 카메라 1920×1080)
+
+- Before: `Logs/FinalPresentation/20260713_002627/02_shop_price_ui.png` — 아이템 이름만 표시.
+- After: `Logs/FinalPresentation/20260713_010817/02_shop_price_ui.png` — `BreadLoaf · 재고 1개` 표시.
+- 패널 크기, 가격 조정 버튼, 반응 바, 배경 카메라는 동일하다.

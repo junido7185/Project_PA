@@ -316,7 +316,14 @@ public class ShopPriceUI : MonoBehaviour
         // 아이템 이름
         string itemName = occupied && _slot.currentItem?.data != null
             ? _slot.currentItem.data.itemName : "—";
-        if (_itemNameTxt != null) _itemNameTxt.text = itemName;
+        if (_itemNameTxt != null)
+        {
+            // Task 018 — 이미 저장·판매에 쓰이는 실제 진열 수량을 가격 결정 화면에 노출한다.
+            // 별도 재고 모델을 만들지 않고 ShopSlot.currentItem.count를 그대로 읽는다.
+            _itemNameTxt.text = occupied
+                ? $"{itemName}  ·  재고 {_slot.currentItem.count:N0}개"
+                : itemName;
+        }
 
         // 회수 버튼 활성 (빈 슬롯이면 회수 불필요)
         if (_retrieveBtn != null)
