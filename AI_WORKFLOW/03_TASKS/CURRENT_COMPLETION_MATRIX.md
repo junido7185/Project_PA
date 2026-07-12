@@ -9,7 +9,7 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 24 | 24 | 11 | 6 | 20 | 85 |
+| 25 | 23 | 11 | 6 | 20 | 85 |
 
 ## Task별 판정
 
@@ -70,7 +70,7 @@
 | 053 | DONE | VillageCulture 검증기 + VC-001A 문서 | 판매→다음날 시각 변화 PASS 이력 | 없음 | NO |
 | 054 | TODO | v8 마이그레이션 패턴 존재 | 설계 문서 없음 | v9 판매 통계 설계 | NO |
 | 055 | DECISION_REQUIRED | SalesLog는 런타임 전용 | 저장 왕복 없음 | v9 추가 스키마 승인 필요 | YES |
-| 056 | PARTIAL | v5부터 ShopSlot item/count/price 저장 | 코드 경로 대조 | 실제 저장소 왕복 검증 필요 | 스키마 추가 시 YES |
+| 056 | DONE | v5 ShopSlot 저장 + `PA_SaveRoundTripValidator` | Task 011에서 item/count/quality/currentPrice/displayPrice 실제 왕복 PASS | 신규 스키마 불필요 | NO |
 | 057 | DECISION_REQUIRED | 마을 변화는 저장하지 않음 | 없음 | v9 변화 상태 저장 승인 필요 | YES |
 | 058 | PARTIAL | hired NPC/FSM 캡처·복원 코드 | 실제 저장소 왕복 없음 | NPC 상태 왕복 검증 | NO |
 | 059 | TODO | Save 규칙 일부 존재 | 체크리스트 없음 | `SAVE_REGRESSION.md` 작성 | NO |
