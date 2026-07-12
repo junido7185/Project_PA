@@ -9,7 +9,7 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 21 | 26 | 12 | 6 | 20 | 85 |
+| 22 | 25 | 12 | 6 | 20 | 85 |
 
 ## Task별 판정
 
@@ -21,7 +21,7 @@
 | 004 | DONE | FinalRoute/LongPlay 검증기 | `Logs/Fable_V3_FinalDemoRoute.log`, `Logs/Fable_VisualPass_LongPlayRegression.log` PASS | BUG/검증 문서의 오래된 BLOCKED 표기 제거 | YES→실행 승인 완료 |
 | 005 | PARTIAL | `HANDOFF_FOR_CODEX.md` 위험 파일 표 | 실제 파일 존재 대조 | 전용 `RISK_FILES.md` 미작성 | NO |
 | 006 | PARTIAL | `CODEX_WORKER_RULES.md` §7 | 현재 ZIP 삭제만 dirty | 전용 `GIT_POLICY.md` 미작성 | NO |
-| 007 | PARTIAL | `SaveData.cs`, `SaveManager.cs` v8 | 필드·마이그레이션 코드 대조 | `SAVE_SCHEMA.md` 작성 | NO |
+| 007 | DONE | `SAVE_SCHEMA.md`, Save v8 코드 | 최상위 필드·DTO·v0→v8 체인 실제 이름 대조 | 실제 저장소 왕복은 Task 011 | NO |
 | 008 | DONE | Player 3종, CharacterController | FinalRoute PASS, CoreSlice PASS | 실제 손맛은 사람 확인 | NO |
 | 009 | PARTIAL | Inventory/Hotbar 코드 | FinalRoute의 핫바→진열, DayNight 재고 증가 PASS | 드래그·전체 InventoryUI 실플레이 미검증 | NO |
 | 010 | DONE | Shop/ShopSlot/ShopPriceUI/Economy | FinalRoute: 진열·가격·구매·30G PASS | 없음 | NO |

@@ -96,3 +96,9 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 동기화: `TASK_QUEUE.md`, `DONE_TASKS.md`, `VERIFICATION_RULES.md`, `BUG_LOG.md`. 2026-06-26 보류 검증기 2종을 실제 PASS 증거에 따라 RESOLVED로 변경했다.
 - 다음 스프린트: Task 007 → Task 011 → Task 018. 가장 큰 병목은 저장 v8 코드의 실제 저장소 왕복 증거 부재.
 - 코드/씬/프리팹/SO 변경 없음. 사용자 ZIP 삭제 2건은 그대로 제외.
+
+## 2026-07-13 — Codex — Task 007 저장 스키마 현황 확정
+
+- `SaveData`, `SaveManager`, `ISaveRepository`, `LocalJsonSaveRepository`를 끝까지 읽고 v8 최상위 필드·DTO·v0→v8 마이그레이션·복원 순서를 `SAVE_SCHEMA.md`에 기록했다.
+- 판매 이력·마을 트렌드·VC-001A 활성 상태가 현재 저장되지 않음을 명시했다.
+- 저장 코드는 수정하지 않았다. 실제 저장소 왕복은 Task 011로 남겼다.

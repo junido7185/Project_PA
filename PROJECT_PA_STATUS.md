@@ -1244,3 +1244,9 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Core Loop의 개별 연결은 검증됐지만 Persistence Lock은 미완이다. v8이 돈·인벤토리·핫바·진열·가격·NPC FSM·Day Prep을 저장하도록 구현돼 있으나 실제 저장소 왕복 증거가 없다.
 - 다음: Task 007 저장 스키마 확정 → Task 011 안전한 저장 왕복 검증 → Task 018 진열 수량 표시.
 - 상세: `AI_WORKFLOW/03_TASKS/CURRENT_COMPLETION_MATRIX.md`.
+
+### Task 007 완료
+
+- Save v8 필드·DTO·마이그레이션·복원 순서를 `AI_WORKFLOW/03_TASKS/SAVE_SCHEMA.md`로 확정했다.
+- 현재 미저장: 판매 이력, 카테고리 트렌드, 마을 변화 pending/active 상태.
+- 저장 코드 무변경. 다음은 사용자 세이브를 보호하는 실제 저장소 왕복 검증(Task 011).

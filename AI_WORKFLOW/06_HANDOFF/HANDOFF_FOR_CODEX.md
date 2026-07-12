@@ -31,13 +31,13 @@
 
 ## 3. 현재 작업 우선순위 (2026-07-13 기준)
 
-Task 001~085를 기준 커밋 `9898f6a`의 실제 증거로 동기화했다. 집계는 DONE 21 / PARTIAL 26 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20. 상세는 `../03_TASKS/CURRENT_COMPLETION_MATRIX.md`.
+Task 001~085를 기준 커밋 `9898f6a`의 실제 증거로 동기화한 뒤 Task 007을 완료했다. 현재 집계는 DONE 22 / PARTIAL 25 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20. 상세는 `../03_TASKS/CURRENT_COMPLETION_MATRIX.md`.
 
 주의: `SubmissionPackages/*.zip` 삭제 2건은 사용자 소유 변경이므로 복구/stage 금지. Visual v3 의도 변경만 체크포인트 커밋 대상이다.
 
-1. **Task 007** — Save v8 필드/마이그레이션을 `SAVE_SCHEMA.md`로 확정.
-2. **Task 011** — 사용자 세이브를 보호하는 실제 저장소 왕복 검증.
-3. **Task 018** — 기존 ShopSlot 데이터를 가격 패널에 수량으로 표시.
+1. **Task 011** — 사용자 세이브를 보호하는 실제 저장소 왕복 검증.
+2. **Task 018** — 기존 ShopSlot 데이터를 가격 패널에 수량으로 표시.
+3. Task 007 결과: `../03_TASKS/SAVE_SCHEMA.md` (v8 필드/마이그레이션 확정).
 4. 사람 승인 대기: Task 055/057 저장 스키마 확장, Task 068 통합 판정.
 5. 발표 전 사람 확인은 `09_FINAL_FABLE_SPRINT/FINAL_HUMAN_CHECKLIST.md` 유지.
 

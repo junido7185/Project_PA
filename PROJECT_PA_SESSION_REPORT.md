@@ -1312,3 +1312,9 @@ Next actions:
 - 최종 집계: DONE 21 / PARTIAL 26 / TODO 12 / BLOCKED 6 / DECISION_REQUIRED 20.
 - 가장 큰 완성 병목은 Persistence: v8 저장 코드 범위는 넓지만 실제 저장소 왕복 검증이 없다.
 - 다음 스프린트: Task 007, Task 011, Task 018. Phase 0에서는 코드·씬·프리팹·SO를 변경하지 않았다.
+
+## Task 007
+
+- Save v8의 실제 필드, DTO, v0→v8 마이그레이션과 복원 의존 순서를 문서화했다.
+- 판매 이력/마을 트렌드/VC-001A 상태가 저장되지 않는 경계를 확인했다.
+- 코드 변경 및 Unity 실행 없음. 실제 저장소 왕복은 아직 확인 못 함(Task 011).

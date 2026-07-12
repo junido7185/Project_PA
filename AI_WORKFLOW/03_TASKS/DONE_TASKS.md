@@ -4,6 +4,7 @@
 
 | Task ID | 완료 날짜 | 수정 파일 | 검증 결과 | 커밋 해시 | 남은 위험 | 다음 작업 |
 |---|---|---|---|---|---|---|
+| Task 007 | 2026-07-13 | `SAVE_SCHEMA.md` 및 작업 기록 | SaveData 최상위 필드·DTO·v0→v8 마이그레이션 이름 대조 | 이번 작업 커밋 | 실제 저장소 왕복 미검증 | Task 011 |
 | Task 065 | 2026-07-13 | `DEMO_5_MINUTE_ROUTE.md`, Final Presentation 캡처 | 실패 대비 스크린샷 전환 경로 확인 | `9898f6a` | 백업 녹화본은 사람 준비 | Task 064 |
 | Task 063 | 2026-07-13 | `FINAL_HUMAN_CHECKLIST.md` | Final Locked/검증 결과와 대조 | `9898f6a` | 실기기 확인 필요 | Task 064 |
 | Task 062 | 2026-07-13 | Visual pass v1~v3 관련 파일 | 핵심 검증기 5종 PASS | `9898f6a` | 사람 Game View 확인 | Task 064 |

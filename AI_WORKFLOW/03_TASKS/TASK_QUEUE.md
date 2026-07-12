@@ -219,7 +219,7 @@ Project P.A.와의 연결: 완성 게임 — 안전.
 
 ## Task 007 - 저장 스키마 현황 조사 문서
 
-상태: PARTIAL
+상태: DONE
 단계: Phase 0
 난이도: S
 예상 Codex 실행 횟수: 1
