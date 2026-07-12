@@ -78,4 +78,4 @@
 
 - `SaveGameAsync`에 `data.version = CurrentSaveVersion`이 연속 두 번 있다. 기능 결과는 같아 현재 Task에서는 수정하지 않는다.
 - `LocalJsonSaveRepository.SaveAsync`는 디렉터리 생성 없이 `File.WriteAllText`를 호출한다. 기본 persistentDataPath는 존재하지만 customRoot 검증에서는 디렉터리를 먼저 준비해야 한다.
-- 현재 구현 증거만으로는 실제 저장소 왕복 PASS를 선언할 수 없다. Task 011에서 사용자 save를 건드리지 않는 임시 경로 왕복 검증이 필요하다.
+- Task 011에서 `PA_SaveRoundTripValidator`가 `Logs/SaveRoundTrip/20260713_010249` 격리 저장소를 사용해 실제 `SaveGameAsync`→JSON→`LoadGameAsync` 왕복을 통과했다. 사용자 `persistentDataPath/savegame.json`은 접근하지 않았다.

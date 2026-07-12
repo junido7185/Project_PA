@@ -9,46 +9,46 @@
 
 ## 현재 작업
 
-- **Task ID**: Task 007
-- **작업명**: 저장 스키마 현황 조사 문서
-- **Phase / 난이도**: Phase 0 / S
+- **Task ID**: Task 011
+- **작업명**: 저장/불러오기 왕복 확인
+- **Phase / 난이도**: Phase 1 / M
 - **사람 승인 필요**: NO
 
 ## 목표
 
-- Save v8의 실제 필드·DTO·마이그레이션·미저장 상태를 `SAVE_SCHEMA.md`로 확정한다.
+- 사용자 save를 보호하면서 실제 SaveManager v8 저장소 왕복을 검증한다.
 
 ## 수정 예정 파일 (작업 전 확정)
 
-- `AI_WORKFLOW/03_TASKS/SAVE_SCHEMA.md` 및 Task 기록 문서
+- `Assets/Editor/PA_SaveRoundTripValidator.cs`, validator registry 및 Task 기록 문서
 
 ## 수정 금지 파일 (위험 파일)
 
-- `SaveData.cs`, `SaveManager.cs`, 저장소 코드, 씬/프리팹은 읽기만 하고 수정하지 않는다.
+- `SaveData.cs`, `SaveManager.cs`, 저장소 코드, 사용자 save, 씬/프리팹은 수정하지 않는다.
 
 ---
 
 ## 작업 전 보고 (구현 시작 전 작성)
 
-- 사전 점검: 경로/Git루트 확인 [x], `git status` 확인 [x], Unity Editor 열림 여부 [x], Unity 실행 해당 없음
-- 접근 방법 (기존 시스템 재사용 여부): 실제 Save v8 코드만 근거로 문서화
-- 건드리지 않을 것 (보존 선언): 저장 코드·씬·프리팹·SO
-- 검증 방법 예고: 문서 필드명과 코드 식별자 대조, Git 상태 확인
+- 사전 점검: 경로/Git루트 확인 [x], `git status` 확인 [x], Unity Editor 닫힘 [x], D3D11 [x]
+- 접근 방법 (기존 시스템 재사용 여부): 실제 SaveManager API와 customRoot LocalJsonSaveRepository 재사용
+- 건드리지 않을 것 (보존 선언): 사용자 save·저장 스키마·씬·프리팹·SO
+- 검증 방법 예고: 격리 저장소 왕복 + FinalRoute + DayNight
 
 ## 작업 후 보고 (구현 완료 후 작성)
 
-- 실제 수정한 파일: `SAVE_SCHEMA.md` 및 기록 문서
-- 한 것 / 안 한 것: 스키마 조사만 완료, 코드 수정 없음
-- 기존 데모 흐름 유지 확인: 코드 무변경
+- 실제 수정한 파일: 신규 Editor 검증기, registry, 기록 문서
+- 한 것 / 안 한 것: 실제 v8 왕복 검증 추가, 저장 런타임 코드는 무변경
+- 기존 데모 흐름 유지 확인: FinalRoute/DayNight PASS
 
 ## 검증 결과 (VERIFICATION_RULES.md 양식)
 
-- 컴파일: 해당 없음 (문서 전용, 코드 무변경)
-- 검증기: 해당 없음
+- 컴파일: 런타임/에디터 오류 0
+- 검증기: SaveRoundTrip/FinalRoute/DayNight 모두 Exit 0 PASS
 - 상점 루프: [해당 항목/해당 없음]
-- 저장/로드: [결과/해당 없음]
+- 저장/로드: 돈 1234, 매출 5678, 인벤토리 4, 핫바 3, 진열 2@77G 및 진행 상태 복원 PASS
 - 마을 변화: [결과/해당 없음]
-- 확인 못 한 것: 실제 저장소 왕복 — Task 011에서 검증
+- 확인 못 한 것: 판매 이력·마을 변화 상태는 현재 스키마 대상이 아님
 
 ## 실패 시
 

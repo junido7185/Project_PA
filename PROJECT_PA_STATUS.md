@@ -1250,3 +1250,9 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Save v8 필드·DTO·마이그레이션·복원 순서를 `AI_WORKFLOW/03_TASKS/SAVE_SCHEMA.md`로 확정했다.
 - 현재 미저장: 판매 이력, 카테고리 트렌드, 마을 변화 pending/active 상태.
 - 저장 코드 무변경. 다음은 사용자 세이브를 보호하는 실제 저장소 왕복 검증(Task 011).
+
+### Task 011 완료
+
+- 사용자 save 대신 `Logs/SaveRoundTrip/20260713_010249`를 사용해 실제 SaveManager v8 왕복 PASS.
+- 돈·누적매출·위치·시간/일차·인벤토리·핫바·진열 아이템/수량/가격·Day Prep·Day 1 단계가 복원됐다.
+- Save 런타임 코드와 스키마는 변경하지 않았다. FinalRoute/DayNight 회귀 PASS.

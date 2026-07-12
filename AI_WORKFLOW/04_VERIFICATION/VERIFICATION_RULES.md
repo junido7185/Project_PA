@@ -43,6 +43,7 @@
 
 ### D. 저장/불러오기 확인 (데이터·진행 상태를 건드린 작업 시)
 
+- 자동 기준: `PA_SaveRoundTripValidator.RunSaveRoundTripValidation`을 D3D11 batchmode로 실행한다. 사용자 save 대신 `Logs/SaveRoundTrip/<timestamp>` 격리 경로를 사용한다.
 - [ ] F5 저장 → F9 로드 왕복 후 돈/인벤토리/진열/진행 상태 보존
 - [ ] 구버전 세이브 호환 (저장 스키마를 확장했다면 마이그레이션 경로 확인)
 - [ ] 저장 스키마 변경이 있었다면: **추가 확장(v7→v8 패턴)인지** 재확인 — 아니면 사람 승인 필요

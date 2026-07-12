@@ -809,5 +809,5 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] TASK_QUEUE/DONE_TASKS와 오래된 검증 BLOCKED 기록 동기화.
 - [x] 다음 Persistence 우선 스프린트 3개 선정.
 - [x] Task 007 — 저장 스키마 현황 확정.
-- [ ] Task 011 — 실제 저장소 왕복 검증.
+- [x] Task 011 — 실제 저장소 왕복 검증.
 - [ ] Task 018 — 가격 패널 진열 수량 표시.

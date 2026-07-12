@@ -102,3 +102,10 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - `SaveData`, `SaveManager`, `ISaveRepository`, `LocalJsonSaveRepository`를 끝까지 읽고 v8 최상위 필드·DTO·v0→v8 마이그레이션·복원 순서를 `SAVE_SCHEMA.md`에 기록했다.
 - 판매 이력·마을 트렌드·VC-001A 활성 상태가 현재 저장되지 않음을 명시했다.
 - 저장 코드는 수정하지 않았다. 실제 저장소 왕복은 Task 011로 남겼다.
+
+## 2026-07-13 — Codex — Task 011 격리 저장소 왕복 검증
+
+- 신규 `PA_SaveRoundTripValidator`: 사용자 save 대신 `Logs/SaveRoundTrip/<timestamp>` customRoot를 실제 SaveManager에 주입한다.
+- 실제 v8 JSON 왕복 PASS: 돈 1234, 누적매출 5678, 플레이어 위치, Day 2 09:30, 인벤토리 4, 핫바 3, ShopSlot 2개@77G, Day Prep activity, Day 1 이름/단계 복원.
+- SaveManager/SaveData/씬/프리팹/SO 무변경. validator registry에 등록.
+- 회귀: 런타임/에디터 컴파일 오류 0, FinalRoute `paid=30G`, DayNight `sellableInventory=10` PASS.

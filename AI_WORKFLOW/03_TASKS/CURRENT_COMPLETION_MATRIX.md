@@ -9,7 +9,7 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 22 | 25 | 12 | 6 | 20 | 85 |
+| 23 | 24 | 12 | 6 | 20 | 85 |
 
 ## Task별 판정
 
@@ -25,7 +25,7 @@
 | 008 | DONE | Player 3종, CharacterController | FinalRoute PASS, CoreSlice PASS | 실제 손맛은 사람 확인 | NO |
 | 009 | PARTIAL | Inventory/Hotbar 코드 | FinalRoute의 핫바→진열, DayNight 재고 증가 PASS | 드래그·전체 InventoryUI 실플레이 미검증 | NO |
 | 010 | DONE | Shop/ShopSlot/ShopPriceUI/Economy | FinalRoute: 진열·가격·구매·30G PASS | 없음 | NO |
-| 011 | PARTIAL | SaveManager v8 저장/로드 구현 | Gathering 검증은 필드 복구만 확인 | 실제 저장소 왕복 검증 필요 | NO |
+| 011 | DONE | `PA_SaveRoundTripValidator.cs`, Save v8 | 실제 격리 저장소 왕복 PASS: 돈/매출/위치/시간/인벤토리/핫바/진열/가격/Day Prep/Day 1 단계 | 사람 F5/F9 체감 확인만 선택 사항 | NO |
 | 012 | PARTIAL | D3D11 규칙이 Worker/Handoff에 존재 | 모든 최근 Unity 검증 D3D11 PASS | `UNITY_LAUNCH_POLICY.md` 미작성 | NO |
 | 013 | PARTIAL | `Logs/Fable_V3_*.log` | 핵심 5종 오류 없이 종료 | `CONSOLE_SNAPSHOT.md` 미작성 | NO |
 | 014 | PARTIAL | `FINAL_HUMAN_CHECKLIST.md` | CoreSlice/FinalPresentation PASS | 전용 `SMOKE_CHECKLIST.md` 미작성 | NO |

@@ -24,7 +24,7 @@
 ## 진행 상태
 
 - [x] Task 007
-- [ ] Task 011
+- [x] Task 011
 - [ ] Task 018
 
 각 Task는 별도 검증과 별도 커밋으로 끝낸다. `SubmissionPackages/*.zip` 삭제는 모든 커밋에서 제외한다.

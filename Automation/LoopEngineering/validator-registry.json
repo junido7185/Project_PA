@@ -48,6 +48,17 @@
       "humanFollowUp": "Manual Day 2-7 feel check remains required."
     },
     {
+      "id": "save-round-trip",
+      "executeMethod": "PA_SaveRoundTripValidator.RunSaveRoundTripValidation",
+      "sourceFile": "Assets/Editor/PA_SaveRoundTripValidator.cs",
+      "purpose": "Validate SaveManager v8 through an isolated LocalJsonSaveRepository without touching the user save.",
+      "workflowTypes": ["save-load", "persistence", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first failed persisted field; do not change the schema without approval.",
+      "humanFollowUp": "Manual F5/F9 feel check remains useful after the automated round trip passes."
+    },
+    {
       "id": "gathering-shop-gate",
       "executeMethod": "PA_GatheringShopGateValidator.RunGatheringShopGateValidation",
       "sourceFile": "Assets/Editor/PA_GatheringShopGateValidator.cs",

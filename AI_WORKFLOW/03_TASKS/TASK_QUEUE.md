@@ -318,7 +318,7 @@ Project P.A.와의 연결: 상점 운영 — 핵심 루프.
 
 ## Task 011 - 저장/불러오기 왕복 확인
 
-상태: PARTIAL
+상태: DONE
 단계: Phase 1
 난이도: M
 예상 Codex 실행 횟수: 2

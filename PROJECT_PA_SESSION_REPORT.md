@@ -1318,3 +1318,9 @@ Next actions:
 - Save v8의 실제 필드, DTO, v0→v8 마이그레이션과 복원 의존 순서를 문서화했다.
 - 판매 이력/마을 트렌드/VC-001A 상태가 저장되지 않는 경계를 확인했다.
 - 코드 변경 및 Unity 실행 없음. 실제 저장소 왕복은 아직 확인 못 함(Task 011).
+
+## Task 011
+
+- 실제 SaveManager API를 격리 LocalJsonSaveRepository에 연결한 전용 검증기를 추가했다.
+- v8 JSON 생성·변조·로드 후 돈/매출/위치/시간/인벤토리/핫바/상점/Day Prep/Day 1 진행 복원을 확인했다.
+- 사용자 save와 저장 스키마는 건드리지 않았다. 컴파일·FinalRoute·DayNight도 PASS.
