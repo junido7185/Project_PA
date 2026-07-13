@@ -32,13 +32,20 @@
 | 단계 | 내용 | 선행 |
 |---|---|---|
 | S1 (완료) | 실내 공간 + 양방향 문 + 슬롯 그리드 + 가격/저장 호환 | — |
-| S2 | 실내 `Shop` 등록 + 그리드 편집(슬롯 추가/이동) 데이터화 | 앵커 로직을 "가장 가까운 Shop"으로 교체 |
-| S3 | NPC 실내 진입: 실내 NavMesh(별도 Surface) + 문 통과 오프메시 링크 or 워프 연출 | S2 |
-| S4 | 외부 가판대 → 실내 상점 전환/병행 티어 연출 (Tier 1 해금과 연결) | S2, TierService |
-| S5 | 실내 인테리어 실모델化 (선반/카운터/조명, PA_DemoProps 재사용) | — |
+| **S2 (완료, 2026-07-13 오후)** | 실내 `Shop` 등록 + `PA_ShopLocator.FindPlazaShop()`(y<50 지상 최근접)로 앵커 5곳(간판/드레싱/마을변화) 오염 차단 | — |
+| **S3 (완료, 2026-07-13 오후)** | 손님 실내 방문 — `InteriorCustomerController` 사이드카: 영업 중+실내 진열 존재 시 지상 Idle 주민을 실내 아일랜드로 워프 초대 → `NpcController.TryBeginShoppingVisitAt`(신규 훅)로 **기존 FSM 그대로** 둘러보기/구매 → Idle 복귀 시 원위치·원상점 복원(`RetargetShop`) | S2, NavMesh 리베이크(실내 아일랜드) |
+| S4 | 외부 가판대 → 실내 상점 전환/병행 티어 연출 (Tier 1 해금과 연결) | TierService |
+| S5 | 실내 인테리어 실모델化 (선반/카운터/조명, PA_DemoProps 재사용) + 진열 폴백 큐브 개선 | — |
+
+## 4-b. S2/S3 실증 (2026-07-13)
+
+- `PA_InteriorCustomerValidator` PASS: **NPC_Blacksmith 초대 입장(y=100) → 둘러보기 → 15G 구매(500→515G) → 퇴장 복귀(Idle)**. Day 1 튜토리얼은 개입 제외(검증 포함).
+- 회귀 5종 PASS: FinalRoute / DayNight / CoreSlice / EnterableShop / CustomerArrival.
+- 시각 증거: `Logs/DemoViewShots/inside_shop_20260713_163425.png` — 실내 그리드 4종 진열(가격 라벨) + 손님이 진열대 앞 쇼핑 중.
+- 진단 기록: 온보딩 모달의 `Time.timeScale=0` 이 에이전트 경로를 영구 pending 시킴 → 검증기에서 세션 복원으로 해제 (다른 Play Mode 검증기 공통 주의점).
 
 ## 5. 다음 작업 3개
 
-1. S2: 실내 Shop 등록 + Shop 앵커 탐색을 플레이어 최근접 기준으로 교체 (위험 파일 3곳 소규모).
-2. S3: 실내 NavMeshSurface + `CustomerArrivalController` 확장으로 손님 실내 방문.
-3. S5: 실내 벽/진열대를 PA_DemoProps 실모델로 교체.
+1. S5: 실내 벽/진열대 실모델化 + 진열 표시를 아이콘/모델 기반으로 (녹색 폴백 큐브 제거).
+2. S4: Tier 1 해금과 실내 상점 전환 연출 연결.
+3. 실내 동시 손님 2명 + 대기 줄 연출 (`maxConcurrentVisitors` 확장).

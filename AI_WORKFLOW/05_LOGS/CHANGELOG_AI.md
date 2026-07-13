@@ -132,3 +132,12 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 작업 2 (`f3ef51a`+`3bf30c9`): 들어갈 수 있는 잡화점 기초 — `BuildingEntrance` Y+100 관례 재사용. B10_Cottage_01 앞 "잡화점" 문 → PA_StoreInterior(12x9 방, 웜 라이트 2, 문라이터식 2x3 ShopSlot 그리드, 출구 문). 실내 슬롯은 SaveManager 계층 키로 자동 저장 호환, Shop 미등록으로 기존 앵커/NPC 로직 무영향. `PA_EnterableShopValidator` PASS: 진입(y100)→진열→가격UI→퇴장.
 - 검증: dotnet build 0 오류. 수정 후 재감사 flagged=0. FinalRoute/DayNight/CoreSlice/SaveRoundTrip PASS, NavMesh agents 8/8 실패 0. Before/After: `Logs/DemoViewShots/before_vslice_20260713_111149.png` → `after_vslice_20260713_112849.png`.
 - 잔여: 보행 애니메이션 질감(사람 에디터 판정), NPC look-at, 실내 실모델화, NPC 실내 진입(S3).
+
+## 2026-07-13 (오후) — Claude (Fable 5) — 상점 진화 S2+S3: 실내 잡화점에 손님이 온다
+
+- S2 (`PA_ShopLocator.cs` 신규): 실내 Shop 등록으로 `FindFirstObjectByType<Shop>` 앵커(간판/드레싱/마을변화 5곳)가 Y+100 실내를 집는 오염을 차단 — 지상(y<50) 최근접 상점 로케이터로 교체. 실내 `PA_StoreInterior`에 Shop 컴포넌트 등록 + NavMesh 리베이크(실내 아일랜드) — `PA_VerticalSliceFixer.RunRegisterInteriorShop`.
+- S3 (`InteriorCustomerController.cs` 신규 사이드카 + 바인더 1줄): 영업 중(밤 개점, Day1 튜토리얼 제외)이고 실내 진열이 있으면 지상 Idle 주민을 실내로 워프 초대 → `NpcController.TryBeginShoppingVisitAt/RetargetShop`(추가 훅 2종, FSM 무변경)으로 기존 둘러보기/구매 수행 → 종료 시 원위치·원상점 복원. `_activeShop` 스테일 방지를 위해 복귀는 반드시 RetargetShop 경유.
+- 검증: `PA_InteriorCustomerValidator` PASS — 초대 입장(y=100)→구매(500→515G)→퇴장 복귀. 회귀 5종(FinalRoute/DayNight/CoreSlice/EnterableShop/CustomerArrival) PASS. 컴파일 0 오류.
+- 시행착오: 에이전트가 pathPending 영구 대기 — 원인은 Day1 온보딩 모달의 Time.timeScale=0. Play Mode 검증기는 `RestoreSavedSession` 으로 온보딩을 먼저 해제할 것 (공통 규칙).
+- 캡처: `Logs/DemoViewShots/inside_shop_20260713_163425.png` — 실내 그리드 진열 4종 + 손님 쇼핑 장면 (`PA_SHOT_INSIDE=1` 분기 추가).
+- 잔여: 실내 진열이 녹색 폴백 큐브(모델 없는 아이템) — S5에서 아이콘/실모델화. 동시 손님 1명 제한.
