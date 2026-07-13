@@ -1,11 +1,11 @@
-# SAVE_SCHEMA — Project P.A. 저장 v8 현황
+# SAVE_SCHEMA — Project P.A. 저장 v9 현황
 
 작성: 2026-07-13 (Codex)
 근거: `Assets/Scripts/SaveData.cs`, `SaveManager.cs`, `Services/ISaveRepository.cs`, `Services/LocalJsonSaveRepository.cs`
 
 ## 현재 규약
 
-- 현재 버전: `SaveManager.CurrentSaveVersion = 8`
+- 현재 버전: `SaveManager.CurrentSaveVersion = 9`
 - 키: `savegame`
 - 로컬 경로: `Application.persistentDataPath/savegame.json`
 - 형식: `JsonUtility` JSON
@@ -17,7 +17,7 @@
 
 | 영역 | 필드 | 저장/복원 경로 |
 |---|---|---|
-| 버전 | `version` | 저장 직전 v8 스탬프, 로드 시 `MigrateSaveData` |
+| 버전 | `version` | 저장 직전 v9 스탬프, 로드 시 `MigrateSaveData` |
 | 경제 | `money`, `cumulativeRevenue` | `EconomyService` ForceSet 계열 |
 | 플레이어 | `playerPosition` | CharacterController를 잠시 끄고 위치 복원 |
 | Day 1 프로필 | `playerName`, `selectedMapId`, `firstDayPrototypeStage` | `PlayableDayScenarioController` |
@@ -32,6 +32,7 @@
 | 핫바 | `hotbarSlots` | Item id/name/count/quality/currentPrice |
 | 상점 진열 | `shopSlots` | slotIndex/key/occupied/displayPrice/item/count/quality/currentPrice |
 | 낮 채집 | `dayPrepCollectedDay`, `dayPrepCollectedActivities` | 같은 날 중복 채집 방지 상태 |
+| 마을 변화 (v9) | `villageCultureHasPendingChange`, `villageCulturePendingSaleDay`, `villageCulturePendingCategory`, `villageCultureHasActiveChange`, `villageCultureActiveCategory`, `villageCultureHintShown` | `VillageCultureVisualController.WriteSaveFields/RestoreSavedState` — 판매→다음날 변화의 대기/활성 상태 (Task 057) |
 
 ## DTO
 
@@ -53,6 +54,7 @@
 | v5→v6 | 플레이어 이름·맵·Day 1 단계 |
 | v6→v7 | 장기 진행 sidecar 필드 |
 | v7→v8 | 낮 채집 완료 일자·activity ID 목록 |
+| v8→v9 | 마을 변화 대기/활성 상태 6필드 (Task 057) |
 
 ## 복원 순서와 의존성
 

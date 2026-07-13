@@ -302,13 +302,21 @@ public static class PA_VillageCultureVisualValidator
         }
     }
 
+    // VC-001A 당시에는 "저장 필드를 추가하지 않는다"가 티켓 규칙이었으나,
+    // Task 057(v8→v9 승인)에서 마을 변화 지속성을 위해 정식으로 필드가 추가됐다.
+    // 이제는 반대로 v9 필드 6종이 존재하는지 확인한다.
     static void RequireNoVillageCultureSaveFields()
     {
-        foreach (var field in typeof(SaveData).GetFields(BindingFlags.Public | BindingFlags.Instance))
+        string[] required =
         {
-            string name = field.Name.ToLowerInvariant();
-            Require(!name.Contains("villageculture") && !name.Contains("culturevisual"),
-                "VC-001A did not add SaveData fields");
+            "villageCultureHasPendingChange", "villageCulturePendingSaleDay", "villageCulturePendingCategory",
+            "villageCultureHasActiveChange", "villageCultureActiveCategory", "villageCultureHintShown"
+        };
+
+        foreach (string fieldName in required)
+        {
+            Require(typeof(SaveData).GetField(fieldName, BindingFlags.Public | BindingFlags.Instance) != null,
+                $"Task 057 SaveData v9 field exists: {fieldName}");
         }
     }
 

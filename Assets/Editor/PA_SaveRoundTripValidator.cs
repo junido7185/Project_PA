@@ -205,6 +205,12 @@ public static class PA_SaveRoundTripValidator
         if (scenario != null)
             scenario.RestoreSavedSession("저장검증", "green_bay", 2);
 
+        // Task 057 — 마을 변화 상태 시드: Day 2에 Processed 판매(다음날 변화 대기) 상태.
+        var villageCulture = VillageCultureVisualController.Instance
+            ?? Object.FindFirstObjectByType<VillageCultureVisualController>();
+        Require(villageCulture != null, "VillageCultureVisualController exists");
+        villageCulture.RestoreSavedState(true, 2, "Processed", false, "", false);
+
         var player = GameObject.FindGameObjectWithTag("Player");
         Vector3 savedPlayerPosition = player != null ? player.transform.position : Vector3.zero;
 
@@ -213,7 +219,11 @@ public static class PA_SaveRoundTripValidator
         string saveFile = Path.Combine(output, "savegame.json");
         Require(File.Exists(saveFile), "isolated savegame.json was written");
         var savedData = JsonUtility.FromJson<SaveData>(File.ReadAllText(saveFile));
-        Require(savedData != null && savedData.version == 8, "saved JSON is schema v8");
+        Require(savedData != null && savedData.version == 9, "saved JSON is schema v9");
+        Require(savedData.villageCultureHasPendingChange
+            && savedData.villageCulturePendingSaleDay == 2
+            && savedData.villageCulturePendingCategory == "Processed",
+            "saved JSON contains pending village change state");
         Require(savedData.money == 1234 && savedData.cumulativeRevenue == 5678, "saved JSON contains economy state");
         Require(savedData.shopSlots.Exists(x => x != null && x.occupied && x.displayPrice == 77 && x.count == 2),
             "saved JSON contains stocked ShopSlot quantity and price");
@@ -230,6 +240,7 @@ public static class PA_SaveRoundTripValidator
         targetShopSlot.displayPrice = 0;
         targetShopSlot.RefreshDisplay();
         loop.RestoreSavedState(5, new List<string>());
+        villageCulture.ResetForValidation(); // 변조: 대기 변화 소거 → 로드가 되살려야 함
         if (scenario != null)
             scenario.RestoreSavedSession("변조상태", "green_bay", 0);
         if (player != null) player.transform.position = savedPlayerPosition + Vector3.right * 2f;
@@ -269,7 +280,25 @@ public static class PA_SaveRoundTripValidator
         if (player != null)
             Require(Vector3.Distance(player.transform.position, savedPlayerPosition) < 0.01f, "player position restores");
 
-        Debug.Log($"PA Save Round Trip Validation passed. money=1234, revenue=5678, inventory=4, hotbar=3, shop=2@77G, output={output}");
+        // Task 057 — 대기 마을 변화가 왕복 후 살아 있고, 다음날 아침 평가에서 실제로 활성화된다.
+        Require(villageCulture.HasPendingChange && villageCulture.PendingSaleDay == 2,
+            "pending village change restores after repository round trip");
+        villageCulture.EvaluateForDayPreparation(3, true);
+        Require(villageCulture.HasActiveCategory && villageCulture.ActiveCategoryName == "Processed",
+            "restored pending change activates on the next morning");
+        Require(villageCulture.VisualActive, "village change visual is active after next-morning evaluation");
+
+        // 활성 상태 자체도 왕복되는지 확인 (2차 저장/로드).
+        await save.SaveGameAsync();
+        var savedData2 = JsonUtility.FromJson<SaveData>(File.ReadAllText(saveFile));
+        Require(savedData2.villageCultureHasActiveChange && savedData2.villageCultureActiveCategory == "Processed",
+            "saved JSON contains active village change state");
+        villageCulture.ResetForValidation();
+        await save.LoadGameAsync();
+        Require(villageCulture.HasActiveCategory && villageCulture.VisualActive,
+            "active village change restores after second round trip");
+
+        Debug.Log($"PA Save Round Trip Validation passed. money=1234, revenue=5678, inventory=4, hotbar=3, shop=2@77G, village=Processed(pending→active), output={output}");
     }
 
     static void ClearSlots(List<InventorySlot> slots)

@@ -51,6 +51,16 @@ public class SaveData
     // reset on save/load (DayNightShopLoopController._prepCollectionDays).
     public int dayPrepCollectedDay = 0;
     public List<string> dayPrepCollectedActivities = new List<string>();
+
+    // Village culture visual state. Added in v9 (Task 057) so the core differentiator —
+    // "오늘 판 물건이 다음날 마을을 바꾼다" — survives save/load.
+    // pending: 오늘 판매로 예약된 다음날 변화 / active: 이미 나타난 변화.
+    public bool villageCultureHasPendingChange = false;
+    public int villageCulturePendingSaleDay = 0;
+    public string villageCulturePendingCategory = "";
+    public bool villageCultureHasActiveChange = false;
+    public string villageCultureActiveCategory = "";
+    public bool villageCultureHintShown = false;
 }
 
 // §4 FriendshipService 저장 DTO — FriendshipService.ForceSetPoints 로 복원한다.

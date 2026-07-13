@@ -22,7 +22,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 8;
+    private const int CurrentSaveVersion = 9;
 
     void Awake()
     {
@@ -80,6 +80,12 @@ public class SaveManager : MonoBehaviour
         var dayLoop = DayNightShopLoopController.Instance ?? FindFirstObjectByType<DayNightShopLoopController>();
         if (dayLoop != null)
             dayLoop.WriteSaveFields(data);
+
+        // Task 057 — 마을 변화(대기/활성) 상태 직렬화. v9.
+        var villageCulture = VillageCultureVisualController.Instance
+            ?? FindFirstObjectByType<VillageCultureVisualController>();
+        if (villageCulture != null)
+            villageCulture.WriteSaveFields(data);
 
         // 3. 건물 정보 — 레지스트리가 가진 명시 목록을 직렬화한다.
         if (BuildingRegistry.Instance != null)
@@ -188,6 +194,18 @@ public class SaveManager : MonoBehaviour
         var dayLoop = DayNightShopLoopController.Instance ?? FindFirstObjectByType<DayNightShopLoopController>();
         if (dayLoop != null)
             dayLoop.RestoreSavedState(data.dayPrepCollectedDay, data.dayPrepCollectedActivities);
+
+        // Task 057 — 마을 변화(대기/활성) 상태 복원. 핵심 차별점의 다음날 지속성.
+        var villageCulture = VillageCultureVisualController.Instance
+            ?? FindFirstObjectByType<VillageCultureVisualController>();
+        if (villageCulture != null)
+            villageCulture.RestoreSavedState(
+                data.villageCultureHasPendingChange,
+                data.villageCulturePendingSaleDay,
+                data.villageCulturePendingCategory,
+                data.villageCultureHasActiveChange,
+                data.villageCultureActiveCategory,
+                data.villageCultureHintShown);
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -364,6 +382,19 @@ public class SaveManager : MonoBehaviour
                 data.dayPrepCollectedActivities = new List<string>();
             data.version = 8;
             Debug.Log("[SaveManager] Migration v7->v8: day-prep gathering fields added.");
+        }
+
+        // v8 -> v9: village culture pending/active change state (Task 057).
+        if (data.version < 9)
+        {
+            data.villageCultureHasPendingChange = false;
+            data.villageCulturePendingSaleDay = 0;
+            if (data.villageCulturePendingCategory == null) data.villageCulturePendingCategory = "";
+            data.villageCultureHasActiveChange = false;
+            if (data.villageCultureActiveCategory == null) data.villageCultureActiveCategory = "";
+            data.villageCultureHintShown = false;
+            data.version = 9;
+            Debug.Log("[SaveManager] Migration v8->v9: village culture change fields added.");
         }
 
         return data;

@@ -118,6 +118,52 @@ public class VillageCultureVisualController : MonoBehaviour
         ActivateChange(_pendingCategory);
     }
 
+    // Task 057 — SaveManager 가 호출: 대기/활성 마을 변화 상태를 직렬화한다 (v9).
+    public void WriteSaveFields(SaveData data)
+    {
+        if (data == null) return;
+
+        data.villageCultureHasPendingChange = _hasPendingChange;
+        data.villageCulturePendingSaleDay = _pendingSaleDay;
+        data.villageCulturePendingCategory = _hasPendingChange ? _pendingCategory.ToString() : "";
+        data.villageCultureHasActiveChange = _hasActiveCategory;
+        data.villageCultureActiveCategory = _hasActiveCategory ? _activeCategory.ToString() : "";
+        data.villageCultureHintShown = _hintShownForActiveChange;
+    }
+
+    // Task 057 — SaveManager 가 호출: 저장된 대기/활성 변화 상태를 복원한다.
+    // 활성 변화는 즉시 시각을 켜고, 힌트는 저장된 표시 여부를 존중해 재표시하지 않는다.
+    public void RestoreSavedState(bool hasPending, int pendingSaleDay, string pendingCategory,
+        bool hasActive, string activeCategory, bool hintShown)
+    {
+        EnsureVisual();
+        EnsureHint();
+
+        _hasPendingChange = false;
+        if (hasPending && Enum.TryParse(pendingCategory, true, out ItemCategory pending))
+        {
+            _hasPendingChange = true;
+            _pendingCategory = pending;
+            _pendingSaleDay = Mathf.Max(1, pendingSaleDay);
+        }
+
+        _hintShownForActiveChange = hintShown;
+
+        if (hasActive && Enum.TryParse(activeCategory, true, out ItemCategory active))
+        {
+            _activeCategory = active;
+            _hasActiveCategory = true;
+            SetVisualActive(true);
+        }
+        else
+        {
+            _hasActiveCategory = false;
+            SetVisualActive(false);
+        }
+
+        Debug.Log($"🏘️ [VillageCulture] 저장 상태 복원: pending={_hasPendingChange}({(_hasPendingChange ? _pendingCategory.ToString() : "-")}@day{_pendingSaleDay}), active={_hasActiveCategory}({(_hasActiveCategory ? _activeCategory.ToString() : "-")})");
+    }
+
     public void ResetForValidation()
     {
         _seenSaleHashes.Clear();
