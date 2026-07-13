@@ -15,6 +15,12 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public bool IsEmpty => currentItem == null || currentItem.count <= 0 || currentItem.data == null;
 
+    // Task 019 — 표시 전용 품절 상태. NPC 구매로 오늘 비워진 슬롯을 기록한다.
+    // 런타임 전용(저장 안 함): 재진열 또는 다음날이 되면 자연히 풀린다.
+    int _soldOutDay = -1;
+    public bool IsSoldOutToday => IsEmpty && _soldOutDay >= 0
+        && GameClock.Instance != null && GameClock.Instance.CurrentDay == _soldOutDay;
+
     public int EffectiveDisplayPrice
     {
         get
@@ -59,13 +65,22 @@ public class ShopSlot : MonoBehaviour, IInteractable
     void Start()
     {
         RefreshDisplay();
+
+        // Task 019 — 날이 바뀌면 남아 있는 품절 라벨을 지운다 (표시 갱신 전용).
+        if (GameClock.Instance != null)
+            GameClock.Instance.OnNewDay += OnNewDayRefreshDisplay;
     }
 
     void OnDestroy()
     {
         if (_parentShop != null)
             _parentShop.UnregisterSlot(this);
+
+        if (GameClock.Instance != null)
+            GameClock.Instance.OnNewDay -= OnNewDayRefreshDisplay;
     }
+
+    void OnNewDayRefreshDisplay(int _) => RefreshDisplay();
 
     public void Interact(GameObject interactor)
     {
@@ -84,7 +99,8 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public string GetInteractPrompt()
     {
-        if (IsEmpty) return "판매대에 상품 진열";
+        if (IsEmpty)
+            return IsSoldOutToday ? "판매대에 상품 진열 (오늘 품절)" : "판매대에 상품 진열";
         return $"가격 확정/조정 ({currentItem.data.itemName} / {EffectiveDisplayPrice}G)";
     }
 
@@ -229,9 +245,10 @@ public class ShopSlot : MonoBehaviour, IInteractable
             if (EconomyService.Instance != null)
                 EconomyService.Instance.Deposit(paidAmount, $"Shop sale[{buyerTag}]: {currentItem.data.itemName}");
 
+            int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+
             if (SalesLogManager.Instance != null && currentItem.data != null)
             {
-                int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
                 int hour = GameClock.Instance != null ? GameClock.Instance.CurrentHourInt : 0;
                 SalesLogManager.Instance.RecordSale(
                     currentItem.data.itemName,
@@ -244,6 +261,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
             }
 
             currentItem = null;
+            _soldOutDay = day; // Task 019 — 오늘 다 팔린 슬롯 표시
             RefreshDisplay();
             return true;
         }
@@ -256,7 +274,26 @@ public class ShopSlot : MonoBehaviour, IInteractable
     public void RefreshDisplay()
     {
         ClearDisplay();
-        if (IsEmpty) return;
+
+        // Task 019 — 오늘 품절된 빈 슬롯은 보충을 유도하는 작은 라벨을 보여준다.
+        if (IsEmpty)
+        {
+            if (IsSoldOutToday)
+            {
+                var soldOutRoot = new GameObject(DisplayRootName);
+                soldOutRoot.transform.SetParent(transform, false);
+                soldOutRoot.transform.localPosition = displayOffset;
+
+                var soldOutLabelGo = new GameObject("SoldOutLabel");
+                soldOutLabelGo.transform.SetParent(soldOutRoot.transform, false);
+                soldOutLabelGo.transform.localPosition = new Vector3(0f, 0.35f, 0f);
+                var soldOutLabel = soldOutLabelGo.AddComponent<PrototypeWorldLabel>();
+                soldOutLabel.Set("품절 · 보충하세요", new Color(1f, 0.62f, 0.55f), 1.2f);
+            }
+            return;
+        }
+
+        _soldOutDay = -1; // 재진열되면 품절 상태 해제
 
         var root = new GameObject(DisplayRootName);
         root.transform.SetParent(transform, false);
@@ -295,9 +332,14 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     void ClearDisplay()
     {
-        var existing = transform.Find(DisplayRootName);
-        if (existing != null)
-            DestroyUnityObject(existing.gameObject);
+        // Task 019 — 같은 프레임에 Refresh 가 두 번 일어나면 지연 Destroy 대기 중인
+        // 이전 루트가 Find 에 걸려 새 루트가 살아남는 문제가 있었다. 전부 순회 제거.
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var child = transform.GetChild(i);
+            if (child != null && child.name == DisplayRootName)
+                DestroyUnityObject(child.gameObject);
+        }
     }
 
     static Material CreateDisplayMaterial(Item item)
