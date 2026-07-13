@@ -4,6 +4,8 @@
 
 | Task ID | 완료 날짜 | 수정 파일 | 검증 결과 | 커밋 해시 | 남은 위험 | 다음 작업 |
 |---|---|---|---|---|---|---|
+| Task 019 | 2026-07-13 | `ShopSlot.cs`(표시 전용+ClearDisplay 견고화), `PA_ShopSoldOutValidator.cs` | 전용 검증기 PASS(구매→품절 라벨→재진열/다음날 해제) + FinalRoute/DayNight/CoreSlice PASS | `f6cbbe1` | 품절 상태는 런타임 전용(저장 안 함, 의도) | Task 034 |
+| Task 057 | 2026-07-13 | `SaveData.cs`, `SaveManager.cs`(v9), `VillageCultureVisualController.cs`, RoundTrip/VillageCulture 검증기, `SAVE_SCHEMA.md` | SaveRoundTrip v9 PASS(대기→다음날 활성→활성 왕복) + VillageCulture/FinalRoute/DayNight PASS | `71fa710` | 트렌드 점수(048)·SalesLog(055)는 미저장 — 별도 승인 | Task 055 승인 또는 Task 034 |
 | Task 056 | 2026-07-13 | 기존 Save v5~v8 + Task 011 검증기 | ShopSlot item/count/quality/currentPrice/displayPrice 실제 왕복 PASS | `e40f102` | 판매/마을 통계는 별도 스키마 | Task 057 승인 |
 | Task 018 | 2026-07-13 | `ShopPriceUI.cs`, `PA_FinalPresentationReviewer.cs`, 기록 문서 | 재고 1개 assertion + Presentation/FinalRoute/DayNight/PanelLayout PASS | 이번 작업 커밋 | 현재 슬롯 수량만 표시 | Task 019 |
 | Task 011 | 2026-07-13 | `PA_SaveRoundTripValidator.cs`, registry, 기록 문서 | 격리 v8 저장소 왕복 PASS + FinalRoute/DayNight PASS | 이번 작업 커밋 | 판매/마을 변화는 스키마 미포함 | Task 018 |

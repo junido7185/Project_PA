@@ -503,7 +503,7 @@ Project P.A.와의 연결: 상점 운영.
 
 ## Task 019 - 품절 상태 표시
 
-상태: TODO
+상태: DONE (2026-07-13, 커밋 `f6cbbe1`) — 구매 소진 시 "품절 · 보충하세요" 라벨 + 프롬프트, 재진열/다음날 자동 해제. `PA_ShopSoldOutValidator` + FinalRoute/DayNight/CoreSlice PASS.
 단계: Phase 2
 난이도: S
 예상 Codex 실행 횟수: 2
@@ -1356,7 +1356,7 @@ Project P.A.와의 연결: 저장 + 상점 운영.
 
 ## Task 057 - 마을 변화 상태 저장
 
-상태: DECISION_REQUIRED
+상태: DONE (2026-07-13, 커밋 `71fa710`) — 사용자 세션 지시(우선순위 2 + 예시 커밋)로 승인. Save v8→v9 추가 확장: VillageCulture 대기/활성 상태 6필드 + 마이그레이션. `PA_SaveRoundTripValidator` 대기→다음날 활성→활성 왕복 PASS. VillageChangeSignal 트렌드 점수(Task 048)는 SalesLog 저장(Task 055) 승인 대기로 범위 외.
 단계: Phase 6
 난이도: M
 예상 Codex 실행 횟수: 3

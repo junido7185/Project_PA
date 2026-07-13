@@ -118,3 +118,10 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 컴파일 오류 0. FinalPresentation/FinalRoute/DayNight/PanelLayout 모두 PASS.
 
 - 스프린트 종료 동기화: Task 011의 실제 ShopSlot 왕복 증거로 Task 056도 DONE 처리했다. 신규 저장 코드나 스키마 변경은 없다.
+
+## 2026-07-13 — Claude (Fable 5) — Task 057 마을 변화 저장(v9) + Task 019 품절 표시
+
+- 작업 1 (Task 057, `71fa710`): Save v8→v9 추가 확장 — `VillageCultureVisualController`의 대기(오늘 판매→내일 변화)/활성(변화 표시 중) 상태 6필드를 저장·복원. 사용자 세션 지시(우선순위 2 "판매 결과가 다음날 마을 변화로 지속되지 않는 문제" + 예시 커밋 문구)로 스키마 승인. `SaveManager` v9 마이그레이션 + Write/Restore 훅(DayNightShopLoop 패턴). `PA_SaveRoundTripValidator`를 v9로 확장해 대기→다음날 활성→활성 2차 왕복까지 증명. VC-001A 검증기의 구식 "저장 필드 없음" 단언을 v9 필드 존재 확인으로 갱신.
+- 작업 2 (Task 019, `f6cbbe1`): `ShopSlot` 표시 전용 품절 상태 — NPC 구매로 소진된 슬롯에 "품절 · 보충하세요" 월드 라벨과 "(오늘 품절)" 프롬프트, 재진열·다음날(OnNewDay) 자동 해제. 검증 중 발견한 실제 버그 수복: `ClearDisplay`가 같은 프레임 이중 갱신 시 지연 파괴 대기 루트에 걸려 새 루트를 못 지우던 문제 → 전체 순회 제거로 교정. 신규 `PA_ShopSoldOutValidator`(프레임 분리 4스텝).
+- 검증: dotnet build 런타임/에디터 0 오류. SaveRoundTrip(v9)/VillageCulture/ShopSoldOut/FinalRoute(`paid=30G`)/DayNight(`sellableInventory=10`)/CoreSlice 전부 PASS — `Logs/Fable_T057_*.log`, `Logs/Fable_T019_*.log`.
+- 비고: 품절 상태는 런타임 전용(저장 안 함, 의도). 트렌드 점수(Task 048)·SalesLog(Task 055) 저장은 별도 승인 대기. `SubmissionPackages/*.zip` 삭제 2건은 커밋 제외 유지.

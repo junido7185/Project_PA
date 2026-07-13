@@ -9,7 +9,9 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 25 | 23 | 11 | 6 | 20 | 85 |
+| 27 | 23 | 10 | 6 | 19 | 85 |
+
+갱신 2026-07-13 (Fable 5): Task 019 TODO→DONE(`f6cbbe1`), Task 057 DECISION_REQUIRED→DONE(`71fa710`, 사용자 세션 지시로 v9 승인).
 
 ## Task별 판정
 
@@ -33,7 +35,7 @@
 | 016 | DECISION_REQUIRED | Stage 0 증거 다수 | 자동 검증 통과, 저장 왕복/사람 가독성 미완 | 사람의 MVP Stabilization 판정 필요 | YES |
 | 017 | PARTIAL | `Item.cs` ItemCategory, Village signal 의미표 | 코드 enum 대조 | `PRODUCT_CATEGORIES.md` 미작성 | NO |
 | 018 | DONE | `ShopPriceUI.cs`, FinalPresentation assertion | 동일 카메라 Before/After + FinalPresentation/FinalRoute/DayNight/PanelLayout PASS | 다중 슬롯 합계가 아닌 현재 슬롯 수량 표시 | NO |
-| 019 | TODO | `ShopSlot.IsEmpty` 존재 | 품절 UI 증거 없음 | 재고 0 상태 표시 | NO |
+| 019 | DONE | `ShopSlot.cs` 품절 라벨/프롬프트, `PA_ShopSoldOutValidator.cs` | 전용 검증기 + FinalRoute/DayNight/CoreSlice PASS (`f6cbbe1`) | 없음 (품절은 런타임 전용이 의도) | NO |
 | 020 | DONE | `DayNightShopLoopController` 한국어 페이즈/HUD | DayNight PASS | 없음 | NO |
 | 021 | DONE | Day 요약: 매출·판매 수·피드백·다음 목표 | FinalPresentation 410/418 PASS | `Village direction` 한국어화 후보 | NO |
 | 022 | PARTIAL | ShopSlot→Economy Deposit 사유 로그 | FinalRoute 30G PASS | 단가×수량 계산 로그 명료화 미완 | NO |
@@ -71,7 +73,7 @@
 | 054 | TODO | v8 마이그레이션 패턴 존재 | 설계 문서 없음 | v9 판매 통계 설계 | NO |
 | 055 | DECISION_REQUIRED | SalesLog는 런타임 전용 | 저장 왕복 없음 | v9 추가 스키마 승인 필요 | YES |
 | 056 | DONE | v5 ShopSlot 저장 + `PA_SaveRoundTripValidator` | Task 011에서 item/count/quality/currentPrice/displayPrice 실제 왕복 PASS | 신규 스키마 불필요 | NO |
-| 057 | DECISION_REQUIRED | 마을 변화는 저장하지 않음 | 없음 | v9 변화 상태 저장 승인 필요 | YES |
+| 057 | DONE | Save v9: VillageCulture 대기/활성 6필드 + 마이그레이션 (`71fa710`) | SaveRoundTrip v9 왕복 PASS(대기→다음날 활성→활성) | 트렌드 점수(048)/SalesLog(055)는 별도 승인 | YES→세션 지시로 승인 |
 | 058 | PARTIAL | hired NPC/FSM 캡처·복원 코드 | 실제 저장소 왕복 없음 | NPC 상태 왕복 검증 | NO |
 | 059 | TODO | Save 규칙 일부 존재 | 체크리스트 없음 | `SAVE_REGRESSION.md` 작성 | NO |
 | 060 | PARTIAL | Coding Rules에 추가 확장/마이그레이션 규칙 | 코드 v0→v8 대조 | 전용 정책 문서 미작성 | NO |

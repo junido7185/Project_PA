@@ -29,16 +29,16 @@
 
 **목표는 프로토타입이 아니라 완성 게임이다.** 졸업 시연(Stage 2)은 완성 게임의 부분집합. 일회용 코드·하드코딩·저장 미지원으로 때우지 않는다.
 
-## 3. 현재 작업 우선순위 (2026-07-13 기준)
+## 3. 현재 작업 우선순위 (2026-07-13 저녁 기준)
 
-Task 001~085 동기화 후 Task 007, 011, 018을 완료했고, Task 011 증거로 기존 Task 056도 DONE 동기화했다. 현재 집계는 DONE 25 / PARTIAL 23 / TODO 11 / BLOCKED 6 / DECISION_REQUIRED 20.
+Persistence 스프린트(007/011/018/056) 이후 Fable 5가 **Task 057**(마을 변화 저장 v9, `71fa710` — 사용자 세션 지시로 스키마 승인)과 **Task 019**(품절 표시, `f6cbbe1`)를 완료했다. 현재 집계는 DONE 27 / PARTIAL 23 / TODO 10 / BLOCKED 6 / DECISION_REQUIRED 19. 저장 스키마는 v9 (`SAVE_SCHEMA.md`).
 
-주의: `SubmissionPackages/*.zip` 삭제 2건은 사용자 소유 변경이므로 복구/stage 금지. Visual v3 의도 변경만 체크포인트 커밋 대상이다.
+주의: `SubmissionPackages/*.zip` 삭제 2건은 사용자 소유 변경이므로 복구/stage 금지.
 
-1. **Task 019** — 품절 상태 표시(승인 불필요, ShopSlot 수학 무변경).
-2. **Task 034** — 구매/거절 일일 통계의 실제 누락 범위 재확인.
-3. **Task 059** — v8 저장 회귀 체크리스트를 Task 011 자동 검증과 연결.
-4. 사람 승인 대기: Task 055/057 저장 스키마 확장, Task 068 통합 판정.
+1. **Task 034** — 구매/거절 일일 통계(거절 수 집계 누락 보완, 승인 불필요).
+2. **Task 059** — 저장 회귀 체크리스트를 SaveRoundTrip 자동 검증과 연결.
+3. **[승인 필요] Task 055** — SalesLog 저장(v10 후보). 057과 같은 패턴으로 진행 가능.
+4. 사람 승인 대기: Task 068 통합 판정, Task 064 새 빌드.
 5. 발표 전 사람 확인은 `09_FINAL_FABLE_SPRINT/FINAL_HUMAN_CHECKLIST.md` 유지.
 
 미확정(사용자 결정 대기, `DECISION_REQUIRED_FOR_USER.md`): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간 / 하루 작업 수.
