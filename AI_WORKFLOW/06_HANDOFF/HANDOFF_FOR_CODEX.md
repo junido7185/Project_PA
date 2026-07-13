@@ -39,7 +39,9 @@ Persistence 스프린트(007/011/018/056) 이후 Fable 5가 **Task 057**(마을 
 
 완료(2026-07-13 오후, Fable 5): **S2+S3 — 실내 잡화점에 손님이 온다.** `PA_ShopLocator` 앵커 안전화 + `InteriorCustomerController` 초대/복귀 + `PA_InteriorCustomerValidator` PASS(입장→구매 500→515G→퇴장). 캡처 `Logs/DemoViewShots/inside_shop_20260713_163425.png`.
 
-1. **상점 진화 S5** — 실내 진열 폴백 큐브를 아이콘/실모델로, 벽/진열대 실모델화.
+추가(2026-07-13 저녁, Fable 5, **검증 생략 — 컴파일만**): S5 구현 — 진열 아이콘 빌보드(전 슬롯), 실내 인테리어(러그/선반/계산대/화분/의자), 동시 손님 2명.
+
+1. **[최우선] 미검증 S5 확인** — InteriorCustomer/FinalRoute/DayNight 회귀 + `PA_SHOT_INSIDE=1` 캡처로 실내 인테리어/아이콘 시각 확인.
 2. **상점 진화 S4** — Tier 1 해금 ↔ 실내 상점 전환 연출.
 3. **Task 034** — 구매/거절 일일 통계(거절 수 집계 누락 보완, 승인 불필요).
 4. **[승인 필요] Task 055** — SalesLog 저장(v10 후보). 057과 같은 패턴으로 진행 가능.

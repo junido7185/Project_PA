@@ -20,7 +20,7 @@ public class InteriorCustomerController : MonoBehaviour
     [Header("Interior Visit")]
     public float inviteInterval = 14f;      // 초대 최소 간격
     public float visitTimeout = 45f;        // 이 시간 넘으면 강제 복귀
-    public int maxConcurrentVisitors = 1;
+    public int maxConcurrentVisitors = 2; // S5 — 실내 동시 손님 2명 (붐비는 가게 인상)
 
     Transform _interiorShop;                // Shop 컴포넌트 홀더 (PA_StoreInterior)
     Shop _interiorShopComponent;

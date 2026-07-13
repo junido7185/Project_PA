@@ -311,13 +311,27 @@ public class ShopSlot : MonoBehaviour, IInteractable
         }
         else
         {
+            // S5 — 모델 없는 아이템: 원색 큐브 대신 낮은 받침 + 실제 아이템 아이콘 빌보드.
             visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
             visual.name = "ItemCube";
             visual.transform.SetParent(root.transform, false);
-            visual.transform.localScale = Vector3.one * fallbackDisplayScale;
+            visual.transform.localScale = new Vector3(fallbackDisplayScale, fallbackDisplayScale * 0.45f, fallbackDisplayScale);
             var renderer = visual.GetComponent<Renderer>();
             if (renderer != null)
                 renderer.sharedMaterial = CreateDisplayMaterial(currentItem.data);
+
+            if (currentItem.data.icon != null)
+            {
+                var iconGo = new GameObject("ItemIcon", typeof(SpriteRenderer));
+                iconGo.transform.SetParent(root.transform, false);
+                iconGo.transform.localPosition = new Vector3(0f, 0.33f, 0f);
+                var sprite = iconGo.GetComponent<SpriteRenderer>();
+                sprite.sprite = currentItem.data.icon;
+                float worldSize = Mathf.Max(sprite.sprite.bounds.size.x, sprite.sprite.bounds.size.y);
+                if (worldSize > 0.01f)
+                    iconGo.transform.localScale = Vector3.one * (0.32f / worldSize);
+                iconGo.AddComponent<DisplayIconBillboard>();
+            }
         }
 
         foreach (var col in visual.GetComponentsInChildren<Collider>(true))
@@ -371,5 +385,18 @@ public class ShopSlot : MonoBehaviour, IInteractable
         if (obj == null) return;
         if (Application.isPlaying) Destroy(obj);
         else DestroyImmediate(obj);
+    }
+
+    // S5 — 진열 아이콘이 항상 카메라를 보게 하는 표시 전용 빌보드.
+    class DisplayIconBillboard : MonoBehaviour
+    {
+        void LateUpdate()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            Vector3 toCamera = transform.position - cam.transform.position;
+            if (toCamera.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.LookRotation(toCamera.normalized, Vector3.up);
+        }
     }
 }

@@ -141,3 +141,10 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 시행착오: 에이전트가 pathPending 영구 대기 — 원인은 Day1 온보딩 모달의 Time.timeScale=0. Play Mode 검증기는 `RestoreSavedSession` 으로 온보딩을 먼저 해제할 것 (공통 규칙).
 - 캡처: `Logs/DemoViewShots/inside_shop_20260713_163425.png` — 실내 그리드 진열 4종 + 손님 쇼핑 장면 (`PA_SHOT_INSIDE=1` 분기 추가).
 - 잔여: 실내 진열이 녹색 폴백 큐브(모델 없는 아이템) — S5에서 아이콘/실모델화. 동시 손님 1명 제한.
+
+## 2026-07-13 (저녁) — Claude (Fable 5) — S5 시각 완성 3종 (검증 생략, 컴파일만)
+
+- ① `ShopSlot` 진열 폴백 개선: 모델 없는 아이템이 원색 큐브 대신 **낮은 받침 + 실제 아이템 아이콘 빌보드**로 표시 (광장/실내 전 슬롯 공통, 표시 전용, 신규 nested `DisplayIconBillboard`).
+- ② 실내 인테리어 드레싱 (`DemoVisualDressingController.DressStoreInterior`): 러그, 북벽 선반 2단+잡화, 계산대(카운터+금전함), 구석 화분 2(실모델 Prop_Flowers/BushBerries), 개구리의자, 벽 트림. 렌더러 전용.
+- ③ `InteriorCustomerController.maxConcurrentVisitors` 1→2 (실내 동시 손님 2명).
+- 검증: 사용자 지시로 생략. dotnet build 0 오류만 확인. **다음 세션 필수**: InteriorCustomer/FinalRoute/DayNight 회귀 + 실내 캡처(PA_SHOT_INSIDE=1)로 시각 확인.

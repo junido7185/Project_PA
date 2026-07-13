@@ -113,8 +113,69 @@ public class DemoVisualDressingController : MonoBehaviour
         DressShopSlots(shop);
         DressGroundZones(shop);
         DressPlaza(shop);
+        DressStoreInterior();
         TidySignage();
         StageShoppers(shop);
+    }
+
+    bool _interiorDressed;
+
+    // ── S5: 실내 잡화점 인테리어 — 러그/벽 선반/계산대/화분/개구리의자 (렌더러 전용) ──
+    void DressStoreInterior()
+    {
+        if (_interiorDressed) return;
+
+        var interior = GameObject.Find("PA_StoreInterior");
+        if (interior == null) return;
+
+        const string dressName = "PA_DemoDressing_Interior";
+        if (interior.transform.Find(dressName) != null) { _interiorDressed = true; return; }
+
+        var dress = new GameObject(dressName);
+        dress.transform.SetParent(interior.transform, false);
+
+        // 중앙 러그 — 판매 그리드 사이 동선을 따뜻하게 구획.
+        CreatePart(dress.transform, PrimitiveType.Cube, "Rug",
+            new Vector3(0f, 0.045f, 0.2f), new Vector3(5.2f, 0.03f, 2.2f), RugWarm);
+
+        // 북쪽 벽 선반 2단 + 잡화 소품 (상품이 더 있는 가게 인상).
+        for (int tier = 0; tier < 2; tier++)
+        {
+            float y = 1.35f + tier * 0.65f;
+            CreatePart(dress.transform, PrimitiveType.Cube, $"WallShelf_{tier}",
+                new Vector3(0f, y, 4.15f), new Vector3(7.5f, 0.08f, 0.4f), WoodLight);
+            for (int i = 0; i < 5; i++)
+            {
+                float x = -3.0f + i * 1.5f + tier * 0.4f;
+                Color goods = FlowerColors[(i + tier) % FlowerColors.Length];
+                CreatePart(dress.transform, PrimitiveType.Sphere, $"ShelfGoods_{tier}_{i}",
+                    new Vector3(x, y + 0.18f, 4.15f), Vector3.one * 0.26f,
+                    (i % 2 == 0) ? CrateWood : goods);
+            }
+        }
+
+        // 계산대 — 출입문 옆 (주인의 자리).
+        CreatePart(dress.transform, PrimitiveType.Cube, "CounterBody",
+            new Vector3(3.6f, 0.45f, -3.1f), new Vector3(1.9f, 0.9f, 0.7f), WoodDark);
+        CreatePart(dress.transform, PrimitiveType.Cube, "CounterTop",
+            new Vector3(3.6f, 0.93f, -3.1f), new Vector3(2.05f, 0.07f, 0.85f), Cream);
+        CreatePart(dress.transform, PrimitiveType.Cube, "CounterRegister",
+            new Vector3(3.2f, 1.12f, -3.1f), new Vector3(0.4f, 0.3f, 0.35f), IronDark);
+
+        // 구석 화분/의자 — 실모델 재사용 (없으면 무시).
+        var flowersA = PlaceProp(dress.transform, "Prop_Flowers", Vector3.zero, 30f, 0.9f);
+        if (flowersA != null) flowersA.transform.localPosition = new Vector3(-5.1f, 0.05f, 3.6f);
+        var flowersB = PlaceProp(dress.transform, "Prop_BushBerries", Vector3.zero, 140f, 0.7f);
+        if (flowersB != null) flowersB.transform.localPosition = new Vector3(5.1f, 0.05f, 3.6f);
+        var chair = PlaceProp(dress.transform, "Prop_FroggyChair", Vector3.zero, 205f, 1.0f);
+        if (chair != null) chair.transform.localPosition = new Vector3(-4.6f, 0.05f, -3.1f);
+
+        // 벽 장식 트림 — 크림 벽 위 따뜻한 포인트 라인.
+        CreatePart(dress.transform, PrimitiveType.Cube, "WallTrim_N",
+            new Vector3(0f, 2.75f, 4.28f), new Vector3(12f, 0.12f, 0.06f), new Color(0.83f, 0.42f, 0.34f));
+
+        _interiorDressed = true;
+        Debug.Log("🏠 [DemoDressing] 실내 인테리어 드레싱 완료: 러그/선반 2단/계산대/화분/의자");
     }
 
     // ── v3: NPC 쇼핑 연출 — Day 1 낮에 손님 2명이 판매대 앞으로 오게 한다.
