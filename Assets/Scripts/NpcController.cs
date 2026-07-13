@@ -524,6 +524,29 @@ public class NpcController : MonoBehaviour
         BeginShoppingVisit();
     }
 
+    // S3 — 실내 상점 방문: 외부 사이드카(InteriorCustomerController)가 대상 상점을
+    // 지정해 쇼핑을 시작시킨다. 기존 BeginShoppingVisit/FSM 을 그대로 재사용한다.
+    public bool TryBeginShoppingVisitAt(Transform newShopLocation)
+    {
+        if (_schedulePaused || currentState != State.Idle) return false;
+        if (newShopLocation == null) return false;
+
+        RetargetShop(newShopLocation);
+        if (_activeShop == null) return false;
+
+        BeginShoppingVisit();
+        return currentState == State.MovingToShop;
+    }
+
+    // S3 — 상점 참조 교체. _activeShop 은 한 번 캐시되면 shopLocation 변경을 따라가지
+    // 않으므로(실내→광장 복귀 시 스테일 위험) 반드시 이 경로로 함께 갱신한다.
+    public void RetargetShop(Transform newShopLocation)
+    {
+        shopLocation = newShopLocation;
+        _activeShop = null;
+        TryCacheShopReference();
+    }
+
     public string GetFsmState()
     {
         return currentState.ToString();

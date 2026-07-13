@@ -261,7 +261,7 @@ public class VillageCultureVisualController : MonoBehaviour
         if (_visualRoot == null)
             return;
 
-        Shop shop = FindFirstObjectByType<Shop>();
+        Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         if (shop != null)
         {
             Vector3 right = shop.transform.right.sqrMagnitude > 0.001f ? shop.transform.right : Vector3.right;

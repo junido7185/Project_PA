@@ -192,7 +192,43 @@ public static class PA_DemoViewCapture
 
         // 주의: 카메라를 마커로 옮기지 않는다 — 실제 플레이 카메라 프레이밍 그대로 캡처한다.
 
+        // S3 — PA_SHOT_INSIDE=1 이면 실내 잡화점 샷: Day 2 밤 영업 + 진열 + 손님 초대 + 플레이어 입장.
+        if (Environment.GetEnvironmentVariable("PA_SHOT_INSIDE") == "1")
+            PrepareInsideShot();
+
         LogLightingDiagnostics();
+    }
+
+    static void PrepareInsideShot()
+    {
+        var loop = DayNightShopLoopController.Instance;
+        if (loop != null)
+        {
+            loop.SimulatePhaseForValidation(19.5f, 2);
+            loop.SetShopOpenedForValidation(true);
+        }
+
+        var interior = GameObject.Find("PA_StoreInterior");
+        if (interior == null) { Debug.LogWarning("[DemoViewCapture] PA_StoreInterior missing"); return; }
+
+        string[] items = { "Items/Item_BreadLoaf", "Items/Item_Carrot", "Items/Item_Ore", "Items/Item_Wheat" };
+        var slots = interior.GetComponentsInChildren<ShopSlot>(true);
+        for (int i = 0; i < slots.Length && i < items.Length; i++)
+        {
+            var item = Resources.Load<Item>(items[i]);
+            if (item == null) continue;
+            slots[i].currentItem = new ItemInstance(item, 1) { quality = 1f, currentPrice = item.basePrice };
+            slots[i].displayPrice = item.basePrice;
+            slots[i].RefreshDisplay();
+        }
+
+        InteriorCustomerController.Instance?.TryInviteOne();
+
+        var player = GameObject.FindGameObjectWithTag("Player") ?? GameObject.Find("Player");
+        var door = GameObject.Find("PA_StoreDoor_Out");
+        var entrance = door != null ? door.GetComponent<BuildingEntrance>() : null;
+        if (player != null && entrance != null)
+            entrance.Interact(player);
     }
 
     // v3 — 조명/포그/앰비언트 실측 + 하단 갈색 플랫폼 정체 확인용 진단.

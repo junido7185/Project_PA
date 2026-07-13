@@ -175,6 +175,60 @@ public static class PA_VerticalSliceFixer
         return changed;
     }
 
+    // ── 1-b) S2/S3: 실내 상점 Shop 등록 + NavMesh 리베이크(실내 아일랜드 포함) ──
+    // 실내 슬롯 6개가 Shop.Slots 로 등록되어 NPC 가 기존 FSM 으로 실내를 둘러볼 수 있게 된다.
+    // 앵커 오염은 PA_ShopLocator(FindPlazaShop, y<50)로 이미 차단됨.
+    [MenuItem("Project PA/Fix/Register Interior Shop And Rebake")]
+    public static void RunRegisterInteriorShop()
+    {
+        try
+        {
+            BackupScene();
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+
+            var interior = GameObject.Find("PA_StoreInterior");
+            if (interior == null) throw new InvalidOperationException("PA_StoreInterior not found — run Build Enterable Shop first");
+
+            if (interior.GetComponent<Shop>() == null)
+            {
+                interior.AddComponent<Shop>();
+                Debug.Log("PA VSliceFix: Shop component registered on PA_StoreInterior");
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+
+            RebakeAllSurfaces(scene);
+
+            Debug.Log("PA VSliceFix: interior shop registered + NavMesh rebaked (interior island).");
+            if (Application.isBatchMode) EditorApplication.Exit(0);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"PA VSliceFix interior-shop failed: {ex.Message}\n{ex}");
+            if (Application.isBatchMode) EditorApplication.Exit(1);
+        }
+    }
+
+    static void RebakeAllSurfaces(UnityEngine.SceneManagement.Scene scene)
+    {
+        Type surfaceType = Type.GetType("Unity.AI.Navigation.NavMeshSurface, Unity.AI.Navigation");
+        if (surfaceType == null) throw new InvalidOperationException("NavMeshSurface type not found");
+
+        var surfaces = Object.FindObjectsByType(surfaceType, FindObjectsSortMode.None);
+        MethodInfo build = surfaceType.GetMethod("BuildNavMesh", BindingFlags.Public | BindingFlags.Instance);
+        foreach (var surface in surfaces)
+        {
+            build.Invoke(surface, null);
+            Debug.Log($"PA VSliceFix: NavMesh rebaked on '{((Component)surface).gameObject.name}'");
+        }
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        AssetDatabase.SaveAssets();
+    }
+
     // ── 2) NavMesh 리베이크 (콜라이더 축소로 걷기 가능 영역이 넓어짐) ─────────
     [MenuItem("Project PA/Fix/Rebake NavMesh")]
     public static void RunNavMeshRebake()

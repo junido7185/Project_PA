@@ -104,7 +104,7 @@ public class DemoVisualDressingController : MonoBehaviour
     {
         if (!autoDress) return;
 
-        Shop shop = FindFirstObjectByType<Shop>();
+        Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         if (shop == null) return; // 상점 없는 씬에서는 아무것도 하지 않는다.
 
         EnsureRoot();

@@ -50,6 +50,7 @@ public static class PA_RuntimeSceneBinder
         EnsureComponent<CustomerPreferencePresentationController>(services);
         EnsureComponent<PurchaseFeedbackPresentationController>(services);
         EnsureComponent<CustomerArrivalController>(services);
+        EnsureComponent<InteriorCustomerController>(services);
         EnsureComponent<CoreSlicePresentationMode>(services);
         EnsureComponent<DemoVisualDressingController>(services);
         var save = EnsureComponent<SaveManager>(services);

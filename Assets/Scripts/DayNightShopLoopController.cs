@@ -377,7 +377,7 @@ public class DayNightShopLoopController : MonoBehaviour
     Vector3 ResolveForagePosition(float angleDeg, float distance)
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player") ?? GameObject.Find("Player");
-        Shop shop = FindFirstObjectByType<Shop>();
+        Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         Vector3 anchor = player != null ? player.transform.position
             : (shop != null ? shop.transform.position : Vector3.zero);
 
@@ -426,7 +426,7 @@ public class DayNightShopLoopController : MonoBehaviour
 
     Vector3 ResolveSignPosition()
     {
-        Shop shop = FindFirstObjectByType<Shop>();
+        Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         if (shop != null)
             return shop.transform.position + shop.transform.forward * 1.6f + shop.transform.right * 1.2f + Vector3.up * 0.45f;
 
@@ -467,7 +467,7 @@ public class DayNightShopLoopController : MonoBehaviour
             return player.transform.position + player.transform.right * side + player.transform.forward * forward + Vector3.up * 0.28f;
         }
 
-        Shop shop = FindFirstObjectByType<Shop>();
+        Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         if (shop != null)
         {
             Vector3 offset = index == 0
