@@ -35,11 +35,13 @@ Persistence 스프린트(007/011/018/056) 이후 Fable 5가 **Task 057**(마을 
 
 주의: `SubmissionPackages/*.zip` 삭제 2건은 사용자 소유 변경이므로 복구/stage 금지.
 
-1. **Task 034** — 구매/거절 일일 통계(거절 수 집계 누락 보완, 승인 불필요).
-2. **Task 059** — 저장 회귀 체크리스트를 SaveRoundTrip 자동 검증과 연결.
-3. **[승인 필요] Task 055** — SalesLog 저장(v10 후보). 057과 같은 패턴으로 진행 가능.
-4. 사람 승인 대기: Task 068 통합 판정, Task 064 새 빌드.
-5. 발표 전 사람 확인은 `09_FINAL_FABLE_SPRINT/FINAL_HUMAN_CHECKLIST.md` 유지.
+추가 (2026-07-13 오후, Fable 5): 접지/충돌/NPC 정비(`f3ef51a`) + 들어갈 수 있는 상점 기초(`3bf30c9`). 파묻힘·투명 벽 해소, 실내 상점(2x3 슬롯 그리드) 검증 통과. 상세: `09_FINAL_FABLE_SPRINT/COLLISION_AND_RIG_FIX_REPORT.md`, `SHOP_EVOLUTION_PLAN_AND_IMPLEMENTATION.md`.
+
+1. **상점 진화 S2** — 실내 Shop 등록 + Shop 앵커 탐색을 플레이어 최근접 기준으로 교체 (`SHOP_EVOLUTION_...md` §4).
+2. **상점 진화 S3** — 실내 NavMeshSurface + 손님 실내 방문.
+3. **Task 034** — 구매/거절 일일 통계(거절 수 집계 누락 보완, 승인 불필요).
+4. **[승인 필요] Task 055** — SalesLog 저장(v10 후보). 057과 같은 패턴으로 진행 가능.
+5. **[사람]** 보행 애니메이션 질감 판정(에디터 실플레이), Task 068 통합 판정, Task 064 새 빌드.
 
 미확정(사용자 결정 대기, `DECISION_REQUIRED_FOR_USER.md`): Demo Lock 날짜 / 두 번째 낮 활동(임시 낚시) / 검증기 실행 방식 / 주간 작업 시간 / 하루 작업 수.
 

@@ -125,3 +125,10 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 작업 2 (Task 019, `f6cbbe1`): `ShopSlot` 표시 전용 품절 상태 — NPC 구매로 소진된 슬롯에 "품절 · 보충하세요" 월드 라벨과 "(오늘 품절)" 프롬프트, 재진열·다음날(OnNewDay) 자동 해제. 검증 중 발견한 실제 버그 수복: `ClearDisplay`가 같은 프레임 이중 갱신 시 지연 파괴 대기 루트에 걸려 새 루트를 못 지우던 문제 → 전체 순회 제거로 교정. 신규 `PA_ShopSoldOutValidator`(프레임 분리 4스텝).
 - 검증: dotnet build 런타임/에디터 0 오류. SaveRoundTrip(v9)/VillageCulture/ShopSoldOut/FinalRoute(`paid=30G`)/DayNight(`sellableInventory=10`)/CoreSlice 전부 PASS — `Logs/Fable_T057_*.log`, `Logs/Fable_T019_*.log`.
 - 비고: 품절 상태는 런타임 전용(저장 안 함, 의도). 트렌드 점수(Task 048)·SalesLog(Task 055) 저장은 별도 승인 대기. `SubmissionPackages/*.zip` 삭제 2건은 커밋 제외 유지.
+
+## 2026-07-13 — Claude (Fable 5) — 접지/충돌/NPC 정비 + 들어갈 수 있는 상점 기초
+
+- 작업 1 (`f3ef51a`): `PA_PhysicsAudit` 실측 기반 씬 수정 — ① 길 비주얼(Road_NS/EW/Pavement) y=-0.47/-0.46로 정렬해 0.48m 파묻힘 해소 ② PlayerModel_C01 localY +0.17로 발=캡슐 바닥 정렬 ③ 건물 BoxCollider 8개를 메시 로컬 bounds 기반으로 축소(최악 TradePort 10m→3.6m, "절대 키우지 않음" 가드) ④ NPC stoppingDistance 0.2→0.75 ⑤ NavMesh 리베이크. 씬 백업: `_Backups/Prototype_FirstDay_before_vslice_fix_20260713.unity`. 교훈: 회전 오브젝트는 월드 AABB→로컬 재변환이 이중 팽창함 / 상대 델타 이동은 재실행에 비멱등 — 절대 좌표로.
+- 작업 2 (`f3ef51a`+`3bf30c9`): 들어갈 수 있는 잡화점 기초 — `BuildingEntrance` Y+100 관례 재사용. B10_Cottage_01 앞 "잡화점" 문 → PA_StoreInterior(12x9 방, 웜 라이트 2, 문라이터식 2x3 ShopSlot 그리드, 출구 문). 실내 슬롯은 SaveManager 계층 키로 자동 저장 호환, Shop 미등록으로 기존 앵커/NPC 로직 무영향. `PA_EnterableShopValidator` PASS: 진입(y100)→진열→가격UI→퇴장.
+- 검증: dotnet build 0 오류. 수정 후 재감사 flagged=0. FinalRoute/DayNight/CoreSlice/SaveRoundTrip PASS, NavMesh agents 8/8 실패 0. Before/After: `Logs/DemoViewShots/before_vslice_20260713_111149.png` → `after_vslice_20260713_112849.png`.
+- 잔여: 보행 애니메이션 질감(사람 에디터 판정), NPC look-at, 실내 실모델화, NPC 실내 진입(S3).
