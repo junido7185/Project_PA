@@ -25,6 +25,7 @@ public static class PA_EnterableShopValidator
     static BuildingEntrance _doorOut;
     static BuildingEntrance _doorIn;
     static ShopSlot _interiorSlot;
+    static PrototypeWorldLabel _storeSign;
 
     static PA_EnterableShopValidator()
     {
@@ -143,11 +144,20 @@ public static class PA_EnterableShopValidator
                 _player = GameObject.FindGameObjectWithTag("Player") ?? GameObject.Find("Player");
                 Require(_player != null, "player exists");
 
+                Require(TierService.Instance != null, "TierService exists");
+                TierService.Instance.ForceSetTier(0, 0, "PA_EnterableShopValidator tier-0 gate");
+
                 var doorOutGo = GameObject.Find("PA_StoreDoor_Out");
                 Require(doorOutGo != null, "exterior store door exists");
                 _doorOut = doorOutGo.GetComponent<BuildingEntrance>();
                 Require(_doorOut != null, "exterior door has BuildingEntrance");
-                Require(_doorOut.GetInteractPrompt().Contains("잡화점"), "exterior door prompt mentions the store");
+                Require(ShopEvolutionController.Instance != null, "shop evolution controller exists");
+                Require(!_doorOut.IsUnlocked, "Tier 0 exterior store door is locked");
+                Require(_doorOut.GetInteractPrompt().Contains("Tier 1"), "locked prompt explains Tier 1 requirement");
+
+                _storeSign = doorOutGo.GetComponentInChildren<PrototypeWorldLabel>(true);
+                Require(_storeSign != null, "exterior store sign exists");
+                Require(_storeSign.label.Contains("Tier 1"), "Tier 0 sign explains the next store stage");
 
                 var interior = GameObject.Find("PA_StoreInterior");
                 Require(interior != null, "store interior root exists");
@@ -160,6 +170,16 @@ public static class PA_EnterableShopValidator
                 Require(slots.Length == 6, $"interior sales grid has 6 slots (found {slots.Length})");
                 _interiorSlot = slots[0];
 
+                // 실제 저장 복원 경로와 같은 ForceSetTier를 사용한다. 다음 프레임에 S4가
+                // 파생 상태(문/간판)를 재구성하는지 확인한 뒤 입장한다.
+                TierService.Instance.ForceSetTier(1, 0, "PA_EnterableShopValidator tier-1 unlock");
+                return false;
+
+            case 1:
+                Require(_doorOut.IsUnlocked, "Tier 1 exterior store door is unlocked");
+                Require(ShopEvolutionController.Instance.IsInteriorUnlocked, "S4 reports interior store unlocked");
+                Require(_storeSign.label.Contains("OPEN"), "Tier 1 sign visibly reports the open interior store");
+
                 // 핫바에 판매 아이템 준비 후 진입
                 var bread = Resources.Load<Item>("Items/Item_BreadLoaf");
                 Require(bread != null, "BreadLoaf asset exists");
@@ -168,7 +188,7 @@ public static class PA_EnterableShopValidator
                 _doorOut.Interact(_player);
                 return false;
 
-            case 1:
+            case 2:
                 Require(_player.transform.position.y > 50f, $"player warped inside (y={_player.transform.position.y:0.#})");
 
                 _interiorSlot.Interact(_player); // 빈 슬롯 → 진열
@@ -178,13 +198,13 @@ public static class PA_EnterableShopValidator
                 Require(ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen, "interior slot opens ShopPriceUI");
                 return false;
 
-            case 2:
+            case 3:
                 _doorIn.Interact(_player);
                 return false;
 
             default:
                 Require(_player.transform.position.y < 50f, $"player warped back outside (y={_player.transform.position.y:0.#})");
-                Debug.Log("PA Enterable Shop Validation passed. enter→stock→price UI→exit");
+                Debug.Log("PA Enterable Shop Validation passed. Tier0 locked→Tier1 unlock→enter→stock→price UI→exit");
                 return true;
         }
     }

@@ -1331,3 +1331,31 @@ Next actions:
 - Before/After 동일 카메라 캡처에서 `BreadLoaf` → `BreadLoaf · 재고 1개` 변화를 확인했다.
 - 첫 캡처는 재컴파일 직후 검은 런타임 머티리얼 아티팩트가 있었고, 코드 수정 없는 1회 재실행에서 해소됐다.
 - Presentation/FinalRoute/DayNight/PanelLayout 전부 PASS.
+
+---
+
+# Session 2026-07-15 — Castle Build S4 Shop Evolution
+
+## 플레이어 경험 변화
+
+- 이전에는 실내 잡화점이 처음부터 출입 가능해 Tier 진행과 공간 성장이 분리되어 있었다.
+- 이제 Tier 0에서는 외부 문이 잠기고 다음 조건을 안내한다.
+- Tier 1 도달 시 간판·문 조명·해금 안내가 바뀌며, 같은 문으로 실내에 들어가 6슬롯 진열과 기존 손님 영업을 사용할 수 있다.
+- 상태는 저장된 Tier에서 파생되어 별도 해금 플래그나 저장 마이그레이션이 필요 없다.
+
+## 최소 안전 확인
+
+- `dotnet build Assembly-CSharp.csproj`: 오류 0, 기존 CS8785 경고 1.
+- `dotnet build Assembly-CSharp-Editor.csproj`: 오류 0, 기존 CS8785/CS0414 경고 2.
+- D3D11 `PA_EnterableShopValidator`: Tier 0 잠금→Tier 1 해금→입장→진열→가격 UI→퇴장 PASS.
+- 증거: `Logs/Codex_S4_EnterableShop.log`.
+
+## 확인하지 않은 것
+
+- 전체 회귀 검증기, 3일 연속 사람 플레이, Windows 빌드, 1920x1080 주관적 UI 가독성은 확인하지 않았다.
+- 사람 확인 방법: Tier 0 새 게임에서 잡화점 문 프롬프트를 확인하고, Tier 1 세이브/검증 상태에서 OPEN 간판과 해금 패널이 기존 HUD를 가리지 않는지 본다.
+
+## 다음 체크포인트
+
+- 승인 없이 가능한 Task 034 구매/거절 일일 통계 연결을 우선한다.
+- 밤 손님 시간 창은 NPC 스케줄 밸런스 결정이 필요한 별도 작업으로 유지한다.

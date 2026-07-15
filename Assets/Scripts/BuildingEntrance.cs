@@ -19,10 +19,32 @@ public class BuildingEntrance : MonoBehaviour, IInteractable
     [Header("UI")]
     [SerializeField] string promptLabel = "문 열기"; // "상점 입장", "상점 나가기" 등으로 Inspector에서 개별 설정
 
-    public string GetInteractPrompt() => promptLabel;
+    [Header("진행 잠금 (선택)")]
+    [SerializeField, Min(0)] int requiredTier = 0;
+    [SerializeField] string lockedPromptLabel = "아직 열리지 않았습니다";
+
+    public int RequiredTier => requiredTier;
+    public bool IsUnlocked => requiredTier <= 0
+        || (TierService.Instance != null && TierService.Instance.IsUnlocked(requiredTier));
+
+    public string GetInteractPrompt() => IsUnlocked ? promptLabel : lockedPromptLabel;
+
+    // 씬 직렬화를 바꾸지 않고 런타임 진행 시스템이 기존 문에 잠금을 연결한다.
+    public void ConfigureTierRequirement(int tier, string lockedPrompt)
+    {
+        requiredTier = Mathf.Max(0, tier);
+        if (!string.IsNullOrWhiteSpace(lockedPrompt))
+            lockedPromptLabel = lockedPrompt;
+    }
 
     public void Interact(GameObject interactor)
     {
+        if (!IsUnlocked)
+        {
+            Debug.Log($"🔒 {name} — Tier {requiredTier}부터 이용할 수 있습니다.");
+            return;
+        }
+
         if (targetSpawn == null)
         {
             Debug.LogWarning($"🚪 {name} — targetSpawn 이 비어있어 워프 불가");

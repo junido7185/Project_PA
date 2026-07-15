@@ -1262,3 +1262,12 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 가격 설정 패널이 현재 ShopSlot의 실제 진열 수량을 `아이템 · 재고 N개`로 표시한다.
 - 동일 카메라 Before/After를 확보했고 FinalPresentation/FinalRoute/DayNight/PanelLayout이 모두 PASS했다.
 - 판매·구매·저장 로직 무변경.
+
+## 2026-07-15 Shop Evolution S4 — Tier 1 Interior Unlock
+
+- Tier 0에서는 외부 잡화점 문이 실제 워프를 차단하고 `Tier 1 지점장 필요`를 표시한다.
+- 누적 진행으로 Tier 1에 도달하면 문이 열리고 간판이 `잡화점 · OPEN`으로 바뀌며, 따뜻한 문 조명과 짧은 해금 안내가 표시된다.
+- 해금 상태는 별도 저장 필드가 아니라 이미 v9에 저장되는 `currentTier`에서 파생되므로 저장/로드 후에도 중복 상태 없이 복원된다.
+- D3D11 Play Mode 스모크 PASS: Tier 0 잠금 → Tier 1 해금 → 실내 입장(y=100.1) → BreadLoaf 진열 → 가격 UI → 외부 복귀(y=0.1).
+- 컴파일 오류 0. 씬/프리팹/저장 스키마/Shop·경제·구매·NPC FSM은 변경하지 않았다.
+- 완성 관점 현황과 다음 순서는 `Docs/Codex/` 4종에 정리했다.
