@@ -1474,3 +1474,22 @@ Next actions:
 ## 다음 체크포인트
 
 - Task 042에서 이 경로를 스모크 체크리스트에 고정한 뒤 낚시 슬라이스를 닫는다.
+
+---
+
+# Session 2026-07-15 — Task 042 Fishing Smoke Checklist
+
+## 산출물
+
+- 신규 `AI_WORKFLOW/04_VERIFICATION/SMOKE_CHECKLIST.md`에 자동 낚시→판매 스모크, Day 1 회귀, 사람 Play Mode 낚시 스모크를 분리했다.
+- 자동 체크는 `Codex_Task041_FishingSaleRoundTrip.log`와 `Codex_Task041_FinalRouteRegression.log`의 실제 PASS만 표시했다.
+- 기존 IslandLife 문서를 즉시 해변 채집 큐브 설명에서 `FishingSpot` 캐스팅·18G 판매 왕복으로 동기화했다.
+
+## 확인하지 않은 것
+
+- 사람 입력으로 해변까지 이동, 1.25초 대기 문구, 실제 NPC 접근·평가, 다음 날 재낚시는 확인하지 않았고 체크리스트에서 미체크다.
+- 이번 문서 작업에서는 Unity를 재실행하지 않았다. 사용한 자동 증거는 직전 Task 041에서 같은 현재 코드로 실행한 D3D11 PASS다.
+
+## 다음 체크포인트
+
+- Task 043에서 기존 Crop/Farmland와 아이템 데이터를 조사해 다음 낮 활동 구현 경계를 확정한다.

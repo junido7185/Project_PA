@@ -9,13 +9,15 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 30 | 22 | 9 | 6 | 18 | 85 |
+| 31 | 21 | 9 | 6 | 18 | 85 |
 
 갱신 2026-07-13 (Fable 5): Task 019 TODO→DONE(`f6cbbe1`), Task 057 DECISION_REQUIRED→DONE(`71fa710`, 사용자 세션 지시로 v9 승인).
 
 갱신 2026-07-15 (Codex): Task 039 PARTIAL→DONE(실제 `IInteractable` 낚시), Task 040 TODO→PARTIAL(대기/성공 프롬프트 구현·자동 확인, 실제 시간 경과 체감은 미확인).
 
 갱신 2026-07-15 (Codex): Task 041 PARTIAL→DONE(실제 어획 Fish 2개 중 1개를 진열·가격 확정→Fisher_01 구매→18G 입금·매출/통계 기록).
+
+갱신 2026-07-15 (Codex): Task 042 PARTIAL→DONE(`SMOKE_CHECKLIST.md` 신규, D3D11 자동 PASS와 미확인 사람 체감 절차 분리).
 
 ## Task별 판정
 
@@ -62,7 +64,7 @@
 | 039 | DONE | `FishingSpot.cs`, shore-forage 런타임 자식 상호작용·낚시 외형 | D3D11 GatheringShopGate: 캐스팅→Fish 2개→일일 제한/리셋 PASS, FinalRoute PASS | 없음 | NO |
 | 040 | PARTIAL | 캐스팅 대기·입질·성공 프롬프트/상태 | 검증기가 캐스팅 진입과 즉시/성공 피드백 확인 | 실제 1.25초 시간 경과와 코지 체감은 사람 확인 필요 | NO |
 | 041 | DONE | 실제 어획 Fish를 합성 주입 없이 `ShopSlot` 진열·가격·NPC 구매 경로에 사용 | D3D11 GatheringShopGate: Fish 2→1 진열, Fisher_01 구매 18G, 돈/누적매출/SalesLog/일일 통계 PASS | 없음 | NO |
-| 042 | PARTIAL | GatheringShopGate에 낚시→진열→NPC 구매·수익 전체 assertion 추가 | D3D11 전체 낚시 왕복 PASS | `SMOKE_CHECKLIST.md` 항목과 실제 시간 경과 확인 미완 | NO |
+| 042 | DONE | `SMOKE_CHECKLIST.md` + GatheringShopGate 전체 낚시 왕복 assertion | D3D11 FishSale 18G/FinalRoute 30G PASS, 사람 입력 항목은 별도 미체크 | 없음(사람 체감은 Task 040/최종 체크) | NO |
 | 043 | TODO | Crop/Farmland 기존 코드 | 설계 문서 없음 | 광질/농사 확장 설계 | NO |
 | 044 | TODO | Dialogue/Demand 데이터는 존재 | 설계 문서 없음 | 기존 데이터 기반 주민 의뢰 설계 | NO |
 | 045 | PARTIAL | GAME_LOOP 채집 4포인트 + 실제 낚시→밤 판매 경로 | Fish 획득→진열·가격→NPC 구매 18G PASS | `DAYTIME_ACTIVITIES.md` 미작성, 다른 낮 활동의 동일 왕복 증거 부족 | NO |

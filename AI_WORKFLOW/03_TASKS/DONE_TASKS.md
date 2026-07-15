@@ -4,6 +4,7 @@
 
 | Task ID | 완료 날짜 | 수정 파일 | 검증 결과 | 커밋 해시 | 남은 위험 | 다음 작업 |
 |---|---|---|---|---|---|---|
+| Task 042 | 2026-07-15 | `SMOKE_CHECKLIST.md`, `GATHERING_AND_SHOP_GATE.md`, 상태 문서 | D3D11 실제 Fish 2→1 진열→Fisher_01 구매 18G + FinalRoute 30G 기존 PASS 증거를 재실행 절차와 사람 체크로 고정 | 이번 작업 커밋 | 실제 이동·1.25초 대기·NPC 접근 체감은 사람 미확인 | Task 043 |
 | Task 041 | 2026-07-15 | `PA_GatheringShopGateValidator.cs`, 상태/루프 문서 | 실제 어획 Fish 2→1 진열·가격 확정→Fisher_01 구매 18G→잔액 500→518G·누적매출·Raw SalesLog·일일 구매 통계 PASS + FinalRoute 30G PASS | 이번 작업 커밋 | 실제 NPC 이동/평가 체감과 3일 사람 연속 플레이는 별도 확인 | Task 042 |
 | Task 039 | 2026-07-15 | `FishingSpot.cs`, `DayNightShopLoopController.cs`, `DemoVisualDressingController.cs`, `PA_GatheringShopGateValidator.cs` | dotnet 오류 0(기준 CS8785 경고 1) + D3D11 낚시/일일 리셋/진열·가격 PASS + FinalRoute 30G PASS | `4acd3c0` | 실제 1.25초 대기 체감은 Task 040 | Task 042 |
 | Task 034 | 2026-07-15 | `SalesLogManager.cs`, `CustomerDemandInsightController.cs`, `DayNightShopLoopController.cs`, `PlayableDayScenarioController.cs`, `PA_CustomerDemandInsightValidator.cs` | 런타임/에디터 컴파일 오류 0 + 전용 D3D11 검증 PASS(구매 1/거절 1/구매율 50%, 정산 표시, 다음날 가격 조언) | 이번 작업 커밋 | 통계는 런타임 전용이며 저장/로드 미지원(Task 055) | 3일 경로 단절 감사 |

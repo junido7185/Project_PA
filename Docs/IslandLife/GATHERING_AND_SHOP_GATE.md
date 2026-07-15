@@ -33,7 +33,7 @@ Milestone 1을 "표시용 낮 준비 바구니 + 항상 판매 가능한 상점"
 | `garden-basket` | Garden Prep Basket | Carrot | Raw / 12 | 근처(보조) | Box(기존) |
 | `producer-dropbox` | Producer Drop Box | Wheat | Raw / 10 | 근처(NPC 지원) | Box(기존) |
 | `forest-forage` | 숲길 채집 | Carrot | Raw / 12 | 각 40°, 9m | Trigger |
-| `shore-forage` | 해변 채집 | Fish | Raw / 18 | 각 130°, 12m | Trigger |
+| `shore-forage` | 해변 낚시터 | Fish | Raw / 18 | 각 130°, 12m | 자식 Fishing Trigger |
 | `meadow-forage` | 들판 채집 | Wheat | Raw / 10 | 각 225°, 10m | Trigger |
 
 - 새 야생 채집 3종은 서로 다른 방향·거리에 분산 배치되어 "걸어가 탐색"하는 느낌을 준다.
@@ -138,6 +138,14 @@ Milestone 1을 "표시용 낮 준비 바구니 + 항상 판매 가능한 상점"
 - 밤 영업 종료(Settlement)에서 영업 마감 상호작용 + 일일 매출 요약 강화.
 - 채집 카테고리 다양화(예: 광석/목재 채집 → 가공 체인 연결).
 - 손님 도착 페이싱: 영업 시작 후 NPC 가 자연스럽게 몰려오도록 스케줄 연동.
+
+## Follow-up — 실제 낚시와 밤 판매 왕복 (2026-07-15)
+
+- `shore-forage`는 더 이상 즉시 Fish를 줍는 큐브가 아니다. 자식 `FishingSpot`이 `IInteractable`을 담당해 캐스팅→약 1.25초 대기→Fish 2개 획득 흐름을 제공한다.
+- 일일 제한·다음 날 리셋·저장 상태는 기존 `DaytimeStockPrepPoint`를 단일 원본으로 계속 사용한다.
+- 해변 표식은 물빛 원형·낚싯대·줄·찌·어획 바구니 런타임 외형으로 일반 채집 지점과 구분된다.
+- `PA_GatheringShopGateValidator`는 합성 Fish 주입 없이 실제 어획물 2개 중 1개가 진열로 이동하고, 18G 가격 확정 후 Fisher_01 구매로 잔액 500→518G·누적매출·Raw 판매 기록·일일 구매 통계가 갱신되는 전체 왕복을 확인한다.
+- 자동 PASS: `Logs/Codex_Task041_FishingSaleRoundTrip.log`. 사람 입력 절차: `AI_WORKFLOW/04_VERIFICATION/SMOKE_CHECKLIST.md` §3.
 
 ## Follow-up — Customer Arrival Pacing (2026-06-24)
 
