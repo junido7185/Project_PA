@@ -389,6 +389,13 @@ public class DemoVisualDressingController : MonoBehaviour
                 continue;
             }
 
+            if (id == "quarry-mining")
+            {
+                DressMiningPoint(dress.transform, point);
+                _dressedPrepIds.Add(id);
+                continue;
+            }
+
             // 나무 궤짝 받침 (포인트 큐브를 감싸는 진열대 느낌)
             CreatePart(dress.transform, PrimitiveType.Cube, "Crate",
                 new Vector3(0f, -0.18f, 0f), new Vector3(0.95f, 0.34f, 0.95f), CrateWood);
@@ -431,6 +438,39 @@ public class DemoVisualDressingController : MonoBehaviour
             new Vector3(-0.62f, 0.02f, 0.25f), new Vector3(0.42f, 0.30f, 0.42f), CrateWood);
 
         CreateItemIconBillboard(parent, point.itemResourcePath, new Vector3(0f, 1.35f, 0f), 0.32f);
+    }
+
+    void DressMiningPoint(Transform parent, DaytimeStockPrepPoint point)
+    {
+        // 기존 끊긴 Gatherable 프리팹 대신 유효 Ore 데이터 위에 런타임 표현만 얹는다.
+        CreatePart(parent, PrimitiveType.Sphere, "Rock_Main",
+            new Vector3(0f, 0.02f, 0f), new Vector3(1.05f, 0.72f, 0.92f),
+            new Color(0.35f, 0.34f, 0.38f, 1f));
+        CreatePart(parent, PrimitiveType.Sphere, "Rock_Left",
+            new Vector3(-0.62f, -0.10f, 0.18f), new Vector3(0.62f, 0.46f, 0.58f),
+            new Color(0.42f, 0.40f, 0.44f, 1f));
+        CreatePart(parent, PrimitiveType.Sphere, "Rock_Right",
+            new Vector3(0.58f, -0.12f, -0.14f), new Vector3(0.58f, 0.42f, 0.52f),
+            new Color(0.30f, 0.30f, 0.34f, 1f));
+
+        Color oreGlow = new Color(0.48f, 0.68f, 0.82f, 1f);
+        var veinA = CreatePart(parent, PrimitiveType.Cube, "OreVein_A",
+            new Vector3(-0.18f, 0.26f, -0.40f), new Vector3(0.16f, 0.38f, 0.12f), oreGlow, emissive: true);
+        veinA.transform.localRotation = Quaternion.Euler(18f, 12f, -28f);
+        var veinB = CreatePart(parent, PrimitiveType.Cube, "OreVein_B",
+            new Vector3(0.24f, 0.18f, -0.42f), new Vector3(0.13f, 0.28f, 0.10f), oreGlow, emissive: true);
+        veinB.transform.localRotation = Quaternion.Euler(-12f, -8f, 22f);
+
+        var pickaxe = new GameObject("PA_Mining_Pickaxe");
+        pickaxe.transform.SetParent(parent, false);
+        pickaxe.transform.localPosition = new Vector3(-0.82f, 0.54f, 0.05f);
+        pickaxe.transform.localRotation = Quaternion.Euler(0f, 0f, -24f);
+        CreatePart(pickaxe.transform, PrimitiveType.Cylinder, "Handle",
+            Vector3.zero, new Vector3(0.045f, 0.72f, 0.045f), WoodDark);
+        CreatePart(pickaxe.transform, PrimitiveType.Cube, "IronHead",
+            new Vector3(0f, 0.70f, 0f), new Vector3(0.48f, 0.10f, 0.12f), IronDark);
+
+        CreateItemIconBillboard(parent, point.itemResourcePath, new Vector3(0f, 1.45f, 0f), 0.34f);
     }
 
     // ── 2) 영업 간판: 큐브 단독 → 나무 기둥 + 걸이대 + 랜턴 ────────────────────

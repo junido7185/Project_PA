@@ -825,7 +825,9 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] Task 041 — 실제 어획 Fish→진열·가격→Fisher_01 구매→18G 수익·판매 통계 단일 왕복 D3D11 PASS.
 - [x] Task 042 — 자동 낚시→판매 PASS와 사람이 직접 확인할 이동·대기·NPC 접근 절차를 스모크 체크리스트에 고정.
 - [x] Task 043 — Crop/Farmland·광질 데이터 호환성 감사와 광질 우선 구현 경계 확정.
-- [ ] 다음 단일 구현 — `quarry-mining`: 실제 Ore 2개 획득→1개 진열→15G 판매·저장/일일 리셋 검증.
+- [x] `quarry-mining` — 실제 Ore 2개 획득→1개 진열→Miner 15G 판매·v9 격리 저장/일일 리셋 D3D11 PASS.
+- [ ] 다음 단일 작업 — 비주얼 도구체인 감사: Unity/URP/패키지/Cinemachine/Navigation/Rigging/Blender/Codex MCP/라이선스/캡처를 기록하고, 검토된 안정 Unity MCP를 프로젝트 범위로 연결해 가장 큰 비주얼 문제에 실제 사용.
+- [ ] `Docs/Codex/VISUAL_TOOLCHAIN.md`, `ASSET_AND_TOOL_PROVENANCE.md`, `ART_DIRECTION.md` 작성 또는 현행화. primitive 기반 채굴 표식은 최종 아트로 인정하지 않는다.
 - [ ] 농사 F1 — 씨앗/수확 Item 참조 복구 후 고정 밭 상호작용 설계대로 구현.
 - [ ] 승인 후 농사 F3 — 날짜 기반 성장과 밭/작물 상태 저장 마이그레이션.
 - [ ] 결정 후 구현: 밤 영업 18~23시와 NPC 휴식 20시 이후의 손님 시간 창 확대.

@@ -1319,3 +1319,11 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 다음 왕복은 낮 `quarry-mining`에서 Ore 2개 획득 → 1개 진열 → 15G 판매 → 잔액/누적매출/Raw SalesLog/일일 구매 통계로 고정했다.
 - 농사는 기존 `Crop`/`Farmland`를 보존하되 씨앗/수확 참조, 상호작용, 날짜 성장, 저장을 단계적으로 복구한다. 저장 확장은 사람 승인 전 구현하지 않는다.
 - 집계는 DONE 32 / PARTIAL 21 / TODO 8 / BLOCKED 6 / DECISION_REQUIRED 18이다. 코드·씬·프리팹·에셋·저장은 변경하지 않았고 Unity는 실행하지 않았다.
+
+## 2026-07-15 Quarry Mining → Night Sale
+
+- 낮 `quarry-mining`에서 `[Space]` 타격 행동으로 Ore 2개를 얻고 같은 날 반복 채굴은 차단한다.
+- 실제 획득 Ore 1개를 진열해 15G로 판매하면 잔액 500→515G, 누적매출, Raw 판매 기록, 일일 구매 통계와 HUD가 함께 갱신된다.
+- v9 격리 저장/로드가 Day 2 채굴 완료와 Ore 2개를 복원하며 Day 3에는 채굴 지점이 다시 활성화된다.
+- 런타임·에디터 컴파일 경고/오류 0. D3D11 채굴 왕복과 기존 FinalDemoRoute가 모두 종료 코드 0/PASS다.
+- 광산 primitive 드레싱은 임시 기능 표식이다. 다음 우선 작업은 Unity/Blender/MCP/패키지/라이선스/캡처 감사와 실제 아트 기준 수립·도구 연결이다.

@@ -1519,3 +1519,25 @@ Next actions:
 ## 다음 체크포인트
 
 - 신규 `MiningSpot`과 런타임 광산 지점을 기존 일일 활동 상태에 붙이고, 합성 Ore 주입 없이 밤 판매까지 전용 검증한다.
+
+---
+
+# Session 2026-07-15 — Quarry Mining Sale Round Trip
+
+## 구현
+
+- `MiningSpot`이 플레이어 상호작용, 곡괭이 타격 대기, Ore 지급 피드백을 담당한다.
+- `quarry-mining` 지점은 기존 일일 활동/v9 저장 상태를 재사용하며 씬이나 저장 스키마를 수정하지 않는다.
+- 검증기는 합성 Ore 주입 없이 채굴→격리 저장/로드→1개 진열→15G 가격 확정→Miner 구매→Day 3 리셋을 수행한다.
+
+## 검증
+
+- `Assembly-CSharp.csproj`, `Assembly-CSharp-Editor.csproj`: 순차 빌드 경고 0, 오류 0.
+- D3D11 MiningShopLoop: Ore 2→1 진열, 15G 판매, 500→515G, Raw 기록/일일 구매 통계, v9 복원, Day 3 재활성 PASS.
+- D3D11 FinalDemoRoute: BreadLoaf 30G 기존 루프 PASS.
+- 증거: `Logs/Codex_MiningShopLoop_Final.log`, `Logs/Codex_Mining_FinalRouteRegression.log`.
+
+## 미확인·다음
+
+- 사람 입력으로 광산까지 이동하는 동선, 타격 시간감, 실제 NPC 접근 장면, Windows 빌드는 확인하지 않았다.
+- 바위·광맥·곡괭이는 기능 위치를 알리는 임시 primitive다. 다음 단일 작업에서 비주얼 도구체인·라이선스·아트 방향을 감사하고 실제 제작 도구로 교체를 시작한다.

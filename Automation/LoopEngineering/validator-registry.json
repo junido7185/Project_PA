@@ -70,6 +70,17 @@
       "humanFollowUp": "Walk-to-gather distance and NPC pathing need real-input review."
     },
     {
+      "id": "mining-shop-loop",
+      "executeMethod": "PA_MiningShopLoopValidator.RunMiningShopLoopValidation",
+      "sourceFile": "Assets/Editor/PA_MiningShopLoopValidator.cs",
+      "purpose": "Validate actual quarry mining, isolated same-day persistence, Ore stocking, and 15G night sale.",
+      "workflowTypes": ["gameplay", "daytime-activity", "shop-loop", "save-load"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first mining interaction, persistence, stock, or sale failure.",
+      "humanFollowUp": "Walk to the quarry and judge the shared-pickaxe strike timing and readability."
+    },
+    {
       "id": "customer-arrival",
       "executeMethod": "PA_CustomerArrivalValidator.RunCustomerArrivalValidation",
       "sourceFile": "Assets/Editor/PA_CustomerArrivalValidator.cs",

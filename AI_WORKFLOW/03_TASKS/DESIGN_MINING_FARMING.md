@@ -149,3 +149,12 @@
 - 기존 바위/작물 프리팹의 아이템 GUID는 현재 프로젝트 데이터와 호환되지 않으므로 직접 기능 원본으로 쓰지 않는 경계를 명시했다.
 - 농사는 기존 `Crop`/`Farmland`를 폐기하거나 새 대형 시스템으로 교체하지 않고, 어댑터와 날짜/저장 확장으로 복구한다.
 - 이번 Task 043에서는 코드, 씬, 프리팹, Item/Recipe 에셋, 저장 스키마를 변경하지 않았다.
+
+## 7. 2026-07-15 구현 결과 — quarry-mining
+
+- `MiningSpot : IInteractable`을 추가해 낮 광산에서 공용 곡괭이 타격 후 Ore 2개를 실제 인벤토리에 지급한다.
+- `DaytimeStockPrepPoint`와 `DayNightShopLoopController`가 `quarry-mining`의 하루 1회 제한, 다음 날 리셋, v9 저장/복원의 단일 상태 원본이다.
+- 실제 채굴 Ore 2개 중 1개를 `ShopSlot`에 진열하고 기본가 15G로 확정한 뒤 Miner가 구매하는 왕복을 연결했다.
+- D3D11 전용 `PA_MiningShopLoopValidator`에서 잔액 500→515G, 누적매출 +15G, Raw `SalesLog`, Day 2 구매 수 +1, Day 3 재활성화를 확인했다.
+- 메인 씬, 프리팹, 저장 스키마, Shop/Economy/Purchase/NPC 코어는 변경하지 않았다.
+- 현재 바위·광맥·곡괭이 런타임 primitive는 상호작용 위치를 식별하기 위한 임시 표현이다. 최종 비주얼 완료로 간주하지 않으며, 다음 비주얼 도구체인 작업에서 아트 방향에 맞는 실제 에셋으로 교체한다.

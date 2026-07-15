@@ -387,6 +387,8 @@ public class DayNightShopLoopController : MonoBehaviour
         EnsureFishingSpot(shorePoint);
         EnsureForagePoint("meadow-forage", "PA_ForagePoint_Meadow", "Items/Item_Wheat", 2,
             "들판 채집", 225f, 10f, new Color(0.92f, 0.85f, 0.42f, 1f));
+        var miningPoint = EnsureMiningPoint();
+        EnsureMiningSpot(miningPoint);
 
         RefreshPrepPoints();
     }
@@ -450,6 +452,84 @@ public class DayNightShopLoopController : MonoBehaviour
         if (fishing == null)
             fishing = interaction.gameObject.AddComponent<FishingSpot>();
         fishing.Configure(shorePoint);
+    }
+
+    DaytimeStockPrepPoint EnsureMiningPoint()
+    {
+        const string activityId = "quarry-mining";
+        var existing = FindPrepPoint(activityId);
+        if (existing != null) return existing;
+
+        var point = CreatePrepPoint(
+            activityId,
+            "PA_MiningPoint_Quarry",
+            "Items/Item_Ore",
+            2,
+            "광산 채굴지",
+            ResolveMiningPosition(),
+            new Vector3(0.9f, 0.75f, 0.9f),
+            new Color(0.44f, 0.43f, 0.48f, 1f));
+
+        var col = point.GetComponent<Collider>();
+        if (col != null) col.isTrigger = true;
+
+        _prepPoints.Add(point);
+        return point;
+    }
+
+    void EnsureMiningSpot(DaytimeStockPrepPoint miningPoint)
+    {
+        if (miningPoint == null) return;
+
+        // 부모는 일일/저장 상태만 소유하고 자식이 전용 광질 입력을 받는다.
+        var parentCollider = miningPoint.GetComponent<Collider>();
+        if (parentCollider != null)
+            parentCollider.enabled = false;
+
+        var interaction = miningPoint.transform.Find("MiningInteraction");
+        if (interaction == null)
+        {
+            var interactionGo = new GameObject("MiningInteraction");
+            interactionGo.layer = miningPoint.gameObject.layer;
+            interaction = interactionGo.transform;
+            interaction.SetParent(miningPoint.transform, false);
+        }
+
+        interaction.localPosition = Vector3.zero;
+        interaction.localRotation = Quaternion.identity;
+        interaction.localScale = Vector3.one;
+
+        var trigger = interaction.GetComponent<BoxCollider>();
+        if (trigger == null)
+            trigger = interaction.gameObject.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        trigger.center = new Vector3(0f, 0.8f, 0f);
+        trigger.size = new Vector3(2.8f, 2.4f, 2.8f);
+
+        var mining = interaction.GetComponent<MiningSpot>();
+        if (mining == null)
+            mining = interaction.gameObject.AddComponent<MiningSpot>();
+        mining.Configure(miningPoint);
+    }
+
+    Vector3 ResolveMiningPosition()
+    {
+        GameObject anchor = GameObject.Find("WorkSpot_Miner") ?? GameObject.Find("MineZone");
+        if (anchor == null)
+            return ResolveForagePosition(310f, 13f);
+
+        Vector3 target = anchor.transform.position;
+        Vector3 rayStart = target + Vector3.up * 8f;
+        if (Physics.Raycast(rayStart, Vector3.down, out var hit, 24f,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            target = hit.point + Vector3.up * 0.35f;
+        else
+            target += Vector3.up * 0.35f;
+
+        if (NavMesh.SamplePosition(target, out var navHit, 5f, NavMesh.AllAreas))
+            target = new Vector3(navHit.position.x, target.y, navHit.position.z);
+
+        return target;
     }
 
     Vector3 ResolveForagePosition(float angleDeg, float distance)
