@@ -228,6 +228,14 @@ public static class PA_FinalDemoRouteValidator
         Require(body.text.Contains("Village direction"), "Day 1 summary includes village direction section");
         Require(body.text.Contains("다음 성장 목표"), "Day 1 summary includes next growth goal");
         Require(body.text.Contains("누적 매출"), "Day 1 summary includes tier revenue progress");
+
+        int closingDay = GameClock.Instance.CurrentDay;
+        InvokePrivate(scenario, "OnPrimaryPressed");
+        Require(GameClock.Instance.CurrentDay == closingDay + 1, "Day 1 summary button starts Day 2");
+        Require(DayNightShopLoopController.Instance.CurrentPhase == PADayNightPhase.DayPreparation,
+            "Day 2 begins in day preparation phase");
+        Require(scenario.objectiveText != null && scenario.objectiveText.text.Contains("Day 2"),
+            "player-facing objective advances from Day 1 to Day 2");
     }
 
     static void ValidateSceneMarkers()

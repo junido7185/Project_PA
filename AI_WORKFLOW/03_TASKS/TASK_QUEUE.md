@@ -1606,7 +1606,7 @@ Project P.A.와의 연결: 시연 → Stage 2 완료.
 
 ## Task 068 - 1일 완전 루프 통합 점검
 
-상태: DECISION_REQUIRED
+상태: PARTIAL — 활성 `/goal`/CASTLE BUILD 지시로 날짜 전환 연결부 승인. Day 1 결산→Day 2, Day 2 정산 간판→Day 3 아침 D3D11 PASS. Task 041과 사람 연속 플레이는 남음.
 단계: Phase 8. Vertical Slice
 난이도: L
 예상 Codex 실행 횟수: 3

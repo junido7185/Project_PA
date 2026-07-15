@@ -182,6 +182,17 @@ public static class PA_DayNightShopLoopValidator
             controller.SimulatePhaseForValidation(23.2f, 2);
             Require(controller.CurrentPhase == PADayNightPhase.Settlement, "Day 2 23:12 resolves to Settlement");
             Require(!controller.IsShopOpen, "settlement phase reports shop closed");
+            Require(controller.CanPlayerStartNextDay, "settlement enables player next-day action");
+
+            var sign = RequireOne<ShopOpenSign>("ShopOpenSign");
+            Require(sign.GetInteractPrompt().Contains("다음 날"), "settlement sign explains next-day action");
+            sign.Interact(null);
+            Require(GameClock.Instance.CurrentDay == 3, "settlement sign advances Day 2 to Day 3");
+            Require(Mathf.Abs(GameClock.Instance.CurrentHour - controller.dayStartHour) < 0.01f,
+                "Day 3 starts at configured morning hour");
+            Require(controller.CurrentPhase == PADayNightPhase.DayPreparation,
+                "Day 3 starts in day preparation phase");
+            Require(controller.CanCollectDayPrepStock, "Day 3 preparation stock is available after rest");
 
             Require(HasPublicMember(typeof(DayNightShopLoopController), "IsShopOpen"), "shop open state is exposed");
             Require(HasPublicMember(typeof(DayNightShopLoopController), "CurrentPhase"), "day/night phase state is exposed");

@@ -33,7 +33,10 @@ public class ShopOpenSign : MonoBehaviour, IInteractable
             return;
         }
 
-        DayNightShopLoopController.Instance.TryOpenShop();
+        if (DayNightShopLoopController.Instance.CanPlayerStartNextDay)
+            DayNightShopLoopController.Instance.TryStartNextDay();
+        else
+            DayNightShopLoopController.Instance.TryOpenShop();
         RefreshLabel();
     }
 
@@ -41,6 +44,7 @@ public class ShopOpenSign : MonoBehaviour, IInteractable
     {
         var loop = DayNightShopLoopController.Instance;
         if (loop == null) return "가게 간판";
+        if (loop.CanPlayerStartNextDay) return "하루 마무리하고 다음 날 시작";
         if (loop.IsTutorialAlwaysOpen) return "가게 간판 (튜토리얼 영업 중)";
         if (loop.PlayerHasOpenedShopToday) return "가게 간판 (영업 중)";
         if (loop.CanPlayerOpenShop) return "영업 시작하기";
@@ -71,6 +75,11 @@ public class ShopOpenSign : MonoBehaviour, IInteractable
         {
             status = "가게 간판";
             color = Color.white;
+        }
+        else if (loop.CanPlayerStartNextDay)
+        {
+            status = "정산 완료 · 다음 날 시작";
+            color = new Color(0.65f, 0.88f, 1f);
         }
         else if (loop.IsShopOpenForCustomers)
         {

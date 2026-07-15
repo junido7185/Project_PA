@@ -152,6 +152,37 @@ public class GameClock : MonoBehaviour
         Debug.Log($"💾 GameClock[{reason}]: Day {_currentDay} {GetTimeString()} ({_currentSeason})");
     }
 
+    /// <summary>
+    /// 정산을 마친 플레이어가 다음 날 아침을 시작하는 게임플레이 경로.
+    /// ForceSet과 달리 OnNewDay/OnHourTick을 발화해 납품·채집 리셋·NPC 일과·마을 변화를 함께 진행한다.
+    /// 호출 가능 시점은 DayNightShopLoopController가 정산 단계에서 제한한다.
+    /// </summary>
+    public void AdvanceToNextDayMorning(float morningHour, string reason)
+    {
+        int previousDay = _currentDay;
+        _currentDay++;
+        _currentHour = Mathf.Clamp(morningHour, 0f, 23.99f);
+        _prevHourInt = Mathf.FloorToInt(_currentHour);
+        _prevMinuteInt = Mathf.FloorToInt((_currentHour - _prevHourInt) * 60f);
+
+        Debug.Log($"🌅 GameClock[{reason}]: Day {previousDay} 마감 → Day {_currentDay} {GetTimeString()} 시작");
+        OnNewDay?.Invoke(_currentDay);
+
+        Season newSeason = ComputeSeason(_currentDay);
+        _currentSeason = newSeason;
+        if (newSeason != _prevSeason)
+        {
+            Debug.Log($"🌸 계절 변화: {_prevSeason} → {newSeason} (Day {_currentDay})");
+            _prevSeason = newSeason;
+            OnSeasonChanged?.Invoke(newSeason);
+        }
+
+        // 자연 시간 진행에서는 자정 직후 OnHourTick이 이어진다. 아침 건너뛰기도
+        // 결과 시각을 한 번 통지해 조명과 시간 전용 구독자가 즉시 동기화되게 한다.
+        OnHourTick?.Invoke(_prevHourInt);
+        OnMinuteTick?.Invoke(_prevMinuteInt);
+    }
+
     // -------- 내부: 계절 산출 --------
 
     private Season ComputeSeason(int day)

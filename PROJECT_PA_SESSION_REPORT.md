@@ -1386,3 +1386,33 @@ Next actions:
 
 - 새 게임 Day 1 종료부터 Day 3 정산까지 실제 입력 경로를 감사하고 가장 큰 단절 1개를 다음 단일 작업으로 선정한다.
 - 밤 손님 시간 창 조정과 Task 055 저장 확장은 각각 사람 결정/승인 전까지 보류한다.
+
+---
+
+# Session 2026-07-15 — Task 068 Partial: Day 1→3 Player Transition
+
+## 감사 결과와 구현
+
+- 기존 장기 검증은 `GameClock.ForceSet`으로 Day 2~7을 구성해 실제 플레이어 날짜 전환을 증명하지 않았다.
+- 기본 60초/게임시간 기준 Day 1 결산 후 최대 약 17분을 기다려야 했고, Day 2+ 정산에는 다음 날 시작 입력이 없었다.
+- `GameClock.AdvanceToNextDayMorning`을 추가해 `OnNewDay`와 결과 아침 시각 이벤트를 정상 발화한다.
+- Day 1 결산 버튼은 Day 2 아침을 시작하고, 이후 보이는 목표/체크리스트를 반복 운영 안내로 바꾼다.
+- Day 2+ 정산에서는 기존 `ShopOpenSign`이 영업 시작 간판에서 하루 마감 간판으로 역할을 전환한다.
+
+## 검증
+
+- 런타임/에디터 dotnet build 오류 0.
+- D3D11 FinalDemoRoute PASS: 첫 판매 30G 유지, Day 1 결산 버튼→Day 2 준비 페이즈·목표 갱신.
+- D3D11 DayNightShopLoop PASS: Day 2 정산 간판 프롬프트/Interact→Day 3 06:00·준비 페이즈·채집 재활성.
+- 로그: `Logs/Codex_Task068_FinalRoute_Day2Transition.log`, `Logs/Codex_Task068_DayNight_Day3Transition.log`.
+- 첫 Unity 호출은 잘못 포함한 `-quit` 때문에 Play Mode 진입 직후 종료됐으며 검증 결과로 계산하지 않았다. 같은 코드를 정상 인자로 재실행해 PASS했다.
+
+## 확인하지 않은 것
+
+- 새 게임부터 Day 3 정산까지 사람 연속 플레이, 새 날짜 전환 후 저장 종료/재실행, Windows 빌드, 1920x1080 가독성은 확인하지 않았다.
+- Task 041 낚시→진열→판매 왕복과 밤 손님 시간 창은 이번 단일 연결 범위 밖이다.
+
+## 다음 체크포인트
+
+- Task 039 실제 낚시 상호작용을 해변의 기존 런타임 채집 지점과 `IInteractable` 패턴 위에 구현한다.
+- 이어서 Task 041에서 낚시 결과의 진열·가격·NPC 구매 왕복을 한 경로로 증명한다.

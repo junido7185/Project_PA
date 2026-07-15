@@ -58,7 +58,8 @@ public class DayNightShopLoopController : MonoBehaviour
 
     // CDN-002 — 손님 구매 게이트.
     // Day 1 튜토리얼은 항상 열림으로 처리해 검증된 첫 판매 루트를 보존한다.
-    public bool IsTutorialAlwaysOpen => keepDay1TutorialShopOpen && CurrentDay <= 1;
+    public bool IsTutorialAlwaysOpen => keepDay1TutorialShopOpen
+        && CurrentDay <= 1 && _phase != PADayNightPhase.Settlement;
     // 플레이어가 오늘 간판으로 영업을 시작했는가.
     public bool PlayerHasOpenedShopToday => _playerOpenedShopToday && _openedShopDay == CurrentDay;
     // 손님이 실제로 구매를 시도할 수 있는가(밤 ShopOpen + 플레이어가 영업 시작, 또는 Day 1 튜토리얼).
@@ -67,6 +68,8 @@ public class DayNightShopLoopController : MonoBehaviour
     // 플레이어가 지금 영업을 시작할 수 있는가(밤 ShopOpen 단계, 아직 안 열었음).
     public bool CanPlayerOpenShop => !IsTutorialAlwaysOpen
         && _phase == PADayNightPhase.ShopOpen && !PlayerHasOpenedShopToday;
+    // 정산 때 기존 가게 간판으로 하루를 마감하고 다음 날 아침을 시작한다.
+    public bool CanPlayerStartNextDay => _phase == PADayNightPhase.Settlement;
 
     int CurrentDay => GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
     float CurrentHour => GameClock.Instance != null ? GameClock.Instance.CurrentHour : 8f;
@@ -155,6 +158,40 @@ public class DayNightShopLoopController : MonoBehaviour
         _lastActivityResult = "가게 영업을 시작했어요! 손님이 곧 찾아옵니다.";
         RefreshUI();
         return true;
+    }
+
+    public bool TryStartNextDay()
+    {
+        return TryStartNextDayInternal(allowCompletedDay1Tutorial: false);
+    }
+
+    // Day 1은 시계보다 온보딩 단계가 먼저 끝날 수 있으므로 결산 버튼에서만 조기 마감을 허용한다.
+    public bool TryStartNextDayAfterTutorial()
+    {
+        return TryStartNextDayInternal(allowCompletedDay1Tutorial: true);
+    }
+
+    bool TryStartNextDayInternal(bool allowCompletedDay1Tutorial)
+    {
+        RefreshState(force: false);
+        bool tutorialCompletion = allowCompletedDay1Tutorial && CurrentDay == 1;
+        if (!CanPlayerStartNextDay && !tutorialCompletion)
+        {
+            _lastActivityResult = "정산 시간이 되면 가게 간판에서 하루를 마무리할 수 있어요.";
+            RefreshUI();
+            return false;
+        }
+
+        if (GameClock.Instance == null)
+        {
+            Debug.LogWarning("[DayNightShopLoop] GameClock이 없어 다음 날을 시작할 수 없습니다.");
+            return false;
+        }
+
+        int closingDay = CurrentDay;
+        GameClock.Instance.AdvanceToNextDayMorning(dayStartHour, "상점 정산 완료");
+        Debug.Log($"🌅 [DayNightShopLoop] Day {closingDay} 정산 완료 — Day {CurrentDay} 아침 시작");
+        return CurrentDay == closingDay + 1;
     }
 
     // 검증용: 플레이어 영업 시작 상태를 직접 설정한다.
@@ -538,12 +575,12 @@ public class DayNightShopLoopController : MonoBehaviour
 
             // CDN-002 — 손님 구매 게이트 상태를 명확히 표시한다.
             string shopState;
-            if (IsShopOpenForCustomers)
+            if (_phase == PADayNightPhase.Settlement)
+                shopState = "상점: 정산 완료 · 간판 [Space]로 다음 날 시작";
+            else if (IsShopOpenForCustomers)
                 shopState = IsTutorialAlwaysOpen ? "상점: 영업 중 (튜토리얼)" : "상점: 영업 중 (손님 구매 가능)";
             else if (CanPlayerOpenShop)
                 shopState = "상점: 간판에서 영업 시작 가능";
-            else if (_phase == PADayNightPhase.Settlement)
-                shopState = "상점: 영업 종료 (오늘 정산)";
             else
                 shopState = "상점: 준비 중 (낮 채집·진열 후 밤에 영업)";
 

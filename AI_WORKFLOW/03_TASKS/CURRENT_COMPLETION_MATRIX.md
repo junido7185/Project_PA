@@ -84,7 +84,7 @@
 | 065 | DONE | 5분 루트 발표 안전선·백업 캡처 경로 | FinalPresentation 5장 생성 | 녹화본은 사람 준비 | NO |
 | 066 | DECISION_REQUIRED | Final Presentation Lock 문서는 존재 | 날짜/코드 프리즈 사람 결정 없음 | Demo Lock 날짜 확정 | YES |
 | 067 | DECISION_REQUIRED | 조건부 발표용 판정 | 빌드·사람 리허설 미완 | 사람의 Demo 완료 판정 | YES |
-| 068 | DECISION_REQUIRED | 핵심 루프 구성요소는 개별 PASS | 저장 영속 연결 미완 | 통합 승인 및 1일 실제 플레이 | YES |
+| 068 | PARTIAL | Day 1 결산 버튼→Day 2 아침, Day 2 정산 간판→Day 3 아침 입력 경로 | FinalRoute/DayNight D3D11 PASS, OnNewDay 납품·채집 리셋 동기화 | Task 041 낚시 왕복, 3일 사람 연속 플레이·저장 재실행 미확인 | YES→활성 `/goal`로 날짜 전환 연결 승인 |
 | 069 | BLOCKED | Fish forage·Processed 변화는 별개 구현 | 통합 낚시 루프 없음 | 068 및 낚시 실제 상호작용 선행 | NO |
 | 070 | BLOCKED | 가구 Item/BuildingData 존재 | 068 미완 | 보조 루프 선택은 이후 | NO |
 | 071 | DECISION_REQUIRED | 조건부 발표용 AI 판정 | 사람 재미 플레이 없음 | 사람 피드백 필요 | YES |

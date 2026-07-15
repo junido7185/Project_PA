@@ -168,12 +168,22 @@ public class PlayableDayScenarioController : MonoBehaviour
     {
         if (PlayerInputHandler.Instance != null)
             PlayerInputHandler.Instance.OnSave += OnSavePressed;
+        if (GameClock.Instance != null)
+            GameClock.Instance.OnNewDay += OnNewDay;
     }
 
     void UnsubscribeInputs()
     {
         if (PlayerInputHandler.Instance != null)
             PlayerInputHandler.Instance.OnSave -= OnSavePressed;
+        if (GameClock.Instance != null)
+            GameClock.Instance.OnNewDay -= OnNewDay;
+    }
+
+    void OnNewDay(int _)
+    {
+        if (Current == Stage.Done)
+            RefreshLabel();
     }
 
     void OnSavePressed()
@@ -366,7 +376,9 @@ public class PlayableDayScenarioController : MonoBehaviour
     {
         // v2 — 상단 중앙은 현재 단계 한 줄만. 이름/지도와 단계 목록은 좌측 퀘스트 패널이 담당.
         if (objectiveText != null)
-            objectiveText.text = GetStageLabel(Current);
+            objectiveText.text = Current == Stage.Done && CurrentGameDay > 1
+                ? GetContinuationObjective(CurrentGameDay)
+                : GetStageLabel(Current);
 
         RefreshQuestList();
     }
@@ -378,6 +390,17 @@ public class PlayableDayScenarioController : MonoBehaviour
 
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"<color=#FFE9B8><b>{PlayerName} · {SelectedMapName}</b></color>");
+
+        if (Current == Stage.Done && CurrentGameDay > 1)
+        {
+            sb.AppendLine($"<color=#FFFFFF>▶ Day {CurrentGameDay} 반복 운영</color>");
+            sb.AppendLine("<color=#D8D3C8>• 낮: 채집·납품 상품 2종 준비</color>");
+            sb.AppendLine("<color=#D8D3C8>• 해질녘: 진열·가격 재검토</color>");
+            sb.AppendLine("<color=#D8D3C8>• 밤: 간판 [Space] 영업 시작</color>");
+            sb.AppendLine("<color=#D8D3C8>• 정산: 간판 [Space] 다음 날 시작</color>");
+            questListText.text = sb.ToString().TrimEnd();
+            return;
+        }
 
         Stage[] order =
         {
@@ -412,6 +435,17 @@ public class PlayableDayScenarioController : MonoBehaviour
             Stage.Done => "Day 1 목표 완료. 결산을 보고 다음 가격/재고 전략을 정하세요.",
             _ => "(목표 데이터 없음)"
         };
+    }
+
+    int CurrentGameDay => GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+
+    static string GetContinuationObjective(int day)
+    {
+        if (day == 2)
+            return "Day 2: 낮에 상품 2종을 준비하고, 밤에는 간판에서 영업을 시작하세요.";
+        if (day == 3)
+            return "Day 3: 어제 구매·보류 결과에 맞춰 상품이나 가격을 바꿔보세요.";
+        return $"Day {day}: 낮 준비 → 밤 영업 → 정산 루프를 이어가세요.";
     }
 
     bool AnyShopSlotStocked()
@@ -558,7 +592,7 @@ public class PlayableDayScenarioController : MonoBehaviour
             $"Village direction:\n{villageSignalSummary}\n\n" +
             $"{tierGoalSummary}\n" +
             "운영 체크: 재고 보충, 가격 재조정, 저장 기록 확인",
-            "계속 플레이");
+            "다음 날 시작");
     }
 
     string BuildFeedbackSummary()
@@ -778,7 +812,14 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     void OnPrimaryPressed()
     {
-        if (Current == Stage.Done && _summaryShown) CloseSummary();
+        if (Current == Stage.Done && _summaryShown)
+        {
+            bool advanced = DayNightShopLoopController.Instance != null
+                && DayNightShopLoopController.Instance.TryStartNextDayAfterTutorial();
+            CloseSummary();
+            if (!advanced)
+                Debug.LogWarning("[PlayableDay] Day 1 결산 후 다음 날 전환에 실패했습니다.");
+        }
         else AdvanceStartupStep();
     }
 
