@@ -9,7 +9,7 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 31 | 21 | 9 | 6 | 18 | 85 |
+| 32 | 21 | 8 | 6 | 18 | 85 |
 
 갱신 2026-07-13 (Fable 5): Task 019 TODO→DONE(`f6cbbe1`), Task 057 DECISION_REQUIRED→DONE(`71fa710`, 사용자 세션 지시로 v9 승인).
 
@@ -18,6 +18,8 @@
 갱신 2026-07-15 (Codex): Task 041 PARTIAL→DONE(실제 어획 Fish 2개 중 1개를 진열·가격 확정→Fisher_01 구매→18G 입금·매출/통계 기록).
 
 갱신 2026-07-15 (Codex): Task 042 PARTIAL→DONE(`SMOKE_CHECKLIST.md` 신규, D3D11 자동 PASS와 미확인 사람 체감 절차 분리).
+
+갱신 2026-07-15 (Codex): Task 043 TODO→DONE(`DESIGN_MINING_FARMING.md` 신규, 광질 우선 단일 슬라이스와 농사 복구/저장 경계 확정).
 
 ## Task별 판정
 
@@ -65,7 +67,7 @@
 | 040 | PARTIAL | 캐스팅 대기·입질·성공 프롬프트/상태 | 검증기가 캐스팅 진입과 즉시/성공 피드백 확인 | 실제 1.25초 시간 경과와 코지 체감은 사람 확인 필요 | NO |
 | 041 | DONE | 실제 어획 Fish를 합성 주입 없이 `ShopSlot` 진열·가격·NPC 구매 경로에 사용 | D3D11 GatheringShopGate: Fish 2→1 진열, Fisher_01 구매 18G, 돈/누적매출/SalesLog/일일 통계 PASS | 없음 | NO |
 | 042 | DONE | `SMOKE_CHECKLIST.md` + GatheringShopGate 전체 낚시 왕복 assertion | D3D11 FishSale 18G/FinalRoute 30G PASS, 사람 입력 항목은 별도 미체크 | 없음(사람 체감은 Task 040/최종 체크) | NO |
-| 043 | TODO | Crop/Farmland 기존 코드 | 설계 문서 없음 | 광질/농사 확장 설계 | NO |
+| 043 | DONE | `DESIGN_MINING_FARMING.md`, 기존 Crop/Farmland/Item/Recipe/프리팹 정적 감사 | 씨앗·작물·바위 GUID/API 호환성 자기검토, 광질 왕복 완료 조건 확정 | 다음 단일 구현: `quarry-mining` Ore 2→15G 밤 판매. 농사는 저장 승인 후 단계적 복구 | NO |
 | 044 | TODO | Dialogue/Demand 데이터는 존재 | 설계 문서 없음 | 기존 데이터 기반 주민 의뢰 설계 | NO |
 | 045 | PARTIAL | GAME_LOOP 채집 4포인트 + 실제 낚시→밤 판매 경로 | Fish 획득→진열·가격→NPC 구매 18G PASS | `DAYTIME_ACTIVITIES.md` 미작성, 다른 낮 활동의 동일 왕복 증거 부족 | NO |
 | 046 | PARTIAL | SalesLogManager/VillageChangeSignal 코드 | VillageChangeSignal 검증 PASS 이력 | `VILLAGE_TREND.md` 미작성 | NO |

@@ -1493,3 +1493,29 @@ Next actions:
 ## 다음 체크포인트
 
 - Task 043에서 기존 Crop/Farmland와 아이템 데이터를 조사해 다음 낮 활동 구현 경계를 확정한다.
+
+---
+
+# Session 2026-07-15 — Task 043 Mining/Farming Design Boundary
+
+## 결정
+
+- 낚시 다음 낮 활동은 광질을 먼저 구현한다.
+- 다음 단일 왕복은 `quarry-mining` 상호작용으로 Ore 2개를 얻고, 실제 획득 Ore 1개를 밤에 15G로 판매하는 경로다.
+- 광질은 기존 `DaytimeStockPrepPoint`의 일일 완료/다음 날 리셋/v9 저장 상태를 재사용하므로 저장 스키마를 바꾸지 않는다.
+
+## 농사 감사 결과
+
+- 기존 `Crop`/`Farmland`는 보존·재사용한다.
+- 현재는 씨앗의 cropPrefab null, Seed 입력 분기와 Harvest 호출자 부재, 테스트용 3초 성장, 작물 저장 부재, 프리팹 Item GUID 단절 때문에 플레이 가능한 농사 루프가 아니다.
+- 농사는 데이터 참조 복구 → `IInteractable` 고정 밭 어댑터 → 날짜 성장/승인된 저장 → Wheat→Bread→판매 왕복 순으로 진행한다.
+
+## 검증과 미확인
+
+- 실제 스크립트, Item/Recipe 에셋, 프리팹 YAML과 GUID 존재 여부를 정적으로 대조했다.
+- 문서 전용 작업이므로 컴파일·Unity Play Mode·D3D11 검증기는 실행하지 않았다.
+- 광질 상호작용, 15G 판매, 일일 리셋/저장 왕복은 다음 구현 작업에서 실제 검증해야 한다.
+
+## 다음 체크포인트
+
+- 신규 `MiningSpot`과 런타임 광산 지점을 기존 일일 활동 상태에 붙이고, 합성 Ore 주입 없이 밤 판매까지 전용 검증한다.
