@@ -184,6 +184,9 @@ public static class PA_GatheringShopGateValidator
             var shoreItem = Resources.Load<Item>("Items/Item_Fish");
             Require(shoreItem != null && IsSellable(shoreItem), "forage item (Fish) is a valid sellable item");
             Require(Inventory.instance.HasItems(shoreItem, 1), "gathered item is present in inventory");
+            int caughtFishCount = CountInventoryItem(shoreItem);
+            Require(caughtFishCount == shore.grantCount,
+                $"fishing grants the configured Fish count ({caughtFishCount})");
 
             // 4) 같은 날 중복 채집 불가.
             fishing.Interact(fishingPlayer);
@@ -199,12 +202,13 @@ public static class PA_GatheringShopGateValidator
             Require(loop.IsDayPrepPointAvailable(shore), "forage point reactivates on the next day");
 
             // 7) 채집 아이템을 ShopSlot 에 진열 + 가격 설정 가능.
-            SeedHotbarWith(shoreItem);
             var slot = FindEmptyShopSlot();
             var player = PlayerObject();
             slot.Interact(player);
             Require(!slot.IsEmpty, "gathered item can be stocked into a ShopSlot");
             Require(slot.currentItem != null && slot.currentItem.data == shoreItem, "stocked slot holds the gathered item");
+            Require(CountInventoryItem(shoreItem) == caughtFishCount - 1,
+                "stocking consumes one Fish from the actual fishing inventory");
             Require(slot.EffectiveDisplayPrice == shoreItem.basePrice, "stocked slot starts at the item base price");
 
             var priceUi = RequireOne<ShopPriceUI>("ShopPriceUI");
@@ -225,15 +229,56 @@ public static class PA_GatheringShopGateValidator
             Require(loop.TryOpenShop(), "player opens the shop via the sign");
             Require(loop.IsShopOpenForCustomers, "after opening, customer purchases are allowed");
 
-            // 9) Day 1 튜토리얼 override: DayPreparation 단계에서도 항상 열림(첫 판매 루트 보존).
+            // 9) 같은 낚시 재고를 실제 NPC 구매 진입점으로 판매해 돈/매출/판매 기록까지 닫는다.
+            var customer = RequireOne<NpcController>("fishing flow customer NPC");
+            string buyerName = customer.profile != null && !string.IsNullOrWhiteSpace(customer.profile.npcName)
+                ? customer.profile.npcName
+                : customer.gameObject.name;
+            Require(!string.IsNullOrWhiteSpace(buyerName), "fishing sale uses a real customer NPC name");
+
+            var economy = RequireOne<EconomyService>("EconomyService");
+            var sales = RequireOne<SalesLogManager>("SalesLogManager");
+            int moneyBeforeSale = economy.Money;
+            long revenueBeforeSale = economy.CumulativeRevenue;
+            int saleRecordsBefore = sales.GetRecent(100).Count;
+            var decisionStatsBefore = sales.GetDailyDecisionStats(2);
+            int expectedFishPayment = slot.EffectiveDisplayPrice * slot.currentItem.count;
+
+            Require(slot.TryPurchaseByNpc(buyerName, out int fishPaid),
+                "customer NPC purchase entry point buys the caught Fish");
+            Require(fishPaid == expectedFishPayment && fishPaid == shoreItem.basePrice,
+                $"caught Fish sale pays the confirmed price ({fishPaid}G)");
+            Require(slot.IsEmpty, "Fish ShopSlot is empty after the customer purchase");
+            Require(economy.Money == moneyBeforeSale + fishPaid,
+                $"Fish sale increases player money ({moneyBeforeSale} -> {economy.Money}G)");
+            Require(economy.CumulativeRevenue == revenueBeforeSale + fishPaid,
+                "Fish sale increases cumulative revenue");
+
+            var recentSales = sales.GetRecent(100);
+            Require(recentSales.Count == saleRecordsBefore + 1,
+                "Fish sale appends one SalesLog record");
+            var fishSale = recentSales[0];
+            Require(fishSale.itemName == shoreItem.itemName
+                && fishSale.category == shoreItem.category.ToString()
+                && fishSale.buyerName == buyerName,
+                "SalesLog records the caught Fish, Raw category, and customer NPC");
+            var decisionStatsAfter = sales.GetDailyDecisionStats(2);
+            Require(decisionStatsAfter.purchases == decisionStatsBefore.purchases + 1,
+                "successful Fish sale increments the daily purchase count");
+
+            var moneyHud = RequireOne<MoneyHUD>("MoneyHUD");
+            Require(moneyHud.moneyText != null && moneyHud.moneyText.text.Contains(economy.Money.ToString()),
+                "MoneyHUD reflects the Fish sale balance");
+
+            // 10) Day 1 튜토리얼 override: DayPreparation 단계에서도 항상 열림(첫 판매 루트 보존).
             loop.SimulatePhaseForValidation(8f, 1);
             Require(loop.IsTutorialAlwaysOpen, "Day 1 keeps the tutorial-always-open override");
             Require(loop.IsShopOpenForCustomers, "Day 1 tutorial customers can buy regardless of phase");
 
-            // 10) Village Direction / 정산 신호 유지.
+            // 11) Village Direction / 정산 신호 유지.
             Require(VillageChangeSignalController.Instance != null, "Village Direction signal controller is alive");
 
-            // 11) 당일 채집 상태 save/load 라운드트립(v8).
+            // 12) 당일 채집 상태 save/load 라운드트립(v8).
             loop.SimulatePhaseForValidation(8f, 2);
             loop.ResetDayPrepForValidation();
             fishing.Interact(fishingPlayer);
@@ -252,7 +297,7 @@ public static class PA_GatheringShopGateValidator
             loop.RestoreSavedState(data.dayPrepCollectedDay, data.dayPrepCollectedActivities);
             Require(!loop.IsDayPrepPointAvailable(shore), "load restores the same-day collected state");
 
-            Debug.Log($"PA Gathering ShopGate Validation passed. gatherPoints={points.Length}, fishing=OK, gatheredInventory={after}, shopGate=OK");
+            Debug.Log($"PA Gathering ShopGate Validation passed. gatherPoints={points.Length}, fishing=OK, FishSale={fishPaid}G, buyer={buyerName}, shopGate=OK");
         }
         catch (Exception ex)
         {
@@ -311,19 +356,23 @@ public static class PA_GatheringShopGateValidator
         return item != null && item.category != ItemCategory.Tool && item.toolType == ToolType.None;
     }
 
-    static void SeedHotbarWith(Item item)
+    static int CountInventoryItem(Item item)
     {
-        Inventory.instance.selectedHotbarIndex = 0;
-        var slot = Inventory.instance.hotbar.GetSlot(0);
-        if (slot == null)
-            throw new InvalidOperationException("Hotbar slot 1 missing.");
+        if (item == null || Inventory.instance == null) return 0;
 
-        slot.SetInstance(new ItemInstance(item, 1)
-        {
-            quality = 1f,
-            currentPrice = item.basePrice
-        });
-        Inventory.instance.RefreshAllUI();
+        int count = 0;
+        CountItemInSlots(Inventory.instance.slots, item, ref count);
+        if (Inventory.instance.hotbar != null)
+            CountItemInSlots(Inventory.instance.hotbar.slots, item, ref count);
+        return count;
+    }
+
+    static void CountItemInSlots(List<InventorySlot> slots, Item item, ref int count)
+    {
+        if (slots == null) return;
+        foreach (var slot in slots)
+            if (slot != null && !slot.IsEmpty && slot.item == item)
+                count += slot.count;
     }
 
     static ShopSlot FindEmptyShopSlot()

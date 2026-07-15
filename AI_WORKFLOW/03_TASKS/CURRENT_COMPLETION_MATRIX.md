@@ -9,11 +9,13 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 29 | 23 | 9 | 6 | 18 | 85 |
+| 30 | 22 | 9 | 6 | 18 | 85 |
 
 갱신 2026-07-13 (Fable 5): Task 019 TODO→DONE(`f6cbbe1`), Task 057 DECISION_REQUIRED→DONE(`71fa710`, 사용자 세션 지시로 v9 승인).
 
 갱신 2026-07-15 (Codex): Task 039 PARTIAL→DONE(실제 `IInteractable` 낚시), Task 040 TODO→PARTIAL(대기/성공 프롬프트 구현·자동 확인, 실제 시간 경과 체감은 미확인).
+
+갱신 2026-07-15 (Codex): Task 041 PARTIAL→DONE(실제 어획 Fish 2개 중 1개를 진열·가격 확정→Fisher_01 구매→18G 입금·매출/통계 기록).
 
 ## Task별 판정
 
@@ -59,11 +61,11 @@
 | 038 | TODO | Fish 아이템은 존재 | 낚시 설계 문서 없음 | 두 번째 낮 활동 결정/설계 | NO(방향은 사람) |
 | 039 | DONE | `FishingSpot.cs`, shore-forage 런타임 자식 상호작용·낚시 외형 | D3D11 GatheringShopGate: 캐스팅→Fish 2개→일일 제한/리셋 PASS, FinalRoute PASS | 없음 | NO |
 | 040 | PARTIAL | 캐스팅 대기·입질·성공 프롬프트/상태 | 검증기가 캐스팅 진입과 즉시/성공 피드백 확인 | 실제 1.25초 시간 경과와 코지 체감은 사람 확인 필요 | NO |
-| 041 | PARTIAL | Fish가 sellable Item이며 낚시 결과를 ShopSlot에 진열·가격 설정 | 동일 GatheringShopGate에서 낚시→재고→진열→가격 PASS | 같은 경로의 NPC 구매·수익 증가 미검증 | NO |
-| 042 | PARTIAL | GatheringShopGate에 FishingSpot·캐스팅·Fish·일일/저장 assertion 추가 | D3D11 낚시 assertion PASS | 실제 시간 경과 완료와 전용 메뉴 스모크는 없음 | NO |
+| 041 | DONE | 실제 어획 Fish를 합성 주입 없이 `ShopSlot` 진열·가격·NPC 구매 경로에 사용 | D3D11 GatheringShopGate: Fish 2→1 진열, Fisher_01 구매 18G, 돈/누적매출/SalesLog/일일 통계 PASS | 없음 | NO |
+| 042 | PARTIAL | GatheringShopGate에 낚시→진열→NPC 구매·수익 전체 assertion 추가 | D3D11 전체 낚시 왕복 PASS | `SMOKE_CHECKLIST.md` 항목과 실제 시간 경과 확인 미완 | NO |
 | 043 | TODO | Crop/Farmland 기존 코드 | 설계 문서 없음 | 광질/농사 확장 설계 | NO |
 | 044 | TODO | Dialogue/Demand 데이터는 존재 | 설계 문서 없음 | 기존 데이터 기반 주민 의뢰 설계 | NO |
-| 045 | PARTIAL | GAME_LOOP 채집 5포인트 + 실제 낚시 경로 | 낚시/채집→진열·가격 검증 PASS | NPC 판매 왕복, `DAYTIME_ACTIVITIES.md` 미작성 | NO |
+| 045 | PARTIAL | GAME_LOOP 채집 4포인트 + 실제 낚시→밤 판매 경로 | Fish 획득→진열·가격→NPC 구매 18G PASS | `DAYTIME_ACTIVITIES.md` 미작성, 다른 낮 활동의 동일 왕복 증거 부족 | NO |
 | 046 | PARTIAL | SalesLogManager/VillageChangeSignal 코드 | VillageChangeSignal 검증 PASS 이력 | `VILLAGE_TREND.md` 미작성 | NO |
 | 047 | PARTIAL | count×1000+revenue 선도 카테고리 점수 | Village signal 검증 | 낚시/캠핑/가구 규칙 설계 미완 | NO |
 | 048 | DONE | 카테고리별 런타임 누적/선도 신호 | VillageChangeSignal PASS | 저장은 별도 | NO |
@@ -86,7 +88,7 @@
 | 065 | DONE | 5분 루트 발표 안전선·백업 캡처 경로 | FinalPresentation 5장 생성 | 녹화본은 사람 준비 | NO |
 | 066 | DECISION_REQUIRED | Final Presentation Lock 문서는 존재 | 날짜/코드 프리즈 사람 결정 없음 | Demo Lock 날짜 확정 | YES |
 | 067 | DECISION_REQUIRED | 조건부 발표용 판정 | 빌드·사람 리허설 미완 | 사람의 Demo 완료 판정 | YES |
-| 068 | PARTIAL | Day 1 결산 버튼→Day 2 아침, Day 2 정산 간판→Day 3 아침 입력 경로 | FinalRoute/DayNight D3D11 PASS, OnNewDay 납품·채집 리셋 동기화 | Task 041 낚시 왕복, 3일 사람 연속 플레이·저장 재실행 미확인 | YES→활성 `/goal`로 날짜 전환 연결 승인 |
+| 068 | PARTIAL | Day 1 결산 버튼→Day 2 아침, Day 2 정산 간판→Day 3 아침 입력 + 낚시 밤 판매 경로 | FinalRoute/DayNight/FishingSale D3D11 PASS, OnNewDay 납품·채집 리셋 동기화 | 새 게임→Day 3 사람 연속 플레이·저장 종료/재실행 미확인 | YES→활성 `/goal`로 날짜 전환 연결 승인 |
 | 069 | BLOCKED | Fish forage·Processed 변화는 별개 구현 | 통합 낚시 루프 없음 | 068 및 낚시 실제 상호작용 선행 | NO |
 | 070 | BLOCKED | 가구 Item/BuildingData 존재 | 068 미완 | 보조 루프 선택은 이후 | NO |
 | 071 | DECISION_REQUIRED | 조건부 발표용 AI 판정 | 사람 재미 플레이 없음 | 사람 피드백 필요 | YES |

@@ -1445,3 +1445,32 @@ Next actions:
 ## 다음 체크포인트
 
 - Task 041에서 현재 낚시 검증 경로를 NPC 구매·수익 증가까지 연장한다.
+
+---
+
+# Session 2026-07-15 — Task 041 Fishing-to-Sale Round Trip
+
+## 연결한 전체 경로
+
+- Day 2 해변에서 실제로 Fish 2개를 낚는다.
+- 합성 아이템을 넣지 않고 그 인벤토리에서 Fish 1개를 판매대에 진열한다.
+- 기본가 18G를 가격 UI에서 확정하고 밤 영업 간판을 연다.
+- 실제 씬 NPC 이름 `Fisher_01`로 구매 진입점을 호출해 같은 Fish가 판매된다.
+- 잔액·누적매출·Raw 판매 기록·일일 구매 통계·MoneyHUD가 한 거래에서 갱신된다.
+
+## 검증
+
+- 첫 에디터 빌드에서 비공개 `NpcController.DisplayName` 접근 오류 1건을 발견했다. 공개 `NpcProfile.npcName`/GameObject 이름 경로로 수정 후 재컴파일 PASS.
+- 런타임 dotnet: 경고 0, 오류 0. 에디터 dotnet: 오류 0, 기존 CS8785/CS0414 경고 2.
+- D3D11 GatheringShopGate: Fish 2→1 진열, Fisher_01 구매 18G, 돈 500→518G, 누적매출/SalesLog/구매 통계 PASS.
+- D3D11 FinalDemoRoute: BreadLoaf 30G 판매와 Day 2 전환 PASS.
+- 증거: `Logs/Codex_Task041_FishingSaleRoundTrip.log`, `Logs/Codex_Task041_FinalRouteRegression.log`.
+
+## 확인하지 않은 것
+
+- 실제 NPC가 걸어와 Fish를 평가하는 시간감과 구매/거절 체감은 사람이 Play Mode에서 확인하지 않았다. 검증은 `NpcController`가 사용하는 동일 거래 진입점을 밤 영업 게이트 뒤에서 호출했다.
+- 새 게임→Day 3 정산 연속 플레이, 저장 종료/재실행, Windows 빌드는 확인하지 않았다.
+
+## 다음 체크포인트
+
+- Task 042에서 이 경로를 스모크 체크리스트에 고정한 뒤 낚시 슬라이스를 닫는다.
