@@ -952,7 +952,7 @@ DECISION_REQUIRED: Vertical Slice 두 번째 낮 활동 = 낚시(임시 기본�
 
 ## Task 039 - 낚시 상호작용 포인트 (낚시 2/5)
 
-상태: PARTIAL
+상태: DONE
 단계: Phase 4
 난이도: M
 예상 Codex 실행 횟수: 3
@@ -974,7 +974,7 @@ Project P.A.와의 연결: 낮 생활(낚시).
 
 ## Task 040 - 낚시 미니 상호작용 피드백 (낚시 3/5)
 
-상태: TODO
+상태: PARTIAL
 단계: Phase 4
 난이도: M
 예상 Codex 실행 횟수: 2

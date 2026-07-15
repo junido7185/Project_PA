@@ -156,6 +156,9 @@ public static class PA_GatheringShopGateValidator
             var shore = FindPoint(points, "shore-forage");
             var forest = FindPoint(points, "forest-forage");
             Require(shore != null && forest != null, "spread forage points (shore/forest) exist");
+            var fishing = shore.GetComponentInChildren<FishingSpot>(true);
+            Require(fishing != null, "shore point exposes a dedicated FishingSpot interaction");
+            Require(fishing.GetInteractPrompt().Contains("낚싯대"), "shore prompt offers casting a fishing rod");
 
             // 2) Day 2 DayPreparation: 채집 가능 상태 + 손님 게이트 닫힘.
             loop.SimulatePhaseForValidation(8f, 2);
@@ -167,18 +170,24 @@ public static class PA_GatheringShopGateValidator
             // 3) 채집 시 유효 sellable ItemInstance 가 인벤토리에 추가된다.
             ClearRuntimeInventory();
             int before = CountSellableItems();
-            bool collected = loop.TryCollectDayPrepStock(shore, PlayerObject());
+            var fishingPlayer = PlayerObject();
+            Require(fishingPlayer != null, "player exists for fishing interaction");
+            fishing.Interact(fishingPlayer);
+            Require(fishing.IsFishing, "fishing interaction enters the cast-and-wait state");
+            Require(fishing.LastFeedback.Contains("기다리는 중"), "casting gives immediate wait feedback");
+            bool collected = fishing.CompleteCatchForValidation(fishingPlayer);
             int after = CountSellableItems();
-            Require(collected, "gathering at a DayPreparation forage point succeeds");
-            Require(after > before, $"gathering adds sellable items to inventory ({before} -> {after})");
+            Require(collected, "finishing the fishing action catches stock");
+            Require(fishing.LastFeedback.Contains("물고기"), "successful catch gives player feedback");
+            Require(after > before, $"fishing adds sellable items to inventory ({before} -> {after})");
 
             var shoreItem = Resources.Load<Item>("Items/Item_Fish");
             Require(shoreItem != null && IsSellable(shoreItem), "forage item (Fish) is a valid sellable item");
             Require(Inventory.instance.HasItems(shoreItem, 1), "gathered item is present in inventory");
 
             // 4) 같은 날 중복 채집 불가.
-            bool secondSameDay = loop.TryCollectDayPrepStock(shore, PlayerObject());
-            Require(!secondSameDay, "same-day repeat gathering is blocked");
+            fishing.Interact(fishingPlayer);
+            Require(!fishing.IsFishing, "same-day repeat fishing is blocked before casting");
 
             // 5) DayPreparation 외(ShopOpen)에서는 채집 불가.
             loop.SimulatePhaseForValidation(20f, 2);
@@ -227,7 +236,9 @@ public static class PA_GatheringShopGateValidator
             // 11) 당일 채집 상태 save/load 라운드트립(v8).
             loop.SimulatePhaseForValidation(8f, 2);
             loop.ResetDayPrepForValidation();
-            Require(loop.TryCollectDayPrepStock(shore, PlayerObject()), "gather on Day 2 for save test");
+            fishing.Interact(fishingPlayer);
+            Require(fishing.IsFishing && fishing.CompleteCatchForValidation(fishingPlayer),
+                "fish on Day 2 for save test");
 
             var data = new SaveData { gameDay = 2 };
             loop.WriteSaveFields(data);
@@ -241,7 +252,7 @@ public static class PA_GatheringShopGateValidator
             loop.RestoreSavedState(data.dayPrepCollectedDay, data.dayPrepCollectedActivities);
             Require(!loop.IsDayPrepPointAvailable(shore), "load restores the same-day collected state");
 
-            Debug.Log($"PA Gathering ShopGate Validation passed. gatherPoints={points.Length}, gatheredInventory={after}, shopGate=OK");
+            Debug.Log($"PA Gathering ShopGate Validation passed. gatherPoints={points.Length}, fishing=OK, gatheredInventory={after}, shopGate=OK");
         }
         catch (Exception ex)
         {

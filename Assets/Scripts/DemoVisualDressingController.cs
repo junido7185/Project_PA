@@ -382,6 +382,13 @@ public class DemoVisualDressingController : MonoBehaviour
             dress.transform.position = point.transform.position;
             dress.transform.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
+            if (id == "shore-forage")
+            {
+                DressFishingPoint(dress.transform, point);
+                _dressedPrepIds.Add(id);
+                continue;
+            }
+
             // 나무 궤짝 받침 (포인트 큐브를 감싸는 진열대 느낌)
             CreatePart(dress.transform, PrimitiveType.Cube, "Crate",
                 new Vector3(0f, -0.18f, 0f), new Vector3(0.95f, 0.34f, 0.95f), CrateWood);
@@ -402,6 +409,28 @@ public class DemoVisualDressingController : MonoBehaviour
 
             _dressedPrepIds.Add(id);
         }
+    }
+
+    void DressFishingPoint(Transform parent, DaytimeStockPrepPoint point)
+    {
+        // 물빛 표식, 기대 둔 낚싯대, 찌로 일반 채집 상자와 구분한다.
+        CreatePart(parent, PrimitiveType.Cylinder, "WaterMarker",
+            new Vector3(0f, -0.22f, 0f), new Vector3(0.95f, 0.035f, 0.95f),
+            new Color(0.36f, 0.70f, 0.82f, 0.72f));
+
+        var rod = CreatePart(parent, PrimitiveType.Cylinder, "FishingRod",
+            new Vector3(-0.32f, 0.65f, 0f), new Vector3(0.035f, 0.82f, 0.035f), WoodDark);
+        rod.transform.localRotation = Quaternion.Euler(0f, 0f, -24f);
+
+        CreatePart(parent, PrimitiveType.Cube, "FishingLine",
+            new Vector3(0.18f, 0.70f, 0f), new Vector3(0.012f, 0.72f, 0.012f), Cream);
+        CreatePart(parent, PrimitiveType.Sphere, "Bobber",
+            new Vector3(0.18f, 0.06f, 0f), Vector3.one * 0.13f,
+            new Color(0.93f, 0.35f, 0.28f, 1f));
+        CreatePart(parent, PrimitiveType.Cube, "CatchBasket",
+            new Vector3(-0.62f, 0.02f, 0.25f), new Vector3(0.42f, 0.30f, 0.42f), CrateWood);
+
+        CreateItemIconBillboard(parent, point.itemResourcePath, new Vector3(0f, 1.35f, 0f), 0.32f);
     }
 
     // ── 2) 영업 간판: 큐브 단독 → 나무 기둥 + 걸이대 + 랜턴 ────────────────────

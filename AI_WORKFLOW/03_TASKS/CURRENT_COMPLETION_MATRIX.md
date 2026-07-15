@@ -9,9 +9,11 @@
 
 | DONE | PARTIAL | TODO | BLOCKED | DECISION_REQUIRED | 합계 |
 |---:|---:|---:|---:|---:|---:|
-| 27 | 23 | 10 | 6 | 19 | 85 |
+| 29 | 23 | 9 | 6 | 18 | 85 |
 
 갱신 2026-07-13 (Fable 5): Task 019 TODO→DONE(`f6cbbe1`), Task 057 DECISION_REQUIRED→DONE(`71fa710`, 사용자 세션 지시로 v9 승인).
+
+갱신 2026-07-15 (Codex): Task 039 PARTIAL→DONE(실제 `IInteractable` 낚시), Task 040 TODO→PARTIAL(대기/성공 프롬프트 구현·자동 확인, 실제 시간 경과 체감은 미확인).
 
 ## Task별 판정
 
@@ -52,16 +54,16 @@
 | 033 | DECISION_REQUIRED | 유입 간격 코드 존재 | 기본 흐름 검증됨 | 밸런스/Inspector 값 사람 결정 | YES |
 | 034 | DONE | SalesLogManager 일일 구매/거절 판단 집계 + 정산/다음날 조언 | CustomerDemandInsight 전용 D3D11 검증 PASS(구매 1/거절 1/구매율 50%) | 런타임 전용, 저장 미지원(Task 055) | NO |
 | 035 | DONE | Arrival/Presentation/Demand 검증기 | Visual pass에서 3종 PASS 이력 | 없음 | NO |
-| 036 | PARTIAL | 채집/Crop/Farmland/Workbench 코드, IslandLife 문서 | GatheringShopGate PASS 이력 | `DAYTIME_ACTIVITIES.md` 미작성, 진짜 낚시 없음 | NO |
+| 036 | PARTIAL | 채집/Crop/Farmland/Workbench 코드, 실제 FishingSpot | GatheringShopGate 낚시 경로 PASS | `DAYTIME_ACTIVITIES.md` 미작성, 광질/농사 생활 루프 미연결 | NO |
 | 037 | DONE | 5개 DaytimeStockPrepPoint, 일별 수집 기록 | GatheringShopGate PASS | 없음 | NO |
 | 038 | TODO | Fish 아이템은 존재 | 낚시 설계 문서 없음 | 두 번째 낮 활동 결정/설계 | NO(방향은 사람) |
-| 039 | PARTIAL | shore-forage가 Fish 지급 | GatheringShopGate PASS | 낚시 상호작용/대기 행위 없음 | NO |
-| 040 | TODO | 없음 | 없음 | 최소 낚시 피드백 구현 | NO |
-| 041 | PARTIAL | Fish가 sellable Item이며 ShopSlot 호환 | forage→재고 검증, 일반 판매 검증 각각 존재 | 낚시→진열→구매 단일 왕복 증거 없음 | NO |
-| 042 | PARTIAL | GatheringShopGate 검증기가 Fish·저장 필드 확인 | 해당 검증 PASS 이력 | 낚시 전용 스모크 없음 | NO |
+| 039 | DONE | `FishingSpot.cs`, shore-forage 런타임 자식 상호작용·낚시 외형 | D3D11 GatheringShopGate: 캐스팅→Fish 2개→일일 제한/리셋 PASS, FinalRoute PASS | 없음 | NO |
+| 040 | PARTIAL | 캐스팅 대기·입질·성공 프롬프트/상태 | 검증기가 캐스팅 진입과 즉시/성공 피드백 확인 | 실제 1.25초 시간 경과와 코지 체감은 사람 확인 필요 | NO |
+| 041 | PARTIAL | Fish가 sellable Item이며 낚시 결과를 ShopSlot에 진열·가격 설정 | 동일 GatheringShopGate에서 낚시→재고→진열→가격 PASS | 같은 경로의 NPC 구매·수익 증가 미검증 | NO |
+| 042 | PARTIAL | GatheringShopGate에 FishingSpot·캐스팅·Fish·일일/저장 assertion 추가 | D3D11 낚시 assertion PASS | 실제 시간 경과 완료와 전용 메뉴 스모크는 없음 | NO |
 | 043 | TODO | Crop/Farmland 기존 코드 | 설계 문서 없음 | 광질/농사 확장 설계 | NO |
 | 044 | TODO | Dialogue/Demand 데이터는 존재 | 설계 문서 없음 | 기존 데이터 기반 주민 의뢰 설계 | NO |
-| 045 | PARTIAL | GAME_LOOP에 채집 5포인트 기록 | Gathering/Shop 검증 분리 PASS | 낚시 미완, DAYTIME_ACTIVITIES 미작성 | NO |
+| 045 | PARTIAL | GAME_LOOP 채집 5포인트 + 실제 낚시 경로 | 낚시/채집→진열·가격 검증 PASS | NPC 판매 왕복, `DAYTIME_ACTIVITIES.md` 미작성 | NO |
 | 046 | PARTIAL | SalesLogManager/VillageChangeSignal 코드 | VillageChangeSignal 검증 PASS 이력 | `VILLAGE_TREND.md` 미작성 | NO |
 | 047 | PARTIAL | count×1000+revenue 선도 카테고리 점수 | Village signal 검증 | 낚시/캠핑/가구 규칙 설계 미완 | NO |
 | 048 | DONE | 카테고리별 런타임 누적/선도 신호 | VillageChangeSignal PASS | 저장은 별도 | NO |

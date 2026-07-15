@@ -1416,3 +1416,32 @@ Next actions:
 
 - Task 039 실제 낚시 상호작용을 해변의 기존 런타임 채집 지점과 `IInteractable` 패턴 위에 구현한다.
 - 이어서 Task 041에서 낚시 결과의 진열·가격·NPC 구매 왕복을 한 경로로 증명한다.
+
+---
+
+# Session 2026-07-15 — Task 039 Real Fishing Interaction
+
+## 플레이어 경험 변화
+
+- 해변 표식에 다가가 `[Space]`를 누르면 즉시 물고기를 줍는 대신 낚싯대를 드리우고 찌의 입질을 기다린다.
+- 성공하면 Fish 2개가 기존 인벤토리에 들어가며, 그날은 낚시 완료 상태가 표시되고 다음 날 다시 이용할 수 있다.
+- 해변 지점은 일반 채집 상자가 아니라 물빛 원형 표식·낚싯대·찌·바구니로 읽힌다.
+
+## 구현·검증
+
+- `FishingSpot`은 기존 `DaytimeStockPrepPoint`의 일일 상태와 `TryCollectDayPrepStock` 인벤토리 경로를 재사용한다. 씬·저장·입력 코어는 변경하지 않았다.
+- 첫 D3D11 검증에서 Unity 특수 null과 `??` 조합으로 자식 컴포넌트 생성이 실패해 BUG_LOG에 기록하고 중단했다. 다음 연속 작업에서 명시적 null 검사로 해결했다.
+- `dotnet build Assembly-CSharp.csproj`: 오류 0, 기존 `CS8785` 경고 1.
+- D3D11 GatheringShopGate PASS: 낚시 프롬프트/대기 상태→Fish 2개→동일 일차 차단→다음 날 재활성→진열·가격→저장 복원.
+- D3D11 FinalDemoRoute PASS: BreadLoaf 판매 30G, Day 1 결산→Day 2 준비 유지.
+- 증거: `Logs/Codex_Task039_Fishing.log`, `Logs/Codex_Task039_FinalRouteRegression.log`.
+
+## 확인하지 않은 것
+
+- 사람이 실제 1.25초 대기와 입질/성공 프롬프트의 코지한 체감을 확인하지 않았다(Task 040 잔여).
+- 낚은 Fish를 같은 검증 경로에서 NPC가 구매하고 수익이 증가하는 마지막 구간은 Task 041로 남는다.
+- Windows 빌드와 새 게임→Day 3 사람 연속 플레이는 확인하지 않았다.
+
+## 다음 체크포인트
+
+- Task 041에서 현재 낚시 검증 경로를 NPC 구매·수익 증가까지 연장한다.

@@ -382,25 +382,27 @@ public class DayNightShopLoopController : MonoBehaviour
         // 기존 Garden Prep Basket/Producer Drop Box 는 튜토리얼/NPC 지원용 보조 재고로 유지한다.
         EnsureForagePoint("forest-forage", "PA_ForagePoint_Forest", "Items/Item_Carrot", 2,
             "숲길 채집", 40f, 9f, new Color(0.45f, 0.78f, 0.40f, 1f));
-        EnsureForagePoint("shore-forage", "PA_ForagePoint_Shore", "Items/Item_Fish", 2,
-            "해변 채집", 130f, 12f, new Color(0.36f, 0.74f, 0.92f, 1f));
+        var shorePoint = EnsureForagePoint("shore-forage", "PA_ForagePoint_Shore", "Items/Item_Fish", 2,
+            "해변 낚시터", 130f, 12f, new Color(0.36f, 0.74f, 0.92f, 1f));
+        EnsureFishingSpot(shorePoint);
         EnsureForagePoint("meadow-forage", "PA_ForagePoint_Meadow", "Items/Item_Wheat", 2,
             "들판 채집", 225f, 10f, new Color(0.92f, 0.85f, 0.42f, 1f));
 
         RefreshPrepPoints();
     }
 
-    bool HasPrepPoint(string activityId)
+    DaytimeStockPrepPoint FindPrepPoint(string activityId)
     {
         foreach (var p in _prepPoints)
-            if (p != null && ResolveActivityId(p) == activityId) return true;
-        return false;
+            if (p != null && ResolveActivityId(p) == activityId) return p;
+        return null;
     }
 
-    void EnsureForagePoint(string activityId, string objectName, string itemPath, int count,
+    DaytimeStockPrepPoint EnsureForagePoint(string activityId, string objectName, string itemPath, int count,
         string label, float angleDeg, float distance, Color color)
     {
-        if (HasPrepPoint(activityId)) return;
+        var existing = FindPrepPoint(activityId);
+        if (existing != null) return existing;
 
         Vector3 pos = ResolveForagePosition(angleDeg, distance);
         var point = CreatePrepPoint(activityId, objectName, itemPath, count, label, pos,
@@ -411,6 +413,43 @@ public class DayNightShopLoopController : MonoBehaviour
         if (col != null) col.isTrigger = true;
 
         _prepPoints.Add(point);
+        return point;
+    }
+
+    void EnsureFishingSpot(DaytimeStockPrepPoint shorePoint)
+    {
+        if (shorePoint == null) return;
+
+        // The child collider resolves FishingSpot before the parent IInteractable,
+        // while the parent remains the owner of daily/save state.
+        var parentCollider = shorePoint.GetComponent<Collider>();
+        if (parentCollider != null)
+            parentCollider.enabled = false;
+
+        var interaction = shorePoint.transform.Find("FishingInteraction");
+        if (interaction == null)
+        {
+            var interactionGo = new GameObject("FishingInteraction");
+            interactionGo.layer = shorePoint.gameObject.layer;
+            interaction = interactionGo.transform;
+            interaction.SetParent(shorePoint.transform, false);
+        }
+
+        interaction.localPosition = Vector3.zero;
+        interaction.localRotation = Quaternion.identity;
+        interaction.localScale = Vector3.one;
+
+        var trigger = interaction.GetComponent<BoxCollider>();
+        if (trigger == null)
+            trigger = interaction.gameObject.AddComponent<BoxCollider>();
+        trigger.isTrigger = true;
+        trigger.center = new Vector3(0f, 0.75f, 0f);
+        trigger.size = new Vector3(2.4f, 2.2f, 2.4f);
+
+        var fishing = interaction.GetComponent<FishingSpot>();
+        if (fishing == null)
+            fishing = interaction.gameObject.AddComponent<FishingSpot>();
+        fishing.Configure(shorePoint);
     }
 
     Vector3 ResolveForagePosition(float angleDeg, float distance)

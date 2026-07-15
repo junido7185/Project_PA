@@ -4,6 +4,7 @@
 
 | Task ID | 완료 날짜 | 수정 파일 | 검증 결과 | 커밋 해시 | 남은 위험 | 다음 작업 |
 |---|---|---|---|---|---|---|
+| Task 039 | 2026-07-15 | `FishingSpot.cs`, `DayNightShopLoopController.cs`, `DemoVisualDressingController.cs`, `PA_GatheringShopGateValidator.cs` | dotnet 오류 0(기준 CS8785 경고 1) + D3D11 낚시/일일 리셋/진열·가격 PASS + FinalRoute 30G PASS | 이번 작업 커밋 | 실제 1.25초 대기 체감과 낚시→NPC 구매는 Task 040/041 | Task 041 |
 | Task 034 | 2026-07-15 | `SalesLogManager.cs`, `CustomerDemandInsightController.cs`, `DayNightShopLoopController.cs`, `PlayableDayScenarioController.cs`, `PA_CustomerDemandInsightValidator.cs` | 런타임/에디터 컴파일 오류 0 + 전용 D3D11 검증 PASS(구매 1/거절 1/구매율 50%, 정산 표시, 다음날 가격 조언) | 이번 작업 커밋 | 통계는 런타임 전용이며 저장/로드 미지원(Task 055) | 3일 경로 단절 감사 |
 | Task 019 | 2026-07-13 | `ShopSlot.cs`(표시 전용+ClearDisplay 견고화), `PA_ShopSoldOutValidator.cs` | 전용 검증기 PASS(구매→품절 라벨→재진열/다음날 해제) + FinalRoute/DayNight/CoreSlice PASS | `f6cbbe1` | 품절 상태는 런타임 전용(저장 안 함, 의도) | Task 034 |
 | Task 057 | 2026-07-13 | `SaveData.cs`, `SaveManager.cs`(v9), `VillageCultureVisualController.cs`, RoundTrip/VillageCulture 검증기, `SAVE_SCHEMA.md` | SaveRoundTrip v9 PASS(대기→다음날 활성→활성 왕복) + VillageCulture/FinalRoute/DayNight PASS | `71fa710` | 트렌드 점수(048)·SalesLog(055)는 미저장 — 별도 승인 | Task 055 승인 또는 Task 034 |
