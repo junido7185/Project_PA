@@ -523,16 +523,13 @@ public class PlayableDayScenarioController : MonoBehaviour
         long earnedToday = Math.Max(0L, revenue - _baselineRevenue);
         int moneyDelta = EconomyService.Instance != null ? money - _baselineMoney : 0;
 
-        // 오늘 판매 건수 — SalesLogManager.GetRecent 에서 day == CurrentDay 만 카운트
-        int salesToday = 0;
-        if (SalesLogManager.Instance != null && GameClock.Instance != null)
-        {
-            int today = GameClock.Instance.CurrentDay;
-            var records = SalesLogManager.Instance.GetRecent(50);
-            if (records != null)
-                foreach (var r in records)
-                    if (r != null && r.gameDay == today) salesToday++;
-        }
+        int today = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        SalesLogManager.DailyDecisionStats decisionStats = SalesLogManager.Instance != null
+            ? SalesLogManager.Instance.GetDailyDecisionStats(today)
+            : default;
+        string decisionSummary = SalesLogManager.Instance != null
+            ? SalesLogManager.Instance.BuildDailyDecisionSummary(today)
+            : "손님 판단 통계를 확인할 수 없습니다.";
 
         // 보리(첫 이주민) 친밀도 변화
         int boriPoints = FriendshipService.Instance != null
@@ -540,9 +537,11 @@ public class PlayableDayScenarioController : MonoBehaviour
             : 0;
 
         string feedbackSummary = BuildFeedbackSummary();
-        string nextAction = earnedToday > 0
-            ? "다음 행동: 잘 팔린 가격대를 기준으로 재고를 보충하고, 더 높은 가치의 가공품을 준비하세요."
-            : "다음 행동: 가격을 낮추거나 NPC 선호에 맞는 상품을 다시 진열하세요.";
+        string nextAction = SalesLogManager.Instance != null && decisionStats.evaluations > 0
+            ? SalesLogManager.Instance.BuildNextDayAdvice(today)
+            : earnedToday > 0
+                ? "다음 준비: 잘 팔린 가격대를 기준으로 재고를 보충하고, 더 높은 가치의 가공품을 준비하세요."
+                : "다음 준비: 가격을 낮추거나 NPC 선호에 맞는 상품을 다시 진열하세요.";
         string tierGoalSummary = BuildTierGoalSummary();
         string villageSignalSummary = BuildVillageSignalSummary();
 
@@ -552,7 +551,7 @@ public class PlayableDayScenarioController : MonoBehaviour
             $"선택 지도: {SelectedMapName}\n" +
             $"오늘 매출: {earnedToday} G\n" +
             $"현재 보유금: {money} G ({moneyDelta:+#;-#;0})\n" +
-            $"판매한 상품: {salesToday} 개\n" +
+            $"손님 판단: {decisionSummary}\n" +
             $"보리와의 친밀도: {boriPoints}\n\n" +
             $"구매/거절 피드백:\n{feedbackSummary}\n\n" +
             $"{nextAction}\n\n" +

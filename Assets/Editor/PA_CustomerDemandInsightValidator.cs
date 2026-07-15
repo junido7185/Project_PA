@@ -140,6 +140,7 @@ public static class PA_CustomerDemandInsightValidator
             Require(item != null, "validation item exists");
 
             GameClock.Instance.ForceSet(8f, 3, "CustomerDemandInsightValidator");
+            var sales = RequireOne<SalesLogManager>("SalesLogManager");
 
             insight.RecordEvaluation(new PurchaseEvaluator.Result
             {
@@ -155,6 +156,10 @@ public static class PA_CustomerDemandInsightValidator
                 reason = "validator-pass"
             }, item, "ValidatorCustomerB", item.basePrice * 2);
 
+            // 구매 건수는 구매 의사가 아니라 실제 결제 성공 경로인 RecordSale만 집계한다.
+            sales.RecordSale(item.itemName, item.category.ToString(), item.basePrice,
+                1f, "ValidatorCustomerA", 3, 19);
+
             insight.RefreshNow();
 
             Require(insight.CurrentInsightText.Contains("Demand Signals"), "demand insight HUD title is visible");
@@ -162,7 +167,21 @@ public static class PA_CustomerDemandInsightValidator
             Require(insight.CurrentInsightText.Contains("Latest:"), "demand insight includes latest signal");
             Require(insight.GetTopCategorySummary().Contains("1/2 bought"), "demand insight summarizes buy rate");
 
-            Debug.Log($"PA Customer Demand Insight Validation passed. item={item.itemName}, category={item.category}");
+            var dailyStats = sales.GetDailyDecisionStats(3);
+            Require(dailyStats.purchases == 1, "daily statistics count one completed purchase");
+            Require(dailyStats.rejections == 1, "daily statistics count one rejected evaluation");
+            Require(dailyStats.purchaseRatePercent == 50, "daily statistics calculate 50 percent purchase rate");
+
+            var loop = RequireOne<DayNightShopLoopController>("DayNightShopLoopController");
+            loop.SimulatePhaseForValidation(23.2f, 3);
+            Require(loop.activityText != null && loop.activityText.text.Contains("구매 1건"),
+                "settlement HUD shows completed purchase count");
+            Require(loop.activityText.text.Contains("보류 1건"),
+                "settlement HUD shows rejection count");
+            Require(sales.BuildNextDayAdvice(3).Contains("가격"),
+                "next-day advice reacts to a high rejection share");
+
+            Debug.Log($"PA Customer Demand Insight Validation passed. item={item.itemName}, category={item.category}, daily=1 buy/1 reject");
         }
         catch (Exception ex)
         {

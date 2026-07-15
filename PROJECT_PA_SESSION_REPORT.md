@@ -1359,3 +1359,30 @@ Next actions:
 
 - 승인 없이 가능한 Task 034 구매/거절 일일 통계 연결을 우선한다.
 - 밤 손님 시간 창은 NPC 스케줄 밸런스 결정이 필요한 별도 작업으로 유지한다.
+
+---
+
+# Session 2026-07-15 — Task 034 Daily Customer Decision Summary
+
+## 플레이어 경험 변화
+
+- 밤 정산에서 그날 손님 판단을 구매 수·보류 수·구매율로 바로 읽을 수 있다.
+- 거절 비중이 높으면 다음 날 시작 안내가 가격 점검을 준비 목표로 제안한다.
+- Day 1 결산과 일반 일일 루프가 같은 `SalesLogManager` 통계를 사용한다.
+
+## 최소 안전 확인
+
+- `dotnet build Assembly-CSharp.csproj`: 오류 0, 기존 CS8785 경고 1.
+- `dotnet build Assembly-CSharp-Editor.csproj`: 오류 0, 기존 CS8785/CS0414 경고.
+- D3D11 `PA_CustomerDemandInsightValidator`: 구매 1건·거절 1건·구매율 50%, 정산 표시, 다음 날 가격 조언 PASS.
+- 증거: `Logs/Codex_Task034_DailyDecisionStats.log`.
+
+## 확인하지 않은 것
+
+- 전체 회귀, Windows 빌드, 3일 연속 사람 플레이, 1920x1080 정산/Day 1 결산의 주관적 가독성은 확인하지 않았다.
+- 일일 통계의 저장/로드는 구현하지 않았다. 저장 v10 후보 Task 055의 승인 범위로 남긴다.
+
+## 다음 체크포인트
+
+- 새 게임 Day 1 종료부터 Day 3 정산까지 실제 입력 경로를 감사하고 가장 큰 단절 1개를 다음 단일 작업으로 선정한다.
+- 밤 손님 시간 창 조정과 Task 055 저장 확장은 각각 사람 결정/승인 전까지 보류한다.

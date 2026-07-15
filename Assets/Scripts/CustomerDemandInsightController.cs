@@ -82,6 +82,18 @@ public class CustomerDemandInsightController : MonoBehaviour
     {
         if (item == null || item.category == ItemCategory.Tool) return;
 
+        // Task 034 — 구매는 ShopSlot.RecordSale의 실제 결제 성공만 집계하고,
+        // 여기서는 기존 평가 관찰 훅을 이용해 보류 판단만 일일 통계에 전달한다.
+        if (!result.willBuy && SalesLogManager.Instance != null)
+        {
+            int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+            SalesLogManager.Instance.RecordRejection(
+                string.IsNullOrEmpty(item.itemName) ? item.name : item.itemName,
+                item.category.ToString(),
+                string.IsNullOrEmpty(customerName) ? "손님" : customerName,
+                day);
+        }
+
         if (!_statsByCategory.TryGetValue(item.category, out var stats))
         {
             stats = new DemandStats();

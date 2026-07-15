@@ -50,7 +50,7 @@
 | 031 | TODO | 주민 프로필은 존재 | 단골/관광객 라벨 없음 | 계층 데이터 방향 확정 후 표시 | NO |
 | 032 | PARTIAL | CustomerArrival/Npc FSM 구현 | Arrival 검증 PASS 이력 | `CUSTOMER_FLOW.md` 미작성 | NO |
 | 033 | DECISION_REQUIRED | 유입 간격 코드 존재 | 기본 흐름 검증됨 | 밸런스/Inspector 값 사람 결정 | YES |
-| 034 | PARTIAL | SalesLogManager 판매 기록 | FinalRoute 판매 기록 흐름 | 거절 수 집계 없음 | NO |
+| 034 | DONE | SalesLogManager 일일 구매/거절 판단 집계 + 정산/다음날 조언 | CustomerDemandInsight 전용 D3D11 검증 PASS(구매 1/거절 1/구매율 50%) | 런타임 전용, 저장 미지원(Task 055) | NO |
 | 035 | DONE | Arrival/Presentation/Demand 검증기 | Visual pass에서 3종 PASS 이력 | 없음 | NO |
 | 036 | PARTIAL | 채집/Crop/Farmland/Workbench 코드, IslandLife 문서 | GatheringShopGate PASS 이력 | `DAYTIME_ACTIVITIES.md` 미작성, 진짜 낚시 없음 | NO |
 | 037 | DONE | 5개 DaytimeStockPrepPoint, 일별 수집 기록 | GatheringShopGate PASS | 없음 | NO |

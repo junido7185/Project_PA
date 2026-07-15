@@ -837,7 +837,7 @@ Project P.A.와의 연결: 상점 운영(밤의 붐빔).
 
 ## Task 034 - 구매/거절 통계 집계 로그
 
-상태: PARTIAL
+상태: DONE
 단계: Phase 3
 난이도: S
 예상 Codex 실행 횟수: 1

@@ -123,7 +123,9 @@ public class DayNightShopLoopController : MonoBehaviour
         _observedDay = day;
         _playerOpenedShopToday = false;
         _openedShopDay = -1;
-        _lastActivityResult = "새로운 아침: 밤 영업 전에 팔 물건을 준비하세요.";
+        _lastActivityResult = day > 1 && SalesLogManager.Instance != null
+            ? SalesLogManager.Instance.BuildNextDayAdvice(day - 1)
+            : "새로운 아침: 밤 영업 전에 팔 물건을 준비하세요.";
         RefreshState(force: true);
         RefreshPrepPoints();
     }
@@ -549,7 +551,11 @@ public class DayNightShopLoopController : MonoBehaviour
         }
 
         if (activityText != null)
-            activityText.text = _lastActivityResult;
+        {
+            activityText.text = _phase == PADayNightPhase.Settlement && SalesLogManager.Instance != null
+                ? SalesLogManager.Instance.BuildDailyDecisionSummary(CurrentDay)
+                : _lastActivityResult;
+        }
     }
 
     static string TimeLabel(float hour)
