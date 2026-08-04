@@ -58,6 +58,8 @@ public class DemoVisualDressingController : MonoBehaviour
     bool _zonesDressed;
     bool _signageTidied;
     bool _shoppersStaged;
+    bool _fountainPhysicsFinalized;
+    bool _tradePortPhysicsFinalized;
     float _nextRefreshAt;
     // v3 — 데모 시작 60초 동안 카운터 앞 손님 그림을 유지하기 위한 재스테이징 기록.
     readonly List<NpcController> _stagedNpcs = new List<NpcController>();
@@ -110,8 +112,11 @@ public class DemoVisualDressingController : MonoBehaviour
         EnsureRoot();
         DressPrepPoints();
         DressShopSign();
-        DressShopSlots(shop);
+        if (!DressMarketStall(shop))
+            DressShopSlots(shop);
         DressGroundZones(shop);
+        FinalizePlazaFountainPhysics();
+        FinalizeTradePortPhysics();
         DressPlaza(shop);
         DressStoreInterior();
         TidySignage();
@@ -119,8 +124,9 @@ public class DemoVisualDressingController : MonoBehaviour
     }
 
     bool _interiorDressed;
+    bool _marketStallDressed;
 
-    // ── S5: 실내 잡화점 인테리어 — 러그/벽 선반/계산대/화분/개구리의자 (렌더러 전용) ──
+    // ── S5: 실내 잡화점 인테리어 — 러그/벽 선반/계산대/화분 (렌더러 전용) ──
     void DressStoreInterior()
     {
         if (_interiorDressed) return;
@@ -162,20 +168,18 @@ public class DemoVisualDressingController : MonoBehaviour
         CreatePart(dress.transform, PrimitiveType.Cube, "CounterRegister",
             new Vector3(3.2f, 1.12f, -3.1f), new Vector3(0.4f, 0.3f, 0.35f), IronDark);
 
-        // 구석 화분/의자 — 실모델 재사용 (없으면 무시).
+        // 구석 화분 — 라이선스가 확인된 Nature Pack 실모델 재사용 (없으면 무시).
         var flowersA = PlaceProp(dress.transform, "Prop_Flowers", Vector3.zero, 30f, 0.9f);
         if (flowersA != null) flowersA.transform.localPosition = new Vector3(-5.1f, 0.05f, 3.6f);
         var flowersB = PlaceProp(dress.transform, "Prop_BushBerries", Vector3.zero, 140f, 0.7f);
         if (flowersB != null) flowersB.transform.localPosition = new Vector3(5.1f, 0.05f, 3.6f);
-        var chair = PlaceProp(dress.transform, "Prop_FroggyChair", Vector3.zero, 205f, 1.0f);
-        if (chair != null) chair.transform.localPosition = new Vector3(-4.6f, 0.05f, -3.1f);
 
         // 벽 장식 트림 — 크림 벽 위 따뜻한 포인트 라인.
         CreatePart(dress.transform, PrimitiveType.Cube, "WallTrim_N",
             new Vector3(0f, 2.75f, 4.28f), new Vector3(12f, 0.12f, 0.06f), new Color(0.83f, 0.42f, 0.34f));
 
         _interiorDressed = true;
-        Debug.Log("🏠 [DemoDressing] 실내 인테리어 드레싱 완료: 러그/선반 2단/계산대/화분/의자");
+        Debug.Log("🏠 [DemoDressing] 실내 인테리어 드레싱 완료: 러그/선반 2단/계산대/화분");
     }
 
     // ── v3: NPC 쇼핑 연출 — Day 1 낮에 손님 2명이 판매대 앞으로 오게 한다.
@@ -497,7 +501,245 @@ public class DemoVisualDressingController : MonoBehaviour
             new Vector3(0.44f, 1.00f, -0.02f), Vector3.one * 0.18f, LanternGlow, emissive: true);
     }
 
-    // ── 3) 판매대 슬롯: 원시 큐브 → 나무 카운터 + 상판 + 앞면 가격판 ────────────
+    // ── 3) 중앙 상점: 임시 큐브 조합을 기존 B01 노점 모델로 교체 ─────────────
+    // 판매/경제 로직은 Prototype_Shop_For_Demo와 기존 ShopSlot이 계속 담당한다.
+    // B01에서는 Visual만 복제하고, 기존 슬롯의 루트 렌더러만 숨겨 상품 표시 자식은 보존한다.
+    bool DressMarketStall(Shop shop)
+    {
+        if (_marketStallDressed) return true;
+
+        const string dressName = "PA_DemoDressing_MarketStall";
+        if (_root.transform.Find(dressName) != null)
+        {
+            _marketStallDressed = true;
+            return true;
+        }
+
+        var definition = Resources.Load<BuildingData>("Buildings/Building_B01_MarketStall");
+        if (definition == null || definition.prefab == null)
+            return false;
+
+        var sourceVisual = definition.prefab.transform.Find("Visual");
+        if (sourceVisual == null)
+            return false;
+
+        var slots = FindDemoSlots(shop);
+        if (slots.Count == 0)
+            return false;
+
+        PlazaFrame frame = ResolvePlazaFrame(slots, shop.transform.position);
+        var stall = new GameObject(dressName);
+        stall.transform.SetParent(_root.transform, false);
+
+        // B01 슬롯은 루트 기준 local -Z(약 2.75m)에 있다. 그 면을 플레이어 쪽으로
+        // 돌리고 기존 슬롯 중심과 맞추면 모델과 실제 상호작용 위치가 일치한다.
+        stall.transform.position = GroundAt(
+            frame.slotsCenter - frame.frontDir * 2.75f,
+            frame.groundY);
+        stall.transform.rotation = Quaternion.LookRotation(-frame.frontDir, Vector3.up);
+
+        var visual = Instantiate(sourceVisual.gameObject, stall.transform);
+        visual.name = "B01_MarketStall_Visual";
+
+        // 상품 모델/아이콘은 ShopSlot_Display 자식이므로 슬롯 GameObject의 원시 메시만 숨긴다.
+        foreach (var slot in slots)
+        {
+            var slotRenderer = slot.GetComponent<Renderer>();
+            if (slotRenderer != null)
+                slotRenderer.enabled = false;
+        }
+
+        // 첫날 안내용 박스 소품은 B01과 역할·공간이 겹친다. 씬 파일은 건드리지 않고
+        // 런타임 표시와 보이지 않는 충돌만 함께 끈다.
+        HidePrototypeMarketBlock("Support_Crate");
+        HidePrototypeMarketBlock("Shop_Tent_Kit");
+        HidePrototypeMarketBlock("Sales_Tent_Preview");
+
+        _marketStallDressed = true;
+        Debug.Log("[DemoDressing] 중앙 상점 최종화: B01 노점 Visual 배치, 임시 박스/충돌 비활성화");
+        return true;
+    }
+
+    static void HidePrototypeMarketBlock(string objectName)
+    {
+        var block = GameObject.Find(objectName);
+        if (block == null) return;
+
+        foreach (var renderer in block.GetComponentsInChildren<Renderer>(true))
+            renderer.enabled = false;
+        foreach (var collider in block.GetComponentsInChildren<Collider>(true))
+            collider.enabled = false;
+    }
+
+    // B11은 원형 분수인데 래퍼 루트의 6x6 BoxCollider가 모서리까지 막아
+    // 보이지 않는 충돌을 만든다. 원본/프리팹은 보존하고, 실제 Visual 메시가
+    // 준비된 경우에만 같은 자식에 비볼록 정적 MeshCollider를 붙인 뒤 루트 Box를 끈다.
+    // 기존 캡슐형 carving NavMeshObstacle은 NPC 우회 권위이므로 건드리지 않는다.
+    void FinalizePlazaFountainPhysics()
+    {
+        if (_fountainPhysicsFinalized) return;
+
+        GameObject fountain = GameObject.Find("B11_PlazaFountain_Static")
+            ?? GameObject.Find("B11_PlazaFountain");
+        if (fountain == null) return;
+
+        int configuredMeshColliders = 0;
+        foreach (MeshFilter meshFilter in fountain.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (meshFilter == null || meshFilter.sharedMesh == null) continue;
+
+            MeshCollider meshCollider = meshFilter.GetComponent<MeshCollider>();
+            if (meshCollider == null)
+                meshCollider = meshFilter.gameObject.AddComponent<MeshCollider>();
+
+            meshCollider.sharedMesh = meshFilter.sharedMesh;
+            meshCollider.convex = false;
+            meshCollider.enabled = true;
+            configuredMeshColliders++;
+        }
+
+        // 메시 준비 실패 시 기존 Box를 유지해 분수가 통과 가능한 상태가 되지 않게 한다.
+        if (configuredMeshColliders == 0) return;
+
+        int disabledBoxes = 0;
+        foreach (BoxCollider boxCollider in fountain.GetComponents<BoxCollider>())
+        {
+            if (!boxCollider.enabled) continue;
+            boxCollider.enabled = false;
+            disabledBoxes++;
+        }
+
+        _fountainPhysicsFinalized = true;
+        Debug.Log($"[DemoDressing] B11 분수 물리 최종화: meshColliders={configuredMeshColliders}, "
+            + $"disabledRootBoxes={disabledBoxes}, carving obstacle preserved");
+    }
+
+    // B12 래퍼의 역사적 10x5m BoxCollider/NavMeshObstacle은 실제 Visual
+    // (약 3.6x2.0m)보다 커서 해안 통로에 보이지 않는 벽과 carving 공백을 만든다.
+    // 원본/프리팹/씬은 보존하고 활성 인스턴스에서만 실제 메시 bounds로 "축소"한다.
+    // 메시가 없거나 현재 물리가 이미 더 작으면 아무것도 변경하지 않는다.
+    void FinalizeTradePortPhysics()
+    {
+        if (_tradePortPhysicsFinalized) return;
+
+        GameObject mapPort = GameObject.Find("B12_TradePort");
+        GameObject legacyPort = GameObject.Find("B12_TradePort_Static");
+        if (mapPort == null && legacyPort == null) return;
+
+        int finalizedRoots = 0;
+        int tightenedBoxes = 0;
+        int tightenedObstacles = 0;
+
+        if (TryTightenTradePortPhysics(mapPort, ref tightenedBoxes, ref tightenedObstacles))
+            finalizedRoots++;
+        if (legacyPort != mapPort
+            && TryTightenTradePortPhysics(legacyPort, ref tightenedBoxes, ref tightenedObstacles))
+        {
+            finalizedRoots++;
+        }
+
+        // Visual 메시가 아직 준비되지 않았다면 다음 refresh에서 다시 시도한다.
+        if (finalizedRoots == 0) return;
+
+        _tradePortPhysicsFinalized = true;
+        Debug.Log($"[DemoDressing] B12 항구 물리 최종화: roots={finalizedRoots}, "
+            + $"tightenedBoxes={tightenedBoxes}, tightenedObstacles={tightenedObstacles}");
+    }
+
+    static bool TryTightenTradePortPhysics(
+        GameObject tradePort,
+        ref int tightenedBoxes,
+        ref int tightenedObstacles)
+    {
+        if (tradePort == null
+            || !TryCalculateLocalMeshBounds(tradePort.transform, out Bounds visualBounds))
+        {
+            return false;
+        }
+
+        foreach (BoxCollider boxCollider in tradePort.GetComponents<BoxCollider>())
+        {
+            if (boxCollider == null || !boxCollider.enabled || boxCollider.isTrigger) continue;
+            if (!IsClearlyOversized(boxCollider.size, visualBounds.size)) continue;
+
+            boxCollider.center = visualBounds.center;
+            boxCollider.size = ShrinkOnly(boxCollider.size, visualBounds.size);
+            tightenedBoxes++;
+        }
+
+        foreach (NavMeshObstacle obstacle in tradePort.GetComponents<NavMeshObstacle>())
+        {
+            if (obstacle == null
+                || !obstacle.enabled
+                || obstacle.shape != NavMeshObstacleShape.Box
+                || !IsClearlyOversized(obstacle.size, visualBounds.size))
+            {
+                continue;
+            }
+
+            obstacle.center = visualBounds.center;
+            obstacle.size = ShrinkOnly(obstacle.size, visualBounds.size);
+            tightenedObstacles++;
+        }
+
+        return true;
+    }
+
+    static bool TryCalculateLocalMeshBounds(Transform root, out Bounds localBounds)
+    {
+        localBounds = default;
+        bool hasBounds = false;
+        Matrix4x4 worldToRoot = root.worldToLocalMatrix;
+
+        foreach (MeshFilter meshFilter in root.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (meshFilter == null || meshFilter.sharedMesh == null) continue;
+
+            Bounds meshBounds = meshFilter.sharedMesh.bounds;
+            Matrix4x4 meshToRoot = worldToRoot * meshFilter.transform.localToWorldMatrix;
+            Vector3 min = meshBounds.min;
+            Vector3 max = meshBounds.max;
+
+            for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
+            {
+                Vector3 corner = meshToRoot.MultiplyPoint3x4(new Vector3(
+                    (cornerIndex & 1) == 0 ? min.x : max.x,
+                    (cornerIndex & 2) == 0 ? min.y : max.y,
+                    (cornerIndex & 4) == 0 ? min.z : max.z));
+
+                if (!hasBounds)
+                {
+                    localBounds = new Bounds(corner, Vector3.zero);
+                    hasBounds = true;
+                }
+                else
+                {
+                    localBounds.Encapsulate(corner);
+                }
+            }
+        }
+
+        return hasBounds;
+    }
+
+    static bool IsClearlyOversized(Vector3 currentSize, Vector3 visualSize)
+    {
+        float currentVolume = currentSize.x * currentSize.y * currentSize.z;
+        float visualVolume = Mathf.Max(0.001f, visualSize.x * visualSize.y * visualSize.z);
+        return currentSize.x > visualSize.x + 0.8f
+            || currentSize.z > visualSize.z + 0.8f
+            || currentVolume > visualVolume * 1.8f;
+    }
+
+    static Vector3 ShrinkOnly(Vector3 currentSize, Vector3 visualSize)
+    {
+        return new Vector3(
+            Mathf.Min(currentSize.x, visualSize.x),
+            Mathf.Min(currentSize.y, visualSize.y),
+            Mathf.Min(currentSize.z, visualSize.z));
+    }
+
+    // B01 에셋이 누락된 개발 환경에서만 사용하는 안전한 폴백 판매대.
     void DressShopSlots(Shop shop)
     {
         var slots = FindDemoSlots(shop);
@@ -705,12 +947,6 @@ public class DemoVisualDressingController : MonoBehaviour
                 CreateBench(plaza.transform, pos, Quaternion.LookRotation(-dir, Vector3.up));
             }
 
-            // 코지 시그니처 소품 — 분수 옆 개구리 의자 (프로젝트 내부 실모델 재사용).
-            Vector3 chairDir = Quaternion.Euler(0f, 200f, 0f) * Vector3.forward;
-            var chair = PlaceProp(plaza.transform, "Prop_FroggyChair",
-                GroundAt(fountain.transform.position + chairDir * 3.0f, frame.groundY), 20f, 1.0f);
-            if (chair != null)
-                chair.transform.rotation = Quaternion.LookRotation(-chairDir, Vector3.up);
         }
 
         // 5-6) v3 실모델 식생 레이어 — Nature Pack 프리팹으로 광장 프레이밍.

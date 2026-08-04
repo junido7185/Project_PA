@@ -12,6 +12,10 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
     public float idleFrequency = 0.55f;
     public float walkFrequency = 1.55f;
     public float blendResponsiveness = 8f;
+    [Tooltip("World-space distance covered by one complete procedural gait cycle.")]
+    public float nominalStrideLength = 1.15f;
+    public float CurrentPlanarSpeed { get; private set; }
+    public float CurrentCadence { get; private set; }
 
     [Header("Idle")]
     [Range(0f, 0.15f)] public float idleBreath = 0.035f;
@@ -160,13 +164,16 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
             velocity.y = 0f;
             speed = velocity.magnitude;
         }
+        CurrentPlanarSpeed = speed;
 
         float targetBlend = Mathf.InverseLerp(0.05f, 1.25f, speed);
         _walkBlend = Mathf.MoveTowards(_walkBlend, targetBlend, Time.deltaTime * blendResponsiveness);
 
-        float speedScale = Mathf.Clamp(speed / 2f, 0.75f, 1.35f);
-        float frequency = Mathf.Lerp(idleFrequency, walkFrequency * speedScale, _walkBlend);
-        _cycle += Time.deltaTime * frequency;
+        float safeStride = Mathf.Max(0.45f, nominalStrideLength);
+        float profileCadenceScale = Mathf.Clamp(walkFrequency / 1.55f, 0.8f, 1.2f);
+        float distanceCadence = Mathf.Clamp(speed / safeStride * profileCadenceScale, 0.7f, 2.5f);
+        CurrentCadence = Mathf.Lerp(idleFrequency, distanceCadence, _walkBlend);
+        _cycle += Time.deltaTime * CurrentCadence;
 
         ApplyPose();
     }
@@ -291,6 +298,7 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         idleFrequency = 0.55f;
         walkFrequency = 1.55f;
         blendResponsiveness = 8f;
+        nominalStrideLength = 1.15f;
         idleBreath = 0.035f;
         idleHeadNod = 0.012f;
         armRestDrop = 0.78f;

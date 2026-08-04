@@ -136,6 +136,17 @@
       "humanFollowUp": "Balance processing margins later."
     },
     {
+      "id": "theme-corner",
+      "executeMethod": "PA_ThemeCornerValidator.RunThemeCornerValidation",
+      "sourceFile": "Assets/Editor/PA_ThemeCornerValidator.cs",
+      "purpose": "Validate live same-category display corners, labels, sales linkage, and save-derived rebuild.",
+      "workflowTypes": ["shop-customization", "merchandising", "village-growth", "presentation"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first adjacency, placement, presentation, sale, or load assertion.",
+      "humanFollowUp": "Judge world-label readability and category color fit from the three same-view captures."
+    },
+    {
       "id": "village-change-signal",
       "executeMethod": "PA_VillageChangeSignalValidator.RunVillageChangeSignalValidation",
       "sourceFile": "Assets/Editor/PA_VillageChangeSignalValidator.cs",

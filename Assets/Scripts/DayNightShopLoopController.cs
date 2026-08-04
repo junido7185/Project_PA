@@ -174,6 +174,15 @@ public class DayNightShopLoopController : MonoBehaviour
     bool TryStartNextDayInternal(bool allowCompletedDay1Tutorial)
     {
         RefreshState(force: false);
+
+        if (LongPlayProgressionController.Instance != null
+            && LongPlayProgressionController.Instance.IsMilestoneCompletionOpen)
+        {
+            _lastActivityResult = "운영 완주 기록에서 계속 플레이 또는 저장 후 종료를 선택하세요.";
+            RefreshUI();
+            return false;
+        }
+
         bool tutorialCompletion = allowCompletedDay1Tutorial && CurrentDay == 1;
         if (!CanPlayerStartNextDay && !tutorialCompletion)
         {
@@ -236,6 +245,33 @@ public class DayNightShopLoopController : MonoBehaviour
 
         RefreshPrepPoints();
         RefreshUI();
+    }
+
+    // 주민 요청을 포함한 낮 활동이 오늘 이미 완료됐는지 조회한다.
+    // SaveData 필드를 늘리지 않고 기존 dayPrepCollectedActivities 문자열 목록을 공유한다.
+    public bool IsDailyActivityCompleted(string activityId)
+    {
+        if (string.IsNullOrWhiteSpace(activityId)) return false;
+
+        return _prepCollectionDays.TryGetValue(activityId.Trim(), out int day)
+            && day >= CurrentDay;
+    }
+
+    // 현재 낮 준비 단계에서만 일일 활동을 한 번 완료 처리한다.
+    public bool TryCompleteDailyActivity(string activityId)
+    {
+        RefreshState(force: false);
+        if (_phase != PADayNightPhase.DayPreparation || string.IsNullOrWhiteSpace(activityId))
+            return false;
+
+        string normalizedId = activityId.Trim();
+        if (IsDailyActivityCompleted(normalizedId))
+            return false;
+
+        _prepCollectionDays[normalizedId] = CurrentDay;
+        RefreshPrepPoints();
+        RefreshUI();
+        return true;
     }
 
     public bool TryCollectDayPrepStock(DaytimeStockPrepPoint source, GameObject interactor)
@@ -389,6 +425,9 @@ public class DayNightShopLoopController : MonoBehaviour
             "들판 채집", 225f, 10f, new Color(0.92f, 0.85f, 0.42f, 1f));
         var miningPoint = EnsureMiningPoint();
         EnsureMiningSpot(miningPoint);
+        EnsureForagePoint("farm-seed-pouch", "PA_FarmSeedPouch", "Items/Item_15_Seed", 2,
+            "농장 씨앗 주머니", 205f, 9f, new Color(0.76f, 0.67f, 0.38f, 1f));
+        FarmPlotInteraction.EnsureRuntimePlots();
 
         RefreshPrepPoints();
     }
@@ -668,8 +707,7 @@ public class DayNightShopLoopController : MonoBehaviour
 
     bool IsPrepActivityCollectedToday(string activityId)
     {
-        return _prepCollectionDays.TryGetValue(activityId, out int day)
-            && day >= CurrentDay;
+        return IsDailyActivityCompleted(activityId);
     }
 
     static string ResolveActivityId(DaytimeStockPrepPoint point)

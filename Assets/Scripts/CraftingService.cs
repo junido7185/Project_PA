@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // 가공(Crafting) 단일 진입점.
@@ -11,20 +12,17 @@ using UnityEngine;
 //   1) 워크샵 종류 매칭 (recipe.requiredWorkbench != None 이면 wb 종류 일치 필수)
 //   2) Tier 잠금 (TierService.IsUnlocked)
 //   3) 재료 보유량 (Inventory.HasItems)
-// 그 후:
-//   4) 재료 차감
-//   5) 결과 quality 계산: baseOutputQuality + ingredientQualityWeight × (재료평균 - 1)
-//   6) ItemInstance 생성 → Inventory.AddInstance 로 메타 보존 추가
-//
-// 주의:
-// - 재료 환원 트랜잭션 없음. 가방 풀 시 경고만 띄우고 false 반환 (재료는 이미 차감된 상태).
+//   4) 결과 quality/ItemInstance 계산
+//   5) 재료 차감 후의 인벤토리를 모의해 결과 스택 수용 가능성 확인
+// 그 후에만:
+//   6) 재료 차감 → Inventory.AddInstance 로 메타 보존 결과 추가
 public static class CraftingService
 {
     public static bool TryCraft(RecipeData recipe, Workbench workbench)
     {
-        if (recipe == null || recipe.outputItem == null)
+        if (recipe == null || recipe.outputItem == null || recipe.outputCount <= 0)
         {
-            Debug.LogWarning("🛠 CraftingService: 잘못된 RecipeData (null 또는 outputItem 없음)");
+            Debug.LogWarning("🛠 CraftingService: 잘못된 RecipeData (null, outputItem 없음 또는 outputCount <= 0)");
             return false;
         }
 
@@ -96,33 +94,111 @@ public static class CraftingService
             ingredientAvgQuality = totalCount > 0 ? totalQ / totalCount : 1f;
         }
 
-        // 5. 재료 차감
+        // 5. 결과 quality 계산
+        float resultQuality = recipe.baseOutputQuality
+            + recipe.ingredientQualityWeight * (ingredientAvgQuality - 1f);
+        resultQuality = Mathf.Clamp(resultQuality, 0.5f, 3f);
+
+        // 6. 결과 ItemInstance를 먼저 만들고, 실제 차감 순서(hotbar → inventory)를
+        //    모의한 뒤에도 메타 일치 스택 또는 빈 슬롯이 남는지 확인한다.
+        var result = new ItemInstance(recipe.outputItem, recipe.outputCount)
+        {
+            quality = resultQuality
+        };
+
+        if (!CanReceiveAfterIngredientRemoval(result, recipe.ingredients))
+        {
+            Debug.LogWarning($"⚠️ 가방 공간 부족: 결과물 [{recipe.outputItem.itemName}] ×{recipe.outputCount}을 받을 수 없습니다. " +
+                             "재료는 차감되지 않았습니다.");
+            return false;
+        }
+
+        // 7. 수용 가능성이 확정된 뒤에만 재료를 차감한다.
         foreach (var ing in recipe.ingredients)
         {
             if (ing == null || ing.item == null || ing.count <= 0) continue;
             Inventory.instance.RemoveItems(ing.item, ing.count);
         }
 
-        // 6. 결과 quality 계산
-        float resultQuality = recipe.baseOutputQuality
-            + recipe.ingredientQualityWeight * (ingredientAvgQuality - 1f);
-        resultQuality = Mathf.Clamp(resultQuality, 0.5f, 3f);
-
-        // 7. 결과 ItemInstance 생성 + 인벤토리 푸시 (메타 보존)
-        var result = new ItemInstance(recipe.outputItem, recipe.outputCount)
-        {
-            quality = resultQuality
-        };
-
         if (!Inventory.instance.AddInstance(result))
         {
-            Debug.LogWarning($"⚠️ 가방이 가득 차 결과물 [{recipe.outputItem.itemName}] 수령 실패. " +
-                             "재료는 이미 차감되었습니다.");
+            Debug.LogError($"❌ [{recipe.recipeName}] 결과 수용량 선검사 후 AddInstance가 실패했습니다. " +
+                           "인벤토리 변경 콜백과 제작 트랜잭션을 점검해야 합니다.");
             return false;
         }
 
+        workbench?.PlayCraftFeedback(recipe.outputItem.itemName);
         Debug.Log($"✅ 가공 완료: {recipe.outputItem.itemName} ×{recipe.outputCount} " +
                   $"(품질 {resultQuality:F2})");
         return true;
+    }
+
+    static bool CanReceiveAfterIngredientRemoval(ItemInstance result, List<RecipeIngredient> ingredients)
+    {
+        Inventory inventory = Inventory.instance;
+        if (inventory == null || inventory.slots == null || result == null || result.data == null)
+            return false;
+
+        var remainingRemoval = new Dictionary<Item, int>();
+        if (ingredients != null)
+        {
+            foreach (RecipeIngredient ingredient in ingredients)
+            {
+                if (ingredient == null || ingredient.item == null || ingredient.count <= 0) continue;
+                remainingRemoval.TryGetValue(ingredient.item, out int count);
+                remainingRemoval[ingredient.item] = count + ingredient.count;
+            }
+        }
+
+        // RemoveItems와 같은 순서로 핫바 소모분을 먼저 계산한다.
+        if (inventory.hotbar != null && inventory.hotbar.slots != null)
+        {
+            foreach (InventorySlot slot in inventory.hotbar.slots)
+                ConsumeSimulated(slot, remainingRemoval);
+        }
+
+        int remainingOutput = result.count;
+        int maxStack = Mathf.Max(1, result.data.maxStack);
+        bool emptySlotAfterRemoval = false;
+
+        foreach (InventorySlot slot in inventory.slots)
+        {
+            if (slot == null || slot.IsEmpty)
+            {
+                emptySlotAfterRemoval = true;
+                continue;
+            }
+
+            int simulatedCount = slot.count;
+            if (remainingRemoval.TryGetValue(slot.item, out int remove) && remove > 0)
+            {
+                int consumed = Mathf.Min(simulatedCount, remove);
+                simulatedCount -= consumed;
+                remainingRemoval[slot.item] = remove - consumed;
+            }
+
+            if (simulatedCount <= 0)
+            {
+                emptySlotAfterRemoval = true;
+                continue;
+            }
+
+            if (slot.instance != null && slot.instance.CanStackWith(result))
+            {
+                remainingOutput -= Mathf.Max(0, maxStack - simulatedCount);
+                if (remainingOutput <= 0) return true;
+            }
+        }
+
+        // AddInstance는 메타 일치 스택을 채운 뒤 남은 결과를 첫 빈 슬롯에 넣는다.
+        return remainingOutput <= 0 || emptySlotAfterRemoval;
+    }
+
+    static void ConsumeSimulated(InventorySlot slot, Dictionary<Item, int> remainingRemoval)
+    {
+        if (slot == null || slot.IsEmpty || slot.item == null) return;
+        if (!remainingRemoval.TryGetValue(slot.item, out int remove) || remove <= 0) return;
+
+        remainingRemoval[slot.item] = Mathf.Max(0, remove - slot.count);
     }
 }

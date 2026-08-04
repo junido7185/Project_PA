@@ -11,7 +11,18 @@ public class VillageCultureVisualController : MonoBehaviour
 {
     public const string ControllerName = "PA_VillageCultureVisualController";
     public const string ProcessedVisualRootName = "PA_VillageCulture_Processed";
+    public const string RawVisualRootName = "PA_VillageCulture_Raw";
+    public const string UtilityVisualRootName = "PA_VillageCulture_Utility";
+    public const string LuxuryVisualRootName = "PA_VillageCulture_Luxury";
     public const string HintPanelName = "VillageCultureHintPanel";
+
+    const string ProcessedWorkbenchDataResource = "Buildings/Building_B05_Workbench";
+    const string ProcessedPreparationKitResource = "VisualFinalization/B05_Workbench_PreparationKit";
+    const string UtilityForgeDataResource = "Buildings/Building_B07_BlacksmithForge";
+    const string LuxurySewingDataResource = "Buildings/Building_B08_SewingTable";
+    const string RawWoodLogResource = "PA_DemoProps/Prop_WoodLog";
+    const string RawRockResource = "PA_DemoProps/Prop_Rock";
+    const string VillageSignResource = "VisualFinalization/B10_Cottage_ShopSign";
 
     public static VillageCultureVisualController Instance { get; private set; }
 
@@ -24,6 +35,9 @@ public class VillageCultureVisualController : MonoBehaviour
     public float hintSeconds = 5f;
 
     GameObject _visualRoot;
+    GameObject _rawVisualRoot;
+    GameObject _utilityVisualRoot;
+    GameObject _luxuryVisualRoot;
     Canvas _hintCanvas;
     GameObject _hintPanel;
     TextMeshProUGUI _hintText;
@@ -39,9 +53,24 @@ public class VillageCultureVisualController : MonoBehaviour
     ItemCategory _pendingCategory;
     ItemCategory _activeCategory;
 
-    public GameObject VisualRoot => _visualRoot;
+    public GameObject VisualRoot => !_hasActiveCategory
+        ? _visualRoot
+        : _activeCategory switch
+        {
+            ItemCategory.Raw => _rawVisualRoot,
+            ItemCategory.Utility => _utilityVisualRoot,
+            ItemCategory.Luxury => _luxuryVisualRoot,
+            _ => _visualRoot
+        };
+    public GameObject ProcessedVisualRoot => _visualRoot;
+    public GameObject RawVisualRoot => _rawVisualRoot;
+    public GameObject UtilityVisualRoot => _utilityVisualRoot;
+    public GameObject LuxuryVisualRoot => _luxuryVisualRoot;
     public GameObject HintPanel => _hintPanel;
-    public bool VisualActive => _visualRoot != null && _visualRoot.activeInHierarchy;
+    public bool VisualActive => IsVisualActive(_visualRoot)
+        || IsVisualActive(_rawVisualRoot)
+        || IsVisualActive(_utilityVisualRoot)
+        || IsVisualActive(_luxuryVisualRoot);
     public bool HasPendingChange => _hasPendingChange;
     public int PendingSaleDay => _pendingSaleDay;
     public int HintDisplayCount => _hintDisplayCount;
@@ -184,6 +213,10 @@ public class VillageCultureVisualController : MonoBehaviour
             return;
 
         var records = SalesLogManager.Instance.GetRecent(Mathf.Max(1, maxRecentSales));
+        bool selectedNewestTrackedSale = false;
+        ItemCategory newestCategory = trackedCategory;
+        int newestSaleDay = 0;
+
         foreach (var record in records)
         {
             if (record == null)
@@ -198,12 +231,32 @@ public class VillageCultureVisualController : MonoBehaviour
             if (!Enum.TryParse(record.category, true, out ItemCategory category))
                 continue;
 
-            if (category != trackedCategory)
+            // VC-001A의 Processed 계약을 보존하면서 Raw/Utility/Luxury를 실제 변화로 확장한다.
+            // GetRecent은 최신순이므로 한 refresh 사이에 여러 판매가 들어오면 가장 최근
+            // 추적 카테고리 하나만 다음 날 대표 변화로 선택한다.
+            if (category != trackedCategory
+                && category != ItemCategory.Processed
+                && category != ItemCategory.Raw
+                && category != ItemCategory.Utility
+                && category != ItemCategory.Luxury)
                 continue;
 
-            _pendingCategory = category;
-            _pendingSaleDay = Mathf.Max(1, record.gameDay);
+            if (selectedNewestTrackedSale)
+                continue;
+
+            newestCategory = category;
+            newestSaleDay = Mathf.Max(1, record.gameDay);
+            selectedNewestTrackedSale = true;
+        }
+
+        if (selectedNewestTrackedSale)
+        {
+            _pendingCategory = newestCategory;
+            _pendingSaleDay = newestSaleDay;
             _hasPendingChange = true;
+            // 기존 활성 변화의 힌트 여부를 새 pending 변화가 이어받으면 두 번째
+            // 카테고리의 설명이 영원히 생략된다. 새 변화마다 딱 한 번 다시 허용한다.
+            _hintShownForActiveChange = false;
         }
     }
 
@@ -223,8 +276,15 @@ public class VillageCultureVisualController : MonoBehaviour
 
     void EnsureVisual()
     {
-        if (_visualRoot != null)
-            return;
+        EnsureProcessedVisual();
+        EnsureRawVisual();
+        EnsureUtilityVisual();
+        EnsureLuxuryVisual();
+    }
+
+    void EnsureProcessedVisual()
+    {
+        if (_visualRoot != null) return;
 
         var existing = GameObject.Find(ProcessedVisualRootName);
         if (existing != null)
@@ -235,30 +295,198 @@ public class VillageCultureVisualController : MonoBehaviour
 
         _visualRoot = new GameObject(ProcessedVisualRootName);
         _visualRoot.transform.SetParent(transform, false);
-        PlaceVisualRoot();
+        PlaceVisualRoot(_visualRoot);
+        _visualRoot.SetActive(false);
 
-        CreateCube("PA_VillageCulture_Processed_Workbench",
-            new Vector3(0f, 0.24f, 0f), new Vector3(1.45f, 0.22f, 0.72f),
-            new Color(0.52f, 0.32f, 0.18f, 1f));
-        CreateCube("PA_VillageCulture_Processed_CrateA",
-            new Vector3(-0.46f, 0.55f, 0.06f), new Vector3(0.36f, 0.32f, 0.32f),
-            new Color(0.92f, 0.63f, 0.33f, 1f));
-        CreateCube("PA_VillageCulture_Processed_CrateB",
-            new Vector3(0.02f, 0.56f, -0.02f), new Vector3(0.42f, 0.34f, 0.30f),
-            new Color(0.96f, 0.70f, 0.38f, 1f));
-        CreateCube("PA_VillageCulture_Processed_RecipeBoard",
-            new Vector3(0.55f, 0.72f, -0.08f), new Vector3(0.12f, 0.78f, 0.62f),
-            new Color(0.18f, 0.34f, 0.28f, 1f));
-        CreateCube("PA_VillageCulture_Processed_WarmBanner",
-            new Vector3(0f, 1.15f, -0.12f), new Vector3(1.25f, 0.14f, 0.08f),
-            new Color(0.95f, 0.50f, 0.24f, 1f));
+        CreateProcessedWorkbenchVisual();
+
+        GameObject sign = CreateResourceProp(_visualRoot.transform, "PA_VillageCulture_Processed_Sign",
+            VillageSignResource, new Vector3(0f, 1.66f, 0.58f), Vector3.zero, 0.44f);
+        if (sign != null)
+            CreateSignLabel(sign.transform, "PA_VillageCulture_Processed_SignLabel", "가공 준비대");
 
         SetVisualActive(false);
     }
 
-    void PlaceVisualRoot()
+    // 핵심 마을 변화에는 더 이상 원시 큐브 작업대를 만들지 않는다. 이미 실제 제작과
+    // 카메라 검증을 거친 B05의 Visual 메시와 Project P.A. 준비 키트만 복제한다.
+    // 래퍼의 Workbench/Collider/NavMeshObstacle은 처음부터 인스턴스화하지 않는다.
+    void CreateProcessedWorkbenchVisual()
     {
-        if (_visualRoot == null)
+        BuildingData definition = Resources.Load<BuildingData>(ProcessedWorkbenchDataResource);
+        Transform sourceVisual = definition != null && definition.prefab != null
+            ? definition.prefab.transform.Find("Visual")
+            : null;
+        if (sourceVisual == null)
+        {
+            Debug.LogWarning($"🏘️ [VillageCulture] B05 실제 Visual을 찾을 수 없습니다: {ProcessedWorkbenchDataResource}/prefab/Visual");
+            return;
+        }
+
+        var holder = new GameObject("PA_VillageCulture_Processed_WorkbenchVisual");
+        holder.transform.SetParent(_visualRoot.transform, false);
+        holder.transform.localPosition = Vector3.zero;
+        holder.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+        holder.transform.localScale = Vector3.one * 0.58f;
+
+        GameObject workbenchVisual = Instantiate(sourceVisual.gameObject, holder.transform, false);
+        workbenchVisual.name = "PA_VillageCulture_Processed_B05Visual";
+        StripToVisualOnly(workbenchVisual, removeLights: true);
+
+        GameObject preparationKit = Resources.Load<GameObject>(ProcessedPreparationKitResource);
+        if (preparationKit == null)
+        {
+            Debug.LogWarning($"🏘️ [VillageCulture] B05 준비 키트를 찾을 수 없습니다: {ProcessedPreparationKitResource}");
+            return;
+        }
+
+        GameObject kitVisual = Instantiate(preparationKit, holder.transform, false);
+        kitVisual.name = "PA_VillageCulture_Processed_PreparationKit";
+        kitVisual.transform.localPosition = Vector3.zero;
+        kitVisual.transform.localRotation = Quaternion.identity;
+        kitVisual.transform.localScale = Vector3.one;
+        StripToVisualOnly(kitVisual, removeLights: true);
+    }
+
+    // Raw 변화는 임시 원시 큐브를 늘리지 않는다. 프로젝트에 이미 들어와 출처가
+    // 기록된 Nature Pack 실모델과 Project P.A. 자체 간판 메시만 조합한다.
+    void EnsureRawVisual()
+    {
+        if (_rawVisualRoot != null) return;
+
+        var existing = GameObject.Find(RawVisualRootName);
+        if (existing != null)
+        {
+            _rawVisualRoot = existing;
+            return;
+        }
+
+        _rawVisualRoot = new GameObject(RawVisualRootName);
+        _rawVisualRoot.transform.SetParent(transform, false);
+        PlaceVisualRoot(_rawVisualRoot);
+
+        CreateResourceProp(_rawVisualRoot.transform, "PA_VillageCulture_Raw_WoodLogA",
+            RawWoodLogResource, new Vector3(-0.48f, 0f, -0.06f), new Vector3(0f, 18f, 0f), 0.56f);
+        CreateResourceProp(_rawVisualRoot.transform, "PA_VillageCulture_Raw_WoodLogB",
+            RawWoodLogResource, new Vector3(0.02f, 0.02f, 0.18f), new Vector3(0f, -16f, 0f), 0.46f);
+        CreateResourceProp(_rawVisualRoot.transform, "PA_VillageCulture_Raw_Rock",
+            RawRockResource, new Vector3(0.50f, 0f, -0.02f), new Vector3(0f, -28f, 0f), 0.72f);
+
+        GameObject sign = CreateResourceProp(_rawVisualRoot.transform, "PA_VillageCulture_Raw_Sign",
+            VillageSignResource, new Vector3(0f, 1.08f, 0.42f), Vector3.zero, 0.52f);
+        if (sign != null)
+            CreateSignLabel(sign.transform, "PA_VillageCulture_Raw_SignLabel", "원자재 수거처");
+
+        SetVisualActive(false);
+    }
+
+    // Utility 변화는 실제 철제 도구 제작과 연결된 B07의 Visual만 축소 재사용한다.
+    // 원본 Workbench 래퍼와 물리·행동·열원 조명은 복제하지 않아 실제 제작대와
+    // 혼동되거나 광장 동선을 막지 않는 다음 날 시각 신호로만 남긴다.
+    void EnsureUtilityVisual()
+    {
+        if (_utilityVisualRoot != null) return;
+
+        var existing = GameObject.Find(UtilityVisualRootName);
+        if (existing != null)
+        {
+            _utilityVisualRoot = existing;
+            return;
+        }
+
+        _utilityVisualRoot = new GameObject(UtilityVisualRootName);
+        _utilityVisualRoot.transform.SetParent(transform, false);
+        PlaceVisualRoot(_utilityVisualRoot);
+        _utilityVisualRoot.SetActive(false);
+
+        CreateUtilityForgeVisual();
+
+        GameObject sign = CreateResourceProp(_utilityVisualRoot.transform, "PA_VillageCulture_Utility_Sign",
+            VillageSignResource, new Vector3(0f, 1.46f, 0.84f), Vector3.zero, 0.44f);
+        if (sign != null)
+            CreateSignLabel(sign.transform, "PA_VillageCulture_Utility_SignLabel", "공구 수리대");
+
+        SetVisualActive(false);
+    }
+
+    void CreateUtilityForgeVisual()
+    {
+        BuildingData definition = Resources.Load<BuildingData>(UtilityForgeDataResource);
+        Transform sourceVisual = definition != null && definition.prefab != null
+            ? definition.prefab.transform.Find("Visual")
+            : null;
+        if (sourceVisual == null)
+        {
+            Debug.LogWarning($"🏘️ [VillageCulture] B07 실제 Visual을 찾을 수 없습니다: {UtilityForgeDataResource}/prefab/Visual");
+            return;
+        }
+
+        var holder = new GameObject("PA_VillageCulture_Utility_ForgeVisual");
+        holder.transform.SetParent(_utilityVisualRoot.transform, false);
+        holder.transform.localPosition = Vector3.zero;
+        holder.transform.localRotation = Quaternion.identity;
+        holder.transform.localScale = Vector3.one * 0.44f;
+
+        GameObject forgeVisual = Instantiate(sourceVisual.gameObject, holder.transform, false);
+        forgeVisual.name = "PA_VillageCulture_Utility_B07Visual";
+        StripToVisualOnly(forgeVisual, removeLights: true);
+    }
+
+    // Luxury 변화는 의류 제작에 실제 연결된 B08의 파스텔 목재·천·마네킹
+    // 실루엣을 생활 공예 전시로 재해석한다. B08 기능 래퍼와 물리·행동은
+    // 복제하지 않아 실제 재봉 작업대가 아닌 다음 날 문화 신호로만 남긴다.
+    void EnsureLuxuryVisual()
+    {
+        if (_luxuryVisualRoot != null) return;
+
+        var existing = GameObject.Find(LuxuryVisualRootName);
+        if (existing != null)
+        {
+            _luxuryVisualRoot = existing;
+            return;
+        }
+
+        _luxuryVisualRoot = new GameObject(LuxuryVisualRootName);
+        _luxuryVisualRoot.transform.SetParent(transform, false);
+        PlaceVisualRoot(_luxuryVisualRoot);
+        _luxuryVisualRoot.SetActive(false);
+
+        CreateLuxuryCraftDisplayVisual();
+
+        GameObject sign = CreateResourceProp(_luxuryVisualRoot.transform, "PA_VillageCulture_Luxury_Sign",
+            VillageSignResource, new Vector3(0f, 1.42f, 0.76f), Vector3.zero, 0.44f);
+        if (sign != null)
+            CreateSignLabel(sign.transform, "PA_VillageCulture_Luxury_SignLabel", "공예 전시대");
+
+        SetVisualActive(false);
+    }
+
+    void CreateLuxuryCraftDisplayVisual()
+    {
+        BuildingData definition = Resources.Load<BuildingData>(LuxurySewingDataResource);
+        Transform sourceVisual = definition != null && definition.prefab != null
+            ? definition.prefab.transform.Find("Visual")
+            : null;
+        if (sourceVisual == null)
+        {
+            Debug.LogWarning($"🏘️ [VillageCulture] B08 실제 Visual을 찾을 수 없습니다: {LuxurySewingDataResource}/prefab/Visual");
+            return;
+        }
+
+        var holder = new GameObject("PA_VillageCulture_Luxury_CraftDisplayVisual");
+        holder.transform.SetParent(_luxuryVisualRoot.transform, false);
+        holder.transform.localPosition = Vector3.zero;
+        holder.transform.localRotation = Quaternion.identity;
+        holder.transform.localScale = Vector3.one * 0.48f;
+
+        GameObject sewingVisual = Instantiate(sourceVisual.gameObject, holder.transform, false);
+        sewingVisual.name = "PA_VillageCulture_Luxury_B08Visual";
+        StripToVisualOnly(sewingVisual, removeLights: true);
+    }
+
+    void PlaceVisualRoot(GameObject root)
+    {
+        if (root == null)
             return;
 
         Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
@@ -268,19 +496,19 @@ public class VillageCultureVisualController : MonoBehaviour
             Vector3 forward = shop.transform.forward.sqrMagnitude > 0.001f ? shop.transform.forward : Vector3.forward;
             Vector3 target = shop.transform.position + right * 3.1f - forward * 1.9f;
             target = SnapNearGround(target, shop.transform.position.y);
-            _visualRoot.transform.position = target;
-            _visualRoot.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+            root.transform.position = target;
+            root.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
             return;
         }
 
         GameObject marker = GameObject.Find("PA_MarketStall_Hub_Visual");
         if (marker != null)
         {
-            _visualRoot.transform.position = SnapNearGround(marker.transform.position + new Vector3(3f, 0f, -2f), marker.transform.position.y);
+            root.transform.position = SnapNearGround(marker.transform.position + new Vector3(3f, 0f, -2f), marker.transform.position.y);
             return;
         }
 
-        _visualRoot.transform.position = new Vector3(3f, 0f, -2f);
+        root.transform.position = new Vector3(3f, 0f, -2f);
     }
 
     Vector3 SnapNearGround(Vector3 target, float fallbackY)
@@ -293,21 +521,87 @@ public class VillageCultureVisualController : MonoBehaviour
         return target;
     }
 
-    void CreateCube(string objectName, Vector3 localPosition, Vector3 localScale, Color color)
+    GameObject CreateResourceProp(Transform parent, string objectName, string resourcePath,
+        Vector3 localPosition, Vector3 localEulerAngles, float uniformScale)
     {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.name = objectName;
-        cube.transform.SetParent(_visualRoot.transform, false);
-        cube.transform.localPosition = localPosition;
-        cube.transform.localRotation = Quaternion.identity;
-        cube.transform.localScale = localScale;
+        GameObject prefab = Resources.Load<GameObject>(resourcePath);
+        if (prefab == null)
+        {
+            Debug.LogWarning($"🏘️ [VillageCulture] 시각 리소스를 찾을 수 없습니다: {resourcePath}");
+            return null;
+        }
 
-        foreach (var collider in cube.GetComponentsInChildren<Collider>(true))
+        GameObject instance = Instantiate(prefab, parent, false);
+        instance.name = objectName;
+        instance.transform.localPosition = localPosition;
+        instance.transform.localRotation = Quaternion.Euler(localEulerAngles);
+        instance.transform.localScale = Vector3.one * uniformScale;
+
+        // 마을 변화 표식은 읽기 전용 시각 사이드카다. 실제 저장함/채집 지점처럼
+        // 오인되거나 동선을 막지 않도록 원본 기능·물리 컴포넌트를 복제하지 않는다.
+        StripToVisualOnly(instance, removeLights: false);
+
+        return instance;
+    }
+
+    void CreateSignLabel(Transform sign, string objectName, string labelText)
+    {
+        if (sign == null) return;
+
+        var labelGo = new GameObject(objectName, typeof(TextMeshPro));
+        labelGo.transform.SetParent(sign, false);
+        labelGo.transform.localPosition = new Vector3(0f, 0f, 0.07f);
+        labelGo.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+        labelGo.transform.localScale = Vector3.one * 0.34f;
+
+        TextMeshPro label = labelGo.GetComponent<TextMeshPro>();
+        label.text = labelText;
+        label.fontSize = 4.1f;
+        label.fontStyle = FontStyles.Bold;
+        label.alignment = TextAlignmentOptions.Center;
+        label.color = new Color(0.96f, 0.89f, 0.70f, 1f);
+        label.overflowMode = TextOverflowModes.Overflow;
+        label.rectTransform.sizeDelta = new Vector2(4.4f, 0.9f);
+    }
+
+    static void StripToVisualOnly(GameObject root, bool removeLights)
+    {
+        if (root == null)
+            return;
+
+        foreach (var collider in root.GetComponentsInChildren<Collider>(true))
+        {
+            collider.enabled = false;
             DestroyUnityObject(collider);
+        }
 
-        var renderer = cube.GetComponent<Renderer>();
-        if (renderer != null)
-            renderer.sharedMaterial = CreateMaterial(objectName + "_Mat", color);
+        foreach (var obstacle in root.GetComponentsInChildren<UnityEngine.AI.NavMeshObstacle>(true))
+        {
+            obstacle.enabled = false;
+            DestroyUnityObject(obstacle);
+        }
+
+        foreach (var body in root.GetComponentsInChildren<Rigidbody>(true))
+        {
+            body.detectCollisions = false;
+            body.isKinematic = true;
+            DestroyUnityObject(body);
+        }
+
+        foreach (var behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
+        {
+            behaviour.enabled = false;
+            DestroyUnityObject(behaviour);
+        }
+
+        if (!removeLights)
+            return;
+
+        foreach (var light in root.GetComponentsInChildren<Light>(true))
+        {
+            light.enabled = false;
+            DestroyUnityObject(light);
+        }
     }
 
     void EnsureHint()
@@ -372,16 +666,35 @@ public class VillageCultureVisualController : MonoBehaviour
 
     string BuildHintText(ItemCategory category)
     {
-        if (category == ItemCategory.Processed)
-            return "Market hub update: processed goods inspired a warm prep corner for tomorrow.";
+        if (category == ItemCategory.Raw)
+            return "마을 변화: 원자재 판매 덕분에 생산자 보관·수거 지점이 생겼어요.";
 
-        return "Market hub update: yesterday's sales changed the plaza mood.";
+        if (category == ItemCategory.Processed)
+            return "마을 변화: 가공품 판매 덕분에 따뜻한 준비 작업 공간이 생겼어요.";
+
+        if (category == ItemCategory.Utility)
+            return "마을 변화: 실용품 판매 덕분에 공구를 손보는 수리대가 생겼어요.";
+
+        if (category == ItemCategory.Luxury)
+            return "마을 변화: 고급품 판매 덕분에 생활 공예를 소개하는 전시대가 생겼어요.";
+
+        return "마을 변화: 어제의 판매가 광장의 모습을 바꾸었어요.";
     }
 
     void SetVisualActive(bool active)
     {
-        if (_visualRoot != null && _visualRoot.activeSelf != active)
-            _visualRoot.SetActive(active);
+        SetRootActive(_visualRoot, active && (!_hasActiveCategory || _activeCategory == ItemCategory.Processed));
+        SetRootActive(_rawVisualRoot, active && _hasActiveCategory && _activeCategory == ItemCategory.Raw);
+        SetRootActive(_utilityVisualRoot, active && _hasActiveCategory && _activeCategory == ItemCategory.Utility);
+        SetRootActive(_luxuryVisualRoot, active && _hasActiveCategory && _activeCategory == ItemCategory.Luxury);
+    }
+
+    static bool IsVisualActive(GameObject root) => root != null && root.activeInHierarchy;
+
+    static void SetRootActive(GameObject root, bool active)
+    {
+        if (root != null && root.activeSelf != active)
+            root.SetActive(active);
     }
 
     int CurrentDay()
@@ -408,12 +721,6 @@ public class VillageCultureVisualController : MonoBehaviour
             hash = hash * 31 + (record.buyerName != null ? record.buyerName.GetHashCode() : 0);
             return hash;
         }
-    }
-
-    static Material CreateMaterial(string name, Color color)
-    {
-        var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-        return new Material(shader) { name = name, color = color };
     }
 
     static void DestroyUnityObject(UnityEngine.Object obj)

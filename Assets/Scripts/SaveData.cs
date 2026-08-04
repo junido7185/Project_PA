@@ -61,6 +61,10 @@ public class SaveData
     public bool villageCultureHasActiveChange = false;
     public string villageCultureActiveCategory = "";
     public bool villageCultureHintShown = false;
+
+    // Zone-aware shop furniture customization. Added in v10.
+    public bool placementStarterGranted = false;
+    public List<PlaceableSaveData> placeables = new List<PlaceableSaveData>();
 }
 
 // §4 FriendshipService 저장 DTO — FriendshipService.ForceSetPoints 로 복원한다.
@@ -113,6 +117,31 @@ public class ShopSlotSaveData
     public string slotKey;
     public bool occupied;
     public int displayPrice;
+    public int itemId;
+    public string itemName;
+    public int count;
+    public float quality;
+    public int currentPrice;
+}
+
+[System.Serializable]
+public class PlaceableSaveData
+{
+    public string zoneId;
+    public string definitionId;
+    public string instanceId;
+    public int gridX;
+    public int gridY;
+    public int rotationQuarterTurns;
+    public bool isFixed;
+    public bool recovered;
+    public string functionalState;
+    public List<PlaceableStoredItemSaveData> storedItems = new List<PlaceableStoredItemSaveData>();
+}
+
+[System.Serializable]
+public class PlaceableStoredItemSaveData
+{
     public int itemId;
     public string itemName;
     public int count;

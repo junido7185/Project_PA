@@ -5,10 +5,20 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // First playable prototype flow:
-// name registration -> briefing -> map selection -> smartphone/supplies intro ->
+// name registration -> briefing -> map selection -> smartphone/controls/supplies intro ->
 // in-world first sale loop -> audit app -> save -> day summary.
 public class PlayableDayScenarioController : MonoBehaviour
 {
+    const string BlacksmithForgeDefinitionId = "Blueprint_B07_BlacksmithForge";
+    const string KitchenStationDefinitionId = "Blueprint_B06_KitchenStation";
+    const string SewingTableDefinitionId = "Blueprint_B08_SewingTable";
+    const string ToolSetResourcePath = "Items/Item_12_ToolSet";
+    const string BreadLoafResourcePath = "Items/Item_BreadLoaf";
+    const string BakedPotatoResourcePath = "Items/Item_09_BakedPotato";
+    const string GrilledFishResourcePath = "Items/Item_10_GrilledFish";
+    const string FurnitureResourcePath = "Items/Item_11_Furniture";
+    const string ClothesResourcePath = "Items/Item_13_Clothes";
+
     public static PlayableDayScenarioController Instance { get; private set; }
 
     public enum Stage
@@ -24,10 +34,13 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     enum StartupStep
     {
+        Title,
+        NewGameConfirm,
         Name,
         Briefing,
         MapSelect,
         PhoneIntro,
+        Controls,
         Supplies,
         Arrival,
     }
@@ -62,12 +75,16 @@ public class PlayableDayScenarioController : MonoBehaviour
     readonly List<Button> _mapButtons = new List<Button>();
     Button _primaryButton;
     Button _secondaryButton;
+    Button _quitButton;
     TextMeshProUGUI _primaryText;
     TextMeshProUGUI _secondaryText;
 
-    StartupStep _startupStep = StartupStep.Name;
+    StartupStep _startupStep = StartupStep.Title;
     bool _startupCompleted;
     bool _startupPausedTime;
+    bool _continueSaveAvailable;
+    bool _continueLoading;
+    int _continueCheckVersion;
     bool _everSawDialogueOpen;
     bool _everSawSmartphoneAudit;
     bool _everSawSave;
@@ -78,6 +95,7 @@ public class PlayableDayScenarioController : MonoBehaviour
     int _baselineMoney;
     int _baselinePriceConfirmCount;
     int _randomNameIndex;
+    float _nextContinuationRefreshAt;
     readonly List<string> _managementFeedback = new List<string>();
 
     static readonly string[] RandomNames =
@@ -126,6 +144,13 @@ public class PlayableDayScenarioController : MonoBehaviour
     void Update()
     {
         if (!_startupCompleted) return;
+
+        if (Current == Stage.Done && CurrentGameDay > 1
+            && Time.unscaledTime >= _nextContinuationRefreshAt)
+        {
+            _nextContinuationRefreshAt = Time.unscaledTime + 0.5f;
+            RefreshLabel();
+        }
 
         if (!_everSawDialogueOpen && DialogueUI.instance != null && DialogueUI.IsOpen)
             _everSawDialogueOpen = true;
@@ -183,7 +208,10 @@ public class PlayableDayScenarioController : MonoBehaviour
     void OnNewDay(int _)
     {
         if (Current == Stage.Done)
+        {
+            _nextContinuationRefreshAt = 0f;
             RefreshLabel();
+        }
     }
 
     void OnSavePressed()
@@ -211,7 +239,7 @@ public class PlayableDayScenarioController : MonoBehaviour
         _timeScaleBeforeStartup = Time.timeScale;
         Time.timeScale = 0f;
         _startupPausedTime = true;
-        _startupStep = StartupStep.Name;
+        _startupStep = StartupStep.Title;
         SetFlowVisible(true);
         ShowStartupStep();
     }
@@ -245,10 +273,41 @@ public class PlayableDayScenarioController : MonoBehaviour
         SetFlowBodyPresentation(summary: false);
         SetNameInputVisible(_startupStep == StartupStep.Name);
         SetMapButtonsVisible(_startupStep == StartupStep.MapSelect);
-        if (_secondaryButton != null) _secondaryButton.gameObject.SetActive(false);
+        bool showTitleControls = _startupStep == StartupStep.Title;
+        SetTitleButtonLayout(showTitleControls);
+        if (_primaryButton != null) _primaryButton.interactable = true;
+        if (_secondaryButton != null)
+        {
+            _secondaryButton.gameObject.SetActive(false);
+            _secondaryButton.interactable = true;
+        }
+        if (_quitButton != null)
+        {
+            _quitButton.gameObject.SetActive(showTitleControls);
+            _quitButton.interactable = true;
+        }
 
         switch (_startupStep)
         {
+            case StartupStep.Title:
+                SetFlowText(
+                    "PROJECT P.A.",
+                    "낮에는 동물 마을에서 재료와 상품을 준비하고, 밤에는 마을의 유일한 잡화점을 운영하세요.\n당신이 판매한 물건은 다음 날 마을의 풍경과 생활을 바꿉니다.",
+                    "새 게임");
+                BeginContinueAvailabilityCheck();
+                break;
+            case StartupStep.NewGameConfirm:
+                SetFlowText(
+                    "기존 저장 기록 확인",
+                    "현재 저장 기록이 있습니다.\n새 게임을 시작해도 지금 바로 삭제되지는 않지만, 이후 저장하면 기존 기록을 덮어씁니다.\n계속하시겠습니까?",
+                    "새 게임 시작");
+                if (_secondaryButton != null)
+                {
+                    _secondaryButton.gameObject.SetActive(true);
+                    _secondaryButton.interactable = true;
+                }
+                if (_secondaryText != null) _secondaryText.text = "타이틀로 돌아가기";
+                break;
             case StartupStep.Name:
                 SetFlowText(
                     "개척자 등록",
@@ -275,6 +334,16 @@ public class PlayableDayScenarioController : MonoBehaviour
                     "스마트폰은 현장 조력자입니다.\n감사 목표, 상점 알림, 피드, 설정을 확인할 수 있고 첫날 목표도 여기서 추적됩니다.",
                     "스마트폰 수령");
                 break;
+            case StartupStep.Controls:
+                SetFlowText(
+                    "현장 조작 안내",
+                    "이동 [WASD/방향키] · 상호작용 [Space] · 인벤토리 [I]\n" +
+                    "스마트폰 [P] · 제작 [C] · 핫바 [1~9/마우스 휠]\n" +
+                    "건설 배치 [좌클릭] · 회전 [R] · 이동 [M] · 회수 [X]\n" +
+                    "저장 [F5] · 불러오기 [F9] · 일시정지 [ESC]\n\n" +
+                    "화면 상단 목표와 가까운 오브젝트의 상호작용 안내를 따라 첫날을 시작하세요.",
+                    "조작 확인");
+                break;
             case StartupStep.Supplies:
                 SetFlowText(
                     "초기 지급 물품",
@@ -288,6 +357,42 @@ public class PlayableDayScenarioController : MonoBehaviour
                     "첫날 시작");
                 break;
         }
+    }
+
+    void BeginContinueAvailabilityCheck()
+    {
+        if (_secondaryButton == null) return;
+
+        int requestVersion = ++_continueCheckVersion;
+        _continueSaveAvailable = false;
+        _continueLoading = false;
+        if (_primaryButton != null) _primaryButton.interactable = false;
+        _secondaryButton.gameObject.SetActive(true);
+        _secondaryButton.interactable = false;
+        if (_secondaryText != null) _secondaryText.text = "저장 확인 중";
+        _ = RefreshContinueAvailabilityAsync(requestVersion);
+    }
+
+    async System.Threading.Tasks.Task RefreshContinueAvailabilityAsync(int requestVersion)
+    {
+        bool exists = false;
+        try
+        {
+            exists = SaveManager.instance != null && await SaveManager.instance.HasSaveAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[PlayableDay] 저장 확인 실패: {ex.Message}");
+        }
+
+        if (this == null || requestVersion != _continueCheckVersion
+            || _startupCompleted || _startupStep != StartupStep.Title)
+            return;
+
+        _continueSaveAvailable = exists;
+        if (_primaryButton != null) _primaryButton.interactable = true;
+        _secondaryButton.interactable = exists;
+        if (_secondaryText != null) _secondaryText.text = exists ? "이어하기" : "저장 없음";
     }
 
     void SetFlowText(string title, string body, string primary)
@@ -393,11 +498,7 @@ public class PlayableDayScenarioController : MonoBehaviour
 
         if (Current == Stage.Done && CurrentGameDay > 1)
         {
-            sb.AppendLine($"<color=#FFFFFF>▶ Day {CurrentGameDay} 반복 운영</color>");
-            sb.AppendLine("<color=#D8D3C8>• 낮: 채집·납품 상품 2종 준비</color>");
-            sb.AppendLine("<color=#D8D3C8>• 해질녘: 진열·가격 재검토</color>");
-            sb.AppendLine("<color=#D8D3C8>• 밤: 간판 [Space] 영업 시작</color>");
-            sb.AppendLine("<color=#D8D3C8>• 정산: 간판 [Space] 다음 날 시작</color>");
+            AppendContinuationChecklist(sb, CurrentGameDay);
             questListText.text = sb.ToString().TrimEnd();
             return;
         }
@@ -439,13 +540,1371 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     int CurrentGameDay => GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
 
-    static string GetContinuationObjective(int day)
+    string GetContinuationObjective(int day)
     {
-        if (day == 2)
-            return "Day 2: 낮에 상품 2종을 준비하고, 밤에는 간판에서 영업을 시작하세요.";
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (loop == null)
+            return $"Day {day}: 낮 준비 → 밤 영업 → 정산 루프를 이어가세요.";
+
+        if (loop.CurrentPhase == PADayNightPhase.Settlement)
+            return $"Day {day} 정산: 가게 간판에서 하루를 마무리하고 다음 날을 시작하세요.";
+
+        if (loop.CurrentPhase == PADayNightPhase.ShopOpen)
+            return loop.IsShopOpenForCustomers
+                ? $"Day {day} 영업 중: 손님 구매·보류 이유를 보고 재고와 가격을 조정하세요."
+                : $"Day {day} 밤: 상품을 진열하고 가격을 확인한 뒤 간판에서 영업을 시작하세요.";
+
         if (day == 3)
-            return "Day 3: 어제 구매·보류 결과에 맞춰 상품이나 가격을 바꿔보세요.";
-        return $"Day {day}: 낮 준비 → 밤 영업 → 정산 루프를 이어가세요.";
+            return "Day 3 낮: 어제 손님 반응을 참고해 상품 2종과 가격 전략을 바꿔보세요.";
+
+        if (TryResolveWeekTwoMilestone(day, out bool weekTwoComplete,
+            out string weekTwoCompleteLabel, out string weekTwoActionLabel))
+        {
+            return weekTwoComplete
+                ? $"Day {day} 낮: 2주차 목표 완료 · {weekTwoCompleteLabel}. 오늘 밤 진열과 가격 전략을 이어가세요."
+                : $"Day {day} 낮: {weekTwoActionLabel}";
+        }
+
+        if (TryResolveMonthOneMilestone(day, out bool monthOneComplete,
+            out string monthOneCompleteLabel, out string monthOneActionLabel))
+        {
+            return monthOneComplete
+                ? $"Day {day} 낮: 첫 달 목표 완료 · {monthOneCompleteLabel}. 오늘 밤 운영과 정산을 이어가세요."
+                : $"Day {day} 낮: {monthOneActionLabel}";
+        }
+
+        if (TryResolveSecondMonthOpeningMilestone(day, out bool secondMonthComplete,
+            out string secondMonthCompleteLabel, out string secondMonthActionLabel))
+        {
+            return secondMonthComplete
+                ? $"Day {day} 낮: 두 번째 달 진입 목표 완료 · {secondMonthCompleteLabel}. 오늘 밤 운영과 정산을 이어가세요."
+                : $"Day {day} 낮: {secondMonthActionLabel}";
+        }
+
+        if (TryResolveTierTwoCampaignMilestone(day, out bool tierTwoCampaignComplete,
+            out string tierTwoCampaignCompleteLabel, out string tierTwoCampaignActionLabel))
+        {
+            return tierTwoCampaignComplete
+                ? $"Day {day} 낮: Tier 2 성장 목표 완료 · {tierTwoCampaignCompleteLabel}. 오늘 밤 운영과 정산을 이어가세요."
+                : $"Day {day} 낮: {tierTwoCampaignActionLabel}";
+        }
+
+        if (TryResolveTierTwoKitchenMilestone(day, out bool kitchenCampaignComplete,
+            out string kitchenCampaignCompleteLabel, out string kitchenCampaignActionLabel))
+        {
+            return kitchenCampaignComplete
+                ? $"Day {day} 낮: Tier 2 주방 목표 완료 · {kitchenCampaignCompleteLabel}. 오늘 밤 운영과 정산을 이어가세요."
+                : $"Day {day} 낮: {kitchenCampaignActionLabel}";
+        }
+
+        if (TryResolveTierThreeCampaignMilestone(day, out bool tierThreeCampaignComplete,
+            out string tierThreeCampaignCompleteLabel, out string tierThreeCampaignActionLabel))
+        {
+            return tierThreeCampaignComplete
+                ? $"Day {day} 낮: Tier 3 공방 목표 완료 · {tierThreeCampaignCompleteLabel}. 오늘 밤 운영과 정산을 이어가세요."
+                : $"Day {day} 낮: {tierThreeCampaignActionLabel}";
+        }
+
+        if (LongPlayProgressionController.TryGetPartnerCampaignStatus(day,
+            out bool partnerComplete, out string partnerCompleteLabel, out string partnerActionLabel))
+        {
+            return partnerComplete
+                ? $"Day {day} 자유 운영: {partnerCompleteLabel}. 오늘의 상품과 마을 방향을 직접 선택하세요."
+                : $"Day {day} 최종 감사 준비: {partnerActionLabel}";
+        }
+
+        if (day >= 5)
+        {
+            int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+            if (hiredCount <= 0)
+                return $"Day {day} 낮: [P] P.A. Phone 채용 앱에서 첫 생산자 또는 전문가를 고용해 반복 준비를 줄이세요.";
+
+            return $"Day {day} 낮: 지원 인력 {hiredCount}명과 함께 재고를 준비하고 오늘 밤 판매 전략을 정하세요.";
+        }
+
+        return $"Day {day} 낮: 생활 활동으로 오늘 밤 판매할 상품 2종을 준비하세요.";
+    }
+
+    void AppendContinuationChecklist(System.Text.StringBuilder sb, int day)
+    {
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        List<string> completedActivities = GetCompletedDayActivityLabels(loop);
+        int preparedTypes = CountPreparedSellableTypes();
+        bool stocked = AnyShopSlotStocked();
+        bool priced = AnyShopSlotPriced();
+        SalesLogManager.DailyDecisionStats sales = SalesLogManager.Instance != null
+            ? SalesLogManager.Instance.GetDailyDecisionStats(day)
+            : default;
+
+        sb.AppendLine($"<color=#FFFFFF>▶ Day {day} 생활–상점 운영</color>");
+        AppendChecklistLine(sb, completedActivities.Count > 0,
+            completedActivities.Count > 0
+                ? $"낮 활동: {string.Join("·", completedActivities)}"
+                : "낮 활동: 낚시·채광·농사·주민 부탁");
+        AppendChecklistLine(sb, preparedTypes >= 2,
+            $"판매 상품 {Mathf.Min(preparedTypes, 2)}/2종 준비");
+
+        if (day >= 5 && day < 8)
+        {
+            int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+            string roster = LongPlayProgressionController.BuildHiredRosterSummary(1);
+            AppendChecklistLine(sb, hiredCount > 0,
+                hiredCount > 0
+                    ? $"성장 지원 {hiredCount}명 · {roster}"
+                    : "[P] P.A. Phone 채용 앱에서 첫 지원 인력 고용",
+                hiredCount > 0 ? null : "성장");
+        }
+
+        if (TryResolveWeekTwoMilestone(day, out bool weekTwoComplete,
+            out string weekTwoCompleteLabel, out string weekTwoActionLabel))
+        {
+            AppendChecklistLine(sb, weekTwoComplete,
+                weekTwoComplete ? weekTwoCompleteLabel : weekTwoActionLabel,
+                weekTwoComplete ? null : "2주차");
+        }
+
+        if (TryResolveMonthOneMilestone(day, out bool monthOneComplete,
+            out string monthOneCompleteLabel, out string monthOneActionLabel))
+        {
+            AppendChecklistLine(sb, monthOneComplete,
+                monthOneComplete ? monthOneCompleteLabel : monthOneActionLabel,
+                monthOneComplete ? null : "첫 달");
+        }
+
+        if (TryResolveSecondMonthOpeningMilestone(day, out bool secondMonthComplete,
+            out string secondMonthCompleteLabel, out string secondMonthActionLabel))
+        {
+            AppendChecklistLine(sb, secondMonthComplete,
+                secondMonthComplete ? secondMonthCompleteLabel : secondMonthActionLabel,
+                secondMonthComplete ? null : "두 번째 달");
+        }
+
+        if (TryResolveTierTwoCampaignMilestone(day, out bool tierTwoCampaignComplete,
+            out string tierTwoCampaignCompleteLabel, out string tierTwoCampaignActionLabel))
+        {
+            AppendChecklistLine(sb, tierTwoCampaignComplete,
+                tierTwoCampaignComplete ? tierTwoCampaignCompleteLabel : tierTwoCampaignActionLabel,
+                tierTwoCampaignComplete ? null : "Tier 2 성장");
+        }
+
+        if (TryResolveTierTwoKitchenMilestone(day, out bool kitchenCampaignComplete,
+            out string kitchenCampaignCompleteLabel, out string kitchenCampaignActionLabel))
+        {
+            AppendChecklistLine(sb, kitchenCampaignComplete,
+                kitchenCampaignComplete ? kitchenCampaignCompleteLabel : kitchenCampaignActionLabel,
+                kitchenCampaignComplete ? null : "Tier 2 주방");
+        }
+
+        if (TryResolveTierThreeCampaignMilestone(day, out bool tierThreeCampaignComplete,
+            out string tierThreeCampaignCompleteLabel, out string tierThreeCampaignActionLabel))
+        {
+            AppendChecklistLine(sb, tierThreeCampaignComplete,
+                tierThreeCampaignComplete ? tierThreeCampaignCompleteLabel : tierThreeCampaignActionLabel,
+                tierThreeCampaignComplete ? null : "Tier 3 공방");
+        }
+
+        if (LongPlayProgressionController.TryGetPartnerCampaignStatus(day,
+            out bool partnerComplete, out string partnerCompleteLabel, out string partnerActionLabel))
+        {
+            AppendChecklistLine(sb, partnerComplete,
+                partnerComplete ? partnerCompleteLabel : partnerActionLabel,
+                partnerComplete ? null : "최종 감사");
+        }
+
+        if (ProcessingOpportunityController.Instance != null
+            && ProcessingOpportunityController.Instance.TryGetFurnitureLoopGuide(day, out var furnitureGuide))
+        {
+            AppendChecklistLine(sb, furnitureGuide.complete, furnitureGuide.label, furnitureGuide.pendingLabel);
+        }
+
+        if (stocked && priced)
+            AppendChecklistLine(sb, true, "진열·가격 확인");
+        else if (stocked)
+            AppendChecklistLine(sb, false, "진열 완료 · 가격 확인 필요", "진행");
+        else
+            AppendChecklistLine(sb, false, "진열대에 상품 놓기");
+
+        if (loop == null || loop.CurrentPhase == PADayNightPhase.DayPreparation)
+            AppendChecklistLine(sb, false, "18시 이후 간판으로 개점");
+        else if (loop.CurrentPhase == PADayNightPhase.ShopOpen && !loop.IsShopOpenForCustomers)
+            AppendChecklistLine(sb, false, "간판에서 영업 시작", "지금");
+        else
+            AppendChecklistLine(sb, true, "밤 영업 시작");
+
+        if (loop != null && loop.CurrentPhase == PADayNightPhase.Settlement)
+            AppendChecklistLine(sb, false, "간판에서 정산·다음 날", "지금");
+        else if (sales.purchases > 0)
+            AppendChecklistLine(sb, true, $"오늘 판매 {sales.purchases}건 · 23시 정산");
+        else
+            AppendChecklistLine(sb, false, "손님 구매 확인 · 23시 정산");
+    }
+
+    static bool TryResolveWeekTwoMilestone(int day, out bool complete,
+        out string completeLabel, out string actionLabel)
+    {
+        complete = false;
+        completeLabel = string.Empty;
+        actionLabel = string.Empty;
+
+        switch (day)
+        {
+            case 8:
+            {
+                int storedUnits = CountStoredUnits();
+                complete = storedUnits > 0;
+                completeLabel = $"보관함 예비 재고 {storedUnits}개 정리";
+                actionLabel = "B09 공동 창고에 예비 상품 1개 보관";
+                return true;
+            }
+            case 9:
+            {
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = processedSales > 0;
+                completeLabel = $"가공품 판매 {processedSales}건 완료";
+                actionLabel = "작업대에서 가공품을 준비해 오늘 밤 1건 판매";
+                return true;
+            }
+            case 10:
+            {
+                int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+                complete = hiredCount > 0;
+                completeLabel = $"마을 지원 인력 {hiredCount}명 · {LongPlayProgressionController.BuildHiredRosterSummary(1)}";
+                actionLabel = "[P] P.A. Phone 채용 앱에서 생산자 또는 전문가 1명 고용";
+                return true;
+            }
+            case 11:
+            {
+                int categoryCount = CountDailySoldCategories(day);
+                complete = categoryCount >= 2;
+                completeLabel = $"서로 다른 상품 카테고리 {categoryCount}종 판매";
+                actionLabel = $"오늘 서로 다른 카테고리 상품 판매 {Mathf.Min(categoryCount, 2)}/2종";
+                return true;
+            }
+            case 12:
+            {
+                int currentTier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
+                complete = currentTier >= 1;
+                completeLabel = $"상점 Tier {currentTier} · 실내 잡화점 성장";
+                actionLabel = BuildTierOneActionLabel();
+                return true;
+            }
+            case 13:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                complete = culture != null && culture.HasActiveCategory;
+                completeLabel = complete
+                    ? $"마을 변화 확인 · {ResolveCategoryLabel(culture.ActiveCategory)}"
+                    : string.Empty;
+                actionLabel = "어제 판매가 만든 광장 변화를 확인하고 오늘 상품 방향 결정";
+                return true;
+            }
+            case 14:
+            {
+                int productCount = CountDailySoldProducts(day);
+                complete = productCount >= 2;
+                completeLabel = $"서로 다른 상품 {productCount}종 판매로 2주차 마감";
+                actionLabel = $"오늘 서로 다른 상품 판매 {Mathf.Min(productCount, 2)}/2종";
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    static bool TryResolveMonthOneMilestone(int day, out bool complete,
+        out string completeLabel, out string actionLabel)
+    {
+        complete = false;
+        completeLabel = string.Empty;
+        actionLabel = string.Empty;
+
+        switch (day)
+        {
+            case 15:
+            {
+                int storedUnits = CountStoredUnits();
+                complete = storedUnits >= 3;
+                completeLabel = $"보관함 예비 재고 {storedUnits}개 확보";
+                actionLabel = $"보관함 예비 재고 {Mathf.Min(storedUnits, 3)}/3개 정리";
+                return true;
+            }
+            case 16:
+            {
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = processedSales > 0;
+                completeLabel = $"가공품 판매 {processedSales}건으로 반복 생산 연결";
+                actionLabel = "기존 작업대에서 가공품을 준비해 오늘 밤 1건 판매";
+                return true;
+            }
+            case 17:
+            {
+                int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+                complete = hiredCount >= 2;
+                completeLabel = $"서로 다른 역할의 지원 인력 {hiredCount}명 운영";
+                actionLabel = $"[P] 채용 앱에서 두 번째 생산자 또는 전문가 고용 {Mathf.Min(hiredCount, 2)}/2명";
+                return true;
+            }
+            case 18:
+            {
+                int categoryCount = CountDailySoldCategories(day);
+                complete = categoryCount >= 2;
+                completeLabel = $"상품 카테고리 {categoryCount}종 판매";
+                actionLabel = $"서로 다른 카테고리 상품 판매 {Mathf.Min(categoryCount, 2)}/2종";
+                return true;
+            }
+            case 19:
+            {
+                int currentTier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
+                complete = currentTier >= 1;
+                completeLabel = $"상점 Tier {currentTier} 공간으로 성장";
+                actionLabel = BuildTierOneActionLabel();
+                return true;
+            }
+            case 20:
+            case 28:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                complete = culture != null && culture.HasActiveCategory;
+                completeLabel = complete
+                    ? $"마을 정체성 확인 · {ResolveCategoryLabel(culture.ActiveCategory)}"
+                    : string.Empty;
+                actionLabel = "광장의 상품 카테고리 변화를 확인하고 오늘 진열 방향 결정";
+                return true;
+            }
+            case 21:
+            {
+                int productCount = CountDailySoldProducts(day);
+                complete = productCount >= 3;
+                completeLabel = $"서로 다른 상품 {productCount}종 판매";
+                actionLabel = $"서로 다른 상품 판매 {Mathf.Min(productCount, 3)}/3종";
+                return true;
+            }
+            case 22:
+            {
+                int storedUnits = CountStoredUnits();
+                complete = storedUnits >= 5;
+                completeLabel = $"확장 예비 재고 {storedUnits}개 확보";
+                actionLabel = $"보관함 예비 재고 {Mathf.Min(storedUnits, 5)}/5개 정리";
+                return true;
+            }
+            case 23:
+            {
+                bool forgePlaced = ShopCustomizationController.Instance != null
+                    && ShopCustomizationController.Instance.HasActiveDefinitionPlacement(BlacksmithForgeDefinitionId);
+                int toolSetSales = CountDailyItemSales(day, ToolSetResourcePath);
+                int productCount = CountDailySoldProducts(day);
+                complete = forgePlaced && toolSetSales > 0 && productCount >= 2;
+                completeLabel = $"대장간 배치 · 철제 도구 {toolSetSales}건 · 상품 {productCount}종 판매";
+                if (TierService.Instance != null && TierService.Instance.CurrentTier < 1)
+                    actionLabel = BuildTierOneActionLabel();
+                else if (!forgePlaced)
+                    actionLabel = "빈 진열대 두 칸을 회수한 뒤 배치 장부에서 Tier 1 대장간 설계도를 받아 배치";
+                else if (toolSetSales <= 0)
+                    actionLabel = "목재 가공대에서 Plank 1개, 대장간에서 Ore 4개→IronBar 2개→철제 도구 1개 제작·판매";
+                else
+                    actionLabel = $"철제 도구와 다른 일상 상품 판매 {Mathf.Min(productCount, 2)}/2종";
+                return true;
+            }
+            case 24:
+            {
+                bool forgePlaced = ShopCustomizationController.Instance != null
+                    && ShopCustomizationController.Instance.HasActiveDefinitionPlacement(BlacksmithForgeDefinitionId);
+                int toolSetSales = CountDailyItemSales(day, ToolSetResourcePath);
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = forgePlaced && toolSetSales > 0 && processedSales > 0;
+                completeLabel = $"철제 도구 {toolSetSales}건 · 가공품 {processedSales}건 판매";
+                if (TierService.Instance != null && TierService.Instance.CurrentTier < 1)
+                    actionLabel = BuildTierOneActionLabel();
+                else if (!forgePlaced)
+                    actionLabel = "Tier 1 대장간을 배치해 철제 가치사슬을 다시 준비";
+                else if (toolSetSales <= 0)
+                    actionLabel = "철제 도구 1개를 제작해 오늘 밤 판매";
+                else
+                    actionLabel = $"IronBar 같은 가공품 동반 판매 {Mathf.Min(processedSales, 1)}/1건";
+                return true;
+            }
+            case 25:
+            {
+                int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+                complete = hiredCount >= 3;
+                completeLabel = $"생산·가공 지원 인력 {hiredCount}명 운영";
+                actionLabel = $"세 번째 역할 채용 또는 다음 전문 역할 검토 {Mathf.Min(hiredCount, 3)}/3명";
+                return true;
+            }
+            case 26:
+            {
+                int categoryCount = CountDailySoldCategories(day);
+                complete = categoryCount >= 3;
+                completeLabel = $"서로 다른 카테고리 {categoryCount}종 판매";
+                actionLabel = $"서로 다른 카테고리 상품 판매 {Mathf.Min(categoryCount, 3)}/3종";
+                return true;
+            }
+            case 27:
+            {
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = processedSales >= 2;
+                completeLabel = $"가공품 묶음 판매 {processedSales}건 완료";
+                actionLabel = $"가공품 판매 {Mathf.Min(processedSales, 2)}/2건";
+                return true;
+            }
+            case 29:
+            {
+                int storedUnits = CountStoredUnits();
+                complete = storedUnits >= 8;
+                completeLabel = $"마지막 날 예비 재고 {storedUnits}개 확보";
+                actionLabel = $"보관함 예비 재고 {Mathf.Min(storedUnits, 8)}/8개 정리";
+                return true;
+            }
+            case 30:
+            {
+                int productCount = CountDailySoldProducts(day);
+                complete = productCount >= 3;
+                completeLabel = $"서로 다른 상품 {productCount}종 판매로 첫 달 마감 준비";
+                actionLabel = $"첫 달 마지막 서로 다른 상품 판매 {Mathf.Min(productCount, 3)}/3종";
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    static bool TryResolveSecondMonthOpeningMilestone(int day, out bool complete,
+        out string completeLabel, out string actionLabel)
+    {
+        complete = false;
+        completeLabel = string.Empty;
+        actionLabel = string.Empty;
+
+        switch (day)
+        {
+            case 31:
+            {
+                int storedUnits = CountStoredUnits();
+                complete = storedUnits >= 10;
+                completeLabel = $"두 번째 달 예비 재고 {storedUnits}개 확보";
+                actionLabel = $"보관함 예비 재고 {Mathf.Min(storedUnits, 10)}/10개 정리";
+                return true;
+            }
+            case 32:
+            {
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = processedSales >= 2;
+                completeLabel = $"가공 주력 상품 {processedSales}건 판매";
+                actionLabel = $"가공품 판매 {Mathf.Min(processedSales, 2)}/2건";
+                return true;
+            }
+            case 33:
+            {
+                int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+                complete = hiredCount >= 3;
+                completeLabel = $"생산·가공 지원 인력 {hiredCount}명 · {LongPlayProgressionController.BuildHiredRosterSummary(3)}";
+                actionLabel = $"생산·가공 역할을 맡을 지원 인력 {Mathf.Min(hiredCount, 3)}/3명 운영";
+                return true;
+            }
+            case 34:
+            {
+                int productCount = CountDailySoldProducts(day);
+                complete = productCount >= 3;
+                completeLabel = $"서로 다른 상품 {productCount}종 판매";
+                actionLabel = $"서로 다른 상품 판매 {Mathf.Min(productCount, 3)}/3종";
+                return true;
+            }
+            case 35:
+            {
+                long revenue = EconomyService.Instance != null
+                    ? EconomyService.Instance.CumulativeRevenue
+                    : 0L;
+                long target = LongPlayProgressionController.GetCampaignRevenueTarget(day);
+                complete = revenue >= target;
+                completeLabel = $"누적 매출 {revenue:N0}G로 성장 점검선 달성";
+                actionLabel = $"두 번째 달 성장 점검선 {revenue:N0}/{target:N0}G";
+                return true;
+            }
+            case 36:
+            {
+                bool forgePlaced = ShopCustomizationController.Instance != null
+                    && ShopCustomizationController.Instance.HasActiveDefinitionPlacement(BlacksmithForgeDefinitionId);
+                int toolSetSales = CountDailyItemSales(day, ToolSetResourcePath);
+                complete = forgePlaced && toolSetSales > 0;
+                completeLabel = $"Tier 1 대장간 유지 · 철제 도구 {toolSetSales}건 판매";
+                if (TierService.Instance != null && TierService.Instance.CurrentTier < 1)
+                    actionLabel = BuildTierOneActionLabel();
+                else if (!forgePlaced)
+                    actionLabel = "배치 장부에서 Tier 1 대장간을 다시 배치";
+                else
+                    actionLabel = "Plank 1개와 Ore 4개로 철제 도구 1개 제작·판매";
+                return true;
+            }
+            case 37:
+            {
+                int categoryCount = CountDailySoldCategories(day);
+                complete = categoryCount >= 3;
+                completeLabel = $"서로 다른 상품 카테고리 {categoryCount}종 판매";
+                actionLabel = $"서로 다른 카테고리 상품 판매 {Mathf.Min(categoryCount, 3)}/3종";
+                return true;
+            }
+            case 38:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                complete = culture != null && culture.HasActiveCategory;
+                completeLabel = complete
+                    ? $"마을 변화 확인 · {ResolveCategoryLabel(culture.ActiveCategory)}"
+                    : string.Empty;
+                actionLabel = "광장의 활성 마을 변화를 확인하고 오늘 상품 방향 결정";
+                return true;
+            }
+            case 39:
+            {
+                int storedUnits = CountStoredUnits();
+                complete = storedUnits >= 12;
+                completeLabel = $"확장 예비 재고 {storedUnits}개 확보";
+                actionLabel = $"보관함 예비 재고 {Mathf.Min(storedUnits, 12)}/12개 정리";
+                return true;
+            }
+            case 40:
+            {
+                int toolSetSales = CountDailyItemSales(day, ToolSetResourcePath);
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = toolSetSales > 0 && processedSales >= 2;
+                completeLabel = $"철제 도구 {toolSetSales}건 · 가공품 {processedSales}건 판매";
+                if (toolSetSales <= 0)
+                    actionLabel = "철제 도구 1개를 제작해 오늘 밤 판매";
+                else
+                    actionLabel = $"가공품 동반 판매 {Mathf.Min(processedSales, 2)}/2건";
+                return true;
+            }
+            case 41:
+            {
+                int productCount = CountDailySoldProducts(day);
+                complete = productCount >= 4;
+                completeLabel = $"서로 다른 상품 {productCount}종 판매";
+                actionLabel = $"서로 다른 상품 판매 {Mathf.Min(productCount, 4)}/4종";
+                return true;
+            }
+            case 42:
+            {
+                int preparedTypes = CountPreparedSellableTypes();
+                complete = preparedTypes >= 4;
+                completeLabel = $"밤 영업 상품 {preparedTypes}종 준비";
+                actionLabel = $"인벤토리·핫바에 판매 상품 {Mathf.Min(preparedTypes, 4)}/4종 준비";
+                return true;
+            }
+            case 43:
+            {
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = processedSales >= 3;
+                completeLabel = $"가공품 묶음 판매 {processedSales}건 완료";
+                actionLabel = $"가공품 판매 {Mathf.Min(processedSales, 3)}/3건";
+                return true;
+            }
+            case 44:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                int productCount = CountDailySoldProducts(day);
+                complete = culture != null && culture.HasActiveCategory && productCount >= 3;
+                completeLabel = complete
+                    ? $"{ResolveCategoryLabel(culture.ActiveCategory)} 방향 확인 · 상품 {productCount}종 판매"
+                    : string.Empty;
+                if (culture == null || !culture.HasActiveCategory)
+                    actionLabel = "광장의 활성 마을 변화를 확인";
+                else
+                    actionLabel = $"{ResolveCategoryLabel(culture.ActiveCategory)} 방향을 고려한 상품 판매 {Mathf.Min(productCount, 3)}/3종";
+                return true;
+            }
+            case 45:
+            {
+                long revenue = EconomyService.Instance != null
+                    ? EconomyService.Instance.CumulativeRevenue
+                    : 0L;
+                long target = LongPlayProgressionController.GetCampaignRevenueTarget(day);
+                int productCount = CountDailySoldProducts(day);
+                complete = revenue >= target && productCount >= 4;
+                completeLabel = $"누적 매출 {revenue:N0}G · 상품 {productCount}종으로 두 번째 달 진입 구간 마감";
+                if (revenue < target)
+                    actionLabel = $"두 번째 달 매출 점검선 {revenue:N0}/{target:N0}G";
+                else
+                    actionLabel = $"마감 상품 판매 {Mathf.Min(productCount, 4)}/4종";
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    static bool TryResolveTierTwoCampaignMilestone(int day, out bool complete,
+        out string completeLabel, out string actionLabel)
+    {
+        complete = false;
+        completeLabel = string.Empty;
+        actionLabel = string.Empty;
+
+        if (day < LongPlayProgressionController.TierTwoCampaignStartDay
+            || day > LongPlayProgressionController.TierTwoCampaignFinalDay)
+            return false;
+
+        if (day == LongPlayProgressionController.TierTwoCampaignFinalDay)
+        {
+            int currentTier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
+            complete = currentTier >= 2;
+            completeLabel = complete
+                ? $"누적 매출 100,000G 성장 · 상점 Tier {currentTier} 달성"
+                : string.Empty;
+            actionLabel = BuildTierTwoActionLabel();
+            return true;
+        }
+
+        switch (LongPlayProgressionController.GetTierTwoCampaignPhase(day))
+        {
+            case 0:
+            {
+                int storedUnits = CountStoredUnits();
+                int target = LongPlayProgressionController.GetTierTwoReserveTarget(day);
+                complete = storedUnits >= target;
+                completeLabel = $"지역 경제 예비 재고 {storedUnits}개 확보";
+                actionLabel = $"보관함 예비 재고 {Mathf.Min(storedUnits, target)}/{target}개 정리";
+                return true;
+            }
+            case 1:
+            {
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                int target = LongPlayProgressionController.GetTierTwoProcessedSalesTarget(day);
+                complete = processedSales >= target;
+                completeLabel = $"가공품 판매 {processedSales}건으로 생산 규모 확장";
+                actionLabel = $"가공품 판매 {Mathf.Min(processedSales, target)}/{target}건";
+                return true;
+            }
+            case 2:
+            {
+                int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+                int preparedTypes = CountPreparedSellableTypes();
+                complete = hiredCount >= 3 && preparedTypes >= 4;
+                completeLabel = $"지원 인력 {hiredCount}명 · 판매 상품 {preparedTypes}종 준비";
+                if (hiredCount < 3)
+                    actionLabel = $"생산·가공 지원 인력 {Mathf.Min(hiredCount, 3)}/3명 운영";
+                else
+                    actionLabel = $"인벤토리·핫바에 판매 상품 {Mathf.Min(preparedTypes, 4)}/4종 준비";
+                return true;
+            }
+            case 3:
+            {
+                int categoryCount = CountDailySoldCategories(day);
+                complete = categoryCount >= 3;
+                completeLabel = $"서로 다른 상품 카테고리 {categoryCount}종 판매";
+                actionLabel = $"서로 다른 카테고리 상품 판매 {Mathf.Min(categoryCount, 3)}/3종";
+                return true;
+            }
+            case 4:
+            {
+                bool forgePlaced = ShopCustomizationController.Instance != null
+                    && ShopCustomizationController.Instance.HasActiveDefinitionPlacement(BlacksmithForgeDefinitionId);
+                int toolSetSales = CountDailyItemSales(day, ToolSetResourcePath);
+                int processedSales = CountDailyCategorySales(day, ItemCategory.Processed);
+                complete = forgePlaced && toolSetSales > 0 && processedSales > 0;
+                completeLabel = $"철제 도구 {toolSetSales}건 · 가공품 {processedSales}건 판매";
+                if (TierService.Instance != null && TierService.Instance.CurrentTier < 1)
+                    actionLabel = BuildTierOneActionLabel();
+                else if (!forgePlaced)
+                    actionLabel = "배치 장부에서 Tier 1 대장간을 배치";
+                else if (toolSetSales <= 0)
+                    actionLabel = "Plank 1개와 Ore 4개로 철제 도구 1개 제작·판매";
+                else
+                    actionLabel = "철제 도구와 함께 가공품 1건 판매";
+                return true;
+            }
+            case 5:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                int productCount = CountDailySoldProducts(day);
+                complete = culture != null && culture.HasActiveCategory && productCount >= 4;
+                completeLabel = complete
+                    ? $"{ResolveCategoryLabel(culture.ActiveCategory)} 방향 확인 · 상품 {productCount}종 판매"
+                    : string.Empty;
+                if (culture == null || !culture.HasActiveCategory)
+                    actionLabel = "광장의 활성 마을 변화를 확인";
+                else
+                    actionLabel = $"{ResolveCategoryLabel(culture.ActiveCategory)} 방향을 고려한 상품 판매 {Mathf.Min(productCount, 4)}/4종";
+                return true;
+            }
+            default:
+            {
+                long revenue = EconomyService.Instance != null
+                    ? EconomyService.Instance.CumulativeRevenue
+                    : 0L;
+                long target = LongPlayProgressionController.GetCampaignRevenueTarget(day);
+                complete = revenue >= target;
+                completeLabel = $"누적 매출 {revenue:N0}G로 Tier 2 주간 점검선 달성";
+                actionLabel = $"Tier 2 주간 매출 점검선 {revenue:N0}/{target:N0}G";
+                return true;
+            }
+        }
+    }
+
+    static bool TryResolveTierTwoKitchenMilestone(int day, out bool complete,
+        out string completeLabel, out string actionLabel)
+    {
+        complete = false;
+        completeLabel = string.Empty;
+        actionLabel = string.Empty;
+
+        if (day < LongPlayProgressionController.TierTwoKitchenCampaignStartDay
+            || day > LongPlayProgressionController.TierTwoKitchenCampaignFinalDay)
+            return false;
+
+        bool kitchenPlaced = ShopCustomizationController.Instance != null
+            && ShopCustomizationController.Instance.HasActiveDefinitionPlacement(KitchenStationDefinitionId);
+
+        switch (day)
+        {
+            case 77:
+            {
+                int currentTier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
+                complete = currentTier >= 2 && kitchenPlaced;
+                completeLabel = "Tier 2 주방 스테이션 배치 완료";
+                if (currentTier < 2)
+                    actionLabel = BuildTierTwoActionLabel();
+                else
+                    actionLabel = "배치 장부를 열어 지급된 Tier 2 주방 설계도를 선택하고 작업 공간에 배치";
+                return true;
+            }
+            case 78:
+            {
+                int sales = CountDailyItemSales(day, BreadLoafResourcePath);
+                complete = kitchenPlaced && sales > 0;
+                completeLabel = $"BreadLoaf {sales}개 판매로 밀 조리 라인 가동";
+                actionLabel = BuildKitchenProductActionLabel(kitchenPlaced,
+                    "Wheat 3개로 BreadLoaf 1개를 조리해 진열·판매");
+                return true;
+            }
+            case 79:
+            {
+                int sales = CountDailyItemSales(day, BakedPotatoResourcePath);
+                complete = kitchenPlaced && sales > 0;
+                completeLabel = $"구운 감자 {sales}개 판매로 채소 조리 라인 가동";
+                actionLabel = BuildKitchenProductActionLabel(kitchenPlaced,
+                    "Carrot 2개로 구운 감자 2개를 조리해 1개 이상 판매");
+                return true;
+            }
+            case 80:
+            {
+                int sales = CountDailyItemSales(day, GrilledFishResourcePath);
+                complete = kitchenPlaced && sales > 0;
+                completeLabel = $"생선구이 {sales}개 판매로 어획 조리 라인 가동";
+                actionLabel = BuildKitchenProductActionLabel(kitchenPlaced,
+                    "Fish 1개로 생선구이 1개를 조리해 진열·판매");
+                return true;
+            }
+            case 81:
+            {
+                int productKinds = CountDailyKitchenProductKinds(day);
+                complete = kitchenPlaced && productKinds >= 2;
+                completeLabel = $"주방 상품 {productKinds}종을 한 영업일에 판매";
+                actionLabel = BuildKitchenProductActionLabel(kitchenPlaced,
+                    $"서로 다른 주방 상품 판매 {Mathf.Min(productKinds, 2)}/2종");
+                return true;
+            }
+            case 82:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                complete = kitchenPlaced && culture != null && culture.HasActiveCategory
+                    && culture.ActiveCategory == ItemCategory.Processed;
+                completeLabel = "가공품 중심 마을 변화 활성화 확인";
+                if (!kitchenPlaced)
+                    actionLabel = BuildKitchenProductActionLabel(false, string.Empty);
+                else
+                    actionLabel = "전날 가공품 판매 비중을 높이고 광장의 가공품 중심 마을 변화를 확인";
+                return true;
+            }
+            case 83:
+            {
+                int preparedKinds = CountPreparedKitchenProductKinds();
+                complete = kitchenPlaced && preparedKinds >= 3;
+                completeLabel = "BreadLoaf·구운 감자·생선구이 3종 준비 완료";
+                actionLabel = BuildKitchenProductActionLabel(kitchenPlaced,
+                    $"인벤토리·핫바·진열대에 주방 상품 준비 {Mathf.Min(preparedKinds, 3)}/3종");
+                return true;
+            }
+            case 84:
+            {
+                int productKinds = CountDailyKitchenProductKinds(day);
+                complete = kitchenPlaced && productKinds >= 3;
+                completeLabel = "주방 전체 메뉴 3종 판매 완료";
+                actionLabel = BuildKitchenProductActionLabel(kitchenPlaced,
+                    $"BreadLoaf·구운 감자·생선구이 판매 {Mathf.Min(productKinds, 3)}/3종");
+                return true;
+            }
+            case 85:
+            {
+                bool chefHired = HasHiredSpecialty(NpcSpecialty.Chef);
+                complete = kitchenPlaced && chefHired;
+                completeLabel = "배치된 주방과 고용된 요리사 연결 완료";
+                if (!kitchenPlaced)
+                    actionLabel = BuildKitchenProductActionLabel(false, string.Empty);
+                else
+                    actionLabel = "P.A. Phone 채용 탭에서 요리사 전문 주민을 고용";
+                return true;
+            }
+            case 86:
+            {
+                int kitchenSales = CountDailyKitchenProductSales(day);
+                int categoryCount = CountDailySoldCategories(day);
+                complete = kitchenPlaced && kitchenSales > 0 && categoryCount >= 3;
+                completeLabel = $"주방 상품 {kitchenSales}개와 상품 분류 {categoryCount}종 판매";
+                if (!kitchenPlaced)
+                    actionLabel = BuildKitchenProductActionLabel(false, string.Empty);
+                else if (kitchenSales <= 0)
+                    actionLabel = "주방 상품 1개 이상 판매";
+                else
+                    actionLabel = $"서로 다른 상품 분류 판매 {Mathf.Min(categoryCount, 3)}/3종";
+                return true;
+            }
+            case 87:
+            {
+                int kitchenSales = CountDailyKitchenProductSales(day);
+                complete = kitchenPlaced && kitchenSales >= 4;
+                completeLabel = $"주방 상품 {kitchenSales}개 배치 판매 완료";
+                actionLabel = BuildKitchenProductActionLabel(kitchenPlaced,
+                    $"주방 상품 판매 {Mathf.Min(kitchenSales, 4)}/4개");
+                return true;
+            }
+            case 88:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                int kitchenSales = CountDailyKitchenProductSales(day);
+                bool processedCulture = culture != null && culture.HasActiveCategory
+                    && culture.ActiveCategory == ItemCategory.Processed;
+                complete = kitchenPlaced && processedCulture && kitchenSales > 0;
+                completeLabel = $"가공품 마을 방향과 주방 상품 {kitchenSales}개 판매 연결";
+                if (!kitchenPlaced)
+                    actionLabel = BuildKitchenProductActionLabel(false, string.Empty);
+                else if (!processedCulture)
+                    actionLabel = "가공품 판매 우세를 유지해 광장의 가공품 중심 마을 변화를 활성화";
+                else
+                    actionLabel = "활성화된 가공품 마을 방향에 맞춰 주방 상품 1개 이상 판매";
+                return true;
+            }
+            case 89:
+            {
+                long revenue = EconomyService.Instance != null
+                    ? EconomyService.Instance.CumulativeRevenue
+                    : 0L;
+                long target = LongPlayProgressionController.GetCampaignRevenueTarget(day);
+                complete = revenue >= target;
+                completeLabel = $"누적 매출 {revenue:N0}G로 주방 성장 점검 완료";
+                actionLabel = $"주방 성장 매출 점검 {revenue:N0}/{target:N0}G";
+                return true;
+            }
+            case 90:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                int productKinds = CountDailyKitchenProductKinds(day);
+                bool processedCulture = culture != null && culture.HasActiveCategory
+                    && culture.ActiveCategory == ItemCategory.Processed;
+                complete = kitchenPlaced && productKinds >= 3 && processedCulture;
+                completeLabel = "재료→주방→판매→가공품 마을 변화 가치사슬 완주";
+                if (!kitchenPlaced)
+                    actionLabel = BuildKitchenProductActionLabel(false, string.Empty);
+                else if (productKinds < 3)
+                    actionLabel = $"주방 전체 메뉴 판매 {Mathf.Min(productKinds, 3)}/3종";
+                else
+                    actionLabel = "가공품 판매 비중을 유지해 가공품 중심 마을 변화를 활성화";
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    static string BuildKitchenProductActionLabel(bool kitchenPlaced, string readyAction)
+    {
+        return kitchenPlaced
+            ? readyAction
+            : "배치 장부를 열어 Tier 2 주방 설계도를 받고 주방 스테이션을 배치";
+    }
+
+    static bool TryResolveTierThreeCampaignMilestone(int day, out bool complete,
+        out string completeLabel, out string actionLabel)
+    {
+        complete = false;
+        completeLabel = string.Empty;
+        actionLabel = string.Empty;
+
+        if (day < LongPlayProgressionController.TierThreeCampaignStartDay
+            || day > LongPlayProgressionController.TierThreeCampaignFinalDay)
+            return false;
+
+        TierService tierService = TierService.Instance;
+        int currentTier = tierService != null ? tierService.CurrentTier : 0;
+        int reputation = tierService != null ? tierService.Reputation : 0;
+        bool sewingTablePlaced = ShopCustomizationController.Instance != null
+            && ShopCustomizationController.Instance.HasActiveDefinitionPlacement(SewingTableDefinitionId);
+
+        switch (day)
+        {
+            case 91:
+            case 92:
+            {
+                int target = day - 90;
+                complete = reputation >= target || currentTier >= 3;
+                completeLabel = $"전문 주민 요청으로 마을 평판 {Mathf.Max(reputation, target)}/3 확보";
+                actionLabel = BuildTierThreeReputationActionLabel(target);
+                return true;
+            }
+            case 93:
+                complete = currentTier >= 3;
+                completeLabel = $"마을 평판 {reputation}/3 · Tier {currentTier} 지역장 상점 진입";
+                actionLabel = BuildTierThreeReputationActionLabel(3);
+                return true;
+            case 94:
+                complete = currentTier >= 3 && sewingTablePlaced;
+                completeLabel = "Tier 3 B08 재봉 작업대 배치 완료";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    "B08 재봉 작업대 배치 완료");
+                return true;
+            case 95:
+            {
+                int clothesSales = CountDailyItemSales(day, ClothesResourcePath);
+                complete = sewingTablePlaced && clothesSales > 0;
+                completeLabel = $"의류 {clothesSales}개 판매로 재봉 상품 라인 가동";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    "Wheat 2개와 Plank 1개로 의류를 제작해 1개 이상 판매");
+                return true;
+            }
+            case 96:
+            {
+                int clothesSales = CountDailyItemSales(day, ClothesResourcePath);
+                int furnitureSales = CountDailyItemSales(day, FurnitureResourcePath);
+                complete = sewingTablePlaced && clothesSales > 0 && furnitureSales > 0;
+                completeLabel = $"의류 {clothesSales}개 · 가구 {furnitureSales}개 Luxury 상품 판매";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    $"의류 판매 {Mathf.Min(clothesSales, 1)}/1 · 가구 판매 {Mathf.Min(furnitureSales, 1)}/1");
+                return true;
+            }
+            case 97:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                bool luxuryCulture = culture != null && culture.HasActiveCategory
+                    && culture.ActiveCategory == ItemCategory.Luxury;
+                complete = sewingTablePlaced && luxuryCulture;
+                completeLabel = "Luxury 중심 마을 변화 활성화 확인";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    "전날 Luxury 판매 비중을 높이고 광장의 공예·전시 중심 마을 변화를 확인");
+                return true;
+            }
+            case 98:
+            {
+                bool tailorHired = HasHiredSpecialty(NpcSpecialty.Tailor);
+                complete = sewingTablePlaced && tailorHired;
+                completeLabel = "배치된 B08과 고용된 재단사 연결 완료";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    "P.A. Phone 채용 탭에서 재단사 전문 주민을 고용");
+                return true;
+            }
+            case 99:
+            {
+                int clothesSales = CountDailyItemSales(day, ClothesResourcePath);
+                int categoryCount = CountDailySoldCategories(day);
+                complete = sewingTablePlaced && clothesSales > 0 && categoryCount >= 3;
+                completeLabel = $"의류 {clothesSales}개와 상품 분류 {categoryCount}종 판매";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    clothesSales <= 0
+                        ? "의류 1개 이상 판매"
+                        : $"서로 다른 상품 분류 판매 {Mathf.Min(categoryCount, 3)}/3종");
+                return true;
+            }
+            case 100:
+            {
+                int preparedKinds = CountPreparedAtelierProductKinds();
+                complete = sewingTablePlaced && preparedKinds >= 2;
+                completeLabel = "의류·가구 2종 공방 상품 준비 완료";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    $"인벤토리·핫바·진열대에 공방 상품 준비 {Mathf.Min(preparedKinds, 2)}/2종");
+                return true;
+            }
+            case 101:
+            {
+                int clothesSales = CountDailyItemSales(day, ClothesResourcePath);
+                int furnitureSales = CountDailyItemSales(day, FurnitureResourcePath);
+                complete = sewingTablePlaced && clothesSales > 0 && furnitureSales > 0;
+                completeLabel = "의류·가구 2종 공방 상품 판매 완료";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    $"의류 판매 {Mathf.Min(clothesSales, 1)}/1 · 가구 판매 {Mathf.Min(furnitureSales, 1)}/1");
+                return true;
+            }
+            case 102:
+            {
+                int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+                complete = sewingTablePlaced && hiredCount >= 4;
+                completeLabel = $"B08 공방과 마을 지원 인력 {hiredCount}명 운영";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    $"P.A. Phone 채용 앱에서 지원 인력 고용 {Mathf.Min(hiredCount, 4)}/4명");
+                return true;
+            }
+            case 103:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                bool luxuryCulture = culture != null && culture.HasActiveCategory
+                    && culture.ActiveCategory == ItemCategory.Luxury;
+                int productCount = CountDailySoldProducts(day);
+                complete = sewingTablePlaced && luxuryCulture && productCount >= 4;
+                completeLabel = $"Luxury 마을 방향과 서로 다른 상품 {productCount}종 판매 연결";
+                actionLabel = BuildAtelierActionLabel(currentTier, sewingTablePlaced,
+                    !luxuryCulture
+                        ? "Luxury 판매 우세를 유지해 공예·전시 중심 마을 변화를 활성화"
+                        : $"서로 다른 상품 판매 {Mathf.Min(productCount, 4)}/4종");
+                return true;
+            }
+            case 104:
+            {
+                long revenue = EconomyService.Instance != null
+                    ? EconomyService.Instance.CumulativeRevenue
+                    : 0L;
+                long target = LongPlayProgressionController.GetCampaignRevenueTarget(day);
+                complete = revenue >= target;
+                completeLabel = $"누적 매출 {revenue:N0}G로 Tier 3 성장 점검선 달성";
+                actionLabel = $"Tier 3 공방 매출 점검선 {revenue:N0}/{target:N0}G";
+                return true;
+            }
+            case 105:
+            {
+                VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+                bool luxuryCulture = culture != null && culture.HasActiveCategory
+                    && culture.ActiveCategory == ItemCategory.Luxury;
+                int clothesSales = CountDailyItemSales(day, ClothesResourcePath);
+                int furnitureSales = CountDailyItemSales(day, FurnitureResourcePath);
+                complete = currentTier >= 3 && sewingTablePlaced && clothesSales > 0
+                    && furnitureSales > 0 && luxuryCulture;
+                completeLabel = "주민 도움→평판→Tier 3→공방→판매→Luxury 마을 변화 가치사슬 완주";
+                if (currentTier < 3)
+                    actionLabel = BuildTierThreeReputationActionLabel(3);
+                else if (!sewingTablePlaced)
+                    actionLabel = BuildAtelierActionLabel(currentTier, false, string.Empty);
+                else if (clothesSales <= 0 || furnitureSales <= 0)
+                    actionLabel = $"의류 판매 {Mathf.Min(clothesSales, 1)}/1 · 가구 판매 {Mathf.Min(furnitureSales, 1)}/1";
+                else
+                    actionLabel = "Luxury 판매 비중을 유지해 공예·전시 중심 마을 변화를 활성화";
+                return true;
+            }
+            default:
+                return false;
+        }
+    }
+
+    static string BuildTierThreeReputationActionLabel(int target)
+    {
+        if (TierService.Instance == null || TierService.Instance.CurrentTier < 2)
+            return BuildTierTwoActionLabel();
+
+        int reputation = TierService.Instance.Reputation;
+        return $"전문 주민에게 필요한 재료를 건네 낮 요청 완료 · 마을 평판 "
+            + $"{Mathf.Min(reputation, target)}/{target} (하루 1회)";
+    }
+
+    static string BuildAtelierActionLabel(int currentTier, bool sewingTablePlaced, string readyAction)
+    {
+        if (currentTier < 3)
+            return BuildTierThreeReputationActionLabel(3);
+
+        return sewingTablePlaced
+            ? readyAction
+            : "배치 장부를 열어 지급된 Tier 3 B08 재봉 작업대를 작업 공간에 배치";
+    }
+
+    static bool HasHiredSpecialty(NpcSpecialty specialty)
+    {
+        if (HiringService.Instance == null) return false;
+
+        foreach (NpcCandidateData candidate in HiringService.Instance.GetHiredCandidates())
+            if (candidate != null && candidate.specialty == specialty)
+                return true;
+
+        return false;
+    }
+
+    static int CountDailyKitchenProductKinds(int day)
+    {
+        int count = 0;
+        if (CountDailyItemSales(day, BreadLoafResourcePath) > 0) count++;
+        if (CountDailyItemSales(day, BakedPotatoResourcePath) > 0) count++;
+        if (CountDailyItemSales(day, GrilledFishResourcePath) > 0) count++;
+        return count;
+    }
+
+    static int CountDailyKitchenProductSales(int day)
+    {
+        return CountDailyItemSales(day, BreadLoafResourcePath)
+            + CountDailyItemSales(day, BakedPotatoResourcePath)
+            + CountDailyItemSales(day, GrilledFishResourcePath);
+    }
+
+    static int CountPreparedKitchenProductKinds()
+    {
+        var expectedItems = new HashSet<Item>();
+        AddResourceItem(expectedItems, BreadLoafResourcePath);
+        AddResourceItem(expectedItems, BakedPotatoResourcePath);
+        AddResourceItem(expectedItems, GrilledFishResourcePath);
+
+        var preparedItems = new HashSet<Item>();
+        Inventory inventory = Inventory.instance;
+        if (inventory != null)
+        {
+            AddPreparedMatches(preparedItems, expectedItems, inventory.slots);
+            if (inventory.hotbar != null)
+                AddPreparedMatches(preparedItems, expectedItems, inventory.hotbar.slots);
+        }
+
+        foreach (ShopSlot slot in UnityEngine.Object.FindObjectsByType<ShopSlot>(FindObjectsSortMode.None))
+            if (slot != null && !slot.IsEmpty && slot.currentItem?.data != null
+                && expectedItems.Contains(slot.currentItem.data))
+                preparedItems.Add(slot.currentItem.data);
+
+        return preparedItems.Count;
+    }
+
+    static int CountPreparedAtelierProductKinds()
+    {
+        var expectedItems = new HashSet<Item>();
+        AddResourceItem(expectedItems, FurnitureResourcePath);
+        AddResourceItem(expectedItems, ClothesResourcePath);
+
+        var preparedItems = new HashSet<Item>();
+        Inventory inventory = Inventory.instance;
+        if (inventory != null)
+        {
+            AddPreparedMatches(preparedItems, expectedItems, inventory.slots);
+            if (inventory.hotbar != null)
+                AddPreparedMatches(preparedItems, expectedItems, inventory.hotbar.slots);
+        }
+
+        foreach (ShopSlot slot in UnityEngine.Object.FindObjectsByType<ShopSlot>(FindObjectsSortMode.None))
+            if (slot != null && !slot.IsEmpty && slot.currentItem?.data != null
+                && expectedItems.Contains(slot.currentItem.data))
+                preparedItems.Add(slot.currentItem.data);
+
+        return preparedItems.Count;
+    }
+
+    static void AddResourceItem(HashSet<Item> items, string resourcePath)
+    {
+        Item item = Resources.Load<Item>(resourcePath);
+        if (item != null) items.Add(item);
+    }
+
+    static void AddPreparedMatches(HashSet<Item> preparedItems, HashSet<Item> expectedItems,
+        List<InventorySlot> slots)
+    {
+        if (slots == null) return;
+
+        foreach (InventorySlot slot in slots)
+            if (slot != null && !slot.IsEmpty && slot.item != null && expectedItems.Contains(slot.item))
+                preparedItems.Add(slot.item);
+    }
+
+    static int CountStoredUnits()
+    {
+        int total = 0;
+        foreach (StorageBox box in UnityEngine.Object.FindObjectsByType<StorageBox>(FindObjectsSortMode.None))
+        {
+            if (box == null || box.items == null) continue;
+            foreach (ItemInstance instance in box.items)
+                if (instance != null && instance.data != null && instance.count > 0)
+                    total += instance.count;
+        }
+
+        return total;
+    }
+
+    static int CountDailyCategorySales(int day, ItemCategory category)
+    {
+        int count = 0;
+        foreach (SaleRecord record in GetRecentSales())
+        {
+            if (record == null || record.gameDay != day) continue;
+            if (Enum.TryParse(record.category, true, out ItemCategory soldCategory)
+                && soldCategory == category)
+                count++;
+        }
+
+        return count;
+    }
+
+    static int CountDailyItemSales(int day, string resourcePath)
+    {
+        Item expectedItem = Resources.Load<Item>(resourcePath);
+        if (expectedItem == null || string.IsNullOrWhiteSpace(expectedItem.itemName))
+            return 0;
+
+        string expectedName = expectedItem.itemName.Trim();
+        int count = 0;
+        foreach (SaleRecord record in GetRecentSales())
+        {
+            if (record == null || record.gameDay != day || string.IsNullOrWhiteSpace(record.itemName))
+                continue;
+            if (string.Equals(record.itemName.Trim(), expectedName, StringComparison.Ordinal))
+                count++;
+        }
+
+        return count;
+    }
+
+    static int CountDailySoldCategories(int day)
+    {
+        var categories = new HashSet<ItemCategory>();
+        foreach (SaleRecord record in GetRecentSales())
+        {
+            if (record == null || record.gameDay != day) continue;
+            if (Enum.TryParse(record.category, true, out ItemCategory category)
+                && category != ItemCategory.Tool)
+                categories.Add(category);
+        }
+
+        return categories.Count;
+    }
+
+    static int CountDailySoldProducts(int day)
+    {
+        var products = new HashSet<string>(StringComparer.Ordinal);
+        foreach (SaleRecord record in GetRecentSales())
+        {
+            if (record == null || record.gameDay != day || string.IsNullOrWhiteSpace(record.itemName))
+                continue;
+            products.Add(record.itemName.Trim());
+        }
+
+        return products.Count;
+    }
+
+    static List<SaleRecord> GetRecentSales()
+    {
+        if (SalesLogManager.Instance == null)
+            return new List<SaleRecord>();
+
+        return SalesLogManager.Instance.GetRecent(
+            Mathf.Max(1, SalesLogManager.Instance.maxRecords));
+    }
+
+    static string BuildTierOneActionLabel()
+    {
+        if (TierService.Instance == null)
+            return "감사 앱에서 Tier 1 실내 잡화점 성장 조건 확인";
+
+        TierDefinition next = TierService.Instance.GetDefinition(1);
+        long revenue = EconomyService.Instance != null
+            ? EconomyService.Instance.CumulativeRevenue
+            : 0L;
+        if (next != null && next.requiredCumulativeRevenue > 0)
+        {
+            long remaining = Math.Max(0L, next.requiredCumulativeRevenue - revenue);
+            return $"Tier 1 실내 잡화점까지 누적 매출 {remaining:N0}G 남음";
+        }
+
+        return "감사 앱에서 Tier 1 실내 잡화점 성장 조건 달성";
+    }
+
+    static string BuildTierTwoActionLabel()
+    {
+        if (TierService.Instance == null)
+            return "감사 앱에서 Tier 2 성장 조건 확인";
+
+        int currentTier = TierService.Instance.CurrentTier;
+        if (currentTier >= 2)
+            return $"상점 Tier {currentTier} 달성 · 배치 장부에서 다음 설계도 확인";
+
+        TierDefinition tierTwo = TierService.Instance.GetDefinition(2);
+        long revenue = EconomyService.Instance != null
+            ? EconomyService.Instance.CumulativeRevenue
+            : 0L;
+        if (tierTwo != null && tierTwo.requiredCumulativeRevenue > 0)
+        {
+            long remaining = Math.Max(0L, tierTwo.requiredCumulativeRevenue - revenue);
+            return $"Tier 2까지 누적 매출 {remaining:N0}G 남음 · 현재 {revenue:N0}/{tierTwo.requiredCumulativeRevenue:N0}G";
+        }
+
+        return "감사 앱에서 Tier 2 성장 조건 달성";
+    }
+
+    static string ResolveCategoryLabel(ItemCategory category)
+    {
+        return category switch
+        {
+            ItemCategory.Raw => "원재료 수거처",
+            ItemCategory.Processed => "가공 준비대",
+            ItemCategory.Utility => "공구 수리대",
+            ItemCategory.Luxury => "공예 전시대",
+            _ => category.ToString()
+        };
+    }
+
+    static void AppendChecklistLine(System.Text.StringBuilder sb, bool complete, string label,
+        string pendingLabel = null)
+    {
+        string state = complete ? "완료" : string.IsNullOrWhiteSpace(pendingLabel) ? " " : pendingLabel;
+        string color = complete ? "#8FCF9A" : pendingLabel == "지금" ? "#FFE9B8" : "#D8D3C8";
+        sb.AppendLine($"<color={color}>[{state}] {label}</color>");
+    }
+
+    static List<string> GetCompletedDayActivityLabels(DayNightShopLoopController loop)
+    {
+        var labels = new List<string>();
+        if (loop != null)
+        {
+            if (loop.IsDailyActivityCompleted("shore-forage")) labels.Add("낚시");
+            if (loop.IsDailyActivityCompleted("quarry-mining")) labels.Add("채광");
+            if (AnyFarmPlotStarted()) labels.Add("농사");
+            else if (loop.IsDailyActivityCompleted("farm-seed-pouch")) labels.Add("농사 준비");
+            if (loop.IsDailyActivityCompleted("forest-forage") || loop.IsDailyActivityCompleted("meadow-forage"))
+                labels.Add("채집");
+        }
+
+        if (AnyResidentRequestCompletedToday()) labels.Add("주민 도움");
+        return labels;
+    }
+
+    static bool AnyFarmPlotStarted()
+    {
+        foreach (FarmPlotInteraction plot in UnityEngine.Object.FindObjectsByType<FarmPlotInteraction>(FindObjectsSortMode.None))
+            if (plot != null && plot.CurrentCrop != null) return true;
+        return false;
+    }
+
+    static bool AnyResidentRequestCompletedToday()
+    {
+        foreach (NpcDialogue dialogue in UnityEngine.Object.FindObjectsByType<NpcDialogue>(FindObjectsSortMode.None))
+            if (dialogue != null && dialogue.TryGetResidentRequest(out NpcDialogue.ResidentRequestState request)
+                && request.CompletedToday) return true;
+        return false;
+    }
+
+    static int CountPreparedSellableTypes()
+    {
+        var items = new HashSet<Item>();
+        Inventory inventory = Inventory.instance;
+        if (inventory != null)
+        {
+            AddSellableTypes(items, inventory.slots);
+            if (inventory.hotbar != null) AddSellableTypes(items, inventory.hotbar.slots);
+        }
+
+        foreach (ShopSlot slot in UnityEngine.Object.FindObjectsByType<ShopSlot>(FindObjectsSortMode.None))
+            if (slot != null && !slot.IsEmpty && IsSellableNow(slot.currentItem.data))
+                items.Add(slot.currentItem.data);
+
+        return items.Count;
+    }
+
+    static void AddSellableTypes(HashSet<Item> items, List<InventorySlot> slots)
+    {
+        if (slots == null) return;
+        foreach (InventorySlot slot in slots)
+            if (slot != null && !slot.IsEmpty && IsSellableNow(slot.item))
+                items.Add(slot.item);
+    }
+
+    static bool IsSellableNow(Item item)
+    {
+        return item != null
+            && item.category != ItemCategory.Tool
+            && item.toolType == ToolType.None
+            && (TierService.Instance == null || TierService.Instance.IsUnlocked(item.requiredTier));
     }
 
     bool AnyShopSlotStocked()
@@ -543,6 +2002,8 @@ public class PlayableDayScenarioController : MonoBehaviour
         SetFlowVisible(true);
         SetNameInputVisible(false);
         SetMapButtonsVisible(false);
+        SetTitleButtonLayout(false);
+        if (_quitButton != null) _quitButton.gameObject.SetActive(false);
         SetFlowBodyPresentation(summary: true);
 
         if (_startupPausedTime == false)
@@ -803,7 +2264,10 @@ public class PlayableDayScenarioController : MonoBehaviour
         _mapButtons.Add(CreateMapButton("shell_port", "조개 항구\n무역 특화 · 준비 중", 280f, false));
 
         _primaryButton = CreateButton(_flowPanel.transform, "PrimaryButton", "다음", new Vector2(150f, -250f), new Vector2(240f, 58f), OnPrimaryPressed);
-        _secondaryButton = CreateButton(_flowPanel.transform, "SecondaryButton", "닫기", new Vector2(-150f, -250f), new Vector2(200f, 58f), CloseSummary);
+        _secondaryButton = CreateButton(_flowPanel.transform, "SecondaryButton", "닫기", new Vector2(-150f, -250f), new Vector2(200f, 58f), OnSecondaryPressed);
+        _quitButton = CreateButton(_flowPanel.transform, "QuitButton", "게임 종료", new Vector2(-260f, -250f), new Vector2(200f, 58f), OnQuitPressed);
+        _quitButton.GetComponent<Image>().color = new Color(0.45f, 0.27f, 0.20f, 1f);
+        _quitButton.gameObject.SetActive(false);
         _primaryText = _primaryButton.GetComponentInChildren<TextMeshProUGUI>();
         _secondaryText = _secondaryButton.GetComponentInChildren<TextMeshProUGUI>();
 
@@ -812,6 +2276,22 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     void OnPrimaryPressed()
     {
+        if (!_startupCompleted && _startupStep == StartupStep.Title)
+        {
+            _startupStep = _continueSaveAvailable
+                ? StartupStep.NewGameConfirm
+                : StartupStep.Name;
+            ShowStartupStep();
+            return;
+        }
+
+        if (!_startupCompleted && _startupStep == StartupStep.NewGameConfirm)
+        {
+            _startupStep = StartupStep.Name;
+            ShowStartupStep();
+            return;
+        }
+
         if (Current == Stage.Done && _summaryShown)
         {
             bool advanced = DayNightShopLoopController.Instance != null
@@ -821,6 +2301,73 @@ public class PlayableDayScenarioController : MonoBehaviour
                 Debug.LogWarning("[PlayableDay] Day 1 결산 후 다음 날 전환에 실패했습니다.");
         }
         else AdvanceStartupStep();
+    }
+
+    async void OnSecondaryPressed()
+    {
+        if (!_startupCompleted && _startupStep == StartupStep.NewGameConfirm)
+        {
+            _startupStep = StartupStep.Title;
+            ShowStartupStep();
+            return;
+        }
+
+        if (Current == Stage.Done && _summaryShown)
+        {
+            CloseSummary();
+            return;
+        }
+
+        if (_startupCompleted || _startupStep != StartupStep.Title
+            || !_continueSaveAvailable || _continueLoading || SaveManager.instance == null)
+            return;
+
+        _continueLoading = true;
+        _primaryButton.interactable = false;
+        _secondaryButton.interactable = false;
+        if (_quitButton != null) _quitButton.interactable = false;
+        if (_secondaryText != null) _secondaryText.text = "불러오는 중";
+
+        try
+        {
+            await SaveManager.instance.LoadGameAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[PlayableDay] 이어하기 실패: {ex.Message}");
+        }
+
+        if (this == null || _startupCompleted) return;
+
+        _continueLoading = false;
+        _primaryButton.interactable = true;
+        if (_quitButton != null) _quitButton.interactable = true;
+        if (_flowBody != null)
+            _flowBody.text = "저장 데이터를 불러오지 못했습니다. 새 게임을 시작하거나 저장 파일을 확인해 주세요.";
+        BeginContinueAvailabilityCheck();
+    }
+
+    void OnQuitPressed()
+    {
+        if (_startupCompleted || _startupStep != StartupStep.Title || _continueLoading)
+            return;
+
+        Application.Quit();
+        if (Application.isEditor && _flowBody != null)
+            _flowBody.text = "실제 빌드에서는 게임이 종료됩니다. Editor에서는 Play Mode를 직접 중지해 주세요.";
+    }
+
+    void SetTitleButtonLayout(bool title)
+    {
+        if (_primaryButton != null)
+            ((RectTransform)_primaryButton.transform).anchoredPosition = title
+                ? new Vector2(260f, -250f)
+                : new Vector2(150f, -250f);
+
+        if (_secondaryButton != null)
+            ((RectTransform)_secondaryButton.transform).anchoredPosition = title
+                ? new Vector2(0f, -250f)
+                : new Vector2(-150f, -250f);
     }
 
     Button CreateMapButton(string mapId, string label, float x, bool enabled)
@@ -953,6 +2500,7 @@ public class PlayableDayScenarioController : MonoBehaviour
         _everSawSave = false;
         _forcedFirstBuyer = false;
         _summaryShown = false;
+        _nextContinuationRefreshAt = 0f;
         CaptureBaselines();
         RefreshLabel();
     }
@@ -966,6 +2514,7 @@ public class PlayableDayScenarioController : MonoBehaviour
         Current = (Stage)Mathf.Clamp(stageIndex, 0, max);
         _startupCompleted = true;
         _summaryShown = Current == Stage.Done;
+        _nextContinuationRefreshAt = 0f;
         SetFlowVisible(false);
 
         if (_startupPausedTime)

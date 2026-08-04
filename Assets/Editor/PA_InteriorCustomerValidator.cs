@@ -24,6 +24,9 @@ public static class PA_InteriorCustomerValidator
     static NpcController _visitor;
     static int _baselineMoney;
     static bool _purchaseSeen;
+    static bool _approachReservationSeen;
+    static bool _completeApproachPathSeen;
+    static bool _approachArrivalSeen;
 
     static PA_InteriorCustomerValidator()
     {
@@ -51,6 +54,9 @@ public static class PA_InteriorCustomerValidator
 
         _entered = false; _ran = false; _hadError = false; _step = 0;
         _visitor = null; _purchaseSeen = false;
+        _approachReservationSeen = false;
+        _completeApproachPathSeen = false;
+        _approachArrivalSeen = false;
         _startedAt = EditorApplication.timeSinceStartup;
 
         SessionState.SetBool(ActiveKey, true);
@@ -107,7 +113,7 @@ public static class PA_InteriorCustomerValidator
             {
                 bool done = RunStep(_step);
                 _step++;
-                _nextStepAt = EditorApplication.timeSinceStartup + 2.0;
+                _nextStepAt = EditorApplication.timeSinceStartup + 0.35;
 
                 if (done)
                 {
@@ -156,7 +162,9 @@ public static class PA_InteriorCustomerValidator
             Require(interiorShop != null, "interior Shop component registered (S2)");
 
             // Day 2 밤 + 간판 개점 → 손님 구매 게이트 열림 (Day 1 튜토리얼 제외 규칙 검증 포함)
-            loop.SimulatePhaseForValidation(19.5f, 2);
+            // 18:15 = ShopOpen(18~) 직후이자 전문직 Shopping 창(18~20시)의 초입.
+            // 19.5 로 시작하면 20:00 Rest 강제 귀가까지 실시간 30초뿐이라 레이스가 났었다.
+            loop.SimulatePhaseForValidation(18.25f, 2);
             loop.SetShopOpenedForValidation(true);
             Require(!loop.IsTutorialAlwaysOpen, "day 2 is not tutorial-always-open");
             Require(loop.IsShopOpenForCustomers, "customer purchase gate is open");
@@ -196,18 +204,33 @@ public static class PA_InteriorCustomerValidator
 
         var agentDiag = _visitor.GetComponent<UnityEngine.AI.NavMeshAgent>();
         if (agentDiag != null)
+        {
             Debug.Log($"PA InteriorCustomer poll: state={_visitor.currentState} pos={_visitor.transform.position} "
                 + $"onMesh={agentDiag.isOnNavMesh} pathPending={agentDiag.pathPending} pathStatus={agentDiag.pathStatus} "
                 + $"remain={(float.IsInfinity(agentDiag.remainingDistance) ? -1f : agentDiag.remainingDistance):0.##} dest={agentDiag.destination}");
 
+            if (_visitor.HasShopApproachReservation && _visitor.CurrentShopSlotTarget != null)
+            {
+                _approachReservationSeen = ShopCustomerApproachController.Instance != null
+                    && ShopCustomerApproachController.Instance.IsReservedBy(_visitor.CurrentShopSlotTarget, _visitor);
+                _completeApproachPathSeen |= !agentDiag.pathPending
+                    && agentDiag.pathStatus == UnityEngine.AI.NavMeshPathStatus.PathComplete;
+                _approachArrivalSeen |= Vector3.Distance(_visitor.transform.position,
+                    _visitor.CurrentShopApproachPoint) < 0.75f;
+            }
+        }
+
         if (_purchaseSeen && visitorOutside)
         {
+            Require(_approachReservationSeen, "visitor reserved an explicit ShopSlot approach owner");
+            Require(_completeApproachPathSeen, "visitor used a complete NavMesh path to the approach point");
+            Require(_approachArrivalSeen, "visitor stopped at the reserved front position before purchase");
             Require(_visitor.currentState == NpcController.State.Idle, "visitor FSM returned to Idle after visit");
-            Debug.Log("PA Interior Customer Validation passed. invite→browse→buy→return");
+            Debug.Log("PA Interior Customer Validation passed. invite→reserve→approach→browse→buy→return");
             return true;
         }
 
-        if (step > 20)
+        if (step > 100)
             throw new InvalidOperationException(
                 $"interior visit did not complete (purchase={_purchaseSeen}, outside={visitorOutside}, state={_visitor.currentState})");
 

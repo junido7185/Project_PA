@@ -308,3 +308,99 @@ Remaining:
 
 - Human visual review should confirm that the primitive processed-goods prep corner is readable and pleasant enough.
 - Future category visuals can expand the same pattern for `Raw`, `Utility`, and `Luxury`.
+
+## Long-Play Implementation Update - 2026-07-27 (Task 112)
+
+Day 7 already offered save-and-continue to Day 8, but Day 8+ still used one generic objective. The second week is now connected to existing playable systems:
+
+- Day 8: store reserve stock in B09.
+- Day 9: complete a Processed product sale.
+- Day 10: operate with at least one hired producer or specialist.
+- Day 11: sell two different product categories.
+- Day 12: reach Tier 1 and the indoor shop stage.
+- Day 13: inspect the active next-day village response.
+- Day 14: close the week with two different sold products.
+
+The Day 2+ player checklist reads the actual storage, same-day sales, hired roster, Tier, and village-culture state. It does not mutate economy, inventory, crafting, hiring, tier, village-change, or save authority. Automatic onboarding supply remains limited to Days 2–7.
+
+Validation:
+
+- Runtime and Editor builds passed with zero errors.
+- Task 112 static contracts passed 40/40.
+- `git diff --check` passed.
+
+Remaining:
+
+- Use an approved safe Unity path to verify Day 7 → Day 8 and representative Day 8–14 state transitions.
+- Review the objective/checklist at 1920×1080.
+
+## Visual And Asset-Finalization Update - 2026-07-27 (Task 113)
+
+The durable Tripo policy remains per-asset rather than wholesale replacement: character identity is preserved, functional furniture must satisfy the existing placement/access/save contract, source assets remain untouched, and provenance is a separate deployment gate.
+
+The B12 Trade Port had a concrete coastal-route risk. Its historical wrapper Box/Obstacle is 10×5m while the measured Visual is about 3.63×1.96m. The active runtime instance now derives local bounds from all transformed mesh corners and only shrinks clearly oversized root `BoxCollider` and box-shaped `NavMeshObstacle` axes. Missing mesh data preserves existing physics.
+
+Validation:
+
+- Runtime and Editor builds passed with zero errors.
+- Task 113 static contracts passed 20/20.
+- Target `git diff --check` passed.
+
+Remaining:
+
+- Use an approved safe Unity path to walk through the former invisible-wall area and stop at the visible dock.
+- Verify NPC carving avoidance and capture the same GameCamera view.
+- Obtain per-asset Tripo generation and commercial-use evidence before final distribution.
+
+## Long-Play Completion Update - 2026-07-27 (Task 114)
+
+The playable campaign now has an authored first-month endpoint instead of dropping back to a generic loop after Day 14:
+
+- Days 15–30 rotate existing storage, processing, workforce, category assortment, Tier, and village-response decisions.
+- Every daily milestone reads the actual runtime state and leaves transaction, unlock, hiring, crafting, and save authority with the existing systems.
+- Day 30 Settlement opens a first-month completion record with cumulative economy, Tier/reputation, workforce, village direction, and final-day sales.
+- The player can save and finish or save, advance through the existing day authority, and continue on Day 31.
+- Day 7 supply cutoff and week-one save → Day 8 remain unchanged.
+
+Validation:
+
+- Sequential Runtime and Editor builds passed with zero warnings and zero errors.
+- Task 114 static contracts passed 56/56.
+- Target `git diff --check` passed.
+
+Remaining:
+
+- Use an approved safe Unity path to verify representative Day 15–30 state transitions.
+- Verify both Day 30 choices, Day 31 continuation/save, and 1920×1080 completion-screen readability.
+
+## Month-One Forge Value-Chain Update - 2026-07-27 (Task 115)
+
+The Month-One attainability audit found that B07's BuildingData, blueprint, Tool Set recipe, and Tool Set item were all Tier 1 while only the placement catalog delayed the forge to Tier 3. Day 23 could also be completed by selling seeds, and Day 24 demanded Luxury before the existing 100,000G Tier-2 gate.
+
+- B07 now joins B05 as a duplicate-safe Tier-1 ledger reward; B06 remains Tier 2 and B08 remains Tier 3.
+- Day 23 requires an active forge, an exact same-day Tool Set sale, and a second distinct product.
+- Day 24 requires an active forge, an exact Tool Set sale, and a Processed sale.
+- The player-facing route is shelf recovery → B07 placement → Plank 1 + Ore 4 → Iron Bars 2 → Tool Set 1 → mixed night sales.
+- Month-One cumulative target display now grows from Day 15 16,000G to Day 30 31,000G and continues upward after completion.
+- Tier definitions, recipe/item/building assets, crafting/sales/economy/save authority, scenes, prefabs, and packages remain unchanged.
+
+Validation:
+
+- Sequential Runtime and Editor builds passed with zero errors; only existing CS8785/CS0414 warnings remain.
+- Executable source contracts passed 39/39.
+- Target `git diff --check` passed.
+
+Remaining:
+
+- Verify Tier-1 B05/B07 reward, two-shelf recovery, B07 placement/access, Iron Bar/Tool Set crafting and Day 23/24 sales in an approved safe Unity path.
+- Review the guidance and checklist at 1920×1080.
+
+## 2026-08-04 — WORLD-000 Architecture Reframe
+
+Current bounded ticket is WORLD-000 and it is **design/investigation only**. The world runtime, generator, terrain mesh, terraforming, SaveData schema, NavMesh runtime update, and `WorldSandbox.unity` were not created.
+
+- Recommended architecture: 2m cell, 16×16-cell custom mesh Chunk, 1m elevation levels 0~6, 128×128 default logical island, seed + sparse modification delta.
+- Scene roles: Prototype_FirstDay = Golden Regression; future WorldSandbox = technology testbed; MainGame = Gate 1~5 이후 별도 통합 후보.
+- WORLD-001 is not active. It requires human confirmation of the scene split, WorldSandbox creation, and prototype baseline.
+- The pre-existing unverified `AudioManager.cs`/`SalesLogManager.cs` change remains untouched and outside WORLD-000.
+- WORLD-000 final loop state is `needs_human_review`; documentation can be complete while implementation gates remain unapproved.

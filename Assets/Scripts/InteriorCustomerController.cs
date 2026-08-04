@@ -34,6 +34,9 @@ public class InteriorCustomerController : MonoBehaviour
         public Vector3 returnPosition;
         public Transform originalShopLocation;
         public float startedAt;
+        public int moneyAtStart;   // 이 방문에서 구매가 있었는지 판정용
+        public int retriesLeft = 1; // 스케줄 정각 Pause 로 중단된 방문의 재개 허용 횟수
+        public NpcScheduleController scheduleOverride; // Rest 주민의 영업 방문 lease
     }
 
     readonly List<Visitor> _visitors = new List<Visitor>();
@@ -68,6 +71,8 @@ public class InteriorCustomerController : MonoBehaviour
         {
             if (TryInviteOne() != null)
                 _nextInviteAt = Time.timeSinceLevelLoad + Mathf.Max(4f, inviteInterval);
+            else
+                _nextInviteAt = Time.timeSinceLevelLoad + 3f; // 실패 시 백오프 — 매초 워프 재시도 스팸 방지
         }
     }
 
@@ -114,12 +119,22 @@ public class InteriorCustomerController : MonoBehaviour
             var agent = npc.GetComponent<NavMeshAgent>();
             if (agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh) continue;
 
+            NpcScheduleController scheduleOverride = null;
+            if (npc.IsSchedulePaused)
+            {
+                scheduleOverride = npc.GetComponent<NpcScheduleController>();
+                if (scheduleOverride == null || !scheduleOverride.TryBeginShopOpenVisitOverride())
+                    continue;
+            }
+
             var visitor = new Visitor
             {
                 npc = npc,
                 returnPosition = npc.transform.position,
                 originalShopLocation = npc.shopLocation,
-                startedAt = Time.timeSinceLevelLoad
+                startedAt = Time.timeSinceLevelLoad,
+                moneyAtStart = EconomyService.Instance != null ? EconomyService.Instance.Money : 0,
+                scheduleOverride = scheduleOverride
             };
 
             // 실내 NavMesh 아일랜드로 워프 후 기존 FSM 으로 쇼핑 시작.
@@ -134,6 +149,8 @@ public class InteriorCustomerController : MonoBehaviour
                 // 시작 실패 — 원위치 복구.
                 agent.Warp(visitor.returnPosition);
                 npc.RetargetShop(visitor.originalShopLocation);
+                npc.SetShoppingPriority(false);
+                scheduleOverride?.EndShopOpenVisitOverride();
                 continue;
             }
 
@@ -163,6 +180,21 @@ public class InteriorCustomerController : MonoBehaviour
             bool timedOut = Time.timeSinceLevelLoad - v.startedAt > Mathf.Max(10f, visitTimeout);
             if (!finished && !timedOut) continue;
 
+            // 정각 스케줄 페이즈 변경(Pause)이 쇼핑 FSM 을 구매 전에 Idle 로 초기화할 수 있다.
+            // 구매 없이 끝난 방문은 아직 실내·영업 중·재개 가능하면 1회 다시 쇼핑을 시작시킨다.
+            bool boughtSomething = EconomyService.Instance != null
+                && EconomyService.Instance.Money > v.moneyAtStart;
+            if (finished && !timedOut && !boughtSomething && v.retriesLeft > 0
+                && v.npc.transform.position.y > 50f
+                && !v.npc.IsSchedulePaused
+                && IsInteriorOpenForVisits()
+                && v.npc.TryBeginShoppingVisitAt(_interiorShop))
+            {
+                v.retriesLeft--;
+                Debug.Log($"🚪 [InteriorCustomer] {v.npc.name} 쇼핑 재개 (정각 스케줄 중단 복구)");
+                continue;
+            }
+
             ReturnVisitor(v, timedOut ? "시간 초과" : "쇼핑 종료");
             _visitors.RemoveAt(i);
         }
@@ -190,6 +222,8 @@ public class InteriorCustomerController : MonoBehaviour
         v.npc.RetargetShop(v.originalShopLocation);
         if (v.npc.currentState != NpcController.State.Idle)
             v.npc.currentState = NpcController.State.Idle;
+        v.npc.SetShoppingPriority(false);
+        v.scheduleOverride?.EndShopOpenVisitOverride();
 
         Debug.Log($"🚪 [InteriorCustomer] {v.npc.name} 퇴장 ({reason})");
     }

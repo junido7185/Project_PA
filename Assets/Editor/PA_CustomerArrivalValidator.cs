@@ -178,7 +178,31 @@ public static class PA_CustomerArrivalValidator
             Require(capped <= 2, $"concurrent customer cap is respected ({capped} <= 2)");
             arrival.maxConcurrentCustomers = originalCap;
 
-            Debug.Log($"PA Customer Arrival Validation passed. npcs={npcs.Length}, invited={invited}, capped={capped}");
+            // 5) Task 128 — 정상 플레이 개점 경로가 실제 무일과표 관광객을 생성하고 기존 구매 FSM에 진입시킨다.
+            NpcController tourist = arrival.TryInviteTourist();
+            Require(tourist != null, "opening the normal-play shop creates a transient tourist customer");
+            Require(arrival.IsTransientTourist(tourist), "arrival controller owns the transient tourist lifecycle");
+            Require(arrival.ActiveTouristCount == 1, "the first tourist is tracked as an active visit");
+            Require(arrival.TouristsSpawnedThisOpening >= 1, "tourist entries are bounded and counted per opening");
+            Require(tourist.currentState == NpcController.State.MovingToShop,
+                "tourist enters the existing NpcController shopping FSM");
+            Require(tourist.GetComponent<NpcScheduleController>() == null,
+                "tourist has no resident village schedule");
+            Require(tourist.GetComponent<ProducerNpcController>() == null
+                && tourist.GetComponent<SpecialistNpcController>() == null,
+                "tourist does not duplicate resident production or specialist roles");
+            Require(tourist.GetComponent<NpcDialogue>() == null,
+                "tourist does not create resident friendship or request authority");
+            Require(tourist.profile != null && tourist.profile.npcName.StartsWith("여행 손님"),
+                "tourist receives a separate runtime-only customer identity");
+            Require(!AssetDatabase.Contains(tourist.profile),
+                "tourist profile is session-only and does not modify a source asset");
+            Require(tourist.GetComponentInChildren<SkinnedMeshRenderer>(true) != null,
+                "tourist reuses a finalized resident character visual instead of a primitive");
+            Require(CustomerPreferencePresentationController.DescribeCustomerClass(tourist) == "[관광객]",
+                "unscheduled tourist is visible through the existing customer-class presentation");
+
+            Debug.Log($"PA Customer Arrival Validation passed. residents={npcs.Length}, invited={invited}, capped={capped}, tourist={tourist.profile.npcName}");
         }
         catch (Exception ex)
         {

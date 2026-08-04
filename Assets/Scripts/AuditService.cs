@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 // 본사 감사(Audit) 시스템 — Docs/05 §1 Tier 4 "파트너" 승급 조건.
@@ -23,6 +24,15 @@ using UnityEngine;
 [DefaultExecutionOrder(-40)]
 public class AuditService : MonoBehaviour
 {
+    public enum AuditOutcome
+    {
+        NotRun,
+        Failed,
+        Passed,
+        AlreadyComplete,
+        AdvancementBlocked
+    }
+
     public static AuditService Instance { get; private set; }
 
     [Header("감사 주기")]
@@ -45,6 +55,36 @@ public class AuditService : MonoBehaviour
 
     /// <summary>마지막 감사가 실시된 게임 일수.</summary>
     public int LastAuditDay => _lastAuditDay;
+
+    /// <summary>현재 실행 세션에서 마지막으로 확인한 감사 결과. 저장 데이터에는 감사 날짜만 보존한다.</summary>
+    public AuditOutcome LastOutcome { get; private set; } = AuditOutcome.NotRun;
+
+    /// <summary>Inspector와 UI가 함께 읽는 최근 감사 결과 요약.</summary>
+    public string LastResult => _debugLastResult;
+
+    public long CurrentRevenue => EconomyService.Instance != null
+        ? EconomyService.Instance.CumulativeRevenue
+        : 0L;
+
+    public int CurrentReputation => TierService.Instance != null
+        ? TierService.Instance.Reputation
+        : 0;
+
+    public int CurrentHiredCount => HiringService.Instance != null
+        ? HiringService.Instance.HiredCount
+        : 0;
+
+    public bool RevenueRequirementMet => CurrentRevenue >= requiredRevenueForAudit;
+    public bool ReputationRequirementMet => CurrentReputation >= requiredReputationForAudit;
+    public bool HiringRequirementMet => CurrentHiredCount >= requiredHiredNpcs;
+    public bool AreAllRequirementsMet => RevenueRequirementMet && ReputationRequirementMet && HiringRequirementMet;
+    public int MetRequirementCount => (RevenueRequirementMet ? 1 : 0)
+                                    + (ReputationRequirementMet ? 1 : 0)
+                                    + (HiringRequirementMet ? 1 : 0);
+    public int NextAuditDay => _lastAuditDay + Mathf.Max(1, auditIntervalDays);
+
+    /// <summary>감사 앱이 열린 상태에서도 날짜·결과 변화를 즉시 반영하기 위한 읽기 전용 알림.</summary>
+    public event Action OnAuditStateChanged;
 
     // -------- Unity 생명주기 --------
 
@@ -77,7 +117,11 @@ public class AuditService : MonoBehaviour
         }
 
         // 감사 실행 여부 확인
-        if (day - _lastAuditDay < auditIntervalDays) return;
+        if (day - _lastAuditDay < auditIntervalDays)
+        {
+            OnAuditStateChanged?.Invoke();
+            return;
+        }
 
         RunAudit(day);
     }
@@ -92,7 +136,12 @@ public class AuditService : MonoBehaviour
     }
 
     /// <summary>저장/로드용 강제 세팅.</summary>
-    public void ForceSetLastAuditDay(int day) => _lastAuditDay = Mathf.Max(0, day);
+    public void ForceSetLastAuditDay(int day)
+    {
+        _lastAuditDay = Mathf.Max(0, day);
+        LastOutcome = AuditOutcome.NotRun;
+        OnAuditStateChanged?.Invoke();
+    }
 
     // -------- 감사 실행 --------
 
@@ -104,8 +153,8 @@ public class AuditService : MonoBehaviour
         // Tier 4 가 이미 달성되었으면 축하만 하고 종료
         if (TierService.Instance != null && TierService.Instance.CurrentTier >= 4)
         {
-            _debugLastResult = $"Day {day}: 이미 최고 등급";
             Debug.Log("🏛️ 결과: 이미 파트너(Tier 4) 등급입니다. 축하드립니다!");
+            PublishResult(AuditOutcome.AlreadyComplete, $"Day {day}: 이미 최고 등급");
             return;
         }
 
@@ -114,9 +163,9 @@ public class AuditService : MonoBehaviour
         bool reputationOk = true;
         bool hiringOk = true;
 
-        long currentRevenue = EconomyService.Instance != null ? EconomyService.Instance.CumulativeRevenue : 0;
-        int currentReputation = TierService.Instance != null ? TierService.Instance.Reputation : 0;
-        int hiredCount = HiringService.Instance != null ? HiringService.Instance.HiredCount : 0;
+        long currentRevenue = CurrentRevenue;
+        int currentReputation = CurrentReputation;
+        int hiredCount = CurrentHiredCount;
 
         if (currentRevenue < requiredRevenueForAudit)
         {
@@ -136,8 +185,8 @@ public class AuditService : MonoBehaviour
 
         if (!revenueOk || !reputationOk || !hiringOk)
         {
-            _debugLastResult = $"Day {day}: 감사 미달";
             Debug.Log("🏛️ 결과: 본사 감사 미통과. 다음 감사를 준비하세요.");
+            PublishResult(AuditOutcome.Failed, $"Day {day}: 감사 미달");
             return;
         }
 
@@ -145,14 +194,22 @@ public class AuditService : MonoBehaviour
         Debug.Log("🏛️ ✅ 모든 감사 조건 충족! 승급 심사를 진행합니다...");
         if (TierService.Instance != null && TierService.Instance.TryManualAdvance())
         {
-            _debugLastResult = $"Day {day}: 감사 통과 → 승급!";
             Debug.Log("🏛️ 🎉 축하합니다! 본사 감사를 통과하여 등급이 승급되었습니다!");
+            PublishResult(AuditOutcome.Passed, $"Day {day}: 감사 통과 → 승급!");
         }
         else
         {
             // TierService 측 조건(매출/평판 기준이 다를 수 있음)에서 막힌 경우
-            _debugLastResult = $"Day {day}: 감사 통과했으나 TierService 조건 미달";
             Debug.Log("🏛️ 감사는 통과했지만 본사 내부 기준이 추가로 필요합니다.");
+            PublishResult(AuditOutcome.AdvancementBlocked,
+                $"Day {day}: 감사 통과했으나 TierService 조건 미달");
         }
+    }
+
+    private void PublishResult(AuditOutcome outcome, string result)
+    {
+        LastOutcome = outcome;
+        _debugLastResult = result;
+        OnAuditStateChanged?.Invoke();
     }
 }

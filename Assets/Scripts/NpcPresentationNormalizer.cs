@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering;
 
 [DisallowMultipleComponent]
 public class NpcPresentationNormalizer : MonoBehaviour
@@ -11,11 +12,17 @@ public class NpcPresentationNormalizer : MonoBehaviour
         HumanoidController
     }
 
-    public const float VisualScale = 2f;
-    public const float ColliderRadius = 0.6f;
-    public const float ColliderHeight = 3.6f;
-    public const float AgentRadius = 0.55f;
-    public const float AgentHeight = 3.6f;
+    // C-02~C-09 have slightly different source heights, so a single scale
+    // multiplier cannot keep residents aligned. Normalize their rendered body
+    // height instead and leave the source FBX identities untouched.
+    public const float VisualScale = 2f; // Legacy spawn staging; Normalize replaces it with measured scaling.
+    public const float TargetVisualHeight = 1.75f;
+    public const float VisualGroundClearance = 0.02f;
+    public const float ColliderRadius = 0.4f;
+    public const float ColliderHeight = 1.8f;
+    public const float AgentRadius = 0.4f;
+    public const float AgentHeight = 1.8f;
+    public const float AgentStoppingDistance = 0.75f;
 
     public RuntimeAnimatorController animatorController;
     public NpcAnimationMode animationMode = NpcAnimationMode.HumanoidProcedural;
@@ -116,7 +123,8 @@ public class NpcPresentationNormalizer : MonoBehaviour
         {
             changed |= SetLocalPosition(visual, Vector3.zero);
             changed |= SetLocalRotation(visual, Quaternion.identity);
-            changed |= SetLocalScale(visual, Vector3.one * VisualScale);
+            changed |= SetLocalScale(visual, Vector3.one);
+            changed |= ScaleVisualToHeight(visual, TargetVisualHeight);
 
             Transform primitiveVisual = root.Find("Visual");
             if (primitiveVisual != null && primitiveVisual != visual && primitiveVisual.gameObject.activeSelf)
@@ -168,6 +176,11 @@ public class NpcPresentationNormalizer : MonoBehaviour
         }
 
         changed |= EnsureProceduralAnimator(npcRoot, useHumanoidProcedural);
+        if (visual != null)
+        {
+            changed |= AlignVisualToGround(visual, root, VisualGroundClearance);
+            changed |= ConfigureCharacterShadows(visual);
+        }
 
         if (normalizer != null)
         {
@@ -277,9 +290,9 @@ public class NpcPresentationNormalizer : MonoBehaviour
             changed = true;
         }
 
-        if (agent.stoppingDistance < 0.2f)
+        if (agent.stoppingDistance < AgentStoppingDistance)
         {
-            agent.stoppingDistance = 0.2f;
+            agent.stoppingDistance = AgentStoppingDistance;
             changed = true;
         }
 
@@ -290,6 +303,74 @@ public class NpcPresentationNormalizer : MonoBehaviour
         }
 
         return changed;
+    }
+
+    static bool ScaleVisualToHeight(Transform visual, float targetHeight)
+    {
+        if (!TryCalculateVisualBounds(visual, out Bounds bounds) || bounds.size.y <= 0.001f)
+            return false;
+
+        float scale = targetHeight / bounds.size.y;
+        Vector3 targetScale = visual.localScale * scale;
+        return SetLocalScale(visual, targetScale);
+    }
+
+    static bool AlignVisualToGround(Transform visual, Transform root, float clearance)
+    {
+        if (!TryCalculateVisualBounds(visual, out Bounds bounds))
+            return false;
+
+        float delta = root.position.y + clearance - bounds.min.y;
+        if (Mathf.Abs(delta) <= 0.001f)
+            return false;
+
+        visual.position += Vector3.up * delta;
+        return true;
+    }
+
+    static bool ConfigureCharacterShadows(Transform visual)
+    {
+        bool changed = false;
+        foreach (SkinnedMeshRenderer renderer in visual.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (renderer.shadowCastingMode == ShadowCastingMode.Off)
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.On;
+                changed = true;
+            }
+
+            if (!renderer.receiveShadows)
+            {
+                renderer.receiveShadows = true;
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    static bool TryCalculateVisualBounds(Transform visual, out Bounds bounds)
+    {
+        SkinnedMeshRenderer[] renderers = visual.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        bool found = false;
+        bounds = default;
+        foreach (SkinnedMeshRenderer renderer in renderers)
+        {
+            if (renderer == null || renderer.sharedMesh == null)
+                continue;
+
+            if (!found)
+            {
+                bounds = renderer.bounds;
+                found = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        return found;
     }
 
     static bool HasValidHumanoidAnimator(GameObject root)

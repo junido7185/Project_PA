@@ -157,6 +157,53 @@ public static class PA_CustomerPresentationValidator
             Require(utilHint.Contains("가격에 관대"), $"price-tolerant profile (priceSensitivity 0.65) shows a price hint ({utilHint})");
             Require(preference.CurrentPreferenceText.Contains("관심 손님 성향"), "preference panel title is visible");
 
+            // Task 031 — 현재 8명은 모두 실제 마을 일과표를 가진 주민이다. 관광객을 임의로 만들지 않고,
+            // 일과표가 없는 방문 손님 분기만 표시 계약으로 고정한다.
+            var npcs = Object.FindObjectsByType<NpcController>(FindObjectsSortMode.None);
+            int residentCount = 0;
+            int touristCount = 0;
+            NpcController firstResident = null;
+            foreach (var npc in npcs)
+            {
+                if (npc == null || npc.profile == null) continue;
+                string customerClass = CustomerPreferencePresentationController.DescribeCustomerClass(npc);
+                if (customerClass == "[주민]")
+                {
+                    residentCount++;
+                    firstResident ??= npc;
+                }
+                else if (customerClass == "[관광객]")
+                {
+                    touristCount++;
+                }
+            }
+
+            Require(residentCount >= 8, $"all current authored customers derive honestly as residents ({residentCount})");
+            Require(touristCount == 0, "no current resident is fabricated as a tourist");
+            Require(CustomerPreferencePresentationController.DescribeCustomerClass(false) == "[관광객]",
+                "an unscheduled future visitor derives the tourist label without changing NPC behavior");
+
+            Require(firstResident != null, "at least one resident customer is available for the live panel");
+            var previousState = firstResident.currentState;
+            firstResident.currentState = NpcController.State.MovingToShop;
+            preference.RefreshNow();
+            Require(preference.CurrentPreferenceText.Contains("[주민]"),
+                $"live preference panel displays the resident class ({preference.CurrentPreferenceText})");
+            Require(preference.CurrentPreferenceText.Contains(firstResident.profile.npcName),
+                "live preference panel keeps the real resident name beside the class label");
+
+            var residentBubble = firstResident.GetComponentInChildren<NpcBubbleUI>(true);
+            Require(residentBubble != null, "resident has the existing player-facing head bubble");
+            residentBubble.Show("진열대를 둘러보는 중...", 3f);
+            Require(residentBubble.CurrentCustomerClassLabel == "[주민]",
+                "player-facing resident bubble displays a separate class tag without changing its body text");
+            Require(residentBubble.bubbleText != null && residentBubble.bubbleText.text == "진열대를 둘러보는 중...",
+                "customer class tag preserves the existing bubble body contract");
+            residentBubble.HideBubble();
+
+            firstResident.currentState = previousState;
+            preference.RefreshNow();
+
             // 3) 구매 결정 → 귀여운 이유 + 마을 변화 연결, 디버그 수치 노출 없음.
             var item = Resources.Load<Item>("Items/Item_BreadLoaf")
                 ?? Resources.Load<Item>("Items/Item_Fish");

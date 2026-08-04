@@ -32,7 +32,7 @@ public class EquipmentSystem : MonoBehaviour
         Item item = Inventory.instance.GetSelectedItem();
         if (item == null)
         {
-            if (buildMgr != null) buildMgr.StopBuildMode();
+            if (buildMgr != null && !buildMgr.IsRelocating) buildMgr.StopBuildMode();
             return;
         }
 
@@ -46,7 +46,7 @@ public class EquipmentSystem : MonoBehaviour
             if (buildMgr.currentBuilding != item.buildingToBuild)
                 buildMgr.SetBuildMode(item.buildingToBuild);
         }
-        else if (buildMgr != null)
+        else if (buildMgr != null && !buildMgr.IsRelocating)
         {
             buildMgr.StopBuildMode();
         }

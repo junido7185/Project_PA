@@ -13,8 +13,11 @@ using UnityEngine.UI;
 // - traitSN  : 카테고리 선호 (S=실용재 / N=장식·고급품). PurchaseEvaluator §2 categoryBonus 와 동일 축.
 // - traitTF  : 구매 스타일 (F=감성 구매 증폭 / T=냉정한 가격 판단). PurchaseEvaluator §3-a, §4.
 // - traitEI  : 구매 적극성 (E=충동·잦은 외출 / I=신중). NpcController 쇼핑 확률 / PurchaseEvaluator §5 와 동일 축.
-// - priceSensitivity : 현재 모든 프로필이 1.0(차이 없음)이므로 기본값과 다를 때만 표시한다.
+// - priceSensitivity : 프로필별 실제 값이 기본값과 충분히 다를 때만 표시한다.
 //                      → 데이터가 없는 성향을 임의로 만들어 표시하지 않는다는 SPY-002 원칙 준수.
+// - NpcScheduleController.scheduleData : 현재 씬 자동 생성 계약에서 상주 주민 8명 모두가 가진
+//                      마을 일과표다. 별도 관광객 데이터가 생기기 전까지 표시 전용 계층 기준으로만
+//                      사용하며, 일과표가 없는 임시 방문 손님은 [관광객]으로 표시한다.
 //
 // 표시 시점:
 // - NpcController.currentState 가 MovingToShop / BrowsingShop 인 손님(=가게로 향하거나 둘러보는 손님)을
@@ -33,7 +36,7 @@ public class CustomerPreferencePresentationController : MonoBehaviour
 
     Canvas _canvas;
     GameObject _panel;
-    string _lastPreferenceText = "관심 손님 성향\n주민들은 저마다 취향이 다릅니다.";
+    string _lastPreferenceText = "관심 손님 성향\n[주민]/[관광객] 계층과 취향을 확인해 보세요.";
     float _nextRefreshAt;
 
     public string CurrentPreferenceText => preferenceText != null ? preferenceText.text : _lastPreferenceText;
@@ -88,15 +91,16 @@ public class CustomerPreferencePresentationController : MonoBehaviour
             if (npc.currentState == NpcController.State.Idle) continue; // 가게로 향하거나 둘러보는 손님만
 
             string name = ResolveName(npc);
+            string customerClass = DescribeCustomerClass(npc);
             string hint = DescribePreference(npc.profile);
-            lines.Add($"{name} · {hint}");
+            lines.Add($"{name} {customerClass} · {hint}");
 
             shown++;
             if (shown >= Mathf.Max(1, maxVisibleCustomers)) break;
         }
 
         if (shown == 0)
-            lines.Add("밤에 가게를 열면 손님마다 취향이 표시됩니다.");
+            lines.Add("밤에 가게를 열면 [주민]/[관광객]과 취향이 표시됩니다.");
 
         return string.Join("\n", lines);
     }
@@ -107,6 +111,24 @@ public class CustomerPreferencePresentationController : MonoBehaviour
         if (npc.profile != null && !string.IsNullOrEmpty(npc.profile.npcName))
             return npc.profile.npcName;
         return npc.gameObject.name;
+    }
+
+    // Task 031 — 손님 계층은 구매 수학이나 FSM을 바꾸지 않는 표시 전용 파생값이다.
+    // 현재 영구 주민 생성 경로는 모두 실제 NpcDailySchedule을 연결한다. 반대로 일과표가 없는
+    // NpcController는 마을에 상주하지 않는 임시 방문 손님으로 읽는다. 향후 명시적 관광객 데이터가
+    // 추가되면 이 한 곳만 그 필드로 교체하면 되며, 현재 주민을 임의로 관광객으로 꾸미지 않는다.
+    public static string DescribeCustomerClass(NpcController npc)
+    {
+        if (npc == null)
+            return "[손님]";
+
+        var schedule = npc.GetComponent<NpcScheduleController>();
+        return DescribeCustomerClass(schedule != null && schedule.scheduleData != null);
+    }
+
+    public static string DescribeCustomerClass(bool hasVillageSchedule)
+    {
+        return hasVillageSchedule ? "[주민]" : "[관광객]";
     }
 
     // NpcProfile 의 실제 값만으로 짧은 성향 힌트를 만든다.

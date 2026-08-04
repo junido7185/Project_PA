@@ -22,6 +22,8 @@
 - **전체 시스템 재작성 금지.** 기존 작동 시스템(`Shop`/`EconomyService`/`PurchaseEvaluator`/`NpcController`/`SaveManager` 등)을 갈아엎지 않는다.
 - **Unity 씬/프리팹/저장 시스템 임의 변경 금지.**
 - **메인 씬 경로(`Assets/Scenes/Prototype_FirstDay.unity`)를 임의로 덮어쓰지 않는다.** 새 씬이 필요해도 사용자 승인 없이 기존 메인 씬을 덮어쓰지 않는다.
+- **WORLD 씬 분리 규칙:** `Prototype_FirstDay.unity`는 Golden Regression Scene이며 신규 WorldGrid/Chunk/Terraforming 실험 대상으로 사용하지 않는다. WORLD 티켓은 별도 명시가 없으면 승인된 `Assets/Scenes/WorldSandbox.unity`를 대상으로 한다. `MainGame.unity` 통합은 Gate 1~5와 별도 사람 승인 전 금지한다.
+- **WORLD 씬 편집 규칙:** 후속 씬 생성·변경은 editor builder/setup utility와 validator를 우선하며 대규모 YAML/바이너리 직접 편집, 이름만 보고 오브젝트 삭제, serialized reference 일괄 교체를 금지한다.
 - **컴파일/테스트 없이 완료 선언 금지.** 검증 기준: `AI_WORKFLOW/04_VERIFICATION/VERIFICATION_RULES.md`. 확인 못 한 항목은 반드시 "확인 못 함"으로 보고.
 - **실패 시 `AI_WORKFLOW/05_LOGS/BUG_LOG.md`에 기록하고 멈춘다.** 같은 원인 2회 실패 후 세 번째 시도 금지.
 - 외부 패키지 추가 금지. `git push` 금지. 승인 없는 커밋 금지. 파괴적 Git/파일 명령 금지. 파일 삭제 금지.

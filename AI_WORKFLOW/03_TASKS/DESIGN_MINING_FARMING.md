@@ -158,3 +158,13 @@
 - D3D11 전용 `PA_MiningShopLoopValidator`에서 잔액 500→515G, 누적매출 +15G, Raw `SalesLog`, Day 2 구매 수 +1, Day 3 재활성화를 확인했다.
 - 메인 씬, 프리팹, 저장 스키마, Shop/Economy/Purchase/NPC 코어는 변경하지 않았다.
 - 현재 바위·광맥·곡괭이 런타임 primitive는 상호작용 위치를 식별하기 위한 임시 표현이다. 최종 비주얼 완료로 간주하지 않으며, 다음 비주얼 도구체인 작업에서 아트 방향에 맞는 실제 에셋으로 교체한다.
+
+## 8. 2026-07-17 구현 결과 — 고정 밭 F1/F2
+
+- `Item_15_Seed.cropPrefab`를 기존 `Crop_Corn`에, `Crop_Corn.harvestItem`을 실제 `Item_Wheat`에 연결하고 수확량을 3개로 명시했다.
+- `FarmPlotInteraction : IInteractable`이 농부 작업 지점 인근 고정 밭 2칸에서 낮 심기, 단계 안내, 수확을 연결한다. `PlayerInteraction`은 수정하지 않았다.
+- 씨앗은 `Farmland.Plant`와 Crop 구성 성공 뒤 1개 차감한다. 수확은 일반 인벤토리의 전량 수용 가능성을 먼저 확인한 뒤 Wheat 3개를 지급해 가방이 찼을 때 작물 손실을 막는다.
+- 하루 1회 `farm-seed-pouch`에서 씨앗 2개를 받을 수 있어 새 플레이에서도 두 밭을 사용할 수 있다.
+- 원시 Crop 단계 대신 기존 CC0 Nature Pack 기반 `PA_DemoProps/Prop_Wheat`를 3단계 군집으로 재사용하고, 밭 바닥은 경작 이랑을 가진 단일 메시로 생성한다.
+- Runtime/Editor 컴파일 오류 0과 데이터/안전 순서/고정 밭/금지 코어 12개 정적 계약은 PASS했다. 직접 렌더 충돌 2회 경계 때문에 Unity 실플레이는 확인하지 않았다.
+- F3의 날짜 기반 성장과 plot 저장은 새 저장 설계/승인 전 추가하지 않았다. 현재 6초×2단계 성장은 F1/F2 상호작용 연결용 런타임 규칙이다.

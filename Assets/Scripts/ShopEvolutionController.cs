@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
 
 // S4 — Tier 0 가판대에서 Tier 1 실내 잡화점으로 이어지는 진행 연결.
@@ -10,6 +12,15 @@ public sealed class ShopEvolutionController : MonoBehaviour
     public static ShopEvolutionController Instance { get; private set; }
 
     public const int InteriorUnlockTier = 1;
+    const string ShopCottageName = "B10_Cottage_01";
+    const string OutsideSpawnName = "PlayerSpawn_Outside";
+
+    static readonly string[] ExteriorStageResources =
+    {
+        "VisualFinalization/ShopEvolution/B02_ShopEvolutionVisual",
+        "VisualFinalization/ShopEvolution/B03_ShopEvolutionVisual",
+        "VisualFinalization/ShopEvolution/B04_ShopEvolutionVisual"
+    };
 
     TierService _tierService;
     BuildingEntrance _exteriorEntrance;
@@ -19,10 +30,44 @@ public sealed class ShopEvolutionController : MonoBehaviour
     TextMeshProUGUI _unlockText;
     Coroutine _presentationRoutine;
     int _appliedTier = int.MinValue;
+    GameObject _shopCottage;
+    Renderer[] _cottageRenderers = System.Array.Empty<Renderer>();
+    Collider[] _cottageColliders = System.Array.Empty<Collider>();
+    NavMeshObstacle[] _cottageObstacles = System.Array.Empty<NavMeshObstacle>();
+    bool[] _cottageRendererStates = System.Array.Empty<bool>();
+    bool[] _cottageColliderStates = System.Array.Empty<bool>();
+    bool[] _cottageObstacleStates = System.Array.Empty<bool>();
+    readonly GameObject[] _exteriorStageVisuals = new GameObject[3];
+    GameObject _activeExteriorVisual;
+    Transform _activeEntranceAnchor;
+    Transform _activeSignAnchor;
+    Transform _doorVisualAnchor;
+    GameObject _outsideSpawn;
+    Vector3 _tierZeroDoorPosition;
+    Quaternion _tierZeroDoorRotation;
+    Vector3 _tierZeroSignPosition;
+    Quaternion _tierZeroSignRotation;
+    Vector3 _tierZeroOutsidePosition;
+    Quaternion _tierZeroOutsideRotation;
+    bool _exteriorStagesBound;
+    bool _reportedMissingStageAssets;
 
     public bool IsInteriorUnlocked => _tierService != null
         && _tierService.IsUnlocked(InteriorUnlockTier);
     public string CurrentStoreSign => _storeSign != null ? _storeSign.label : string.Empty;
+    public int ActiveExteriorStage { get; private set; }
+    public string ActiveExteriorStageName => ActiveExteriorStage switch
+    {
+        1 => "B02_GeneralStore",
+        2 => "B03_ConvenienceStore",
+        3 => "B04_DepartmentStore",
+        _ => "B10_Cottage"
+    };
+    public GameObject ActiveExteriorVisual => _activeExteriorVisual;
+    public Transform ActiveEntranceAnchor => _activeEntranceAnchor;
+    public Transform ActiveSignAnchor => _activeSignAnchor;
+    public int ActiveEvolutionVisualCount => _exteriorStageVisuals.Count(item => item != null && item.activeSelf);
+    public bool HasAllExteriorStageAssets => _exteriorStageVisuals.All(item => item != null);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InstallForEnterableStore()
@@ -82,6 +127,8 @@ public sealed class ShopEvolutionController : MonoBehaviour
             EnsureUnlockPanel();
         }
 
+        EnsureExteriorStages();
+
         if (_tierService == null || _exteriorEntrance == null) return false;
 
         _exteriorEntrance.ConfigureTierRequirement(
@@ -92,8 +139,7 @@ public sealed class ShopEvolutionController : MonoBehaviour
 
     void OnTierAdvanced(int oldTier, int newTier)
     {
-        bool crossedInteriorUnlock = oldTier < InteriorUnlockTier && newTier >= InteriorUnlockTier;
-        ApplyTierState(crossedInteriorUnlock);
+        ApplyTierState(newTier > oldTier);
     }
 
     void ApplyTierState(bool showUnlockPresentation)
@@ -102,13 +148,14 @@ public sealed class ShopEvolutionController : MonoBehaviour
 
         _appliedTier = _tierService.CurrentTier;
         bool unlocked = IsInteriorUnlocked;
+        int exteriorStage = ApplyExteriorStage(showUnlockPresentation && unlocked);
 
         if (_storeSign != null)
         {
             _storeSign.Set(
-                unlocked ? "잡화점 · OPEN" : "잡화점 준비 중 · Tier 1",
-                unlocked ? new Color(0.35f, 0.22f, 0.12f) : new Color(0.45f, 0.34f, 0.22f),
-                unlocked ? 1.35f : 1.0f);
+                GetStageSign(exteriorStage, unlocked),
+                new Color(0.30f, 0.17f, 0.08f),
+                unlocked ? 2.25f : 2.05f);
         }
 
         if (_tierOneLight != null)
@@ -118,11 +165,156 @@ public sealed class ShopEvolutionController : MonoBehaviour
         }
 
         if (showUnlockPresentation && unlocked)
-            ShowUnlockPresentation();
+            ShowUnlockPresentation(_tierService.CurrentTier);
 
         Debug.Log(unlocked
-            ? "🏪 [상점 진화] Tier 1 실내 잡화점 개방 — 외부 문과 실내 영업 연결 완료"
+            ? $"🏪 [상점 진화] Tier {_tierService.CurrentTier} {ActiveExteriorStageName} — " +
+              "외부 문·실내 영업·기존 배치 보존"
             : "🏪 [상점 진화] Tier 0 가판대 운영 중 — 실내 잡화점은 Tier 1에서 개방");
+    }
+
+    void EnsureExteriorStages()
+    {
+        if (_exteriorStagesBound || _exteriorEntrance == null) return;
+        _shopCottage = GameObject.Find(ShopCottageName);
+        if (_shopCottage == null) return;
+
+        // Cache only the authored B10 components before adding any derived stage visuals.
+        _cottageRenderers = _shopCottage.GetComponentsInChildren<Renderer>(true);
+        _cottageColliders = _shopCottage.GetComponentsInChildren<Collider>(true);
+        _cottageObstacles = _shopCottage.GetComponentsInChildren<NavMeshObstacle>(true);
+        _cottageRendererStates = _cottageRenderers.Select(item => item.enabled).ToArray();
+        _cottageColliderStates = _cottageColliders.Select(item => item.enabled).ToArray();
+        _cottageObstacleStates = _cottageObstacles.Select(item => item.enabled).ToArray();
+
+        _tierZeroDoorPosition = _exteriorEntrance.transform.position;
+        _tierZeroDoorRotation = _exteriorEntrance.transform.rotation;
+        _doorVisualAnchor = _exteriorEntrance.transform.Find("B10_EntranceVisualAnchor");
+        if (_doorVisualAnchor != null)
+        {
+            _tierZeroSignPosition = _doorVisualAnchor.position;
+            _tierZeroSignRotation = _doorVisualAnchor.rotation;
+        }
+        _outsideSpawn = GameObject.Find(OutsideSpawnName);
+        if (_outsideSpawn != null)
+        {
+            _tierZeroOutsidePosition = _outsideSpawn.transform.position;
+            _tierZeroOutsideRotation = _outsideSpawn.transform.rotation;
+        }
+
+        for (int index = 0; index < ExteriorStageResources.Length; index++)
+        {
+            string instanceName = $"PA_ShopEvolution_B0{index + 2}";
+            Transform existing = _shopCottage.transform.Find(instanceName);
+            GameObject stage = existing != null ? existing.gameObject : null;
+            if (stage == null)
+            {
+                GameObject prefab = Resources.Load<GameObject>(ExteriorStageResources[index]);
+                if (prefab != null)
+                {
+                    stage = Instantiate(prefab, _shopCottage.transform, false);
+                    stage.name = instanceName;
+                }
+            }
+
+            if (stage != null)
+            {
+                stage.transform.localPosition = Vector3.zero;
+                stage.transform.localRotation = Quaternion.identity;
+                stage.transform.localScale = Vector3.one;
+                stage.SetActive(false);
+            }
+            _exteriorStageVisuals[index] = stage;
+        }
+
+        _exteriorStagesBound = true;
+        if (!HasAllExteriorStageAssets && !_reportedMissingStageAssets)
+        {
+            _reportedMissingStageAssets = true;
+            Debug.LogWarning("[상점 진화] B02~B04 visual-only Resources 프리팹 일부가 없어 B10 외형을 유지합니다.");
+        }
+    }
+
+    int ApplyExteriorStage(bool showPresentation)
+    {
+        EnsureExteriorStages();
+        int requestedStage = GetExteriorStageForTier(_tierService != null ? _tierService.CurrentTier : 0);
+        int resolvedStage = requestedStage;
+        if (requestedStage > 0 && _exteriorStageVisuals[requestedStage - 1] == null)
+            resolvedStage = 0;
+
+        RestoreCottageComponentStates(resolvedStage == 0);
+        for (int index = 0; index < _exteriorStageVisuals.Length; index++)
+        {
+            GameObject stage = _exteriorStageVisuals[index];
+            if (stage == null) continue;
+            bool active = resolvedStage == index + 1;
+            stage.SetActive(active);
+            stage.transform.localScale = active && showPresentation && _unlockPanel != null
+                ? Vector3.one * 0.94f
+                : Vector3.one;
+        }
+
+        _activeExteriorVisual = resolvedStage > 0 ? _exteriorStageVisuals[resolvedStage - 1] : null;
+        _activeEntranceAnchor = _activeExteriorVisual != null
+            ? _activeExteriorVisual.transform.Find("EntranceAnchor")
+            : null;
+        _activeSignAnchor = _activeExteriorVisual != null
+            ? _activeExteriorVisual.transform.Find("SignAnchor")
+            : null;
+
+        if (_activeEntranceAnchor != null)
+        {
+            _exteriorEntrance.transform.SetPositionAndRotation(
+                _activeEntranceAnchor.position, _activeEntranceAnchor.rotation);
+            if (_outsideSpawn != null)
+            {
+                Vector3 spawnPosition = _activeEntranceAnchor.position + _activeEntranceAnchor.forward * 1.35f;
+                spawnPosition.y = _shopCottage.transform.position.y + 0.05f;
+                _outsideSpawn.transform.SetPositionAndRotation(spawnPosition, _activeEntranceAnchor.rotation);
+            }
+            if (_doorVisualAnchor != null && _activeSignAnchor != null)
+                _doorVisualAnchor.SetPositionAndRotation(_activeSignAnchor.position, _activeSignAnchor.rotation);
+        }
+        else
+        {
+            _exteriorEntrance.transform.SetPositionAndRotation(_tierZeroDoorPosition, _tierZeroDoorRotation);
+            if (_outsideSpawn != null)
+                _outsideSpawn.transform.SetPositionAndRotation(_tierZeroOutsidePosition, _tierZeroOutsideRotation);
+            if (_doorVisualAnchor != null)
+                _doorVisualAnchor.SetPositionAndRotation(_tierZeroSignPosition, _tierZeroSignRotation);
+        }
+
+        ActiveExteriorStage = resolvedStage;
+        Physics.SyncTransforms();
+        return resolvedStage;
+    }
+
+    void RestoreCottageComponentStates(bool restore)
+    {
+        for (int index = 0; index < _cottageRenderers.Length; index++)
+            if (_cottageRenderers[index] != null)
+                _cottageRenderers[index].enabled = restore && _cottageRendererStates[index];
+        for (int index = 0; index < _cottageColliders.Length; index++)
+            if (_cottageColliders[index] != null)
+                _cottageColliders[index].enabled = restore && _cottageColliderStates[index];
+        for (int index = 0; index < _cottageObstacles.Length; index++)
+            if (_cottageObstacles[index] != null)
+                _cottageObstacles[index].enabled = restore && _cottageObstacleStates[index];
+    }
+
+    static int GetExteriorStageForTier(int tier) => Mathf.Clamp(tier, 0, 3);
+
+    static string GetStageSign(int exteriorStage, bool unlocked)
+    {
+        if (!unlocked) return "P.A. SHOP - Tier 1";
+        return exteriorStage switch
+        {
+            1 => "P.A. GENERAL - OPEN",
+            2 => "P.A. MARKET - OPEN",
+            3 => "P.A. DEPT. - OPEN",
+            _ => "P.A. SHOP - OPEN"
+        };
     }
 
     void EnsureTierOneLight(Transform door)
@@ -203,9 +395,20 @@ public sealed class ShopEvolutionController : MonoBehaviour
         panelGo.SetActive(false);
     }
 
-    void ShowUnlockPresentation()
+    void ShowUnlockPresentation(int tier)
     {
         if (_unlockPanel == null) return;
+        if (_unlockText != null)
+        {
+            _unlockText.text = tier switch
+            {
+                1 => "잡화점 진화 완료!\n실내 5×4 · 기본 작업대 설계도가 열렸습니다.",
+                2 => "마을 마트 확장 완료!\n실내 6×5 · 진열대 8개 · 조리 준비대가 열렸습니다.",
+                3 => "부티크 백화점 확장 완료!\n실내 7×6 · 진열대 12개 · 수리/재봉 준비대가 열렸습니다.",
+                4 => "파트너 상점 운영 승인!\n진열대 한도가 20개로 늘어 더 큰 매장을 꾸밀 수 있습니다.",
+                _ => "상점 진화 완료!\n기존 진열과 배치는 그대로 유지됩니다."
+            };
+        }
         if (_presentationRoutine != null) StopCoroutine(_presentationRoutine);
         _presentationRoutine = StartCoroutine(CoShowUnlockPresentation());
     }
@@ -220,10 +423,17 @@ public sealed class ShopEvolutionController : MonoBehaviour
         {
             t += Time.unscaledDeltaTime;
             _unlockPanel.alpha = Mathf.Clamp01(t / 0.35f);
+            if (_activeExteriorVisual != null)
+            {
+                float eased = Mathf.SmoothStep(0f, 1f, _unlockPanel.alpha);
+                _activeExteriorVisual.transform.localScale = Vector3.one * Mathf.Lerp(0.94f, 1f, eased);
+            }
             if (_tierOneLight != null)
                 _tierOneLight.intensity = Mathf.Lerp(2.4f, 4.2f, _unlockPanel.alpha);
             yield return null;
         }
+
+        if (_activeExteriorVisual != null) _activeExteriorVisual.transform.localScale = Vector3.one;
 
         yield return new WaitForSecondsRealtime(4.5f);
 

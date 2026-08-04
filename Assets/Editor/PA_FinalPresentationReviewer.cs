@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -20,10 +21,9 @@ public static class PA_FinalPresentationReviewer
     static bool _entered;
     static bool _ran;
     static bool _hadError;
-    static int _step;
     static double _startedAt;
-    static double _nextStepAt;
     static string _outputDir;
+    static Task _runtimeTask;
     static ShopSlot _reviewSlot;
     static Item _reviewItem;
 
@@ -56,9 +56,8 @@ public static class PA_FinalPresentationReviewer
         _entered = false;
         _ran = false;
         _hadError = false;
-        _step = 0;
+        _runtimeTask = null;
         _startedAt = EditorApplication.timeSinceStartup;
-        _nextStepAt = _startedAt;
         _outputDir = CreateOutputDirectory();
 
         SessionState.SetBool(ActiveKey, true);
@@ -99,7 +98,6 @@ public static class PA_FinalPresentationReviewer
         {
             _entered = true;
             _startedAt = EditorApplication.timeSinceStartup;
-            _nextStepAt = _startedAt + 2.5;
             SessionState.SetBool(EnteredKey, true);
         }
 
@@ -125,12 +123,24 @@ public static class PA_FinalPresentationReviewer
             return;
         }
 
-        if (!_ran && EditorApplication.isPlaying)
+        if (!_ran && EditorApplication.isPlaying && _runtimeTask == null && elapsed > 2.5)
         {
-            if (EditorApplication.timeSinceStartup < _nextStepAt)
-                return;
+            _runtimeTask = RunRuntimeChecksAsync();
+            return;
+        }
 
-            RunNextStep();
+        if (!_ran && _runtimeTask != null && _runtimeTask.IsCompleted)
+        {
+            if (_runtimeTask.IsFaulted)
+            {
+                _hadError = true;
+                SessionState.SetBool(HadErrorKey, true);
+                Debug.LogError($"PA Final Presentation failed: {_runtimeTask.Exception?.GetBaseException()}");
+            }
+
+            _ran = true;
+            SessionState.SetBool(RanKey, true);
+            EditorApplication.ExitPlaymode();
             return;
         }
 
@@ -141,53 +151,30 @@ public static class PA_FinalPresentationReviewer
         }
     }
 
-    static void RunNextStep()
+    static async Task RunRuntimeChecksAsync()
     {
-        try
-        {
-            switch (_step)
-            {
-                case 0:
-                    PrepareRuntimeState();
-                    Capture("01_market_hub_objective");
-                    break;
-                case 1:
-                    OpenPriceReview();
-                    Capture("02_shop_price_ui");
-                    break;
-                case 2:
-                    ShowNpcFeedbackReview();
-                    Capture("03_npc_feedback_bubble");
-                    break;
-                case 3:
-                    OpenAuditReview();
-                    Capture("04_audit_app_goal");
-                    break;
-                case 4:
-                    OpenSummaryReview();
-                    Capture("05_day1_summary");
-                    break;
-                case 5:
-                    ValidatePresentationLayout();
-                    ValidateCapturedFiles();
-                    _ran = true;
-                    SessionState.SetBool(RanKey, true);
-                    EditorApplication.ExitPlaymode();
-                    break;
-            }
+        PrepareRuntimeState();
+        await CaptureAsync("01_market_hub_objective");
+        await Task.Delay(900);
 
-            _step++;
-            _nextStepAt = EditorApplication.timeSinceStartup + 0.9;
-        }
-        catch (Exception ex)
-        {
-            _hadError = true;
-            SessionState.SetBool(HadErrorKey, true);
-            Debug.LogError($"PA Final Presentation failed: {ex.Message}\n{ex}");
-            _ran = true;
-            SessionState.SetBool(RanKey, true);
-            EditorApplication.ExitPlaymode();
-        }
+        await OpenPriceReviewAsync();
+        await CaptureAsync("02_shop_price_ui");
+        await Task.Delay(900);
+
+        ShowNpcFeedbackReview();
+        await CaptureAsync("03_npc_feedback_bubble");
+        await Task.Delay(900);
+
+        OpenAuditReview();
+        await CaptureAsync("04_audit_app_goal");
+        await Task.Delay(900);
+
+        OpenSummaryReview();
+        await CaptureAsync("05_day1_summary");
+        await Task.Delay(900);
+
+        ValidatePresentationLayout();
+        ValidateCapturedFiles();
     }
 
     static void PrepareRuntimeState()
@@ -204,7 +191,7 @@ public static class PA_FinalPresentationReviewer
         Require(Object.FindObjectsByType<NpcController>(FindObjectsSortMode.None).Length > 0, "NPCs are present");
     }
 
-    static void OpenPriceReview()
+    static async Task OpenPriceReviewAsync()
     {
         ClosePhoneIfOpen();
 
@@ -223,6 +210,50 @@ public static class PA_FinalPresentationReviewer
         var itemName = GameObject.Find("ItemNameTxt")?.GetComponent<TextMeshProUGUI>();
         Require(itemName != null && itemName.text.Contains("재고 1개"),
             "ShopPriceUI shows the stocked quantity");
+
+        var merchandising = GameObject.Find("MerchandisingTxt")?.GetComponent<TextMeshProUGUI>();
+        Require(merchandising != null
+                && merchandising.text.Contains("일반품")
+                && merchandising.text.Contains("가격 파생값")
+                && merchandising.text.Contains("품질 ×1.00"),
+            "ShopPriceUI shows price-derived rarity and actual item quality");
+
+        var recommendation = GameObject.Find("RecommendationTxt")?.GetComponent<TextMeshProUGUI>();
+        Require(recommendation != null
+                && recommendation.text.Contains("추천 기준가 30 G")
+                && recommendation.text.Contains("기본가+품질"),
+            "ShopPriceUI shows the base-price and quality recommendation");
+
+        // 같은 패널에서 고가 상품 분기도 실제로 갱신되는지 확인한 뒤 캡처용 일반품을 복원한다.
+        Item rareItem = Resources.Load<Item>("Items/Item_13_Clothes");
+        Require(rareItem != null && rareItem.basePrice >= 100,
+            "high-price catalog item is available for derived-rarity review");
+
+        ItemInstance originalInstance = _reviewSlot.currentItem;
+        int originalPrice = _reviewSlot.displayPrice;
+        _reviewSlot.currentItem = new ItemInstance(rareItem, 1)
+        {
+            quality = 1.25f,
+            currentPrice = rareItem.basePrice
+        };
+        _reviewSlot.displayPrice = rareItem.basePrice;
+        priceUi.Open(_reviewSlot);
+        Require(merchandising.text.Contains("희귀품")
+                && merchandising.text.Contains("가격 파생값")
+                && merchandising.text.Contains("품질 ×1.25"),
+            "ShopPriceUI distinguishes the high-price derived-rarity branch");
+        var pendingPrice = GameObject.Find("PriceTxt")?.GetComponent<TextMeshProUGUI>();
+        Require(recommendation.text.Contains("추천 기준가 186 G")
+                && pendingPrice != null
+                && pendingPrice.text.Contains("165 G"),
+            "ShopPriceUI recommends from quality without auto-applying the price");
+        _reviewSlot.RefreshDisplay();
+        await CaptureAsync("02b_shop_price_ui_rare");
+
+        _reviewSlot.currentItem = originalInstance;
+        _reviewSlot.displayPrice = originalPrice;
+        _reviewSlot.RefreshDisplay();
+        priceUi.Open(_reviewSlot);
     }
 
     static void ShowNpcFeedbackReview()
@@ -252,6 +283,12 @@ public static class PA_FinalPresentationReviewer
         if (priceUi != null && priceUi.IsOpen)
             priceUi.Close();
 
+        if (_reviewSlot != null && !_reviewSlot.IsEmpty)
+        {
+            Require(_reviewSlot.TryPurchaseByNpc("PresentationReviewer", out int paid) && paid > 0,
+                "presentation review records a Processed sale before opening the audit app");
+        }
+
         var phone = Object.FindFirstObjectByType<SmartphoneUI>();
         Require(phone != null, "SmartphoneUI exists");
         if (!phone.IsOpen)
@@ -262,6 +299,8 @@ public static class PA_FinalPresentationReviewer
         var audit = FindObject<AuditResultUI>("AuditResultUI", includeInactive: true);
         audit.Refresh();
         Require(audit.nextTierText != null && !string.IsNullOrWhiteSpace(audit.nextTierText.text), "audit next-tier text is visible");
+        Require(audit.facilityDirectionText != null && audit.facilityDirectionText.text.Contains("조리·가공 작업대"),
+            "audit facility preview is visible for the Processed sale capture");
     }
 
     static void OpenSummaryReview()
@@ -303,84 +342,28 @@ public static class PA_FinalPresentationReviewer
         }
     }
 
-    static void Capture(string name)
+    static async Task CaptureAsync(string name)
     {
         if (string.IsNullOrEmpty(_outputDir))
             _outputDir = CreateOutputDirectory();
 
         string file = Path.Combine(_outputDir, $"{name}.png");
-        WriteCameraCapture(file);
-        Debug.Log($"PA Final Presentation Capture: {file}");
-    }
-
-    static void WriteCameraCapture(string file)
-    {
-        var camera = Camera.main;
+        var camera = Camera.main ?? Object.FindFirstObjectByType<Camera>();
         if (camera == null)
             throw new InvalidOperationException("Main camera not found for presentation capture.");
 
-        const int width = 1920;
-        const int height = 1080;
-
-        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        var modes = new RenderMode[canvases.Length];
-        var canvasCameras = new Camera[canvases.Length];
-        var planeDistances = new float[canvases.Length];
-
-        var oldTarget = camera.targetTexture;
-        int oldCullingMask = camera.cullingMask;
-        var oldActive = RenderTexture.active;
-
-        var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-        var tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-
-        try
+        var marker = GameObject.Find("PA_ScreenshotCameraMarker_MarketHub");
+        await PA_SafeGameViewCapture.CaptureAsync(file, camera, captureCamera =>
         {
-            for (int i = 0; i < canvases.Length; i++)
+            if (marker != null)
             {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-
-                modes[i] = canvas.renderMode;
-                canvasCameras[i] = canvas.worldCamera;
-                planeDistances[i] = canvas.planeDistance;
-
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    canvas.renderMode = RenderMode.ScreenSpaceCamera;
-                    canvas.worldCamera = camera;
-                    canvas.planeDistance = Mathf.Max(camera.nearClipPlane + 0.5f, 1f);
-                }
+                captureCamera.transform.SetPositionAndRotation(marker.transform.position, marker.transform.rotation);
+                captureCamera.fieldOfView = 46f;
             }
 
-            camera.cullingMask = -1;
-            camera.targetTexture = rt;
-            RenderTexture.active = rt;
-            camera.Render();
-
-            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            tex.Apply();
-            File.WriteAllBytes(file, tex.EncodeToPNG());
-        }
-        finally
-        {
-            camera.targetTexture = oldTarget;
-            camera.cullingMask = oldCullingMask;
-            RenderTexture.active = oldActive;
-
-            for (int i = 0; i < canvases.Length; i++)
-            {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-                canvas.renderMode = modes[i];
-                canvas.worldCamera = canvasCameras[i];
-                canvas.planeDistance = planeDistances[i];
-            }
-
-            Object.DestroyImmediate(tex);
-            rt.Release();
-            Object.DestroyImmediate(rt);
-        }
+            captureCamera.cullingMask = -1;
+        }, 1920, 1080, 1000);
+        Debug.Log($"PA Final Presentation Capture: {file}");
     }
 
     static void ValidateCapturedFiles()
@@ -395,6 +378,7 @@ public static class PA_FinalPresentationReviewer
         {
             "01_market_hub_objective.png",
             "02_shop_price_ui.png",
+            "02b_shop_price_ui_rare.png",
             "03_npc_feedback_bubble.png",
             "04_audit_app_goal.png",
             "05_day1_summary.png"

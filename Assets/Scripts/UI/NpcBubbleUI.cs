@@ -15,6 +15,8 @@ public class NpcBubbleUI : MonoBehaviour
 
     [Header("직접 연결 (선택)")]
     public TextMeshProUGUI bubbleText;
+    [Tooltip("Task 031 — 구매/거절 본문과 분리된 주민/관광객 표시 태그")]
+    public TextMeshProUGUI customerClassText;
 
     Canvas   _canvas;
     Image    _bg;
@@ -33,6 +35,7 @@ public class NpcBubbleUI : MonoBehaviour
 
         if (bubbleText == null) BuildBubble();
         else _bubbleRoot = bubbleText.transform.parent as RectTransform;
+        EnsureCustomerClassTag();
 
         UpdateScreenPosition();
         gameObject.SetActive(false);
@@ -51,7 +54,7 @@ public class NpcBubbleUI : MonoBehaviour
         _bubbleRoot.anchorMin = new Vector2(0.5f, 0.5f);
         _bubbleRoot.anchorMax = new Vector2(0.5f, 0.5f);
         _bubbleRoot.pivot = new Vector2(0.5f, 0.5f);
-        _bubbleRoot.sizeDelta = new Vector2(360f, 96f);
+        _bubbleRoot.sizeDelta = new Vector2(360f, 112f);
 
         // 배경
         var bgGO = rootGO;
@@ -66,7 +69,7 @@ public class NpcBubbleUI : MonoBehaviour
         textRT.anchorMin = Vector2.zero;
         textRT.anchorMax = Vector2.one;
         textRT.offsetMin = new Vector2(8f, 6f);
-        textRT.offsetMax = new Vector2(-8f, -6f);
+        textRT.offsetMax = new Vector2(-8f, -28f);
 
         bubbleText           = textGO.GetComponent<TextMeshProUGUI>();
         bubbleText.fontSize  = 21;
@@ -77,15 +80,55 @@ public class NpcBubbleUI : MonoBehaviour
         bubbleText.raycastTarget = false;
     }
 
+    void EnsureCustomerClassTag()
+    {
+        if (_bubbleRoot == null || customerClassText != null) return;
+
+        var tagGO = new GameObject("CustomerClassTag", typeof(RectTransform), typeof(TextMeshProUGUI));
+        tagGO.transform.SetParent(_bubbleRoot, false);
+        var tagRT = (RectTransform)tagGO.transform;
+        tagRT.anchorMin = new Vector2(0f, 1f);
+        tagRT.anchorMax = new Vector2(1f, 1f);
+        tagRT.pivot = new Vector2(0.5f, 1f);
+        tagRT.anchoredPosition = new Vector2(0f, -4f);
+        tagRT.sizeDelta = new Vector2(-16f, 22f);
+
+        customerClassText = tagGO.GetComponent<TextMeshProUGUI>();
+        customerClassText.fontSize = 15f;
+        customerClassText.fontStyle = FontStyles.Bold;
+        customerClassText.alignment = TextAlignmentOptions.Center;
+        customerClassText.textWrappingMode = TextWrappingModes.NoWrap;
+        customerClassText.overflowMode = TextOverflowModes.Ellipsis;
+        customerClassText.raycastTarget = false;
+        RefreshCustomerClassLabel();
+    }
+
     // ── 공개 API ────────────────────────────────────────────────────────────────
 
     public void Show(string text, float duration = 2.5f)
     {
+        RefreshCustomerClassLabel();
         if (bubbleText != null) bubbleText.text = text;
         if (_bg != null) _bg.color = new Color(1f, 1f, 1f, 0.92f);
         gameObject.SetActive(true);
         UpdateScreenPosition();
         RestartHide(duration);
+    }
+
+    public string CurrentCustomerClassLabel =>
+        customerClassText != null ? customerClassText.text : string.Empty;
+
+    // 구매 결과 본문과 독립된 표시 전용 태그. 기존 말풍선 문자열 계약은 바꾸지 않는다.
+    public void RefreshCustomerClassLabel()
+    {
+        if (customerClassText == null) return;
+
+        var npc = GetComponentInParent<NpcController>();
+        string label = CustomerPreferencePresentationController.DescribeCustomerClass(npc);
+        customerClassText.text = label;
+        customerClassText.color = label == "[관광객]"
+            ? new Color(0.72f, 0.42f, 0.08f, 1f)
+            : new Color(0.12f, 0.42f, 0.24f, 1f);
     }
 
     // CustomerReaction 통합 — 구매 결정 후 감정 반응 표시

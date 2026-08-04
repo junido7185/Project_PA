@@ -24,4 +24,4 @@ MonoBehaviour:
   category: 2
   requiredTier: 0
   buildingToBuild: {fileID: 0}
-  cropPrefab: {fileID: 0}
+  cropPrefab: {fileID: 8058956569748438353, guid: bb2221cbfc971164b8472aa7c223276a, type: 3}

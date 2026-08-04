@@ -47,6 +47,7 @@ public static class PA_RuntimeSceneBinder
         EnsureComponent<ProcessingOpportunityController>(services);
         EnsureComponent<CustomerDemandInsightController>(services);
         EnsureComponent<VillageChangeSignalController>(services);
+        EnsureComponent<MerchandisingCornerController>(services);
         EnsureComponent<CustomerPreferencePresentationController>(services);
         EnsureComponent<PurchaseFeedbackPresentationController>(services);
         EnsureComponent<CustomerArrivalController>(services);
@@ -83,6 +84,7 @@ public static class PA_RuntimeSceneBinder
         EnsureComponent<FriendshipUI>(host);
         EnsureComponent<ClockHUD>(host);
         EnsureComponent<CraftingUI>(host);
+        EnsureComponent<StorageUI>(host);
         EnsureComponent<PauseManager>(host);
         EnsureComponent<MoneyHUD>(host);
         EnsureComponent<ShopPriceUI>(host);

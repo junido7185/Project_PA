@@ -26,6 +26,9 @@ using UnityEngine.AI;
 //   주입된 specialty 에 따라 NpcSpecialtyMapping.GetWorkbenchType() 로 대응 작업대를 결정.
 public class SpecialistNpcController : MonoBehaviour
 {
+    const float ApproachSampleRadius = 0.9f;
+    const float ApproachSourceTolerance = 0.25f;
+
     public enum State { Idle, MovingToWorkbench, CraftingAtBench }
 
     [Header("정체성")]
@@ -81,6 +84,19 @@ public class SpecialistNpcController : MonoBehaviour
     // 현재 가공 중인 레시피 + 이번 방문에서 남은 연속 가공 횟수.
     private RecipeData _currentRecipe;
     private int _remainingCrafts;
+    private readonly List<Vector3> _approachSourcePoints = new List<Vector3>(4);
+    private readonly List<Vector2Int> _approachZoneCells = new List<Vector2Int>(4);
+    private Vector3 _currentApproachSource;
+    private Vector3 _currentApproachPoint;
+    private string _approachReservationKey = string.Empty;
+
+    // 같은 interaction 셀에 여러 전문 주민이 겹치지 않게 하는 세션 범위 예약이다.
+    // 파괴된 Unity 오브젝트는 다음 예약 시 정리되므로 domain reload 비활성 환경도 안전하다.
+    static readonly Dictionary<string, SpecialistNpcController> ApproachReservations =
+        new Dictionary<string, SpecialistNpcController>();
+
+    public Vector3 CurrentWorkbenchApproachPoint => _currentApproachPoint;
+    public bool HasWorkbenchApproachReservation => !string.IsNullOrEmpty(_approachReservationKey);
 
     private string DisplayName =>
         profile != null && !string.IsNullOrEmpty(profile.npcName) ? profile.npcName : gameObject.name;
@@ -120,6 +136,16 @@ public class SpecialistNpcController : MonoBehaviour
         }
     }
 
+    void OnDisable()
+    {
+        ReleaseApproachReservation();
+    }
+
+    void OnDestroy()
+    {
+        ReleaseApproachReservation();
+    }
+
     // -------- 상태: Idle --------
 
     void UpdateIdle()
@@ -150,11 +176,13 @@ public class SpecialistNpcController : MonoBehaviour
 
     void BeginCraftSession(RecipeData recipe)
     {
-        if (targetWorkbench == null) TryCacheWorkbench();
-        if (targetWorkbench == null)
+        WorkbenchType requiredType = recipe != null && recipe.requiredWorkbench != WorkbenchType.None
+            ? recipe.requiredWorkbench
+            : NpcSpecialtyMapping.GetWorkbenchType(specialty);
+        if (!TryReserveReachableWorkbench(requiredType, out string reason))
         {
-            _debugLastAction = "작업대를 찾을 수 없음";
-            Debug.LogWarning($"🔧 {DisplayName}: 전문 분야({specialty})에 맞는 작업대를 찾지 못했습니다.");
+            _debugLastAction = $"접근 가능한 작업대 없음: {reason}";
+            Debug.LogWarning($"🔧 {DisplayName}: 전문 분야({specialty}) 작업대 접근 실패 — {reason}");
             return;
         }
 
@@ -162,21 +190,33 @@ public class SpecialistNpcController : MonoBehaviour
         _remainingCrafts = CalculateCraftCount();
         _craftTimer = 0f;
 
-        if (_agent != null && _agent.isOnNavMesh)
-        {
-            _agent.SetDestination(targetWorkbench.transform.position);
-        }
-
         ChangeState(State.MovingToWorkbench);
-        Debug.Log($"🔧 {DisplayName}: 작업대({targetWorkbench.displayName})로 출발! [{recipe.recipeName}] ×{_remainingCrafts}");
+        Debug.Log($"🔧 {DisplayName}: 작업대({targetWorkbench.displayName}) 전면 접근점으로 출발! [{recipe.recipeName}] ×{_remainingCrafts}");
     }
 
     void UpdateMovingToWorkbench()
     {
         if (_agent == null || !_agent.isOnNavMesh) { ChangeState(State.Idle); return; }
-
-        if (!_agent.pathPending && _agent.remainingDistance < arriveDistance)
+        if (!IsApproachReservationValid())
         {
+            _debugLastAction = "작업대 이동/회수로 접근 예약 무효";
+            targetWorkbench = null;
+            ChangeState(State.Idle);
+            return;
+        }
+        if (!_agent.pathPending && (_agent.pathStatus != NavMeshPathStatus.PathComplete
+            || float.IsInfinity(_agent.remainingDistance)))
+        {
+            _debugLastAction = "작업대 전면까지 완전 경로 없음";
+            ChangeState(State.Idle);
+            return;
+        }
+
+        float arrivalRadius = Mathf.Max(_agent.stoppingDistance + 0.1f,
+            Mathf.Clamp(arriveDistance, 0.2f, 0.65f));
+        if (!_agent.pathPending && _agent.remainingDistance <= arrivalRadius)
+        {
+            FaceWorkbench();
             ChangeState(State.CraftingAtBench);
             _craftTimer = 0f;
         }
@@ -186,6 +226,13 @@ public class SpecialistNpcController : MonoBehaviour
 
     void UpdateCraftingAtBench()
     {
+        if (!IsApproachReservationValid())
+        {
+            _debugLastAction = "작업대 이동/회수로 가공 중단";
+            targetWorkbench = null;
+            ChangeState(State.Idle);
+            return;
+        }
         if (_currentRecipe == null || _remainingCrafts <= 0)
         {
             _debugLastAction = "가공 세션 완료";
@@ -274,9 +321,7 @@ public class SpecialistNpcController : MonoBehaviour
         _schedulePaused = false;
         _restoredFromSave = true;
         _idleTimer = 0f;
-        TryCacheWorkbench();
-
-        if (restoredState == State.CraftingAtBench && _currentRecipe == null)
+        if (restoredState != State.Idle && _currentRecipe == null)
         {
             _currentRecipe = FindViableRecipe();
             _remainingCrafts = Mathf.Max(1, _remainingCrafts);
@@ -284,23 +329,23 @@ public class SpecialistNpcController : MonoBehaviour
                 restoredState = State.Idle;
         }
 
+        // 저장된 작업 중 상태는 현재 배치/회전/NavMesh를 기준으로 전면 접근점을 다시 잡는다.
+        if (restoredState != State.Idle)
+        {
+            WorkbenchType requiredType = _currentRecipe != null
+                ? _currentRecipe.requiredWorkbench
+                : NpcSpecialtyMapping.GetWorkbenchType(specialty);
+            restoredState = TryReserveReachableWorkbench(requiredType, out _)
+                ? State.MovingToWorkbench
+                : State.Idle;
+        }
         ChangeState(restoredState);
-
-        if (_agent == null || !_agent.isOnNavMesh) return;
-
-        if (restoredState == State.MovingToWorkbench && targetWorkbench != null)
-        {
-            _agent.SetDestination(targetWorkbench.transform.position);
-        }
-        else
-        {
-            _agent.ResetPath();
-        }
     }
 
     /// <summary>HiringService.InjectProfile() 에서 SendMessage 로 호출된다.</summary>
     public void ApplySpecialty(NpcSpecialty newSpecialty)
     {
+        ReleaseApproachReservation();
         specialty = newSpecialty;
         targetWorkbench = null;  // 캐시 무효화 — 다음 사용 시 재탐색
         Debug.Log($"🔧 {DisplayName}: 전문 분야 → {specialty}");
@@ -315,6 +360,7 @@ public class SpecialistNpcController : MonoBehaviour
 
         if (newState == State.Idle)
         {
+            ReleaseApproachReservation();
             if (_agent != null && _agent.isOnNavMesh && !_agent.isStopped)
                 _agent.ResetPath();
         }
@@ -348,12 +394,182 @@ public class SpecialistNpcController : MonoBehaviour
             Debug.Log($"🔧 {DisplayName}: 작업대 캐시 → {targetWorkbench.displayName} ({wbType})");
     }
 
+    bool TryReserveReachableWorkbench(WorkbenchType requiredType, out string reason)
+    {
+        reason = string.Empty;
+        ReleaseApproachReservation();
+        PruneApproachReservations();
+
+        if (requiredType == WorkbenchType.None)
+        {
+            reason = "전문 분야에 대응하는 작업대 타입이 없습니다.";
+            return false;
+        }
+        if (_agent == null || !_agent.isActiveAndEnabled || !_agent.isOnNavMesh)
+        {
+            reason = "전문 주민이 NavMesh 위에 있지 않습니다.";
+            return false;
+        }
+
+        Workbench bestWorkbench = null;
+        Vector3 bestSource = Vector3.zero;
+        Vector3 bestNavPoint = Vector3.zero;
+        string bestKey = string.Empty;
+        float bestLength = float.PositiveInfinity;
+        int areaMask = _agent.areaMask != 0 ? _agent.areaMask : NavMesh.AllAreas;
+
+        foreach (Workbench candidate in FindObjectsByType<Workbench>(FindObjectsSortMode.None))
+        {
+            if (candidate == null || candidate.workbenchType != requiredType
+                || !candidate.gameObject.activeInHierarchy)
+                continue;
+
+            ResolveApproachSourcePoints(candidate, _approachSourcePoints, _approachZoneCells,
+                out string placementId);
+            for (int i = 0; i < _approachSourcePoints.Count; i++)
+            {
+                Vector3 source = _approachSourcePoints[i];
+                string key = BuildApproachReservationKey(candidate, placementId, source,
+                    i < _approachZoneCells.Count ? _approachZoneCells[i] : (Vector2Int?)null);
+                if (ApproachReservations.TryGetValue(key, out SpecialistNpcController owner)
+                    && owner != null && owner != this)
+                    continue;
+                if (!NavMesh.SamplePosition(source, out NavMeshHit hit, ApproachSampleRadius, areaMask))
+                    continue;
+
+                var path = new NavMeshPath();
+                if (!NavMesh.CalculatePath(_agent.transform.position, hit.position, areaMask, path)
+                    || path.status != NavMeshPathStatus.PathComplete)
+                    continue;
+
+                float length = CalculatePathLength(path);
+                if (length >= bestLength) continue;
+                bestLength = length;
+                bestWorkbench = candidate;
+                bestSource = source;
+                bestNavPoint = hit.position;
+                bestKey = key;
+            }
+        }
+
+        if (bestWorkbench == null)
+        {
+            reason = "비어 있고 완전한 NavMesh 경로를 가진 전면 interaction 셀이 없습니다.";
+            return false;
+        }
+
+        ApproachReservations[bestKey] = this;
+        _approachReservationKey = bestKey;
+        _currentApproachSource = bestSource;
+        _currentApproachPoint = bestNavPoint;
+        targetWorkbench = bestWorkbench;
+        if (!_agent.SetDestination(bestNavPoint))
+        {
+            ReleaseApproachReservation();
+            targetWorkbench = null;
+            reason = "선택한 전면 접근점을 NavMesh 목적지로 설정하지 못했습니다.";
+            return false;
+        }
+        return true;
+    }
+
+    void ResolveApproachSourcePoints(Workbench workbench, List<Vector3> points,
+        List<Vector2Int> cells, out string placementId)
+    {
+        points.Clear();
+        cells.Clear();
+        placementId = string.Empty;
+
+        ShopCustomizationController customization = ShopCustomizationController.Instance;
+        if (customization != null
+            && customization.TryGetNpcApproachPoints(workbench, points, cells, out placementId))
+            return;
+
+        // 배치 zone 밖의 구형 작업대도 collider 앞면을 사용해 장애물 원점 이동을 피한다.
+        float frontDistance = 1.15f;
+        BoxCollider box = workbench.GetComponent<BoxCollider>();
+        if (box != null)
+        {
+            float scaledDepth = Mathf.Abs(box.size.z * workbench.transform.lossyScale.z);
+            frontDistance = scaledDepth * 0.5f + Mathf.Max(0.15f, _agent.radius) + 0.15f;
+        }
+        Vector3 fallback = workbench.transform.position - workbench.transform.forward * frontDistance;
+        fallback.y = workbench.transform.position.y + 0.04f;
+        points.Add(fallback);
+    }
+
+    bool IsApproachReservationValid()
+    {
+        if (targetWorkbench == null || !targetWorkbench.gameObject.activeInHierarchy
+            || string.IsNullOrEmpty(_approachReservationKey)
+            || !ApproachReservations.TryGetValue(_approachReservationKey, out var owner)
+            || owner != this)
+            return false;
+
+        ResolveApproachSourcePoints(targetWorkbench, _approachSourcePoints, _approachZoneCells, out _);
+        foreach (Vector3 source in _approachSourcePoints)
+        {
+            Vector2 delta = new Vector2(source.x - _currentApproachSource.x,
+                source.z - _currentApproachSource.z);
+            if (delta.sqrMagnitude <= ApproachSourceTolerance * ApproachSourceTolerance)
+                return true;
+        }
+        return false;
+    }
+
+    void ReleaseApproachReservation()
+    {
+        if (!string.IsNullOrEmpty(_approachReservationKey)
+            && ApproachReservations.TryGetValue(_approachReservationKey, out var owner)
+            && owner == this)
+            ApproachReservations.Remove(_approachReservationKey);
+        _approachReservationKey = string.Empty;
+        _currentApproachSource = Vector3.zero;
+        _currentApproachPoint = Vector3.zero;
+    }
+
+    static void PruneApproachReservations()
+    {
+        var stale = new List<string>();
+        foreach (var pair in ApproachReservations)
+            if (pair.Value == null || !pair.Value.gameObject.activeInHierarchy)
+                stale.Add(pair.Key);
+        foreach (string key in stale) ApproachReservations.Remove(key);
+    }
+
+    static string BuildApproachReservationKey(Workbench workbench, string placementId,
+        Vector3 source, Vector2Int? zoneCell)
+    {
+        if (!string.IsNullOrEmpty(placementId) && zoneCell.HasValue)
+            return $"{placementId}:{zoneCell.Value.x}:{zoneCell.Value.y}";
+        return $"workbench:{workbench.GetInstanceID()}:{Mathf.RoundToInt(source.x * 10f)}:{Mathf.RoundToInt(source.z * 10f)}";
+    }
+
+    static float CalculatePathLength(NavMeshPath path)
+    {
+        if (path == null || path.corners == null || path.corners.Length < 2) return 0f;
+        float result = 0f;
+        for (int i = 1; i < path.corners.Length; i++)
+            result += Vector3.Distance(path.corners[i - 1], path.corners[i]);
+        return result;
+    }
+
+    void FaceWorkbench()
+    {
+        if (targetWorkbench == null) return;
+        Vector3 direction = targetWorkbench.transform.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+    }
+
     // -------- 레시피 선택 --------
 
     /// <summary>재료가 충분한 첫 번째 레시피를 반환한다. 없으면 null.</summary>
     RecipeData FindViableRecipe()
     {
         if (assignedRecipes == null || Inventory.instance == null) return null;
+        WorkbenchType specialtyWorkbench = NpcSpecialtyMapping.GetWorkbenchType(specialty);
 
         foreach (var recipe in assignedRecipes)
         {
@@ -362,8 +578,7 @@ public class SpecialistNpcController : MonoBehaviour
 
             // 작업대 종류 매칭
             if (recipe.requiredWorkbench != WorkbenchType.None
-                && targetWorkbench != null
-                && recipe.requiredWorkbench != targetWorkbench.workbenchType)
+                && recipe.requiredWorkbench != specialtyWorkbench)
                 continue;
 
             // 티어 잠금

@@ -142,6 +142,7 @@ public static class PA_VillageChangeSignalValidator
             sales.RecordSale("BreadLoaf", ItemCategory.Processed.ToString(), 34, 1.0f, "ValidatorCustomerA", 2, 19);
             sales.RecordSale("IronBar", ItemCategory.Processed.ToString(), 42, 1.0f, "ValidatorCustomerB", 2, 20);
             sales.RecordSale("Wood", ItemCategory.Raw.ToString(), 8, 1.0f, "ValidatorCustomerC", 2, 20);
+            sales.RecordSale("Fish", ItemCategory.Raw.ToString(), 18, 1.0f, "ValidatorFisherA", 2, 20);
 
             signal.RefreshNow();
 
@@ -149,6 +150,31 @@ public static class PA_VillageChangeSignalValidator
             Require(signal.CurrentSignalText.Contains("Processed"), "village signal includes leading category");
             Require(signal.CurrentSignalText.Contains("food/workshop"), "village signal explains category impact");
             Require(signal.GetLeadingSignalSummary().Contains("2 sale"), "village signal summarizes category count");
+            Require(signal.TryGetNamedTrendSnapshot(VillageChangeSignalController.FishingTrendId, out var fishing)
+                    && fishing.transactions == 1 && fishing.revenue == 18 && fishing.score == 1018,
+                "one Fish sale creates fishing 1018 from one transaction and 18G");
+            Require(signal.GetLeadingSignalSummary().Contains("낚시 생활"),
+                "settlement-facing village summary includes the named fishing trend");
+
+            // 정확한 (category, itemName) 쌍이 아니면 이름이 비슷해도 명명 트렌드가 아니다.
+            sales.RecordSale("Fish", ItemCategory.Processed.ToString(), 18, 1.0f, "ValidatorWrongPair", 2, 20);
+            sales.RecordSale("Shop_Tent_Kit", ItemCategory.Utility.ToString(), 30, 1.0f, "ValidatorTent", 2, 20);
+            Require(signal.TryGetNamedTrendSnapshot(VillageChangeSignalController.FishingTrendId, out fishing)
+                    && fishing.transactions == 1 && fishing.revenue == 18,
+                "wrong category and unregistered camping-like names are fail-closed");
+            Require(!signal.TryGetNamedTrendSnapshot(VillageChangeSignalController.CampingTrendId, out _),
+                "camping remains inactive without a registered sellable product");
+
+            // 거래 수 동률이면 매출, 거래 수가 다르면 가격보다 거래 수가 먼저다.
+            sales.RecordSale("목제 가구", ItemCategory.Luxury.ToString(), 185, 1.0f, "ValidatorCarpenter", 2, 21);
+            Require(signal.GetLeadingNamedTrendSummary().Contains("가구 문화"),
+                "equal transaction counts select the higher-revenue furniture trend");
+            sales.RecordSale("Fish", ItemCategory.Raw.ToString(), 18, 1.0f, "ValidatorFisherB", 2, 22);
+            Require(signal.TryGetNamedTrendSnapshot(VillageChangeSignalController.FishingTrendId, out fishing)
+                    && fishing.transactions == 2 && fishing.revenue == 36 && fishing.score == 2036,
+                "two Fish transactions score 2036 and are not inferred as one stack sale");
+            Require(signal.GetLeadingNamedTrendSummary().Contains("낚시 생활"),
+                "transaction count outranks revenue when selecting the leading named trend");
 
             Debug.Log($"PA Village Change Signal Validation passed. summary={signal.GetLeadingSignalSummary()}");
         }

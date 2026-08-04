@@ -18,6 +18,7 @@ NPC 손님이 익명의 군중이 아니라, 저마다 취향과 구매 기준�
 | `NpcProfile.traitTF` | 값이 다름 (-0.3 ~ 0.7) | 구매 스타일: F=감성 구매형 / T=실리 판단형. `PurchaseEvaluator` §3-a, §4 와 동일 축 |
 | `NpcProfile.traitEI` | 값이 다름 (-0.5 ~ 0.2) | 구매 적극성: E=충동구매형 / I=신중형 |
 | `NpcProfile.priceSensitivity` | SPY-003(2026-06-22)에서 NPC별로 차등화 (0.65 ~ 1.45) | 1.25 이상=가격에 민감, 0.75 이하=가격에 관대. 기본값(1.0)에 가까우면 표시하지 않음 |
+| `NpcScheduleController.scheduleData` | 씬 자동 생성 경로의 현재 주민 8명 모두에 연결된 실제 마을 일과표 | Task 031 계층 표시: 일과표 있음=`[주민]`, 없음=`[관광객]`. 구매·스케줄 동작에는 사용하지 않는 표시 전용 파생값 |
 | `NpcController.currentState` | 런타임 FSM 상태 | MovingToShop / BrowsingShop 인 손님만 "관심 손님"으로 패널에 노출 |
 | `PurchaseEvaluator.Result` (willBuy, probability) | 구매 평가 결과 그대로 | 구매/거절 이유 분기 |
 | `ShopSlot.EffectiveDisplayPrice` / `Item.basePrice` | 진열 데이터 | 가격 비율로 "값이 착해서/가격이 부담돼" 이유 분기 |
@@ -50,13 +51,13 @@ SPY-002 당시 `priceSensitivity`/`utilityConsumption`/`luxuryConsumption` 가 8
 
 - 화면: 우상단 인사이트 스택(Money/Demand/Village) 바로 아래 `관심 손님 성향` 패널.
 - NPC가 `MovingToShop` 또는 `BrowsingShop` 상태(=가게로 향하거나 둘러보는 손님)일 때 최대 3명까지 표시.
-- 형식: `이름 · <카테고리 선호>[ · <구매 스타일/가격 성향>]`
-  - 예) `Miner_01 · 장식·고급품 선호 · 가격에 민감`
-  - 예) `Tailor_01 · 실용재(식료품·도구) 선호 · 가격에 관대`
-  - 예) `Blacksmith_01 · 장식·고급품 선호 · 신중형`
+- 형식: `이름 [주민|관광객] · <카테고리 선호>[ · <구매 스타일/가격 성향>]`
+  - 예) `Miner_01 [주민] · 장식·고급품 선호 · 가격에 민감`
+  - 예) `Tailor_01 [주민] · 실용재(식료품·도구) 선호 · 가격에 관대`
+  - 향후 마을 일과표 없이 생성되는 방문 손님은 같은 위치에 `[관광객]`으로 표시한다.
 - 한 줄을 짧게 유지하기 위해 가격 성향(priceSensitivity)이 두드러지면 그것을 우선 표시하고,
   그렇지 않으면 감성/실리(traitTF) → 충동/신중(traitEI) 순으로 한 가지 성격만 덧붙인다.
-- 활동 중인 손님이 없으면: `밤에 가게를 열면 손님마다 취향이 표시됩니다.` (개념 학습용 안내)
+- 활동 중인 손님이 없으면: `밤에 가게를 열면 [주민]/[관광객]과 취향이 표시됩니다.` (개념 학습용 안내)
 
 ## 어떤 구매/거절 이유가 표시되는가 (B. 이유 + D. 마을 연결)
 
@@ -86,8 +87,23 @@ SPY-002 당시 `priceSensitivity`/`utilityConsumption`/`luxuryConsumption` 가 8
   `willBuy`/판매/돈/FSM/구매 확률에 전혀 영향 없음.
 - `PA_RuntimeSceneBinder` 에 두 컨트롤러 자동 부착 등록.
 - `Shop`, `ShopSlot`, `ShopPriceUI`, `EconomyService`, `PurchaseEvaluator`, NPC FSM, Save 구조 **미변경**.
-- 기존 `NpcController.BuildPurchaseFeedback` 말풍선(머리 위, 확률 % 포함)도 **그대로 보존**
-  (FinalDemoRoute 검증기가 정확한 텍스트/길이를 검사하기 때문).
+- 기존 `NpcController.BuildPurchaseFeedback` 말풍선 본문(머리 위, 확률 % 포함)은 **그대로 보존**한다.
+  Task 031은 `NpcBubbleUI` 안에 별도 `[주민]/[관광객]` 태그를 두어 FinalDemoRoute가 검사하는 본문 문자열을 바꾸지 않는다.
+
+### Task 031 — 주민/관광객 표시 (2026-07-17)
+
+- 현재 `NpcProfile`에는 별도 관광객 필드가 없고, 실제 씬의 소비형 NPC 8명은 모두 `NpcScheduleController`와 유효한 마을 일과표를 가진 상주 주민이다.
+- 따라서 현재 주민 중 일부를 관광객으로 꾸미지 않았다. 유효한 일과표가 있으면 `[주민]`, 없으면 향후 임시 방문 손님용 `[관광객]`으로 표시만 파생한다.
+- F10 개발 오버레이인 `CustomerPreferenceCanvas`에는 이름 옆 계층이 함께 나오고, 기본 플레이 화면에서는 기존 머리 위 `NpcBubbleUI`의 작은 녹색 `[주민]` 태그로 확인한다.
+- 이 분류는 구매 확률, 가격, FSM, 스케줄, 저장에 입력되지 않는다. 실제 관광객 생성·유입·별도 소비 규칙은 후속 콘텐츠다.
+
+검증:
+
+| 검증기 | 로그 | 결과 |
+|---|---|---|
+| `PA_CustomerPresentationValidator` | `Logs/Codex_Task031_CustomerPresentation_Final.log` | 현재 8명 모두 주민, 가짜 관광객 0명, 무일과표 관광객 폴백, 기본 말풍선 태그/본문 보존 PASS |
+| `PA_CustomerPanelLayoutValidator` | `Logs/Codex_Task031_CustomerPanelLayout_Final.log` | 계층 태그 화면 경계 PASS, `Logs/CustomerPanelReview/20260717_032821/customer_panels_1920x1080.png` 직접 확인 |
+| `PA_FinalDemoRouteValidator` | `Logs/Codex_Task031_FinalDemoRoute.log` | 기존 말풍선 본문 정확히 유지, BreadLoaf 30G PASS |
 
 ## 자동 검증 결과
 
@@ -158,7 +174,7 @@ SPY-002 당시 `priceSensitivity`/`utilityConsumption`/`luxuryConsumption` 가 8
 
 ## 다음 추천 작업
 
-- 손님 성향 힌트를 머리 위 작은 태그/말풍선으로도 노출(현재는 패널 중심).
+- (완료, Task 031) 손님 계층을 머리 위 작은 `[주민]/[관광객]` 태그로 노출. 성향 상세는 F10 패널에 유지.
 - (완료, SPY-003) `priceSensitivity` / `utilityConsumption` / `luxuryConsumption` NPC별 차등화로
   "가격에 민감/관대" 힌트가 데이터 기반으로 표시됨.
 - 손님 성향 → Village Direction → 시설/이벤트 잠금 해제로 이어지는 중기 연결(Milestone 2).

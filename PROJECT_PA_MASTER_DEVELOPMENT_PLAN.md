@@ -293,3 +293,15 @@ Next sprint recommendation:
 - Creative North Star Milestone 1 implementation.
 - Add day/night phase flow, shop open/close state, two daytime stock-prep activities, daily settlement, and one product-category village-change signal.
 - Use the already visible supply, processing, and demand signals as support. Preserve existing tier unlock math in the first pass.
+
+## WORLD Track — Separated Testbed and Integration
+
+WORLD-000 establishes a parallel, bounded architecture track without displacing the current playable loop.
+
+1. **Design lock (WORLD-000):** audit current grid/build/save/NPC/shop/nav dependencies; choose custom chunk mesh and document data, delta save, migration, scene roles, and bounded tickets. No scene or runtime implementation.
+2. **WorldSandbox technology (WORLD-001~008):** create the approved minimal testbed, then pass World Data, Terrain, Building, delta Save, and Navigation gates. Connect only the existing services required by each ticket.
+3. **Existing gameplay integration (WORLD-009~010):** connect one existing shop and representative NPC home/work/shop roles through adapters; preserve economy, purchase, schedule, and Day/Night authority.
+4. **World affordances (WORLD-011~012):** bridge/ramp/cliff navigation and provenance-approved decoration placement.
+5. **MainGame integration:** a separate human-approved `WORLD-MAIN-001` after Gates 1~5; never an automatic continuation of WORLD-012.
+
+`Prototype_FirstDay.unity` remains the Golden Regression Scene throughout. `WorldSandbox.unity` is the technology testbed. `MainGame.unity` is only a candidate validated integration scene after its existing functionality is inventoried and preserved.

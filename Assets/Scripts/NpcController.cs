@@ -74,6 +74,12 @@ public class NpcController : MonoBehaviour
     private bool _arrivedAtSlot;
     private float _browseTimer;
     private bool _restoredFromSave;
+    private Vector3 _currentApproachPoint;
+    private bool _hasApproachReservation;
+
+    public ShopSlot CurrentShopSlotTarget => _currentSlotTarget;
+    public Vector3 CurrentShopApproachPoint => _currentApproachPoint;
+    public bool HasShopApproachReservation => _hasApproachReservation;
 
     private string DisplayName => profile != null && !string.IsNullOrEmpty(profile.npcName) ? profile.npcName : gameObject.name;
 
@@ -221,6 +227,18 @@ public class NpcController : MonoBehaviour
             return;
         }
 
+        // P4 — 진열대가 쇼핑 중 이동/회전되면 낡은 앞자리로 걸어가지 않고 다시 예약한다.
+        var approach = ShopCustomerApproachController.Instance;
+        if (_hasApproachReservation && (approach == null
+            || !approach.IsReservationValid(this, _currentSlotTarget)))
+        {
+            approach?.Release(this);
+            _hasApproachReservation = false;
+            _currentSlotTarget = null;
+            PickNextSlotToBrowse();
+            return;
+        }
+
         // 슬롯이 다른 NPC 에게 이미 팔려 비었으면 다음 슬롯으로.
         if (_currentSlotTarget.IsEmpty)
         {
@@ -233,15 +251,29 @@ public class NpcController : MonoBehaviour
         if (!_arrivedAtSlot)
         {
             // 슬롯으로 이동 중
-            if (agent != null && !agent.pathPending && agent.remainingDistance < slotArriveDistance)
+            if (agent != null && !agent.pathPending && agent.pathStatus != NavMeshPathStatus.PathComplete)
+            {
+                approach?.Release(this);
+                _hasApproachReservation = false;
+                _currentSlotTarget = null;
+                PickNextSlotToBrowse();
+                return;
+            }
+
+            float arriveDistance = _hasApproachReservation && agent != null
+                ? Mathf.Max(0.35f, agent.stoppingDistance + 0.12f)
+                : slotArriveDistance;
+            if (agent != null && !agent.pathPending && agent.remainingDistance < arriveDistance)
             {
                 _arrivedAtSlot = true;
                 _browseTimer = 0f;
+                FaceCurrentSlot(true);
             }
         }
         else
         {
             // 슬롯 앞에서 구경 중
+            FaceCurrentSlot(false);
             _browseTimer += Time.deltaTime;
             if (_browseTimer >= browseDurationAtSlot)
             {
@@ -252,6 +284,9 @@ public class NpcController : MonoBehaviour
 
     void PickNextSlotToBrowse()
     {
+        ShopCustomerApproachController.Instance?.Release(this);
+        _hasApproachReservation = false;
+        _currentApproachPoint = Vector3.zero;
         _arrivedAtSlot = false;
         _browseTimer = 0f;
         _currentSlotTarget = null;
@@ -281,13 +316,34 @@ public class NpcController : MonoBehaviour
             return;
         }
 
-        int idx = _rng.Next(available.Count);
-        _currentSlotTarget = available[idx];
+        var approach = ShopCustomerApproachController.Instance;
+        if (approach != null)
+        {
+            if (!approach.TryReserveReachableSlot(this, agent, available, _rng,
+                    out _currentSlotTarget, out _currentApproachPoint, out string reason))
+            {
+                EndShoppingVisit(reason);
+                return;
+            }
+            _hasApproachReservation = true;
+        }
+        else
+        {
+            int idx = _rng.Next(available.Count);
+            _currentSlotTarget = available[idx];
+            _currentApproachPoint = _currentSlotTarget.transform.position;
+        }
         _visitedSlots.Add(_currentSlotTarget);
 
         if (agent != null && agent.isOnNavMesh)
         {
-            agent.SetDestination(_currentSlotTarget.transform.position);
+            if (!agent.SetDestination(_currentApproachPoint))
+            {
+                approach?.Release(this);
+                _hasApproachReservation = false;
+                _currentSlotTarget = null;
+                EndShoppingVisit("접근점 경로 설정 실패");
+            }
         }
     }
 
@@ -394,8 +450,28 @@ public class NpcController : MonoBehaviour
 
     void ReleaseShoppingClaims()
     {
+        ShopCustomerApproachController.Instance?.Release(this);
+        _hasApproachReservation = false;
+        _currentApproachPoint = Vector3.zero;
         if (_currentSlotTarget != null) _currentSlotTarget.ReleaseClaim(DisplayName);
         foreach (var s in _visitedSlots) if (s != null) s.ReleaseClaim(DisplayName);
+    }
+
+    void FaceCurrentSlot(bool immediate)
+    {
+        if (_currentSlotTarget == null) return;
+        Vector3 direction = _currentSlotTarget.transform.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.001f) return;
+        Quaternion target = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        transform.rotation = immediate
+            ? target
+            : Quaternion.Slerp(transform.rotation, target, Time.deltaTime * 8f);
+    }
+
+    void OnDisable()
+    {
+        ReleaseShoppingClaims();
     }
 
     string BuildPurchaseFeedback(PurchaseEvaluator.Result result, ShopSlot slot)
@@ -523,6 +599,10 @@ public class NpcController : MonoBehaviour
 
         BeginShoppingVisit();
     }
+
+    // S5 — 스케줄 정지 여부 공개(읽기 전용). 사이드카가 초대 불가능한 NPC 를
+    // 워프해 보기 전에 걸러낼 수 있게 한다. 상태 변경 없음.
+    public bool IsSchedulePaused => _schedulePaused;
 
     // S3 — 실내 상점 방문: 외부 사이드카(InteriorCustomerController)가 대상 상점을
     // 지정해 쇼핑을 시작시킨다. 기존 BeginShoppingVisit/FSM 을 그대로 재사용한다.

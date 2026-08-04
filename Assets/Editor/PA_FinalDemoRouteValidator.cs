@@ -214,6 +214,12 @@ public static class PA_FinalDemoRouteValidator
         onEnable?.Invoke(audit, null);
         audit.Refresh();
         Require(audit.nextTierText != null && audit.nextTierText.text.Contains("다음:"), "audit app shows next-tier goal text");
+        Require(audit.facilityDirectionText != null && audit.facilityDirectionText.text.Contains("시설 방향 예고"),
+            "audit app shows facility-direction preview");
+        Require(audit.facilityDirectionText.text.Contains("조리·가공 작업대"),
+            "Processed sale points toward the cooking/processing facility candidate");
+        Require(audit.facilityDirectionText.text.Contains("실제 해금: 티어·감사 조건"),
+            "facility preview remains advisory and preserves tier/audit unlock authority");
     }
 
     static void ValidateScenarioSummary(PlayableDayScenarioController scenario)

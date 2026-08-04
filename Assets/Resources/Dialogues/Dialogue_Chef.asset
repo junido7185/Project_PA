@@ -24,3 +24,8 @@ MonoBehaviour:
     - "\uB9DB\uC788\uB294 \uC74C\uC2DD\uC740 \uBAA8\uB450\uB97C \uD589\uBCF5\uD558\uAC8C
       \uD574\uC694! \uD568\uAED8 \uB4DC\uC2E4\uB798\uC694?"
     - "\uC0C8\uB85C\uC6B4 \uB808\uC2DC\uD53C\uB97C \uC0DD\uAC01\uD558\uBA74 \uC124\uB808\uC5B4\uC694!"
+  - topic: 6
+    thinkingLines:
+    - "오늘 빵 준비에 쓸 기본 재료가 부족해. 필요한 수량을 확인해 줘."
+    feelingLines:
+    - "오늘도 따뜻한 빵을 굽고 싶어요. 필요한 재료를 함께 준비해 줄래요?"

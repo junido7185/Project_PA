@@ -1,5 +1,82 @@
 # PROJECT_PA_SESSION_REPORT.md
 
+## 2026-07-16 Continuation — Tripo Character Unity Finalization Complete
+
+- Audited C-01~C-09 source FBX files, Humanoid import settings, Avatars, meshes, materials/textures, polycounts, Idle/Walk clips, scene/runtime assignments, colliders, agents, and existing grounding code through Unity Editor API.
+- All nine characters are intact, valid Humanoids with a coherent warm stylized identity. No replacement, Blender repair, source asset overwrite, or new generated art was justified.
+- Found the main runtime defect in `NpcPresentationNormalizer`: every resident source was forced to 2× scale and every body/agent to 3.6m, overriding the safer scene values. Runtime baseline measured residents at 2.088–2.190m with feet as much as 0.132m below their root.
+- Changed normalization to measure each rendered model, target 1.75m, align feet 0.02m above the root, and use 1.8m/0.4m CapsuleCollider and NavMeshAgent with 0.75m stopping distance. Character shadow settings are also normalized.
+- Changed NPC procedural cadence from an arbitrary time/speed factor to actual planar speed divided by a 1.15m nominal stride, while preserving role-specific pose profiles. Added constrained Walk playback synchronization to the player's existing foot IK component using the existing clip's 1.174m/s average speed.
+- Created `PA_CharacterFinalizer` for reproducible C-01~C-09 auditing, source lineup capture, same-camera runtime staging, metrics, and final assertions. It does not save the main scene.
+- D3D11 compile passed. Actual Play idle validation passed for all eight residents: 1.748–1.751m rendered height, +0.032–+0.035m foot offset, 1.8/0.4 collider, 1.8/0.4/0.75 agent, valid Avatar, and shadows. `character_idle_after.png` visibly improves scale and grounding over the baseline.
+- The first walking final validation stopped because startup onboarding left `Time.timeScale=0`. A follow-up single task reused `PlayableDayScenarioController.RestoreSavedSession`, explicitly restored game time, and kept runtime character code unchanged. The BUG_LOG entry is now RESOLVED.
+- Final D3D11 walking validation passed with player 5m/s/Animator playback 2.25× and all eight NPCs at 2.5m/s with cadence 1.851–2.328. Walking bounds stayed 1.737–1.758m with +0.029–+0.037m foot offsets and the corrected physical bodies.
+- Direct visual review iterated the validation-only staging from the obstructed shop front to the actual west road. The final `character_walk_after.png` separates all eight residents and the player so feet, silhouettes, direction, and shadows are readable; one roadside tree only partially overlaps one torso.
+- D3D11 regressions passed: InteriorCustomer reserve→complete path→front stop→purchase→return, CustomerArrival invited 3/capped 2, and FinalDemoRoute BreadLoaf 30G sale.
+- Runtime assignment audit also found Bori=C-03, Miner=C-04, Farmer/Fisher=C-05 duplicate, and C-02 unused. These are identity decisions, so no resident was remapped without user confirmation.
+- No source FBX, Avatar, animation clip, texture, prefab, main scene, NavMesh bake, save schema, package, commit, or push operation was performed.
+
+Next: audit B02~B04 shop-evolution models as the next single visual task, preserving existing Tier, placement, shop, and save contracts.
+
+## 2026-07-16 Continuation — B05 Workbench Functional Art Finalization
+
+- Audited the actual B05 source FBX, wrapper prefab, four faces, scene/runtime use, 2×2 placement, collider, carving obstacle, and existing crafting chain through Unity Editor API. The grounded 14,689-triangle source has a readable work surface, pegboard, stool, and drawer, so its visual identity was preserved.
+- The defect was integration, not a broken mesh: the modeled work side faced local `+Z`, opposite the placement system's reserved local `-Z` interaction/clearance face, and the physical 3.2m-wide collider exceeded the 2.26m visible mesh.
+- Extended only `Workbench` and the successful tail of `CraftingService`. BasicWorkbench rotates its source Visual 180°, uses a `(2.5,2,2.55)` physical collider/carving obstacle, and attaches a persistent Project-PA-owned preparation kit. The prefab collider remains untouched so its established 2×2 placement footprint does not change.
+- Kept the existing `Workbench → CraftingUI → CraftingService` system and chose its existing Wood→Plank recipe as the purpose-readable minimum function. No parallel gathering, crafting, inventory, or progression system was added.
+- Generated `B05_Workbench_PreparationKit` with low-poly raw Wood, cream guide board/rails, finished Plank pieces, and a coral clamp/handle. It reuses four existing Project PA materials and contains no random decorative tools.
+- A successful craft animates the clamp handle and softly pulses a warm light for 0.72 seconds. Direct review found the initial 2.2 light too bright, so it was reduced to 0.9 and recaptured.
+- Actual Play Mode MainCamera before/after: `Logs/B05_WorkbenchAudit/b05_runtime_before.png` → `b05_runtime_after.png`. The player, interaction face, work surface, material flow, and collider now agree.
+- D3D11 final validation passed: open actual CraftingUI, spend 2 Wood, create 1 Plank, observe feedback, close UI. Processing-chain BreadLoaf, 2×2 placement/v10 persistence, Tier interior round trip, and FinalDemoRoute 30G regressions also passed.
+- Two validation-infrastructure failures were recorded and resolved: asynchronous Play Mode capture launched with `-quit`, and a substring selector choosing the Furniture recipe whose ingredient contained “Plank”.
+- No source FBX, texture, wrapper prefab, main scene, save schema, package, commit, or push operation was performed.
+
+Next: preserve C-01~C-09 identities and finalize player/NPC grounding, walk speed/foot sliding, Animator/Avatar, collider, and NavMeshAgent through same-angle runtime captures.
+
+## 2026-07-16 Continuation — B10 Cottage Visual Finalization
+
+- Audited the Tripo-estimated B10 source, wrapper prefab, four scene instances, connected mesh components, bounds, colliders, and game-camera evidence through Unity Editor API.
+- Four-side captures proved the FBX itself is grounded and intact; its authored door facade is local `-X`. The map had aimed local `-Z` at the plaza, while a separate primitive `PA_StoreDoor_Out` and cube sign were left floating at `local z=-3.819`.
+- Added `CottageVisualFinalizationController`: all three authoritative map cottages face their real doors toward the plaza, and the legacy Static B10 is disabled at runtime. Collider/NavMeshObstacle rotate with each intact root.
+- Preserved the modeled door, awning, windows, steps, `BuildingEntrance`, collider, Tier gate, and inside/outside spawn contract. Only the detached primitive door/sign renderers are hidden.
+- Extended `PA_CottageVisualFinalizer` to audit 573 connected source components, generate a Project-PA-owned beveled two-material shop-sign mesh/prefab, validate the scene without saving it, and capture the actual Play Mode MainCamera.
+- Reused existing `PA_Market_DarkWood` and `PA_Market_AwningCream`; no external asset, package, Blender, source-FBX overwrite, wrapper-prefab edit, or main-scene save was performed.
+- Fixed the world sign presentation after direct inspection: scale-compensating door child anchor, fixed plaque-parallel text, explicit TMP Rect width/overflow, and hand-authored `P.A. SHOP - Tier 1/OPEN` copy.
+- D3D11 validation passed: final asset/bounds/facade/duplicate checks, Play Mode MainCamera capture, Tier 0 lock→Tier 1 OPEN→enter→stock→price→exit, and FinalDemoRoute BreadLoaf 30G.
+- Evidence: `Logs/B10_CottageAudit/b10_cottage_before.png`, `b10_cottage_after.png`, `b10_cottage_runtime.png`, `Logs/B10_CottageFinalValidation_Final.log`, `Logs/B10_EnterableShopRegression_Final.log`, `Logs/B10_FinalDemoRouteRegression.log`.
+- Two failed checks were recorded and resolved in `BUG_LOG.md`: TMP renderer over-count in the editor assertion, and a temporary break of the door-child sign lookup contract.
+
+Next: B05 Workbench functional art is the next single task. Preserve its existing `Workbench`, 2×2 placement, carving, save, and day-prep connection while replacing the temporary-table look with a purpose-readable work surface.
+
+## 2026-07-16 Continuation — Shop Customer Approach P4
+
+- Audited the actual `NpcController` FSM and confirmed it previously walked to `ShopSlot.transform.position`, then claimed only at evaluation time.
+- Added `ShopCustomerApproachController` as a runtime sidecar. It resolves existing rotated interaction cells, excludes logically blocked cells, samples NavMesh, requires a complete calculated path, and reserves a slot by NPC owner before movement.
+- Added a narrow read-only approach API to `ShopCustomizationController`; private placement definitions and the shared GridService remain authoritative.
+- Extended `NpcController` without changing purchase math: reserve reachable slot → walk to front cell → face display → existing ShopSlot claim/PurchaseEvaluator → release reservation.
+- A shelf moved during a visit invalidates the old source point and causes safe re-selection. Reservations are transient and do not alter save v10.
+- First Unity import found one validator-only definite-assignment compile error; explicit initialization fixed it and the single retry passed. Unity compile has no C# errors; `dotnet build` has 0 errors and the pre-existing Unity source-generator warning CS8785.
+- D3D11 ShopCustomization PASS: moved `(4,0)/r3` shelf maps to `(3,0)`, complete path, same-slot owner exclusion, different-slot concurrent reservation, and existing 61G/v10 checks.
+- D3D11 InteriorCustomer PASS: real visitor reserve→approach stop→15G purchase→return. CustomerArrival PASS (`invited=3`, cap 2) and FinalDemoRoute PASS (BreadLoaf 30G).
+- Captured `Logs/DemoViewShots/p4_shop_approach_final_20260716_114141.png`. The top-down camera shows the stocked interior/customer staging but does not isolate both reserved cells clearly enough for subjective visual approval.
+- No main scene, prefab, NavMesh bake, save schema, package, commit, or push operation was performed.
+
+Next: B10 Cottage detached/floating parts are the next single visual task; B05 functional art follows.
+
+## 2026-07-16 Continuation — Outdoor Placement P3
+
+- Audited `GridService`, `BuildManager`, `BuildingRegistry`, v10 save order, map roads/plaza, B09 prefab/collider/StorageBox, and previous physics evidence.
+- Added `OutdoorPlacementController` as a sidecar over the existing grid: `village.outdoor` is 47×47 at 2m with 212 protected road/plaza/entrance/spawn cells.
+- Extended the existing build path to multi-cell owner occupancy, front clearance, 90° preview, M relocation, and X safe recovery. `EquipmentSystem` only gained the narrow guard needed to keep relocation active without a selected blueprint.
+- Finalized B09 for this milestone as an external village storage shed. The model identity and original FBX/prefab remain intact; Unity runtime alignment, occupancy, carving, interaction, duplicate suppression, and save behavior were corrected.
+- Reused save schema v10. Outdoor records append to `placeables`; `BuildingRegistry` remains responsible for dynamic building recreation and the sidecar restores exact cell/rotation/storage contents.
+- Added `PA_OutdoorPlacementValidator`. D3D11 PASS: protected=212, B09=9 cells, fixed `(15,31)/r3`, dynamic `(31,28)/r1`, stored items 2+1, unsafe recovery refusal, empty recovery, save/load.
+- Captured and visually reviewed `Logs/OutdoorPlacement/20260716_111214/b09_outdoor_baseline.png` and `b09_outdoor_final.png`. B09 reads as storage and the final control hint is legible; B10 Cottage detached pieces are now the next visual priority.
+- Regressions passed: SaveRoundTrip v10, ShopCustomization B05/shelf/61G, FinalDemoRoute BreadLoaf 30G.
+- No main-scene, prefab, source FBX, package, commit, or push operation was performed.
+
+Next: P4 NPC approach/reservation/reachability first; B10 visual repair and B05 functional-art pass follow without pausing the full-game loop.
+
 Session date: 2026-06-19
 
 ## Goal
@@ -1541,3 +1618,903 @@ Next actions:
 
 - 사람 입력으로 광산까지 이동하는 동선, 타격 시간감, 실제 NPC 접근 장면, Windows 빌드는 확인하지 않았다.
 - 바위·광맥·곡괭이는 기능 위치를 알리는 임시 primitive다. 다음 단일 작업에서 비주얼 도구체인·라이선스·아트 방향을 감사하고 실제 제작 도구로 교체를 시작한다.
+
+---
+
+# Session 2026-07-15 — Visual Toolchain Audit and B01 Market Stall
+
+## 감사·설치
+
+- Unity 6000.3.2f1, URP/Core/Shader Graph 17.3.0, AI Navigation 2.0.12, Timeline 1.8.9와 전체 manifest/lock을 확인했다. Cinemachine, Animation Rigging, Blender는 미설치다.
+- 체크포인트 `64860ff` 뒤 Unity MCP 9.7.0을 안정 태그와 정확한 커밋에 고정했다. uv 0.11.28 서버를 `127.0.0.1`에서만 실행하고 프로젝트 `.codex/config.toml`로 연결했다.
+- Editor/Runtime 컴파일, WebSocket, Project_PA 인스턴스, 30개 Unity 도구 등록을 확인했다. MCP로 활성 씬, 계층, B01 프리팹, Play Mode와 Game View를 직접 검사했다.
+
+## 실제 비주얼 개선
+
+- 변경 전 중앙 상점은 B01 에셋 대신 큰 갈색 원시 박스와 안내용 오브젝트가 시각적 초점을 차지했다.
+- `DemoVisualDressingController`가 `Building_B01_MarketStall`의 `Visual`만 기존 4개 ShopSlot에 정렬한다. 슬롯의 상품 표시 자식은 유지하고 원시 루트 Renderer만 숨긴다.
+- 겹치던 `Support_Crate`, `Shop_Tent_Kit`, `Sales_Tent_Preview`의 Renderer/Collider는 런타임에서만 끈다. 메인 씬·B01 프리팹·Shop·경제·저장 코어는 변경하지 않았다.
+- Tripo 추정 플레이어/주민은 외형 보존 우선으로 분류했고, B09 창고와 B05 작업대는 실제 기능에 따른 재구성 후보로 남겼다.
+
+## 증거·남은 확인
+
+- 변경 전 `Logs/DemoViewShots/shot_20260715_164534.png`, B01 원본 `Logs/VisualAudit/B01_MarketStall_MCP.png`, 1차 Play 확인 `Logs/VisualAudit/after_b01_mcp.png`.
+- 동일 구도 최종 `Logs/DemoViewShots/shot_20260715_171613.png`: 큰 갈색 큐브와 검은 아티팩트가 없어지고 B01 차양·목재 프레임·상품 접근면이 보인다.
+- dotnet 런타임 경고 1/오류 0, Editor 경고 2/오류 0(기존 기준 경고), Unity Console 오류 0. D3D11 FinalDemoRoute가 `stocked=BreadLoaf, paid=30G`로 PASS했다.
+- Unity MCP의 장문 `execute_code` Windows 길이 실패는 `BUG_LOG.md`에 기록하고 구조화 도구로 우회했다.
+- 다음 단일 작업은 기존 그리드/건설/저장 구조를 감사한 뒤 상점 실내 배치 MVP를 연결하는 것이다. 저장 스키마 변경은 별도 승인 조건을 유지한다.
+
+---
+
+# Session 2026-07-16 — Shop Interior Grid Customization P1/P2
+
+## 구현
+
+- 기존 `GridService`를 유일한 권한자로 유지하면서 zone/owner/footprint/clearance/protected cell/BFS 통로 API를 추가했다.
+- `shop.interior`는 2m 5×4 셀이며 문 앞 `(2,0)`과 안쪽 `(2,3)` 연결을 보호한다.
+- 상점 배치 장부와 UI에서 실제 프리팹 preview, 90도 회전, 플레이어 전방 셀 배치, 기존 가구 이동·회수, 첫 B05 청사진 지급을 제공한다.
+- 기존 ShopSlot을 그대로 이동해 NPC 목적지, 가격, 상품, Shop 등록과 hierarchy 저장 키를 보존한다. 기존 슬롯에 carving obstacle을 보강했다.
+- 실제 B05 Workbench를 2×2로 연결했다. B06~B08은 실제 청사진에서 정의되며 B09는 공간·역할 재설계 전 실내 금지다.
+- `SaveData`/`SaveManager`를 v10으로 확장해 zone/definition/instance/cell/rotation/recovered/function/storage를 저장·복원한다.
+
+## 검증과 시각 확인
+
+- Unity 6000.3.2f1 D3D11 컴파일 성공. 새 Runtime/Editor 어셈블리 오류 0.
+- 보호 셀·겹침 거부, 선반 2개 회수, B05 2×2 배치, 선반 `(4,0)`/270° 이동, 이동 후 NPC 판매 61G PASS.
+- 격리 v10 JSON 저장 뒤 Workbench, 이동 선반, 상품 2개, 표시 가격 73G와 보호 통로 복원 PASS.
+- Workbench 기능/차폐 obstacle/회수 PASS.
+- 기존 SaveRoundTrip을 v10 기대값으로 갱신해 경제·인벤토리·ShopSlot·마을 변화 복원 PASS. 기존 FinalDemoRoute도 BreadLoaf 30G 판매 PASS.
+- 첫 batch 캡처 파일 미생성을 `BUG_LOG`에 기록하고 RenderTexture 동기 PNG로 해결했다.
+- 최종 이미지 `Logs/ShopCustomization/20260716_103307/shop_customization_game_camera.png`를 직접 확인해 앞벽 가림을 줄이고 UI 상태 문구 여백을 보정했다.
+- 회귀 로그: `Logs/ShopCustomization_SaveRoundTripRegression.log`, `Logs/ShopCustomization_FinalRouteRegression.log`.
+
+## 문서와 다음 작업
+
+- 작성: `PLACEMENT_SYSTEM_ARCHITECTURE.md`, `CUSTOMIZATION_ROADMAP.md`, `PLACEABLE_ASSET_GUIDE.md`.
+- 갱신: 저장 v10 `SAVE_SCHEMA.md`와 종료 기록 6종.
+- 미확인: 사람 손으로 장부까지 걸어가 장시간 배치하는 체감, Windows 빌드, 명시적 NPC approach 셀.
+- 다음 단일 구현: P3 `village.outdoor` zone과 도로/건물 입구 보호. B09 창고는 현재 임시 외형을 확정하지 않고 기능 역할부터 재설계한다.
+
+---
+
+## 2026-07-16 Continuation — B02~B04 Shop Evolution Visual Finalization
+
+- Audited B02~B04 source FBX files, wrapper prefabs, four faces, mesh bounds/polycounts, colliders, and embedded Shop/ShopSlot counts through Unity Editor API. All three sources are grounded and intact; their actual facades face local `-X`.
+- Classified all three as category 2, Unity configuration only. B02 reads as a small wood general store, B03 as a mint-awning market, and B04 as a mansard-roof cozy boutique; no mesh repair, Blender work, material replacement, or identity replacement was justified.
+- Found that spawning the existing wrappers as evolution stages would duplicate one Shop plus 8/16/32 ShopSlots over the already functional interior. Generated three visual-only Resource prefabs that reference the existing Visual, add exact BoxCollider/NavMeshObstacle bounds, and provide Entrance/Sign anchors without economy objects.
+- Extended the existing `ShopEvolutionController` instead of creating a parallel evolution system. The current saved Tier derives Tier 0=B10 Cottage, Tier 1=B02, Tier 2=B03, and Tier 3+=B04; no new save field was added.
+- Existing `PA_StoreDoor_Out`, outside player spawn, BuildingEntrance, and the B10 3D sign now follow the active modeled doorway. The old B10 render/collision shell is hidden only while an upgraded stage is active, and exactly one evolution visual remains active.
+- Captured actual Play Mode Tier 1/2/3 views from the same game camera. Direct review caught the first B02 entrance anchor on the wrong horizontal side; it was corrected from negative to positive local Z and all stage captures/assertions were rerun.
+- Final D3D11 validation passed for resource loading, single active visual, no duplicate Shop/slots, grounding, collider fit, entrance/sign alignment, and exact preservation of the existing placement snapshot across Tier transitions.
+- EnterableShop regression passed Tier 0 lock→Tier 1 B02→interior entry→six-slot stock→price UI→exit. FinalDemoRoute retained the BreadLoaf 30G sale.
+- Two audit-tool failures were recorded and resolved: a missing `UnityEngine.AI` import and SessionState tier reconstruction after domain reload. Neither failure was repeated.
+- No source FBX, texture, wrapper prefab, BuildingData, TierDefinition, main scene, save schema, package, commit, or push operation was performed.
+
+Next: P5 shop-evolution placement unlock—expand zone size and catalog by Tier while preserving every existing placement record.
+
+---
+
+## 2026-07-17 Continuation — P5 Shop Progression Unlock (Stopped on First Runtime Failure)
+
+- Implemented a monotonic shop interior expansion over the existing `shop.interior` grid: Tier 0/1 `5x4`, Tier 2 `6x5`, Tier 3+ `7x6`. The original origin and every existing placement identity/cell/rotation contract remain unchanged.
+- Reused authored TierDefinition capacity values with a six-display floor, producing limits 6/8/12/20. A hidden clone of the authored shelf provides new functional ShopSlot displays without introducing a new primitive visual or duplicate Shop system.
+- Connected B05/B06/B07+B08 to Tier 1/2/3 ledger rewards. Added physical floor/wall/light/ledger expansion, an expansion-only runtime NavMesh surface, and a Processed-culture warm theme persisted through a special v10 placeable record.
+- Extended the existing evolution banner with player-readable zone, display capacity, and preparation-bench unlocks. No main scene, source asset, wrapper prefab, TierDefinition, BuildingData, SaveData, SaveManager, package, commit, or push operation was performed.
+- Both local Runtime and Editor assemblies compile with zero errors. The first D3D11 play validation stopped during initialization because `GetComponent<Light>() ?? AddComponent<Light>()` retained Unity's fake-null Light wrapper and threw `MissingComponentException` at `light.type`.
+- Recorded the failure as OPEN in `BUG_LOG.md`; no identical rerun was attempted. P5 is not complete, no generated visual checkpoint is accepted, and regressions were not run.
+
+Next: replace the null-coalescing Light lookup with an explicit Unity null check, then run the full P5 validator from Tier 0 through Tier 4.
+
+---
+
+## 2026-07-17 Continuation — P5 Shop Progression Unlock Complete
+
+- Replaced the Unity fake-null `Light` lookup with an explicit Unity null check and rebuilt both Runtime and Editor assemblies with zero errors.
+- Finalized monotonic shop growth: Tier 0/1 `5x4`, Tier 2 `6x5`, Tier 3+ `7x6`; physical display limits are `6/6/8/12/20` and existing placement IDs/cells/rotations stay intact.
+- Connected the expansion NavMesh surface to the authored interior through east/north bidirectional links and verified a complete path to the far expansion cell.
+- Kept the authored six shelves, moved the hidden clone template outside the Shop hierarchy, and verified only placed clones register as functional ShopSlots.
+- Verified B05/B06/B07+B08 Tier rewards, the Processed warm-workshop theme, and v10 clear/restore of both theme and dynamic shelf records.
+- Directly reviewed the same-camera Tier 0 and Tier 3 captures. Corrected the ledger status/theme-button overlap and accepted the final capture at `Logs/ShopProgressionUnlock/20260717_005831/`.
+- D3D11 PASS: `P5_ShopProgression_D3D11_Release.log`, ShopCustomization, EnterableShop, SaveRoundTrip, and FinalDemoRoute regressions. No main scene, source asset, prefab, TierDefinition, BuildingData, save core, package, commit, or push change was made.
+
+Next: Task 044 resident-request display design, grounded in the existing Dialogue/Demand/day-activity/village-change data.
+
+---
+
+## 2026-07-17 Continuation — Task 044 Resident Request Display Design Complete
+
+- Audited the live dialogue path, all eight role dialogue assets, customer-demand insight, resident profiles, specialist recipes, inventory removal, friendship rewards, presentation filtering, and daily activity persistence.
+- Confirmed that no personal item-request state exists today: dialogue assets contain Greeting only, demand insight is category-level runtime data, and resident profiles have no request item fields.
+- Designed the first request as Chef_01 asking for Wheat x3, derived directly from the existing `Recipe_Bread` ingredient. Blacksmith Ore x2 and Carpenter Wood x2 are the next compatible cases.
+- Kept the design outside a generic quest engine: reuse `NpcDialogue`/`DialogueUI`, the existing `Economy` topic, `assignedRecipes`, `Inventory`, `FriendshipService`, and namespaced daily activity IDs.
+- Found an existing data mismatch: `PA_SceneAutoBuilder` assigns Bread to Tailor instead of the available Clothes recipe. Tailor is explicitly excluded until a separate data correction is approved and verified.
+- This task was documentation-only by queue contract. No code, scene, prefab, asset, package, save schema, commit, or push action was performed. Static compatibility review and `git diff --check` passed; Unity/Play Mode was not applicable.
+
+Next: Task 045 documentation sync for daytime activity results flowing into stock. Resident-request code requires a separate single-task authorization because Task 044 explicitly forbids code and scene changes.
+
+---
+
+## 2026-07-17 Continuation — Task 045 Daytime Activity To Stock Sync Complete
+
+- Created `AI_WORKFLOW/03_TASKS/DAYTIME_ACTIVITIES.md` from current source and existing D3D11 evidence rather than old task-state assumptions.
+- Documented six daily stock-source owners: two onboarding/NPC-support points plus forest Carrot, shore Fishing/Fish, meadow Wheat, and quarry Mining/Ore activities.
+- Reconfirmed the complete Fish loop from the existing log: Fish x2, stock one, confirm 18G, Fisher_01 purchase, money 500→518G, cumulative revenue, Raw SalesLog, daily stats, and HUD update.
+- Reconfirmed the complete Ore loop: Ore x2, isolated save/load, stock one, confirm 15G, Miner_01 purchase, money 500→515G, revenue/log/stats, and next-day quarry reset.
+- Updated `PROJECT_PA_GAME_LOOP.md` so its day, preparation, and night status rows include both verified loops and explicitly retain farming and resident requests as unimplemented.
+- Kept Carrot/Wheat at “inventory grant implemented, item-specific full sale round trip unverified”; no validation result was invented.
+- Documentation-only scope: no code, scene, prefab, asset, package, save schema, commit, or push action. Static source/log/document correspondence passed; Unity was not rerun.
+
+Next: Task 046 documents the real category-sales aggregation and village-trend boundary in `VILLAGE_TREND.md`.
+
+---
+
+## 2026-07-17 Continuation — Task 046 Category Sales Aggregation Audit Complete
+
+- Created `AI_WORKFLOW/03_TASKS/VILLAGE_TREND.md` from the live sale, signal, presentation, culture-visual, and save sources.
+- Confirmed that one `SaleRecord` represents one successful ShopSlot transaction, while its price is the full stack payment. Rejections remain separate daily-decision statistics.
+- Confirmed the runtime limits and formula: SalesLog retains 100 records by default; the village signal rebuilds from the latest 40, excludes Tool, and selects by `transaction count × 1000 + revenue` without an explicit tie contract.
+- Rechecked existing D3D11 evidence for Processed 2 sales/76G, Fish 18G, Ore 15G, BreadLoaf 30G, next-morning Processed activation, and Processed pending-to-active save restoration.
+- Documented the persistence boundary: v10 restores the Processed visual pending/active state, but does not restore sale records, daily decision dictionaries, or category trend statistics.
+- Static verification passed against seven document markers, twenty source markers, six log markers, four referenced files, and trailing whitespace. Unity was not rerun because Task 046 is documentation-only.
+- No code, scene, prefab, asset, package, save-schema, commit, or push action was performed.
+
+Next: Task 047 completes the fishing/camping/furniture trend-score data contract in `VILLAGE_TREND.md` without code or scene changes.
+
+---
+
+## 2026-07-17 Continuation — Task 047 Named Trend Score Data Design Complete
+
+- Extended `VILLAGE_TREND.md` with a named-life-trend layer that preserves the existing ItemCategory signal.
+- Mapped fishing to the real Fish (Raw, 18G) and Grilled Fish (Processed, 52G) data, and furniture to the real Wooden Furniture item (Luxury, 185G, Tier 2, three Planks at a BasicWorkbench).
+- Confirmed that no camping Item, Recipe, activity, or Resources content exists. The legacy `Shop_Tent_Kit` is a hidden prototype shop marker and cannot produce camping trend points.
+- Defined sale-only scoring as `qualified transactions × 1000 + min(revenue, 999)`. Crafting, stocking, rejection, placeable furniture, and blueprint unlocks produce no points.
+- Defined a settlement-day window, a future persisted seven-day snapshot boundary, and deterministic ties by transactions, uncapped revenue, latest sale, then trendId.
+- Kept the current category formula and Processed pending/active save ownership separate. Named trend code and weekly persistence remain unimplemented and require later tasks.
+- Final static verification passed for ten document markers, thirty-seven data/source markers, six SaleRecord fields, nine camping asset terms, six score examples, and whitespace. Unity was not rerun because this was documentation-only.
+- No code, scene, prefab, asset, package, save-schema, commit, or push action was performed.
+
+Next: Task 051 connects the existing Village direction to a player-readable facility-unlock preview without changing TierService unlock logic.
+
+---
+
+## 2026-07-17 Continuation — Task 051 Facility Unlock Direction Preview Complete
+
+- Reused the existing successful-sale category aggregation and exposed a read-only facility preview: Raw storage/collection, Processed cooking/processing, Utility repair/tools, and Luxury packaging/culture display.
+- Added a compact facility-direction card to the audit app with the leading category, candidate facility, sale count/revenue signal, and an explicit statement that actual unlocks remain owned by tier/audit conditions.
+- Preserved `TierService`, `AuditService`, sale math, save v10, the main scene, prefabs, packages, and every actual unlock rule.
+- Runtime and Editor builds completed with zero errors; only the existing generator and unused-field warnings remain.
+- D3D11 FinalDemoRoute passed after a real BreadLoaf 30G sale and asserted the Processed→cooking/processing preview plus the advisory boundary.
+- FinalPresentation recorded the Processed sale before opening the audit app. Direct review of the first 1920×1080 capture found truncated copy; the text was shortened and the same view was recaptured.
+- Final visual evidence: `Logs/FinalPresentation/20260717_021259/04_audit_app_goal.png`. All four decision lines are visible and the phone, HUD, and hotbar do not overlap.
+
+Next: Task 052 designs small event-unlock candidates grounded in the real fishing loop and current village-direction signals without implementing a new event system.
+
+---
+
+## 2026-07-17 Continuation — Task 052 Event Candidate Design Paused During Static Verification
+
+- Drafted `DESIGN_EVENTS.md` around `event.fishing.harvest_market`, a small seaside harvest festival that is unlocked by a completed fishing-product sale and becomes active the following morning.
+- Kept the playable route grounded in the verified loop: normal one-per-day fishing, optional Grilled Fish processing, existing stocking/pricing/shop opening, successful `SaleRecord`, and settlement.
+- Defined the event states, non-punitive retry, provisional one-time reputation reward, visual/navigation safety lines, additive sidecar ownership, save boundary, Task 078 approval gate, and future validation contract.
+- No event, trend, dialogue, reward, scene, asset, package, or save implementation was performed.
+- Static marker and source checks reached the whitespace stage, where the Markdown hard-break spaces on lines 3–4 were rejected. The failure is recorded in `BUG_LOG.md`; Task 052 remains active and its queue/matrix counts are unchanged.
+
+Next: remove the two metadata hard-break spaces, run independent `git diff --check` and source/marker checks once, then close Task 052 if both pass.
+
+---
+
+## 2026-07-17 Continuation — Task 052 Event Candidate Design Complete
+
+- Removed only the two Markdown hard-break spaces recorded by the paused verification; no gameplay content was altered.
+- Finalized `DESIGN_EVENTS.md` with the seaside harvest festival as the first implementation candidate: a verified fishing-product sale schedules the next-day event, and the active day preserves normal fishing, optional processing, stocking, pricing, shop opening, successful sale, and settlement.
+- Fixed the event's lifecycle, non-punitive retry, provisional one-time reputation reward, visual/navigation constraints, shared named-trend ownership, additive save candidates, Task 078 approval gate, and future runtime validation contract.
+- Verification passed independently: whole-worktree `git diff --check`; 10 document contracts; 10 live source/data contracts; five Task 041 fishing-sale log markers; zero trailing-whitespace lines; zero existing event runtime classes.
+- Unity was not run because Task 052 is documentation-only. No code, scene, prefab, asset, package, save schema, commit, or push action was performed.
+
+Next: Task 054 designs the additive persistence boundary for daily/category sales and seven-day named-trend snapshots against the current v10 schema. Task 055 implementation remains approval-gated.
+
+---
+
+## 2026-07-17 Continuation — Task 054 Sales Persistence v11 Design Complete
+
+- Finalized the additive v10-to-v11 persistence contract in `AI_WORKFLOW/03_TASKS/SAVE_SCHEMA.md` without changing runtime serialization.
+- Separated bounded recent sale records, daily purchase/rejection decisions, daily category aggregates, and seven-day named-trend snapshots so the current feed/recent-40 behavior and longer history can both survive a future load.
+- Defined DTO fields, successful-sale and rejection ownership, one-time settlement finalization, seven completed days plus the current day retention, deterministic normalization, and restore ordering after `GameClock` but before trend/event consumers.
+- Defined v10 migration as empty statistics only. Existing money, cumulative revenue, ShopSlots, v9 village-culture state, and v10 placement state cannot be used to fabricate historical sales.
+- Documented that the stale Task 055 SaveData/SaveManager-only scope is insufficient for private SalesLog state. Its approval request must explicitly include minimal SalesLog owner APIs, the shared named-trend owner, and affected round-trip validators.
+- Replaced the failed broad word search with exact declarations and paths. Verification passed: 12/12 document contracts, 17/17 live v10 source contracts, zero schema-document trailing whitespace, and whole-worktree `git diff --check` exit 0.
+- Unity was not run because this was documentation-only. No C# runtime, scene, prefab, asset, package, actual save-version, commit, or push action was performed.
+
+Next: Task 055 requires explicit user approval for the additive v11 implementation. If approval is not available, Task 060 can document the version-management policy without changing runtime state.
+
+---
+
+## 2026-07-17 Continuation — Task 023 Stopped Before Implementation
+
+- Audited the actual merchandising data: no rarity field exists, while each displayed stack preserves `ItemInstance.quality`.
+- The current sellable Resources catalog forms two base-price bands, 8–52G and 150–185G. The intended minimal UI therefore labels a 100G split explicitly as price-derived and shows the real quality multiplier alongside it.
+- Two patch applications failed on the same color-constant context. Per the repository stop rule, no third implementation attempt was made and the failure was recorded in `BUG_LOG.md`.
+- The one partially added unused field was removed. Runtime C#, scenes, prefabs, item assets, purchase math, saves, and packages have no final changes from this attempt. Task 023 remains TODO; Unity compile and visual capture were not run.
+
+Next: resume Task 023 with independent patches anchored to the verified `ItemNameTxt` creation and `RefreshUI` blocks, never the failed color-constant selector.
+
+---
+
+## 2026-07-17 Continuation — Task 023 Rarity And Quality Display Complete
+
+- Resumed with independent patch anchors and never reused the failed color-constant selector.
+- Added a compact merchandising line to the existing runtime-built `ShopPriceUI`: `Normal|Rare · price-derived value · quality ×N.NN` in the Korean player-facing copy.
+- The current catalog has no rarity source field, so the rule is explicitly temporary and price-derived: below 100G is normal, 100G or above is rare. The displayed quality is the real `ItemInstance.quality`, not a fabricated tier.
+- Normal goods use a soft green label; rare goods use the existing gold accent. The existing item, stock count, price controls, customer reaction, and player confirmation flow remain unchanged.
+- Runtime and Editor builds completed with zero errors. FinalPresentation asserted BreadLoaf quality 1.00 and Clothes quality 1.25, captured both states, and passed. FinalDemoRoute retained the real BreadLoaf 30G sale.
+- Direct same-camera review compared the earlier `20260717_021259` price panel with the final `20260717_030256` normal and rare captures. The new line is readable without clipping or overlap.
+- No scene, prefab, Item asset, purchase math, save, package, commit, or push change was made.
+
+Next: Task 025 can expose the existing price basis as a read-only recommended-price hint while preserving manual price choice.
+
+---
+
+## 2026-07-17 Continuation — Task 025 Read-only Recommended Price Complete
+
+- Confirmed there is no separate `IdealSellPrice` owner. The live purchase evaluator derives its price basis from base price plus positive quality, so the UI now mirrors that exact basis as read-only information.
+- Added `추천 기준가 N G · 기본가+품질` beneath the player's current price. Nothing applies the recommendation automatically; manual +/- adjustment and confirmation remain unchanged.
+- BreadLoaf quality 1.00 shows current/recommended 30G. Clothes quality 1.25 deliberately keeps the current 165G while showing a 186G recommendation.
+- The approximate reaction bar now compares against the same quality-adjusted basis, removing an internal presentation mismatch without changing `PurchaseEvaluator` or any NPC decision.
+- Direct review of the first capture found the recommendation overlapping the adjustment buttons. Increased the runtime panel height and spacing, then recaptured the same normal and rare views. The final text, controls, HUD, and interaction prompt do not overlap.
+- Runtime and Editor builds completed with zero errors. D3D11 FinalPresentation passed both recommendation assertions and the non-auto-apply assertion. FinalDemoRoute retained the BreadLoaf 30G sale.
+- No scene, prefab, Item asset, purchase math, save, package, commit, or push change was made.
+
+Next: Task 031 adds an honest resident/tourist customer-class label from existing NPC data without changing purchase behavior.
+
+---
+
+## 2026-07-17 Continuation — Task 031 Resident/Tourist Customer Label Complete
+
+- Audited `NpcProfile`, the scene-authoring path, schedules, current customer controllers, the hidden preference panel, and the player-facing head bubble. There is no explicit tourist field; all eight current customers have valid village schedules and are residents.
+- Added a presentation-only derivation: a valid `NpcScheduleController.scheduleData` means `[주민]`; an unscheduled future visiting customer means `[관광객]`. No current resident was fabricated as a tourist.
+- The F10 preference panel now formats active customers as `name [class] · preference`. Because direct capture proved that panel is intentionally hidden in the default player view, the existing `NpcBubbleUI` now also renders a separate small class tag above its unchanged body text.
+- The class is never used by `NpcController`, `PurchaseEvaluator`, scheduling, economy, or save logic. Real tourist generation and differentiated behavior remain future content.
+- A first parallel dotnet validation attempt caused a shared output-DLL lock; that command shape was discarded. Sequential Runtime and Editor builds then completed with zero errors.
+- D3D11 CustomerPresentation passed all eight resident labels, zero fabricated tourists, the tourist fallback, the visible head tag, and body-text preservation. CustomerPanelLayout passed tag bounds and produced `Logs/CustomerPanelReview/20260717_032821/customer_panels_1920x1080.png`, which was directly reviewed. FinalDemoRoute preserved the exact feedback body and BreadLoaf 30G sale.
+- No `NpcController`, `NpcProfile`, purchase math, scene, prefab, save, package, commit, or push change was made.
+
+Next: Task 024 is the next unapproved-safe queue item; it should define a theme-corner contract over existing ShopSlots before any implementation task is opened.
+
+---
+
+## 2026-07-17 Continuation — Task 024 Merchandising Theme Corner Design Complete
+
+- Audited the real `ShopSlot`, Item categories, `shop.interior` placement/footprint APIs, v10 restore order, sales log, and village-direction path.
+- Wrote `AI_WORKFLOW/03_TASKS/DESIGN_THEME_CORNER.md`. A corner is a four-neighbour connected component of at least two distinct, active, stocked shelf placements with the same sellable `ItemCategory`.
+- Kept the feature separate from the existing whole-interior `shop.theme/fixed.shop.theme` preset. The recommended runtime name is `MerchandisingCorner`, not another `ShopTheme` record.
+- The corner is derived live after stocking, sold-out, replenishment, move, rotation, recovery, and load. It creates no parallel inventory, save record, purchase modifier, revenue multiplier, or trend multiplier.
+- The existing successful-sale path remains the only village signal: corner item purchase → one `SaleRecord` → existing category direction. Display alone never changes the village.
+- Defined the narrow placement read API, runtime controller ownership, placement-ledger summary, one label per connected corner, implementation file boundary, and eleven D3D11/save/regression assertions.
+- Static checks passed for required contracts, real referenced paths, prohibited boundaries, and whitespace. This documentation-only task did not run Unity and changed no code, scene, prefab, asset, package, or save schema.
+
+Next: register and execute the Task 024 follow-up as one implementation task, reporting the exact code files before edits.
+
+## 2026-07-17 Continuation — Task 086 Theme Corner Implementation Partial
+
+- Registered Task 086 and implemented a read-only derived merchandising-corner controller over existing `ShopSlot`, placement IDs, and authoritative grid footprints.
+- Added four-neighbour same-category component detection, placement-ledger summary, one world label per component, runtime binding, and a dedicated validator. No parallel inventory, bonus, sale, village score, save field, scene, prefab, or package change was introduced.
+- Unity 6000.3.2f1 Runtime and Editor assemblies compiled successfully. The first D3D11 Play Mode run passed controller readiness, grid ownership, all six authored shelves, both item categories, and the empty-state zero-corner/zero-label assertion.
+- The first 1920×1080 capture crashed inside Unity native rendering at `Camera.Render()` before a PNG was written. The run did not reach positive-corner, sold-out, move/recover, sales/village signal, isolated save/load, regression, or visual-review assertions.
+- Recorded the crash in `BUG_LOG.md` and stopped without a same-source retry, as required. Task 086 remains PARTIAL and active.
+
+Next: replace the validator's direct `Camera.Render()` with an already proven project capture path, then perform one D3D11 completion run and the three planned regressions.
+
+## 2026-07-17 Continuation — Task 086 Function Pass, Regression Capture Blocked
+
+- Replaced the ThemeCorner validator's explicit off-screen `Camera.Render()` with ordinary D3D11 GameView `ScreenCapture` and aligned the validation-only move helper with the real placement commit state.
+- The dedicated run passed four-neighbour Raw/Processed grouping, negative adjacency cases, sold-out/replenishment, recover/move, exactly three existing sales, Processed village direction, and v10 load-derived Raw2 restoration.
+- Runtime and Editor builds completed with zero errors. The successful feature log is `Logs/Codex_Task086_ThemeCorner_CaptureFinal.log`.
+- Direct image review found intermittent black TMP/Canvas frames in different captures rather than a state-bound gameplay mesh. Clean same-framing evidence exists for none (`20260717_130433`), Raw2 (`20260717_130201`), and Processed4 (`20260717_130433`), but the registration modal still obscures the world label.
+- The existing ShopCustomization regression then crashed Unity in its own direct `Camera.Render()` call with the same native `GfxDevice::DrawSharedGeometryJobs` stack. This is the second occurrence, so no third Unity run or remaining regressions were attempted.
+- Task 086 remains PARTIAL: its feature assertions pass, while full regression coverage and default-player-view label readability remain unverified. The user's Grid-Based Customization and Tripo3D finalization directives are preserved in the existing Codex architecture/audit documents and queued for the next safe asset-audit task.
+
+Next: obtain human direction for replacing all validator `Camera.Render()` capture paths; otherwise continue the Tripo3D audit without Unity execution, prioritizing player/NPC identity preservation and functional warehouse/workbench classification.
+
+## 2026-07-17 Continuation — Task 087 Tripo Asset Audit Reconciled
+
+- Counted 174 FBX, 150 OBJ, zero GLB, and zero Blend files; 24 FBX files remain outside the separately licensed Ultimate Nature Pack.
+- Read the Unity 6 binary main scene through a non-mutating ASCII index and confirmed live player/resident, B05–B08 workbench, and B09–B12 object names. GUID, Resources, prefab, and code references were cross-checked without editing the scene.
+- Classified B06 Kitchen, B07 Forge, and B08 Sewing as existing functional workbenches rather than decorative placeholders. Their authoritative player-facing contracts are 2×2/Tier 2, 3×2/Tier 3, and 2×2/Tier 3 with a full front clearance/interaction row and existing recipe/specialist links.
+- Kept Blender/model edits conditional because the importers and wrappers show no current mesh-damage evidence. Functional integration is complete; same-camera facing, collider, aisle, and success-feedback review remains pending.
+- Classified B11 Fountain and B12 TradePort as static world dressing in the current runtime. Their BuildingData/blueprints do not make them active placeables or interactables; only physical-route finalization is currently authorized.
+- Verified the bundled Quaternius Nature Pack license as CC0 1.0. Individual Tripo generation/commercial-use records and the runtime Froggy Chair license remain release gates.
+- Updated `TRIPO_ASSET_AUDIT.md` and `ASSET_AND_TOOL_PROVENANCE.md`. Static census, placement/recipe, binary-scene, and license marker checks passed. Unity was not launched because the two-occurrence direct-render crash boundary remains in force.
+- No code, scene, prefab, model, texture, package, save schema, commit, or push operation was performed. Task 087 is DONE; Task 086 remains PARTIAL.
+
+Next: approve a safe shared validator capture path, then finalize B06 through an actual game-camera before/after pass before moving to B07 and B08.
+
+## 2026-07-17 Continuation — Task 088 Resident Material Request Implemented / Project Partial
+
+- Registered one implementation task over the existing Task 044 design without adding a quest engine or save field.
+- `NpcDialogue` now derives one day request from the first unlocked assigned recipe whose workbench exactly matches the resident specialty. This yields Chef Wheat 3, Blacksmith Ore 2, and Carpenter Wood 2 while excluding the temporary Tailor→Bread mismatch.
+- The existing interaction prompt and dialogue UI expose unseen, insufficient, ready-to-deliver, and completed-today states. Insufficient dialogue preserves the existing daily dialogue-points path.
+- `Inventory.CountItems` provides a null-safe combined inventory/hotbar count. Delivery rechecks the exact count, removes it once, records the deterministic request ID in the existing day-prep activity list, and grants friendship only.
+- Added Economy-topic request tone lines to Chef, Blacksmith, and Carpenter data. No money, item reward, sale, demand, village signal, scene, prefab, package, or save-schema change was made.
+- Sequential Runtime and Editor builds completed with zero errors. Static contracts passed for recipes, assignments, workbench mismatch exclusion, daily APIs, save-list reuse, exact count, dialogue pools, and economy isolation.
+- Unity was not launched because a third run through the twice-crashed direct-render validation boundary is prohibited. Live insufficient/delivery/repeat/save-load/next-day/night-block and camera/UI evidence remain unverified, so Task 088 is PARTIAL.
+
+Next: after approving a safe shared validator capture path, run the Task 088 live route and its save/day/night checks before marking it DONE.
+
+## 2026-07-17 Continuation — Task 089 Fixed Wheat Plots F1/F2 Implemented / Project Partial
+
+- Repaired the actual data chain from `Item_15_Seed.cropPrefab` to `Crop_Corn` and from its harvest item to `Item_Wheat`, with a harvest count of three.
+- Added `FarmPlotInteraction : IInteractable` without changing `PlayerInteraction`. It ensures two fixed plots near `WorkSpot_Farmer` and exposes empty, growing, harvest-ready, inventory-full, and night-blocked states through the existing prompt/dialogue surfaces.
+- Added a once-per-day seed pouch using the existing day-prep activity path, making two seeds reachable in a fresh route.
+- Planting removes one seed only after `Farmland.Plant` and crop configuration succeed. Harvesting checks full inventory capacity before adding Wheat 3, so failure preserves the mature crop.
+- Reused the existing real Wheat resource for three visual stages and replaced the visible primitive crop stages at runtime. The plot surface is a purposeful tilled-ridge mesh rather than an undecorated cube.
+- Runtime and Editor builds completed with zero errors after including the new script in the locally generated project file. Twelve static contracts passed.
+- Unity live interaction and camera evidence remain unverified under the two-occurrence native-render crash boundary. Date-based growth and plot persistence remain the separately approved F3 scope, so Task 089 is PARTIAL.
+
+Next: once the shared safe capture path is approved, validate Task 088 and Task 089 live routes; then design/approve F3 plot persistence before replacing the temporary elapsed-seconds growth rule.
+
+## 2026-07-17 Continuation — Task 090 Day 2+ Operations Checklist Implemented / Project Partial
+
+- Replaced the static Day 2+ repeat-operations text in `PlayableDayScenarioController` with a read-only live checklist.
+- The panel refreshes every 0.5 seconds from existing fishing, mining, farming/prep, forage, and resident-request completion signals.
+- Prepared product variety is counted across inventory, hotbar, and stocked displays while excluding tools and tier-locked items. Display/price, actual shop-open gate, same-day purchases, and settlement are also read from their existing owners.
+- The top objective now follows `DayPreparation`, pre-open night, active shop operation, and `Settlement` without adding a quest engine, reward, or persistence field.
+- Runtime and Editor builds completed with zero errors. Ten static contracts passed, including economy/save isolation.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live Day 2 transitions and 1920×1080 readability remain unverified, so Task 090 is PARTIAL.
+
+Next: after approving a safe shared capture path, validate Tasks 088–090 in one Day 2 daytime-to-settlement pass; keep F3 persistence separate until explicitly approved.
+
+## 2026-07-17 Continuation — Task 091 Craft Output Capacity Guard Implemented / Project Partial
+
+- Audited all eight current `RecipeData` assets and the shared `CraftingService` → `Inventory.AddInstance` path.
+- Fixed the common failure where ingredients were removed before a full inventory rejected the crafted result.
+- The service now creates the exact result metadata first, simulates ingredient consumption in the same hotbar-then-inventory order, and accepts only an exact `CanStackWith` destination or a slot that is/will become empty.
+- A blocked result returns before ingredient removal. Successful crafting preserves the existing ingredient-quality calculation, removal, metadata result, and workbench feedback.
+- Runtime and Editor builds completed with zero errors. All eight recipes and eleven static transaction/isolation contracts passed.
+- Unity was not launched under the two-occurrence native-render crash boundary. Full-bag, matching-stack, and ingredient-freed-slot live branches remain unverified, so Task 091 is PARTIAL.
+
+Next: include Task 091's three inventory branches in the same approved safe Day 2 validation pass, then continue with the existing-system furniture secondary-loop design rather than adding a parallel crafting system.
+
+## 2026-07-17 Continuation — Task 092 Raw Next-Day Village Change Implemented / Project Partial
+
+- Reused the existing successful-sale observer and v10 pending/active category strings to make `Raw` the second implemented next-day village visual category.
+- `SalesLogManager.GetRecent` is newest-first; when several tracked sales arrive between refreshes, the newest real Raw/Processed sale becomes the single representative next-day change.
+- The current sale day remains unchanged. A later `DayPreparation` activates only `PA_VillageCulture_Raw` and hides the Processed root; restore follows the same category without adding a save field.
+- The Raw supply point creates no new primitive cube. It instantiates the existing Quaternius CC0 WoodLog/Rock resources and the Project-P.A.-owned B10 sign mesh, adds a Korean `원자재 수거처` label, and strips copied colliders/functional behaviours.
+- Runtime and Editor sequential builds completed with zero errors. Fourteen static contracts passed for resource provenance, latest-sale selection, one hint per newly pending change, phase timing, exclusive roots, collision isolation, readable copy, and existing save-field reuse.
+- One initial parallel build failed only because both builds locked the same output DLL; the competing invocation was discarded and the sequential commands passed.
+- Unity was not launched under the two-occurrence native-render crash boundary. GameCamera before/after, sign facing/scale, overlap, and NPC/player route readability remain unverified, so Task 092 is PARTIAL.
+- No shop/economy/NPC/save-schema, scene, prefab source, Tripo source, package, commit, or push change was made.
+
+Next: after approving a safe common capture path, include Task 092's Raw sale-day/next-day/save-restore camera check in the same bounded Day 2 validation pass.
+
+## 2026-07-17 Continuation — Task 093 Named Fishing/Furniture Trends Implemented / Project Partial
+
+- Extended the existing read-only `VillageChangeSignalController`; no parallel trend service or reward system was added.
+- Only current-day successful sales matching `(Raw, Fish)`, `(Processed, 생선구이)`, or `(Luxury, 목제 가구)` contribute to named trends. Camping remains inactive and similar names fail closed.
+- Implemented `transactions * 1000 + min(revenue, 999)` and deterministic transaction, revenue, recency, then trend-id selection. One 18G Fish transaction scores 1018; two score 2036.
+- Preserved the legacy category summary and facility preview. The settlement-facing summary now adds a second `생활 트렌드` line for fishing life or furniture culture.
+- Runtime and Editor builds completed with zero errors. Eighteen static contracts passed. A dirty-worktree baseline check that mistook pre-existing save diffs for Task 093 edits was logged and replaced with an ownership-limited check.
+- Unity was not launched under the two-occurrence native-render crash boundary. Settlement wrapping/readability and actual grilled-fish/furniture craft-to-sale round trips remain unverified, so Task 093 and the integrated Task 069 route are PARTIAL.
+
+Next: once the common safe capture path is approved, validate Fish sale → settlement named trend → next-day Raw visual in one bounded route, then validate the existing furniture recipe through workbench, stocking, purchase, and furniture-trend feedback.
+
+## 2026-07-17 Continuation — Task 094 Tripo Asset Policy and Unverified Prop Exposure / Project Partial
+
+- Integrated the user's long-term Tripo directive into the existing audit and placeable architecture instead of creating a parallel asset system.
+- The persistent policy now requires per-asset 1–8 classification, player/resident identity preservation, function-first storage/workbench decisions, Unity-before-Blender correction, source/derivative separation, placeable footprint/clearance/interaction, provenance, and same-camera review.
+- Removed both runtime `Prop_FroggyChair` spawns from the shop interior and B11 plaza because no license document exists in the repository. Preserved the source FBX, wrapper/Resource prefabs, B01 stall, shop systems, licensed CC0 vegetation, and plaza benches.
+- Runtime and Editor builds completed with zero errors. Static contracts confirmed zero runtime references, three preserved source/resource assets, and preserved B01/vegetation/bench paths.
+- Unity was not launched under the two-occurrence native-render crash boundary. Visual absence/empty-space composition is unverified, and the Resource asset still requires provenance or build-time quarantine, so Task 094 is PARTIAL.
+
+Next: return to the audited furniture secondary loop. Resolve its Tier 1 B05/Tier 2 furniture/10,000G–100,000G reachability mismatch through one explicit existing-system implementation without silently changing progression balance.
+
+## 2026-07-17 Continuation — Task 095 Furniture Secondary-Loop Guidance Implemented / Project Partial
+
+- Reused the existing processing advisor as the sole read-only owner of furniture-loop guidance; no quest, reward, crafting, or progression service was added.
+- The Day 4+ player checklist now exposes one current step across Tier 1 revenue, B05 installation, three Planks, Tier 2 revenue, furniture crafting, stocking, same-day sale, and settlement furniture-culture feedback.
+- Tier definitions, the 10,000G/100,000G thresholds, recipe/item assets, shop/economy/purchase systems, and save schema remain unchanged.
+- Runtime and Editor builds completed with zero errors. Static contracts passed for the exact furniture recipe, Tier/Workbench/ingredient/stock/same-day-sale reads, UI bridge, and absence of gameplay mutators.
+- Unity was not launched under the two-occurrence native-render crash boundary. Tier-state text, 1920×1080 clipping, and the complete craft-to-settlement route remain unverified, so Task 095 and Task 070 are PARTIAL.
+
+Next: continue implementation outside the blocked Unity-visual batch. Do not change the 100,000G progression gate without explicit balance approval.
+
+## 2026-07-17 Continuation — Task 096 New Game / Continue Entry Implemented / Project Partial
+
+- Reused the existing first-day Canvas instead of adding a parallel menu scene or manager.
+- Added a PROJECT P.A. title step with the core day-village/night-shop fantasy, New Game, and save-aware Continue.
+- `SaveManager.HasSaveAsync` only delegates to the existing repository `ExistsAsync(SaveKey)`. Continue uses the existing v10 `LoadGameAsync` and `RestoreSavedSession`; New Game proceeds to the existing name registration without deleting the old save.
+- A missing save disables Continue, and a failed load returns control to the title.
+- Runtime and Editor builds completed with zero errors. Fifteen state-transition contracts and an exact mutator-absence check passed.
+- Unity was not launched under the two-occurrence native-render crash boundary. The no-save/save-present screens and actual v10 continue round trip remain unverified, so Task 096 is PARTIAL.
+
+Next: continue from the current completion map with another approval-free player-facing gap while keeping the safe Unity capture batch pending.
+
+## 2026-07-17 Continuation — Task 097 Product Pause Menu Implemented / Project Partial
+
+- Expanded the existing pause overlay into Resume, Save Game, Load Save, and Save & Quit controls; no parallel save or menu manager was added.
+- Pause now captures the prior time scale and cursor lock/visibility, exposes the mouse for UI use, and restores the exact prior state on resume or destruction.
+- Load is gated by the existing save-presence API. Save/load continue through the authoritative `SaveManager`; busy input is locked and any save failure cancels quitting.
+- The startup title cannot be covered by Pause, while the existing smartphone and inventory ESC priority remains intact.
+- Runtime and Editor builds completed with zero errors. Eleven static contracts passed for menu controls, state restoration, save authority, exception recovery, and save-before-quit ordering.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live ESC/click behavior, 1920×1080 readability, and built-player quit/relaunch remain unverified, so Task 097 is PARTIAL.
+
+Next: continue with another approval-free product gap; keep Tasks 088–097 live verification grouped behind the safe Unity capture-path decision.
+
+## 2026-07-17 Continuation — Task 098 Week-One Completion Implemented / Project Partial
+
+- Added the missing product endpoint to the existing long-play owner: Day 7 Settlement now opens a one-time Week One completion summary.
+- The summary reads the existing player name, cumulative revenue, cash, tier, reputation, and Day 7 settlement record; it creates no reward, progression service, or save field.
+- Continue performs a Day 7 save, closes the modal, advances through the authoritative day-loop method, and saves Day 8. Quit is called only after a successful save.
+- The modal preserves time/cursor state and blocks the background shop sign from advancing the day before the player chooses.
+- Runtime and Editor builds completed with zero errors. Twelve static contracts passed for display gating, state reads, save ordering, background blocking, and recovery.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live Day 7 presentation, 1920×1080 readability, built-player quit, and Continue reload remain unverified, so Task 098 is PARTIAL.
+
+Next: finish another approval-free player-facing gap while the bounded live-validation batch remains pending.
+
+## 2026-07-17 Continuation — Task 099 Input-Accurate Startup Controls Implemented / Project Partial
+
+- Added a controls step to the existing first-day startup state machine immediately after the P.A. Phone introduction.
+- The copy mirrors the authoritative `PlayerInputHandler`: WASD/arrows, Space, I/P/C, hotbar 1–9/wheel, build click/R/M/X, F5/F9, and ESC.
+- Confirming the screen continues through the existing supplies, arrival, and Day 1 flow. No parallel help manager, input state, or save field was added.
+- Runtime and Editor builds completed with zero errors. Eleven functional contracts passed for step order, exact input mapping, read-only presentation, and preservation of the title/Continue and arrival paths.
+- Two invalid verification assumptions were logged and retired: a nested PowerShell `$input` collision and a dirty-worktree `HEAD` cleanliness check for the pre-existing M/X input diff.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live 1920×1080 readability and click progression remain unverified, so Task 099 is PARTIAL.
+
+Next: continue with one approval-free player-facing product gap; keep Task 099's live UI check in the bounded safe-capture validation batch.
+
+## 2026-07-18 Continuation — Task 100 Title Quit Path Implemented / Project Partial
+
+- Reused the existing `FirstDayPrototypeCanvas` and button factory to add a title-only Quit Game control.
+- The title lays out Quit, Continue, and New Game at three non-overlapping positions. Non-title onboarding and the Day 1 summary restore the existing button layout and hide Quit.
+- Continue loading disables Quit until failure recovery. A built player calls `Application.Quit`; the Editor keeps Play Mode under developer control and shows an explanatory message.
+- The title quit path performs no save mutation and preserves New Game, save-aware Continue, Task 099 controls, Pause Save & Quit, and the week-one endpoint.
+- Runtime and Editor builds completed with zero errors. Fourteen contracts passed for visibility, layout, loading lock, isolated Quit ownership, Editor fallback, and preservation boundaries.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live 1920×1080 layout and built-player process exit remain unverified, so Task 100 is PARTIAL.
+
+Next: continue with one approval-free player-facing completion gap while keeping Tasks 096–100 in the bounded live product-control validation batch.
+
+## 2026-07-18 Continuation — Task 101 Existing-Save New-Game Guard Implemented / Project Partial
+
+- Reused the title's authoritative save-presence result to guard New Game; no save manager, key, schema, or file was changed.
+- New Game remains direct when no save exists. When a save exists, it now explains that the current file is not deleted immediately but a later save will overwrite the single slot.
+- Confirm continues to the existing name-registration flow. Cancel returns to the title and refreshes save presence. New Game is disabled while the asynchronous check is pending.
+- The confirmation path performs no save, load, or delete mutation and preserves Continue, title Quit, and the input-accurate onboarding.
+- Runtime and Editor builds completed with zero errors. Fifteen contracts passed for state order, both save branches, async locking, back navigation, authority preservation, and mutation isolation.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live no-save/save-present clicks, 1920×1080 readability, and the first subsequent F5 overwrite behavior remain unverified, so Task 101 is PARTIAL.
+
+Next: continue with one approval-free player-facing completion gap; keep Tasks 096–101 in the bounded live product-control validation batch.
+
+## 2026-07-18 Continuation — Task 102 B09 Storage UI Implemented / Project Partial
+
+- Confirmed that the binary main scene contains no `StorageUI` component: B09 already had a 24-slot `StorageBox` and v10 `storedItems` persistence, but interaction ended after the OpenBox call with no usable screen.
+- The runtime binder now guarantees one `StorageUI` under the existing UI root. Its 6×4 panel shows actual item icons, counts, quality, and effective price.
+- Storing creates a one-item metadata-preserving split and decrements only the selected hotbar slot after `StorageBox.AddInstance` succeeds. Withdrawal keeps the existing `Inventory.AddInstance` authority and preserves storage contents when the bag is full.
+- Storage is mutually exclusive with inventory, phone, and crafting panels. ESC closes storage before Pause and restores the cursor state captured before opening.
+- Runtime and Editor builds completed with zero errors. Fourteen final contracts passed for B09 entry, singleton UI, slot layout, metadata, exact transfer, full-bag safety, panel/cursor priority, and v10 persistence isolation.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live B09 interaction, 1920×1080 presentation, transfer clicks, and v10 save/load remain unverified, so Task 102 is PARTIAL.
+
+Next: continue with another approval-free end-to-end gameplay gap while keeping Task 102 in the bounded safe-capture validation batch.
+
+## 2026-07-18 Continuation — Task 103 Crafting Product Flow Implemented / Project Partial
+
+- Confirmed that all eight existing recipes require a workbench, so the onboarding-advertised C panel filtered every recipe out and opened empty.
+- C now opens a read-only recipe book containing all eight recipes and their required stations; remote crafting is disabled. Workbench interaction still filters by station and delegates the only transaction to `CraftingService.TryCraft`.
+- Recipe cards use existing item art and show output quantity, every ingredient's owned/required count, tier/friendship lock state, and refreshed success/failure feedback.
+- Added a full-screen input blocker, mutual exclusion with storage/inventory/phone, captured cursor restoration, and crafting-first ESC handling. Duplicate components no longer destroy the shared runtime UI host.
+- Runtime and Editor builds completed with zero errors. Sixteen contracts passed for recipes, station context, remote-craft blocking, presentation, feedback, input blocking, cursor/ESC behavior, and authority preservation; diff check passed.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live C/Space interaction, B05–B08 click results, ESC transitions, and 1920×1080 presentation remain unverified, so Task 103 is PARTIAL.
+
+Next: continue with one approval-free end-to-end gameplay gap while Tasks 096–103 remain in the bounded safe-capture validation batch.
+
+## 2026-07-18 Continuation — Task 104 Tripo Policy And B11 Fountain Physics Implemented / Project Partial
+
+- Reconciled the new Grid-customization and Tripo-finalization directives with the already implemented P1–P5 placement system and the existing full asset audit instead of creating a parallel system.
+- Added durable architecture decisions for per-asset 1–8 classification, player/resident identity preservation, functional-furniture placement/access/save contracts, non-destructive derivatives, and provenance gates.
+- Identified B11's remaining concrete defect: the circular fountain used a 6×6 root BoxCollider, so its square corners blocked space outside the visible stone silhouette.
+- The runtime visual sidecar now reuses each actual B11 Visual mesh as a non-convex static MeshCollider and disables only root BoxColliders after at least one valid mesh has been configured. Missing meshes leave the safe original collision in place.
+- The existing capsule-shaped carving NavMeshObstacle, model, materials, placement, source FBX, wrapper prefab, and binary main scene remain untouched.
+- Runtime and Editor builds completed with zero errors. Twelve contracts passed for ordering, idempotency, real-mesh ownership, safe fallback, root-only Box removal, NavMesh authority preservation, protected-file boundaries, ADR markers, and diff integrity.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live four-sided walking, bench access, NPC avoidance, and a same-camera After capture remain unverified, so Task 104 is PARTIAL.
+
+Next: continue the approval-free full-game completion path; keep Task 104's live movement/capture check in the bounded safe Unity validation batch.
+
+## 2026-07-18 Continuation — Task 105 Late-Night Customer Flow Implemented / Project Partial
+
+- Audited the existing resident schedules against the 18:00–23:00 shop window and confirmed that Rest starts at 19:00–20:00, removing all eligible customers before closing.
+- Added an idempotent Rest-only shop-visit override without changing the active schedule phase. Work, Sleep, Day 1 behavior, and already active residents remain protected.
+- Outdoor and interior customer sidecars now lease original position, shop reference, and schedule override ownership. Completion, failed start, timeout, and shop close restore every borrowed state.
+- Existing `NpcController` movement/purchase FSM, customer caps, `TryForceShop`/`TryBeginShoppingVisitAt`, purchase math, schedule assets, save schema, scenes, prefabs, and packages remain unchanged.
+- Runtime and Editor builds completed with zero errors. Eighteen contracts passed for Rest/phase restrictions, outdoor/interior leases, every restore path, and existing authority preservation; diff check passed.
+- Unity was not launched under the two-occurrence native-render crash boundary. Live 18:30/20:30/22:30 traffic, customer caps, and 23:00 recall remain unverified, so Task 105 is PARTIAL.
+
+Next: continue one approval-free end-to-end gameplay gap; batch Task 105's live clock checks with the eventual approved safe Unity validation route.
+
+## 2026-07-18 Continuation — Task 106 Processed Village Visual Real-Asset Replacement / Project Partial
+
+- Audited the first Processed next-day village response and confirmed that its workbench, two crates, board, and banner were still five runtime primitive cubes, directly contradicting the current art direction and asset-finalization policy.
+- Replaced the blockout with the existing B05 workbench definition's `Visual` child only. The functional wrapper is never instantiated; the already validated Project P.A. wood-to-plank preparation kit and B10-derived sign provide process and role readability.
+- Matched the validated B05 working-face correction with a 180-degree holder rotation and bounded the plaza footprint at 0.58 scale. The sign reads `가공 준비대`.
+- Every cloned Collider, Rigidbody, NavMeshObstacle, MonoBehaviour, and extra Light is disabled and removed. Existing B05 functionality, placement, unlocks, Raw visual exclusivity, next-day timing, and v10 category persistence remain unchanged.
+- Runtime and Editor builds completed with zero errors. Eighteen contracts passed for primitive removal, real resource resolution, wrapper isolation, visual-only stripping, Raw preservation, and persistence authority; diff check passed.
+- Unity was not launched under the two-occurrence native-render crash boundary. Existing B05 source evidence was inspected, but no new same-camera plaza capture exists, so Task 106 is PARTIAL.
+
+Next: continue one approval-free end-to-end implementation gap; include Task 106's Processed before/after composition in the eventual approved safe Unity batch.
+
+## 2026-07-27 Continuation — Task 107 Utility Repair Point Implemented / Project Partial
+
+- Confirmed an honest end-to-end content basis: `Item_12_ToolSet` is a sellable Utility item and `Recipe_ToolSet` uses the existing B07 Forge.
+- Extended the existing sale observer and generic v10 category-string persistence; no category, reward, unlock, or save field was added.
+- Utility sales now create a pending change that activates only on a later DayPreparation. Processed, Raw, and Utility visuals are mutually exclusive.
+- Instantiates only `Building_B07_BlacksmithForge.prefab/Visual` at 0.44 scale with the Project P.A. `공구 수리대` sign. The functional wrapper is never instantiated.
+- Collider, Rigidbody, NavMeshObstacle, MonoBehaviour, and Light components are disabled and removed, preserving the real B07 station, placement, unlocks, economy, purchase, NPC, scene, prefab, FBX, and package boundaries.
+- The first `--no-restore` build stopped because Unity had removed `Temp/obj` assets. Standard restore-inclusive Runtime and Editor builds then completed with zero errors; 23/23 static contracts passed.
+- Unity was not launched under the repeated direct-render native-crash boundary. Utility sale-day/next-day timing, save restore, same-camera composition, and player/NPC routes remain unverified, so Task 107 is PARTIAL.
+
+Next: continue one approval-free implementation gap; include Task 107 with the bounded safe Unity village-change validation batch.
+
+## 2026-07-27 Continuation — Task 108 Luxury Craft Display Implemented / Project Partial
+
+- Confirmed an honest content basis: `Item_11_Furniture` and `Item_13_Clothes` are both sellable Luxury items; their existing recipes use the Basic Workbench and B08 Sewing Table.
+- Extended the existing sale observer and generic v10 category-string persistence; no category, reward, unlock, or save field was added.
+- Luxury sales now create a pending change that activates only on a later DayPreparation. Processed, Raw, Utility, and Luxury visuals are mutually exclusive.
+- Instantiates only `Building_B08_SewingTable.prefab/Visual` at 0.48 scale with the Project P.A. `공예 전시대` sign. The functional wrapper is never instantiated.
+- Collider, Rigidbody, NavMeshObstacle, MonoBehaviour, and Light components are disabled and removed, preserving the real B08 station, placement, unlocks, economy, purchase, NPC, scene, prefab, FBX, and package boundaries.
+- Runtime and Editor builds completed with zero errors. The first static audit had two selector false negatives because B08 stores `Visual` as a prefab override and save/package files were already dirty. The corrected single rerun passed 27/27 contracts.
+- Unity was not launched under the repeated direct-render native-crash boundary. Luxury sale-day/next-day timing, v10 restore, same-camera composition, and player/NPC routes remain unverified, so Task 108 is PARTIAL.
+
+Next: continue one approval-free implementation gap; include Task 108 with the bounded safe Unity village-change validation batch.
+
+## 2026-07-27 Continuation — Task 109 Hiring Product Flow Implemented / Project Partial
+
+- Audited all eight smartphone candidates and confirmed every dedicated `spawnPrefab` was null, making the existing hiring screen a dead end.
+- Preserved future explicit prefab priority and added a role-exact fallback to the existing C-02–C-09 Producer/Specialist residents. A usable source must include `NpcController` and a real `SkinnedMeshRenderer`; runtime hired clones cannot become future templates.
+- New hiring and existing v10 restore share the same resolver. Candidate profile, specialty, schedule, dialogue, and unique friendship identity are injected without changing SaveManager or candidate assets.
+- Specialists receive only the existing Resources recipes matching their workbench type, so a hired Tailor no longer inherits the source resident's unrelated Bread assignment.
+- Candidate, tier, source, and balance validation happens before the existing `EconomyService.TrySpend`. The UI now builds on first open and shows bio, Korean role, cost, unavailable state, and success/failure feedback.
+- Runtime and Editor builds completed with zero errors. An initial protected-boundary selector misread a SaveManager explanatory comment as a write; the corrected single rerun passed 36/36 static contracts.
+- Unity was not launched under the repeated direct-render native-crash boundary. Actual hiring, role behavior, save/reload restore, and 1920×1080 UI readability remain unverified, so Task 109 is PARTIAL.
+
+Next: continue one approval-free end-to-end gap; include Task 109 in the eventual approved safe Unity product-flow validation batch.
+
+## 2026-07-27 Continuation — Task 110 Week-One Hiring Milestone Implemented / Project Partial
+
+- Audited the first-week plan after Task 109 and found that Day 5 still asked the player only to “identify future worker needs”; successful hiring was absent from the playable checklist and week-one result.
+- Day 5+ daytime objectives now direct an unhired player to P.A. Phone > Hiring. The existing operations checklist adds one workforce line without replacing activity, product, stocking, pricing, shop-open, sale, or settlement progress.
+- After a hire, the line immediately changes to the real candidate name, Korean role, and total hired count. LongPlay listens to the existing `OnHired` event only to refresh presentation.
+- Week-one completion reads the same existing hired-candidate collection, sorts it deterministically, and summarizes up to three names/roles plus any remaining count.
+- Hiring, cost, spawn, specialist behavior, economy, tier, NPC FSM, save authority, candidate/recipe assets, scene, prefabs, and packages remain unchanged.
+- Runtime and Editor builds completed with zero errors. Twenty-nine static contracts passed for Day 5 boundaries, no-hire/hired states, real roster identity, all eight role labels, event lifecycle, week-one summary, existing checklist preservation, and read-only authority.
+- Unity was not launched under the repeated direct-render native-crash boundary. The live Day 5 hire transition, Day 7 summary, and 1920×1080 readability remain unverified, so Task 110 is PARTIAL.
+
+Next: continue one approval-free end-to-end gap; include Tasks 109–110 in the eventual approved safe Unity hiring and first-week validation batch.
+
+## 2026-07-27 Continuation — Task 111 Atomic Producer Delivery Implemented / Project Partial
+
+- Audited the post-hiring producer-to-player transfer and found a concrete loss path: the producer charged through `EconomyService`, then deleted its stock when the player's inventory rejected the delivery. The existing `AddInstance` could also fill part of a matching stack before returning false.
+- Added an exact read-only `Inventory.CanAddInstance` preflight using the same metadata-stack and empty-slot rules as `AddInstance`. `AddInstance` now exits before all mutations when the full stack cannot fit.
+- Reordered actual producer delivery to validate player inventory and full-stack capacity before the existing spend call. Full-bag, missing-inventory, and insufficient-funds outcomes keep producer stock and make no inventory transfer.
+- Preserved `ItemInstance` quality/currentPrice on success and remove producer stock only after the transfer completes. An unexpected post-charge add failure refunds the full buy-in through the existing economy authority and retains producer stock.
+- Reused the existing per-NPC bubble for successful delivery, full-bag holding, required buy-in money, and exceptional refund feedback; no new UI or economy service was created.
+- Runtime and Editor builds completed with zero errors. Thirty static contracts passed for preflight immutability, failure atomicity, operation ordering, metadata transfer, refund, bubble feedback, FSM preservation, and the existing LongPlay delivery path.
+- Unity was not launched under the repeated direct-render native-crash boundary. The live full-bag hold → free-space → retry delivery and bubble readability remain unverified, so Task 111 is PARTIAL.
+- No EconomyService, LongPlay code, save schema/authority, NPC schedule/FSM/data, hiring, shop purchase/sale, scene, prefab, asset, package, commit, or push operation was performed.
+
+Next: continue one approval-free end-to-end gap; include Tasks 109–111 in the eventual approved safe Unity hiring, producer delivery, and first-week validation batch.
+
+## 2026-07-27 Continuation — Task 112 Week-Two Operations Campaign Implemented / Project Partial
+
+- Audited the Day 7 completion path and confirmed that save → Day 8 worked, but every Day 8+ daytime objective fell back to one generic operations sentence unrelated to the project's existing growth systems.
+- Added explicit Day 8–14 plans: reserve stock in B09, sell a Processed product, hire village support, sell two categories, reach Tier 1, inspect the next-day village response, and close the week with two different products.
+- The player-facing continuation checklist now reads actual stored units, same-day sale records, hired candidates, Tier, and active village-culture state every 0.5 seconds. It does not own or mutate any of those systems.
+- Kept automatic onboarding deliveries limited to Days 2–7. Week 2 requires direct gathering, producer buy-ins, processing, storage, display, pricing, and night sales through existing gameplay.
+- Preserved Day 1–7 plans, the Day 7 completion modal and save → Day 8 transition, and the activity/product/stock/price/open/sale/settlement checklist.
+- Runtime and Editor builds completed with zero errors. Forty static contracts and the diff check passed.
+- Unity was not launched under the repeated direct-render native-crash boundary. Live Day 7→8, representative Day 8–14 transitions, and 1920×1080 readability remain unverified, so Task 112 is PARTIAL.
+- No economy, inventory, sales, crafting, hiring, Tier, village-change, save-schema/authority, scene, prefab, asset, package, commit, or push operation was performed.
+
+Next: continue one approval-free end-to-end gap; include Task 112 in the eventual approved safe Unity multi-day validation batch.
+
+## 2026-07-27 Continuation — Task 113 Tripo Re-Audit And B12 Trade-Port Collision Hardening / Project Partial
+
+- Reconciled the latest Tripo temporary-asset and Grid placement directive with the existing per-asset classification, character-identity, Placeable, non-destructive-source, and provenance ADRs.
+- Recounted 174 FBX, 150 OBJ, zero GLB, and zero Blend files; the 24 non-Nature-Pack project FBX files remain fully represented in the audit. C-01–C-09 importer metadata contains direct `tripo_node_*` evidence, while individual commercial-use records remain a deployment gate.
+- Confirmed the historical B12 wrapper uses a 10×5m root Box/Obstacle while the measured Visual is about 3.63×1.96m. The saved-scene Box audit had passed earlier, but the source wrapper and box-shaped carving obstacle could still recreate the invisible coastal barrier.
+- Extended the existing runtime visual sidecar to calculate B12 Visual bounds from all eight transformed mesh corners and shrink only clearly oversized root `BoxCollider` and box-shaped `NavMeshObstacle` axes.
+- Missing meshes preserve existing physics and retry later; no axis can grow. No trade interaction, Placeable registration, fake approach point, or save state was added.
+- Runtime and Editor builds completed with zero errors. Twenty static contracts and the target diff check passed.
+- Unity was not launched under the repeated direct-render native-crash boundary. Live coastal traversal, visible-boundary stopping, NPC carving avoidance, and a same-camera capture remain unverified, so Task 113 is PARTIAL.
+- No source FBX, texture, wrapper prefab, main scene, BuildingData, blueprint, save schema, package, external tool/asset/service, commit, or push operation was performed.
+
+Next: continue one approval-free end-to-end implementation gap; include Task 113 with Task 104 and the visual-route checks in the eventual approved safe Unity batch.
+
+## 2026-07-27 Continuation — Task 114 Month-One Campaign And Day-30 Completion / Project Partial
+
+- Audited the current long-play route and confirmed that authored progression stopped at Day 14 even though the design roadmap promises facility, workforce, assortment, reputation, and village-economy growth through Day 30.
+- Added sixteen Day 15–30 plans that rotate existing storage, processing, hiring, category sales, Tier, and active village-change state rather than introducing another quest or crafting framework.
+- The visible continuation checklist reads actual storage contents, same-day sale records, hired count, Tier, and active culture. It performs no transaction, unlock, hire, craft, or persistence mutation.
+- Added an explicit Day 30 Settlement completion record showing cumulative revenue, money, Tier, reputation, hired roster, active village direction, and the final day's sales decision summary.
+- Continue performs Day 30 save → the existing next-day authority → Day 31 save; quit still requires a successful save. Day 7 supply cutoff and week-one save → Day 8 remain separate and intact.
+- The first parallel build caused a shared Runtime output lock and the first static script had a PowerShell parser error; both were logged and resolved without repeating the failed commands. Sequential Runtime/Editor builds completed with zero warnings and zero errors, and 56/56 static contracts plus target diff checks passed.
+- Unity was not launched under the repeated direct-render native-crash boundary. Representative Day 15–30 transitions, both Day 30 actions, Day 31 continuation, and 1920×1080 readability remain unverified, so Task 114 is PARTIAL.
+- No save schema/authority, economy, sales, crafting, hiring, Tier, village-change authority, scene, prefab, asset, package, commit, or push operation was performed.
+
+Next: continue one approval-free functional completion gap; include Task 114 in the eventual approved safe multi-day/save/UI validation batch.
+
+## 2026-07-27 Continuation — Task 115 Tier-1 Forge And Tool-Set Value Chain / Project Partial
+
+- Audited every Month-One goal against player-reachable data. `Building_B07_BlacksmithForge`, its blueprint, `Recipe_ToolSet`, and `Item_12_ToolSet` are all authored at Tier 1, while only the placement catalog delayed B07 to Tier 3.
+- Aligned the B07 catalog tag, minimum Tier, and duplicate-safe ledger reward with that existing Tier-1 authority. The separate B05 starter, B06 Tier 2, B08 Tier 3, and TierService's 10,000G/100,000G requirements remain unchanged.
+- Replaced the seed-bypassable Day 23 Utility check with active B07 + exact same-day Tool Set + a second product. Replaced the pre-Tier-2-impossible Day 24 Luxury check with active B07 + exact Tool Set + a Processed sale.
+- The checklist explains the actual route: recover two empty shelves, place the 3x2 forge, process Plank 1 and Ore 4 into Iron Bars 2 and Tool Set 1, then sell a mixed assortment. It grants, crafts, unlocks, or sells nothing.
+- Corrected the cumulative goal display from its Day-14 15,000G → Day-15 3,900G regression to a monotonic Day-15 16,000G → Day-30 31,000G curve with continued post-month growth. Tier balance data was not changed.
+- Sequential Runtime and Editor builds completed with zero errors. Only the existing Unity generator CS8785 and Editor CS0414 warnings remain. Executable source contracts passed 39/39 and the target diff check passed.
+- Unity was not launched under the repeated direct-render native-crash boundary. Actual Tier-1 reward, shelf recovery, B07 placement/access, crafting/sales, Day 23/24 UI transition, and 1920x1080 readability remain unverified, so Task 115 is PARTIAL.
+- No TierDefinition, recipe/item/building/prefab/scene, crafting/sales/economy/save authority, package, commit, or push operation was performed.
+
+Next: continue one approval-free functional completion gap; retain Task 115 with Task 114 in the approved safe multi-day/forge/save/UI validation batch.
+
+## 2026-07-27 Continuation — Task 116 Safe GameView Capture Foundation Pass 1 / Project Partial
+
+- Audited every actual direct `camera.Render()` call under `Assets/Editor` and found twelve. The ThemeCorner source contains one explanatory comment but no remaining direct invocation.
+- Extracted the already exercised ThemeCorner GameView flow into `PA_SafeGameViewCapture`: requested resolution, Canvas/TMP refresh, settle delay, ordinary `ScreenCapture.CaptureScreenshot`, fresh nontrivial PNG polling, and `finally` restoration of camera and screen state.
+- Migrated the known second native-crash site in `PA_ShopCustomizationValidator` and both current Tier/B07 captures in `PA_ShopProgressionUnlockValidator` to the shared asynchronous path.
+- The three target files now contain zero actual direct camera-render calls. Runtime build completed with zero warnings and zero errors; Editor completed with zero errors and only the existing CS8785/CS0414 warnings.
+- Twenty-eight source contracts and the target diff check passed. Ten audited direct-render sites remain in Character/Cottage/CustomerPanel/DemoView/FinalPresentation/GatheringShop/OutdoorPlacement/ShopEvolution/VillageCulture/Workbench Editor tooling.
+- Unity was not launched because the same native cause has already crashed twice. Pass 1 does not authorize a third attempt while those ten sites remain, so Task 116 is PARTIAL.
+- No runtime gameplay code, scene, prefab, asset, save/economy/NPC/placement authority, package, ProjectSettings, graphics API, commit, or push operation was performed.
+
+Next: migrate the ten remaining direct-render sites in bounded passes, prove the repository-wide actual-call count is zero, then request the already-required human judgment for one isolated D3D11 GameView capture.
+
+## 2026-07-27 Continuation — Task 117 Safe GameView Capture Foundation Pass 2 / Project Partial
+
+- Selected the three highest player-facing sites from the ten remaining direct-render tools: VillageCulture for next-day category visuals, CustomerPanelLayout for 1920x1080 UI, and FinalPresentation for the six-shot final review.
+- Replaced each validator's synchronous step loop with one guarded asynchronous task, so every ordinary GameView PNG is awaited before the validator mutates the next sale, day, price, NPC, audit, or settlement state.
+- Routed all ten captures through the existing `PA_SafeGameViewCapture`. The market marker, 46-degree FOV, all-layer culling, 1920x1080 request, optional warning policy for VillageCulture/CustomerPanel, and FinalPresentation's normal/rare price file list remain intact.
+- Removed the three local RenderTexture/ReadPixels/direct-camera-render implementations. The target call count is zero and the repository remainder is seven: Character, Cottage, DemoView, GatheringShop, OutdoorPlacement, ShopEvolution, and Workbench.
+- Runtime build completed with zero warnings and zero errors. Editor build completed with zero errors and only the existing CS8785/CS0414 warnings. The first source audit used four outdated helper variable selectors and ended at 34/38; after re-reading the helper and replacing those selectors rather than retrying them, the corrected contracts passed 38/38. Target diff checks passed.
+- Unity was not launched because the same native cause has already crashed twice. Pass 2 does not authorize a third attempt while seven direct-render sites remain, so Task 117 is PARTIAL.
+- No shared helper, runtime gameplay code, scene, prefab, asset, save/economy/NPC/placement authority, package, ProjectSettings, graphics API, commit, or push operation was performed.
+
+Next: migrate the seven remaining direct-render sites in bounded passes, prove the repository-wide actual-call count is zero, then obtain human judgment before one isolated D3D11 GameView capture.
+
+## 2026-07-27 Continuation — Task 118 Safe GameView Capture Foundation Pass 3 / Project Partial
+
+- Selected DemoView, GatheringShop, and OutdoorPlacement from the seven remaining direct-render tools because they cover the actual tracking-camera reference, the day-activity-to-night-sale review, and outdoor placement/collision evidence.
+- DemoView now awaits one 2560x1440 ordinary GameView PNG after the existing 11-second indoor or 4.5-second outdoor staging delay. It keeps the actual tracking camera instead of introducing a validator-only frame.
+- GatheringShop awaits five 1920x1080 shots in the preserved forage, gathered, night-market, customer-reaction, and next-day-settlement sequence. OutdoorPlacement awaits two 1280x720 shots with the same orthographic position, focus, size, and nontrivial-file checks.
+- Each flow temporarily disables the active `CameraController` during capture and restores it in `finally`; the shared helper remains the owner of camera and screen-state restoration.
+- The three targets contain no RenderTexture, ReadPixels, or actual direct camera-render calls. The repository remainder is four: Character, Cottage, ShopEvolution, and Workbench.
+- Runtime build completed with zero warnings and zero errors. Editor build completed with zero errors and only the existing CS8785/CS0414 warnings. Static contracts passed 35/35 and target diff checks passed.
+- Unity was not launched because the same native cause has already crashed twice. Pass 3 does not authorize a third attempt while four direct-render sites remain, so Task 118 is PARTIAL.
+- No shared helper, runtime gameplay code, scene, prefab, asset, save/economy/NPC/placement authority, package, ProjectSettings, graphics API, commit, or push operation was performed.
+
+Next: migrate the four remaining direct-render sites in bounded passes, prove the repository-wide actual-call count is zero, then obtain human judgment before one isolated D3D11 GameView capture.
+
+## 2026-07-27 Continuation — Task 119 Safe GameView Capture Foundation Pass 4 / Project Partial
+
+- Selected Character, Cottage, and Workbench from the four remaining direct-render tools because they cover the first three visual priorities: player/NPC grounding and locomotion, frequently seen cottage scale, and the functional preparation station connecting day activity to night sales.
+- Character now awaits its 1600x900 source lineup plus runtime idle and walking shots. The existing 350ms preparation, 600ms actual movement loop, 250ms completion delay, grounding/Avatar/collider/NavMesh/cadence checks, and filenames remain intact.
+- Cottage awaits its 1920x1080 scene overview, four isolated directions, final view, and runtime view. Its 18m orthographic framing, renderer isolation, entrance/label checks, and renderer restoration remain intact.
+- Workbench awaits both four-direction audit sets and the selected runtime baseline or final view. Its front-side placement, collider/carving, real Wood-to-Plank interaction, CraftingUI, and feedback checks remain intact.
+- Actual game-camera captures temporarily disable `CameraController` and restore it in `finally`. Temporary Workbench audit objects and Cottage renderer states also restore after awaited captures.
+- The three targets contain no RenderTexture, ReadPixels, or actual direct camera-render calls. The repository remainder is one: ShopEvolution.
+- Runtime build completed with zero warnings and zero errors. Editor build completed with zero errors and only the existing CS8785/CS0414 warnings. Static contracts passed 42/42 and target whitespace checks passed.
+- Unity was not launched because the same native cause has already crashed twice. Pass 4 does not authorize a third attempt while one direct-render site remains, so Task 119 is PARTIAL.
+- No shared helper, runtime gameplay code, scene, prefab, asset, save/economy/NPC/placement authority, package, ProjectSettings, graphics API, commit, or push operation was performed.
+
+Next: migrate the final ShopEvolution direct-render site, prove the repository-wide actual-call count is zero, then obtain human judgment before one isolated D3D11 GameView capture.
+
+## 2026-07-27 Continuation — Task 120 Safe GameView Capture Foundation Final Pass / Project Partial
+
+- Migrated the final direct-render site in `PA_ShopEvolutionVisualFinalizer` to the shared ordinary GameView screenshot helper.
+- The B02-B04 source audit now awaits twelve 1600x900 four-direction captures. Runtime evidence awaits the baseline or Tier 1-3 after files while preserving the four-second initial setup, 750ms tier settling, orthographic 6.6 framing, and filenames.
+- A single runtime `Task` guard advances only after each PNG is complete. The existing before/after `ShopCustomizationController.WriteSaveFields` JSON equality check still runs after the final tier.
+- Runtime GameCamera capture temporarily disables `CameraController`; its enabled state and `clearFlags` restore in `finally`, while the shared helper restores transform, projection, culling, viewport, target texture, and screen state.
+- The target contains no RenderTexture, ReadPixels, or actual direct camera-render call. Repository-wide actual direct `Camera.Render()` invocation count is zero; one explanatory crash comment remains.
+- Runtime build completed with zero warnings and zero errors. Editor build completed with zero errors and only the existing CS8785/CS0414 warnings. Static contracts passed 36/36.
+- Unity was not launched because the same native cause has already crashed twice. Human judgment is still required before a third attempt, so Task 120 is PARTIAL.
+- No shared helper, runtime gameplay code, scene, prefab, asset, save/economy/NPC/placement authority, package, ProjectSettings, graphics API, commit, or push operation was performed.
+
+Next: obtain human judgment, then run one isolated D3D11 GameView PNG capture and inspect freshness, file size, readability, and restored camera/screen state before any sequential validator run.
+
+## 2026-07-27 Continuation — Task 121 Day 31-45 Second-Month Opening Campaign / Project Partial
+
+- Selected the first post-month gap that did not require a new system or human balance approval: after the Day 30 completion record, Day 31 and later fell back to a generic long-term sentence.
+- Added fifteen authored Day 31-45 plans to `LongPlayProgressionController`. The preserved revenue curve now gives player-facing checkpoints from 32,500G on Day 31 to 53,500G on Day 45.
+- Added fifteen live milestone evaluators to `PlayableDayScenarioController`: storage reserves, processed sales, the existing hired roster, product/category breadth, the Tier 1 forge and exact ToolSet sales, active village culture, prepared catalog breadth, and cumulative revenue.
+- Day 45 requires both its existing revenue checkpoint and four distinct same-day product sales. Day 46 returns to the existing long-term fallback.
+- The implementation does not create quest/save state or mutate inventory, sales, hiring, placement, village culture, or tier progression. Day 1-30, the Day 30 completion UI, Tier 2 at 100,000G, B06 at Tier 2, and B08 at Tier 3 remain authoritative.
+- Sequential Runtime and Editor builds completed with zero errors. Runtime reported the existing CS8785 generator warning; Editor reported the existing CS8785/CS0414 warnings. Static campaign contracts passed 23/23.
+- Unity was not launched because the same native cause has already crashed twice. Day 30->31, representative Day 35/40/45 transitions, 1920x1080 readability, and the Day 46 fallback remain unverified, so Task 121 is PARTIAL.
+- No scene, prefab, asset, save schema, economy/purchase/crafting/hiring/tier/village authority, package, ProjectSettings, commit, or push operation was performed.
+
+Next: continue the authored long-play route beyond Day 45 toward the existing Tier 2 threshold without changing its balance, unless human judgment first authorizes the isolated D3D11 GameView safety check.
+
+## 2026-07-27 Continuation — Task 122 Day 46-76 Tier 2 Growth Campaign / Project Partial
+
+- Audited the authoritative Tier 2 route before implementation. `Tier2.asset` requires exactly 100,000G, no reputation, and no manual approval; `TierService` reevaluates automatically on cumulative-revenue changes.
+- Confirmed the existing monotonic campaign curve reaches 55,000G on Day 46 and exactly 100,000G on Day 76, so no balance change is needed to create a complete Tier 2 arc.
+- Added a generated thirty-day Day 46-75 operating rhythm: reserve logistics, processed sales, three-worker/four-product preparation, three-category demand, active forge plus ToolSet/Processed sales, active village direction plus four products, and a revenue checkpoint.
+- Reserve targets scale from 12 to 20 units and processed sales from two to four. All other milestones reuse existing state without creating quest, reward, or save authority.
+- Day 76 is a separate breakthrough plan and completes only when the actual `TierService.CurrentTier` is at least 2. This creates the functional entrance to the existing Tier 2 B06 kitchen route.
+- Sequential Runtime and Editor builds completed with zero errors. Runtime reported the existing CS8785 warning; Editor reported the existing CS8785/CS0414 warnings. Static Tier 2 campaign contracts passed 34/34.
+- Unity was not launched because the same native cause has already crashed twice. Representative weekly transitions, automatic Tier 2 advancement, 1920x1080 readability, and the Day 77 fallback remain unverified, so Task 122 is PARTIAL.
+- No scene, prefab, asset, save schema, economy/purchase/crafting/hiring/tier/village authority, package, ProjectSettings, commit, or push operation was performed.
+
+Next: connect Day 77 onward to the newly available B06 kitchen and its existing Bread, Baked Potato, and Grilled Fish value chains without adding new recipes or changing Tier balance.
+
+## 2026-07-27 Continuation — Task 123 Day 77-90 Tier 2 Kitchen Value Chain / Project Partial
+
+- Audited B06 as the existing Tier 2 placement-ledger unlock and confirmed that its prefab is a Kitchen workbench.
+- Confirmed the existing Wheat→BreadLoaf, Carrot→Baked Potato, and Fish→Grilled Fish recipes, output items, and sale-record paths without adding content.
+- Added fourteen authored Day 77-90 plans and live milestones covering B06 placement, each recipe line, two/three-product menus, full pre-opening preparation, a hired Chef, category balance, batch sales, processed village culture, revenue review, and the final ingredient-to-village loop.
+- Completion reads only active placement, inventory/hotbar/shelf contents, exact daily sales, the hired roster, village culture, and cumulative revenue. It creates no quest/save state, reward, recipe, item, tier change, or automatic player action.
+- Sequential Runtime and Editor builds completed with zero errors. Runtime reported the existing CS8785 warning; Editor reported the existing CS8785/CS0414 warnings. Target whitespace checks passed.
+- The source-contract audit stopped because its own `objective-hook` assertion expected three call sites although the objective and checklist correctly provide two. The failed selector was logged and was not retried under project policy.
+- Unity was not launched under the repeated native-crash boundary. Task 123 remains PARTIAL until the corrected static audit and later safe runtime validation.
+- No scene, prefab, asset, save schema, economy/purchase/crafting/hiring/tier/village authority, package, ProjectSettings, commit, or push operation was performed.
+
+Next: run one corrected Task 123 source-contract audit with an exact two-call expectation; if it passes, continue long-play implementation in a separate task.
+
+## 2026-07-27 Continuation — Task 124 Task 123 Kitchen Contract Recovery / Project Partial
+
+- Ran the recorded source-contract recovery once with the correct expectation of two `TryResolveTierTwoKitchenMilestone(day` call sites.
+- The two UI hooks, single evaluator definition, fourteen Day 77-90 plans, fourteen runtime branches, Day 76 boundary, B06 Kitchen prefab, all three Kitchen recipes, all three Processed output categories, and required resources passed.
+- The audit stopped at 44/47 because the expected B06 minimum-tier C# expression and two Korean output-name YAML expressions did not match the current source text.
+- No second query or adjusted-pattern retry was made in this task. Current evidence does not distinguish an actual data issue from a source-format mismatch.
+- No code, scene, prefab, asset, save, package, ProjectSettings, Unity run, commit, or push operation was performed.
+
+Next: inspect only the three authoritative C#/YAML serialization lines, classify data defect versus checker mismatch, and do not rerun the combined audit before that classification.
+
+## 2026-07-27 Continuation — Task 125 B06 Tier and Output-Name Authority Audit / Done
+
+- Inspected only the three authoritative lines identified by Task 124 and did not rerun the combined audit.
+- `ShopCustomizationController.ResolveMinimumTier` contains `case "Blueprint_B06_KitchenStation": return 2;`.
+- The Baked Potato item serializes its Korean name as `"\uAD6C\uC6B4 \uAC10\uC790"`, which decodes to `구운 감자`.
+- The Grilled Fish item serializes its Korean name as `"\uC0DD\uC120\uAD6C\uC774"`, which decodes to `생선구이`.
+- All three mismatches were checker-format assumptions, not data defects. Task 123 therefore has 47/47 static evidence from 44 automated contracts plus these three direct authoritative checks.
+- Task 124 and Task 125 are DONE. Task 123 remains project-PARTIAL only because its Unity runtime route has not been safely executed.
+- No code, scene, prefab, asset, save, package, ProjectSettings, Unity run, commit, or push operation was performed.
+
+Next: return to implementation and connect Day 91 onward instead of spending another task on the resolved checker.
+
+## 2026-07-27 — Task 126 Day 91~105 Tier 3 공동 공방 캠페인
+
+### 결과
+
+- 기존 Tier 3가 평판 3을 요구하지만 평판 증가 호출이 없어 정상 플레이로 도달 불가능한 연결 단절을 확인했다.
+- 전문 주민의 낮 재료 요청 완료를 기존 일일 활동 저장 목록에 하루 한 번 기록하고 평판 +1로 연결했다.
+- Day 91~105의 열다섯 목표를 기존 Tier 3, B08, 의류/가구 Luxury 제작·판매, 재단사, 마을 변화와 연결했다.
+- Day 105는 주민 도움→평판→Tier 3→공방→판매→Luxury 마을 변화의 전체 결과를 함께 요구한다.
+
+### 검증과 경계
+
+- Runtime 빌드 오류 0/기존 CS8785 경고 1개.
+- Editor 빌드 오류 0/기존 CS8785·CS0414 경고 2개.
+- 정적 계약 24/24, 대상 공백 검사 PASS.
+- Unity는 동일 네이티브 원인의 세 번째 실행 전 사람 판단 정책 때문에 실행하지 않았다.
+- 씬·프리팹·에셋·저장 스키마·Tier 수치·레시피·아이템·경제식·패키지·ProjectSettings는 변경하지 않았다.
+- 첨부 GRID/Tripo 지침은 이미 구축된 P1/P2/P4/P5와 Codex 문서 4종의 장기 권위로 유지하며 다음 단일 에셋 작업에서 재대조한다.
+
+## 2026-08-04 — Task 127 B05~B08 Specialist Workbench Approach
+
+### 결과
+
+- B05~B08의 저작된 전면 interaction 셀이 전문 주민에게 사용되지 않고 작업대 collider/NavMeshObstacle 중심이 목적지였음을 확인했다.
+- 기존 배치의 회전된 Workbench interaction 셀을 읽기 전용 좌표로 노출하고, 전문 주민이 완전 경로가 있는 빈 셀을 예약해 이동하도록 연결했다.
+- 작업대 이동·회수, 일정 중단, NPC 비활성화 때 예약/제작을 해제하고 도착 시 작업대 정면을 바라보며, 저장 상태 복원 뒤 현재 배치에 다시 접근한다.
+- 씬·프리팹·FBX/재질·레시피·인벤토리/경제·저장 스키마는 변경하지 않았다.
+
+### 검증과 경계
+
+- 이전 continuation의 잘못된 csproj/task 경로 2회, 대형 문서 패치와 표식 검사 오류는 실제 `| 127 |` 행을 직접 확인한 뒤 `BUG_LOG.md`에서 RESOLVED 처리했다.
+- Runtime 빌드 오류 0/기존 CS8785 경고 1개.
+- Editor 빌드 오류 0/기존 CS8785·CS0414 경고 2개.
+- Task 127 접근·예약 정적 계약 29/29와 대상 공백 검사 PASS.
+- Unity는 반복 네이티브 충돌의 사람 판단 게이트 때문에 실행하지 않는다.
+- 실제 B05~B08 전문 주민 이동·정면·겹침 방지·제작은 확인 못 했으므로 Task 127의 프로젝트 판정은 PARTIAL이다.
+
+## 2026-08-04 — Task 128 Tourist Customer Normal-Play Entry
+
+### 결과
+
+- 기존 `[관광객]`은 무일과표 NPC용 표시 폴백뿐이고 실제 작성 고객 8명은 모두 주민이라 두 번째 손님 계층이 정상 플레이에 없음을 확인했다.
+- 기존 `CustomerArrivalController` 안에 세션 한정 관광객 입장·쇼핑·퇴장 생명주기를 연결했다.
+- 관광객은 작성 주민의 검증된 SkinnedMesh/Avatar 시각만 복제하고 별도 런타임 이름을 사용한다. 주민 일과·직업·의뢰/친밀도·채용·저장에는 등록되지 않는다.
+- Day 2+ 실제 개점에만 영업당 최대 2명/동시 1명이 가게 주변 NavMesh 완전 경로에서 들어오며, 기존 `NpcController`와 `PurchaseEvaluator`를 그대로 거친다.
+- 구매/거절 말풍선을 읽을 시간 뒤 같은 진입점으로 걸어 나가 런타임 루트와 프로필을 함께 정리한다.
+
+### 검증과 경계
+
+- 교정된 GUID 감사로 씬/프리팹 직렬화 참조 0, SceneAutoBuilder 작성 주민 8명과 기존 관광객 0명 검증 계약을 확인해 이전 감사 오류를 `BUG_LOG.md`에서 RESOLVED 처리했다.
+- Runtime 빌드 오류 0/기존 CS8785 경고 1개.
+- Editor 빌드 오류 0/기존 CS8785·CS0414 경고 2개.
+- Task 128 정적 계약 46/46과 대상 공백 검사 PASS.
+- Unity는 반복 네이티브 충돌의 사람 판단 게이트 때문에 실행하지 않았다.
+- 실제 입장·`[관광객]` 표시·구매/거절·퇴장·동시 손님/1920×1080은 확인 못 했으므로 프로젝트 판정은 PARTIAL이다.
+
+## 2026-08-04 — Task 129 Headquarters Audit And Tier 4 Full-Campaign Finale
+
+### 결과
+
+- Day 106 이후 일반 목표를 조사하는 과정에서 정상 플레이의 유일한 평판 지급이 Tier 2의 3점에서 끝나고, 기존 본사 감사가 평판 5를 요구해 Tier 4가 도달 불가능함을 확인했다.
+- Day 106+ Tier 3에서는 전문 주민의 실제 낮 재료 요청을 완료할 때 기존 날짜별 활동 표식으로 감사 요구 평판까지만 하루 1점을 얻는다.
+- 상단 목표와 운영 체크리스트가 실제 감사 조건의 다음 미달 항목을 평판→고용→누적 매출→다음 정기 감사일 순서로 표시한다.
+- 모든 조건 충족 뒤 승급은 기존 `AuditService`만 수행한다. LongPlay는 Tier를 직접 변경하지 않는다.
+- Tier 4 통과 후 첫 Settlement에 전체 캠페인 기록이 열리고, 저장→다음 날 자유 운영→재저장 또는 저장 성공 후 종료를 선택할 수 있다.
+
+### 검증과 경계
+
+- Runtime 빌드 오류 0/기존 CS8785 경고 1개.
+- Editor 빌드 오류 0/기존 CS8785·CS0414 경고 2개.
+- 기능 계약 40개 자동 PASS. 더티 기준선을 오인한 범위 검사 1개는 구현 파일의 금지 mutator 0 직접 확인으로 정합화해 총 40개 자동+1개 직접 권위 PASS다.
+- 잘못된 Windows 와일드카드 감사와 더티 기준선 검사 오류는 `BUG_LOG.md`에서 RESOLVED 처리했다.
+- Unity는 반복 네이티브 충돌의 사람 판단 게이트 때문에 실행하지 않았다.
+- 실제 평판 4/5, 감사 성공/실패, Tier 4, 최종 모달, 저장/계속·종료와 화면 가독성은 확인 못 했으므로 프로젝트 판정은 PARTIAL이다.
+
+## 2026-08-04 — Task 130 Headquarters Audit Player Feedback
+
+### 결과
+
+- `AuditService`의 실제 결과가 콘솔과 Inspector 문자열에만 남고 감사 앱은 다음 날짜만 표시하는 피드백 단절을 확인했다.
+- 서비스의 기존 판정 뒤 실패·통과·최고 등급·승급 보류 결과를 현재 세션 상태로 발행하고, 앱이 열려 있으면 즉시 새로 고친다.
+- 앱은 실제 누적 매출·평판·고용의 현재/요구값, 완료/부족, 다음 감사일, 최근 결과와 가장 가까운 다음 행동을 표시한다.
+- 수동 승인 Tier의 진행 바는 더 이상 고정 0이 아니라 감사 세 조건의 실제 부분 진행을 평균한다.
+- 기존 스마트폰 높이 안에서 콘텐츠 총 높이를 유지하도록 Tier/매출/시설/감사 카드와 여백을 재배치했다.
+
+### 검증과 경계
+
+- Runtime 빌드 오류 0/기존 CS8785 경고 1개.
+- Editor 빌드 오류 0/기존 CS8785·CS0414 경고 2개.
+- 감사 기준·유일 승급 권위·모든 결과 분기·이벤트 구독/해제·UI 비변경 권위·고정 높이·메인 씬 비침범 계약 48/48 PASS.
+- 읽기 전용 참조 검색에 존재하지 않는 `Assets/Data`를 넣은 오류는 명시 존재 경로로 복구해 `BUG_LOG.md`에 RESOLVED로 기록했다.
+- Unity는 반복 네이티브 충돌의 사람 판단 게이트 때문에 실행하지 않았다.
+- 실제 실패/성공 결과, 열린 앱 즉시 갱신, Tier 4 문구, 1920×1080 가독성은 확인 못 했으므로 프로젝트 판정은 PARTIAL이다.
+
+## 2026-08-04 — Task 131 Tripo Long-Term Policy Recheck And B06 Kitchen Finalization
+
+### 결과
+
+- 첨부 GRID 기반 커스터마이징 요구가 별도 프로토타입이 아니라 기존 `GridService` 2m zone, 상점 실내/마을 야외 P1~P5, footprint/clearance/interaction, NPC 접근 예약, v10 placeable 저장에 이미 구현되어 있음을 확인했다.
+- `Assets` 모델 재고는 FBX 174/OBJ 150/GLB 0/Blend 0이며 non-Nature 고유 FBX 24개로 기존 전수 감사와 일치했다.
+- Tripo 대장은 1~8 개별 분류, 캐릭터 외형 정체성 보존, 창고/작업대 기능 우선, 원본 비파괴, 출처/라이선스 배포 게이트를 단일 장기 권위로 유지한다.
+- 다음 고노출 미완성인 B06은 기존 Visual renderer bounds를 루트 로컬에서 측정해 래퍼 물리보다 0.2m 이상 작은 X/Z 축만 0.16m 여유로 축소한다. box형 Carving도 같은 center/size를 사용하며 어떤 축도 키우지 않는다.
+- 로컬 `-Z` 물리 앞에 `PA_KitchenInteractionAnchor`를 만들고, 성공한 기존 제작 트랜잭션 뒤에만 B06 모델 자체가 0.72초/최대 3.5% pulse한다.
+- B05 기능 아트, B06 Tier 2/2×2/Kitchen 레시피, 전문 주민 접근, 저장, FBX·프리팹·씬·재질·BuildingData·설계도는 보존했다. 새 외부 에셋·도구·패키지는 없다.
+
+### 검증과 경계
+
+- Runtime 빌드 오류 0/기존 CS8785 경고 1개.
+- Editor 빌드 오류 0/기존 CS8785·CS0414 경고 2개.
+- B05 회귀, B06 기존 Visual 재사용, 축소 전용 물리/Carving, 전면 anchor, 성공 후 pulse, Tier 2/2×2, 자산 정책 계약 30/30 PASS.
+- 잘못 추측한 계획/loop-state 경로와 Windows wildcard 조회는 정확한 파일 검색으로 복구해 `BUG_LOG.md`에 RESOLVED로 기록했다.
+- Unity는 반복 네이티브 충돌의 사람 판단 게이트 때문에 실행하지 않았다.
+- 실제 B06 배치, 플레이어/Chef 전면 접근, 모델-물리 경계, Bread 제작 pulse, 동일 GameCamera Before/After는 확인 못 했으므로 프로젝트 판정은 PARTIAL이다.
+
+## 2026-08-04 — WORLD-000 Procedural Island Architecture
+
+### 범위와 보호
+
+- WORLD-000만 활성 ticket으로 삼고 조사·설계·문서화만 수행했다.
+- Task 131 loop-state와 136-path dirty worktree를 읽었다. `AudioManager.cs`/`SalesLogManager.cs`의 중단된 미검증 변경은 그대로 보존하고 수정·검증·롤백하지 않았다.
+- Git commit/push/reset/clean, Unity 실행, 코드/scene/asset/save/package/ProjectSettings 변경은 없었다.
+
+### 조사 결과와 결정
+
+- `GridService`/BuildManager/OutdoorPlacement는 2m 배치와 footprint/clearance/rotation/move/recover/v10 placeable을 제공하지만 flat fixed zone이며 고도·물·Chunk·role reachability가 없다.
+- v10 SaveManager와 repository는 유지하되 legacy fixed world를 자동 변환하지 않는다. 새 world는 사람 승인된 additive seed+generationVersion+sparse delta를 쓴다.
+- NPC/shop은 `shopLocation`, `homePoint`, `workSpot`, `dropOffPoint`, 이름/tag/Y+100 등 고정 참조를 role anchor adapter로 단계 이관한다.
+- 현행 지형은 Unity Terrain이 아니라 primitive/mesh 기반 fixed map이다. AI Navigation 2.0.12는 async surface update API가 있으나 chunk seam runtime 증거는 없다.
+- 최종 권장안은 2m cell, 16×16 Chunk, 1m 높이 0~6, 128×128 기본 논리 섬의 custom chunk mesh다. 완전 voxel과 Unity Terrain 권위는 배제했다.
+
+### 씬 전략
+
+- Prototype_FirstDay: Golden Regression Scene/Core Slice/제출 안전본. 신규 월드 실험 금지.
+- WorldSandbox: 승인 후 editor builder로 만들 최소 기술 testbed. WORLD-000에서는 생성하지 않음.
+- MainGame: Gate 1~5 이후 기존 기능 inventory와 사람 승인에 따라 별도 통합. 즉시 재작성 금지.
+
+### 결과
+
+- World North Star, architecture plan, system impact map, WORLD-001~012 backlog, ADR을 작성하고 기존 방향 문서에 최소 반영했다.
+- WORLD-001은 scene 분리·WorldSandbox 생성·prototype 수치 승인 전 시작하지 않는다.
+- 최종 loop-state는 `needs_human_review`다. 이는 WORLD-000 문서 미완성이 아니라 후속 구현의 scene/save/nav/MainGame 사람 Gate를 뜻한다.

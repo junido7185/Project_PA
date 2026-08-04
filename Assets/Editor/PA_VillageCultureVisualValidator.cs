@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -20,10 +21,9 @@ public static class PA_VillageCultureVisualValidator
     static bool _entered;
     static bool _ran;
     static bool _hadError;
-    static int _step;
     static double _startedAt;
-    static double _nextStepAt;
     static string _outputDir;
+    static Task _runtimeTask;
 
     static PA_VillageCultureVisualValidator()
     {
@@ -54,9 +54,8 @@ public static class PA_VillageCultureVisualValidator
         _entered = false;
         _ran = false;
         _hadError = false;
-        _step = 0;
+        _runtimeTask = null;
         _startedAt = EditorApplication.timeSinceStartup;
-        _nextStepAt = _startedAt;
         _outputDir = CreateOutputDirectory();
 
         SessionState.SetBool(ActiveKey, true);
@@ -97,7 +96,6 @@ public static class PA_VillageCultureVisualValidator
         {
             _entered = true;
             _startedAt = EditorApplication.timeSinceStartup;
-            _nextStepAt = _startedAt + 2.5;
             SessionState.SetBool(EnteredKey, true);
         }
 
@@ -123,12 +121,24 @@ public static class PA_VillageCultureVisualValidator
             return;
         }
 
-        if (!_ran && EditorApplication.isPlaying)
+        if (!_ran && EditorApplication.isPlaying && _runtimeTask == null && elapsed > 2.5)
         {
-            if (EditorApplication.timeSinceStartup < _nextStepAt)
-                return;
+            _runtimeTask = RunRuntimeChecksAsync();
+            return;
+        }
 
-            RunNextStep();
+        if (!_ran && _runtimeTask != null && _runtimeTask.IsCompleted)
+        {
+            if (_runtimeTask.IsFaulted)
+            {
+                _hadError = true;
+                SessionState.SetBool(HadErrorKey, true);
+                Debug.LogError($"PA VillageCultureVisual failed: {_runtimeTask.Exception?.GetBaseException()}");
+            }
+
+            _ran = true;
+            SessionState.SetBool(RanKey, true);
+            EditorApplication.ExitPlaymode();
             return;
         }
 
@@ -139,44 +149,21 @@ public static class PA_VillageCultureVisualValidator
         }
     }
 
-    static void RunNextStep()
+    static async Task RunRuntimeChecksAsync()
     {
-        try
-        {
-            switch (_step)
-            {
-                case 0:
-                    PrepareDefaultDayStart();
-                    Capture("vc001a_day1_default_no_change");
-                    break;
-                case 1:
-                    RecordProcessedSaleSameDay();
-                    Capture("vc001a_after_processed_sale_same_day");
-                    break;
-                case 2:
-                    EnterNextDayPreparation();
-                    Capture("vc001a_day2_preparation_visual_active");
-                    break;
-                case 3:
-                    ValidateSafetyAndLayout();
-                    _ran = true;
-                    SessionState.SetBool(RanKey, true);
-                    EditorApplication.ExitPlaymode();
-                    break;
-            }
+        PrepareDefaultDayStart();
+        await CaptureAsync("vc001a_day1_default_no_change");
+        await Task.Delay(1000);
 
-            _step++;
-            _nextStepAt = EditorApplication.timeSinceStartup + 1.0;
-        }
-        catch (Exception ex)
-        {
-            _hadError = true;
-            SessionState.SetBool(HadErrorKey, true);
-            Debug.LogError($"PA VillageCultureVisual failed: {ex.Message}\n{ex}");
-            _ran = true;
-            SessionState.SetBool(RanKey, true);
-            EditorApplication.ExitPlaymode();
-        }
+        RecordProcessedSaleSameDay();
+        await CaptureAsync("vc001a_after_processed_sale_same_day");
+        await Task.Delay(1000);
+
+        EnterNextDayPreparation();
+        await CaptureAsync("vc001a_day2_preparation_visual_active");
+        await Task.Delay(1000);
+
+        ValidateSafetyAndLayout();
     }
 
     static void PrepareDefaultDayStart()
@@ -331,7 +318,7 @@ public static class PA_VillageCultureVisualValidator
         }
     }
 
-    static void Capture(string name)
+    static async Task CaptureAsync(string name)
     {
         try
         {
@@ -339,83 +326,26 @@ public static class PA_VillageCultureVisualValidator
                 _outputDir = CreateOutputDirectory();
 
             string file = Path.Combine(_outputDir, $"{name}.png");
-            WriteCameraCapture(file);
+            var camera = Camera.main ?? Object.FindFirstObjectByType<Camera>();
+            if (camera == null)
+                throw new InvalidOperationException("Main camera not found for capture.");
+
+            var marker = GameObject.Find("PA_ScreenshotCameraMarker_MarketHub");
+            await PA_SafeGameViewCapture.CaptureAsync(file, camera, captureCamera =>
+            {
+                if (marker != null)
+                {
+                    captureCamera.transform.SetPositionAndRotation(marker.transform.position, marker.transform.rotation);
+                    captureCamera.fieldOfView = 46f;
+                }
+
+                captureCamera.cullingMask = -1;
+            }, 1920, 1080, 1000);
             Debug.Log($"PA VillageCultureVisual Capture: {file}");
         }
         catch (Exception ex)
         {
             Debug.LogWarning($"PA VillageCultureVisual: screenshot capture skipped: {ex.Message}");
-        }
-    }
-
-    static void WriteCameraCapture(string file)
-    {
-        var camera = Camera.main;
-        if (camera == null)
-            throw new InvalidOperationException("Main camera not found for capture.");
-
-        const int width = 1920;
-        const int height = 1080;
-
-        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        var modes = new RenderMode[canvases.Length];
-        var canvasCameras = new Camera[canvases.Length];
-        var planeDistances = new float[canvases.Length];
-
-        var oldTarget = camera.targetTexture;
-        int oldCullingMask = camera.cullingMask;
-        var oldActive = RenderTexture.active;
-
-        var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-        var tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-
-        try
-        {
-            for (int i = 0; i < canvases.Length; i++)
-            {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-
-                modes[i] = canvas.renderMode;
-                canvasCameras[i] = canvas.worldCamera;
-                planeDistances[i] = canvas.planeDistance;
-
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    canvas.renderMode = RenderMode.ScreenSpaceCamera;
-                    canvas.worldCamera = camera;
-                    canvas.planeDistance = Mathf.Max(camera.nearClipPlane + 0.5f, 1f);
-                }
-            }
-
-            camera.cullingMask = -1;
-            camera.targetTexture = rt;
-            RenderTexture.active = rt;
-            camera.Render();
-
-            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            tex.Apply();
-            Directory.CreateDirectory(Path.GetDirectoryName(file));
-            File.WriteAllBytes(file, tex.EncodeToPNG());
-        }
-        finally
-        {
-            camera.targetTexture = oldTarget;
-            camera.cullingMask = oldCullingMask;
-            RenderTexture.active = oldActive;
-
-            for (int i = 0; i < canvases.Length; i++)
-            {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-                canvas.renderMode = modes[i];
-                canvas.worldCamera = canvasCameras[i];
-                canvas.planeDistance = planeDistances[i];
-            }
-
-            Object.DestroyImmediate(tex);
-            rt.Release();
-            Object.DestroyImmediate(rt);
         }
     }
 

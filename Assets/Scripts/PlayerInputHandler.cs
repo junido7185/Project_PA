@@ -57,6 +57,12 @@ public class PlayerInputHandler : MonoBehaviour
     /// <summary>마우스 좌클릭 — UI 위 클릭은 내부에서 이미 필터링되어 발행되지 않는다.</summary>
     public event Action OnBuildPlace;
 
+    /// <summary>M — 가까운 야외 건물을 이동 배치 모드로 전환.</summary>
+    public event Action OnBuildMove;
+
+    /// <summary>X — 가까운 빈 야외 건물을 설계도로 안전 회수.</summary>
+    public event Action OnBuildRecover;
+
     /// <summary>마우스 휠 스크롤. 값: 양수 = 아래(Next), 음수 = 위(Previous).</summary>
     public event Action<float> OnHotbarScroll;
 
@@ -104,6 +110,8 @@ public class PlayerInputHandler : MonoBehaviour
         if (kb.pKey.wasPressedThisFrame)      OnPhoneToggle?.Invoke(); // 📱 스마트폰
         if (kb.cKey.wasPressedThisFrame)      OnCraftToggle?.Invoke();
         if (kb.rKey.wasPressedThisFrame)      OnBuildRotate?.Invoke();
+        if (kb.mKey.wasPressedThisFrame)      OnBuildMove?.Invoke();
+        if (kb.xKey.wasPressedThisFrame)      OnBuildRecover?.Invoke();
         if (kb.f5Key.wasPressedThisFrame)        OnSave?.Invoke();
         if (kb.f9Key.wasPressedThisFrame)        OnLoad?.Invoke();
         if (kb.escapeKey.wasPressedThisFrame)    OnPauseToggle?.Invoke();

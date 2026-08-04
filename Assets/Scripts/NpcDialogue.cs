@@ -32,27 +32,91 @@ public class NpcDialogue : MonoBehaviour, IInteractable
              "같은 프리팹을 여러 번 스폰할 때 각자의 친밀도를 원한다면 인스턴스마다 고유 ID를 지정한다.")]
     public string friendshipId = "";
 
+    [Header("주민 요청")]
+    [Tooltip("전문 주민의 당일 재료 요청을 완료했을 때 지급할 친밀도. 코인/아이템 보상은 지급하지 않습니다.")]
+    [Min(0)] public int requestFriendshipReward = 4;
+
     // 직전에 출력한 대사를 기억해 연속 호출 시 동일 라인을 회피하는 최소한의 반복 억제.
     private string _lastLine;
+    private string _seenRequestId;
+    private int _seenRequestDay = -1;
 
     // 런타임 NpcController 캐시 (결정론 RNG 시드 재사용)
     private NpcController _cachedController;
     private bool _controllerProbed;
 
+    public struct ResidentRequestState
+    {
+        public RecipeData Recipe { get; }
+        public Item Item { get; }
+        public int RequiredCount { get; }
+        public int OwnedCount { get; }
+        public string ActivityId { get; }
+        public bool CompletedToday { get; }
+        public bool CanDeliver => !CompletedToday && OwnedCount >= RequiredCount;
+
+        public ResidentRequestState(RecipeData recipe, Item item, int requiredCount,
+            int ownedCount, string activityId, bool completedToday)
+        {
+            Recipe = recipe;
+            Item = item;
+            RequiredCount = requiredCount;
+            OwnedCount = ownedCount;
+            ActivityId = activityId;
+            CompletedToday = completedToday;
+        }
+    }
+
     // -------- IInteractable --------
 
     public void Interact(GameObject interactor)
     {
-        SpeakTopic(DialogueTopic.Greeting);
+        if (IsResidentRequestWindow() && TryGetResidentRequest(out ResidentRequestState request))
+        {
+            if (request.CompletedToday)
+            {
+                ShowLine("오늘 필요한 재료는 이미 받았어요. 고마워요!", DialogueTopic.Economy);
+                return;
+            }
 
-        // 대화 성공 시 친밀도 가산 (ID 가 설정되어 있을 때만)
-        if (!string.IsNullOrEmpty(friendshipId) && FriendshipService.Instance != null)
-            FriendshipService.Instance.AddDialoguePoints(friendshipId);
+            if (request.CanDeliver)
+            {
+                TryDeliverResidentRequest(interactor);
+                return;
+            }
+
+            MarkRequestSeen(request.ActivityId);
+            string toneLine = ResolveTopicLine(DialogueTopic.Economy, warnIfMissing: false);
+            string requestLine = $"요청: {RequestItemName(request)} x{request.RequiredCount} · 보유 {request.OwnedCount}/{request.RequiredCount}\n낮에 재료를 준비한 뒤 다시 이야기하세요.";
+            string combinedLine = string.IsNullOrWhiteSpace(toneLine)
+                ? requestLine
+                : $"{toneLine}\n{requestLine}";
+            _lastLine = combinedLine;
+            ShowLine(combinedLine, DialogueTopic.Economy);
+            GrantDailyDialoguePoints();
+            return;
+        }
+
+        SpeakTopic(DialogueTopic.Greeting);
+        GrantDailyDialoguePoints();
     }
 
     public string GetInteractPrompt()
     {
         string name = ResolveProfile() is NpcProfile p && !string.IsNullOrEmpty(p.npcName) ? p.npcName : gameObject.name;
+
+        if (IsResidentRequestWindow() && TryGetResidentRequest(out ResidentRequestState request))
+        {
+            string itemName = RequestItemName(request);
+            if (request.CompletedToday)
+                return $"[{name}] 오늘 도움 완료";
+            if (request.CanDeliver)
+                return $"[{name}] {itemName} {request.OwnedCount}/{request.RequiredCount} · 건네기";
+            if (HasSeenRequest(request.ActivityId))
+                return $"[{name}] {itemName} {request.OwnedCount}/{request.RequiredCount}";
+            return $"[{name}] 요청 확인 · {itemName} {request.OwnedCount}/{request.RequiredCount}";
+        }
+
         return $"[{name}] {interactPrompt}";
     }
 
@@ -61,21 +125,7 @@ public class NpcDialogue : MonoBehaviour, IInteractable
     /// <summary>topic 에 해당하는 라인 하나를 꺼내 Debug.Log (추후 UI) 로 출력한다.</summary>
     public void SpeakTopic(DialogueTopic topic)
     {
-        if (dialogueData == null)
-        {
-            Debug.LogWarning($"💬 {gameObject.name}: DialogueData 가 비어 있습니다.");
-            return;
-        }
-
-        NpcProfile profile = ResolveProfile();
-        string line = DialogueService.GetLineFor(profile, dialogueData, topic);
-
-        // 직전과 동일하면 한 번 더 뽑아서 반복 회피 (최소한의 UX 보정)
-        if (!string.IsNullOrEmpty(line) && line == _lastLine)
-        {
-            string retry = DialogueService.GetLineFor(profile, dialogueData, topic);
-            if (!string.IsNullOrEmpty(retry)) line = retry;
-        }
+        string line = ResolveTopicLine(topic, warnIfMissing: true);
 
         if (string.IsNullOrEmpty(line))
         {
@@ -85,6 +135,90 @@ public class NpcDialogue : MonoBehaviour, IInteractable
 
         _lastLine = line;
         ShowLine(line, topic);
+    }
+
+    // 전문 주민의 실제 담당 레시피에서 오늘 요청할 첫 유효 재료를 파생한다.
+    public bool TryGetResidentRequest(out ResidentRequestState state)
+    {
+        state = default;
+
+        SpecialistNpcController specialist = GetComponent<SpecialistNpcController>();
+        if (specialist == null || specialist.assignedRecipes == null)
+            return false;
+
+        WorkbenchType expectedWorkbench = NpcSpecialtyMapping.GetWorkbenchType(specialist.specialty);
+        if (expectedWorkbench == WorkbenchType.None)
+            return false;
+
+        foreach (RecipeData recipe in specialist.assignedRecipes)
+        {
+            if (recipe == null || recipe.outputItem == null || recipe.ingredients == null)
+                continue;
+            if (recipe.requiredWorkbench != expectedWorkbench)
+                continue;
+            if (TierService.Instance != null && !TierService.Instance.IsUnlocked(recipe.requiredTier))
+                continue;
+            if (FriendshipService.Instance != null && !FriendshipService.Instance.IsRecipeUnlocked(recipe))
+                continue;
+
+            RecipeIngredient ingredient = null;
+            foreach (RecipeIngredient candidate in recipe.ingredients)
+            {
+                if (candidate != null && candidate.item != null && candidate.count > 0)
+                {
+                    ingredient = candidate;
+                    break;
+                }
+            }
+
+            if (ingredient == null)
+                continue;
+
+            int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+            string residentId = ResolveResidentId();
+            string activityId = $"resident-request:{day}:{residentId}:{recipe.name}:{ingredient.item.id}";
+            int ownedCount = Inventory.instance != null ? Inventory.instance.CountItems(ingredient.item) : 0;
+            bool completed = DayNightShopLoopController.Instance != null
+                && DayNightShopLoopController.Instance.IsDailyActivityCompleted(activityId);
+
+            state = new ResidentRequestState(recipe, ingredient.item, ingredient.count,
+                ownedCount, activityId, completed);
+            return true;
+        }
+
+        return false;
+    }
+
+    // 준비된 재료를 정확히 한 번 차감하고 기존 당일 활동 저장 경로에 완료를 기록한다.
+    public bool TryDeliverResidentRequest(GameObject interactor)
+    {
+        if (!IsResidentRequestWindow()
+            || !TryGetResidentRequest(out ResidentRequestState request)
+            || request.CompletedToday
+            || Inventory.instance == null
+            || !Inventory.instance.HasItems(request.Item, request.RequiredCount))
+            return false;
+
+        Inventory.instance.RemoveItems(request.Item, request.RequiredCount);
+        if (!DayNightShopLoopController.Instance.TryCompleteDailyActivity(request.ActivityId))
+        {
+            Debug.LogError($"[ResidentRequest] {request.ActivityId} 재료 차감 후 당일 완료 기록에 실패했습니다.");
+            return false;
+        }
+
+        MarkRequestSeen(request.ActivityId);
+        bool rewarded = !string.IsNullOrEmpty(friendshipId)
+            && FriendshipService.Instance != null
+            && requestFriendshipReward > 0;
+        if (rewarded)
+            FriendshipService.Instance.AddPoints(friendshipId, requestFriendshipReward, "주민 재료 요청");
+
+        string rewardText = rewarded ? $" · 친밀도 +{requestFriendshipReward}" : "";
+        string line = $"{RequestItemName(request)} x{request.RequiredCount} 전달 완료! 오늘 도움을 기억할게요.{rewardText}";
+        _lastLine = line;
+        ShowLine(line, DialogueTopic.Economy);
+        Debug.Log($"[ResidentRequest] 완료: {request.ActivityId}{rewardText}");
+        return true;
     }
 
     /// <summary>현재 참조 중인 NpcProfile 을 반환한다 (override → NpcController → null).</summary>
@@ -98,6 +232,69 @@ public class NpcDialogue : MonoBehaviour, IInteractable
             _controllerProbed = true;
         }
         return _cachedController != null ? _cachedController.profile : null;
+    }
+
+    private string ResolveTopicLine(DialogueTopic topic, bool warnIfMissing)
+    {
+        if (dialogueData == null)
+        {
+            if (warnIfMissing)
+                Debug.LogWarning($"💬 {gameObject.name}: DialogueData가 비어 있습니다.");
+            return null;
+        }
+
+        NpcProfile profile = ResolveProfile();
+        string line = DialogueService.GetLineFor(profile, dialogueData, topic);
+        if (!string.IsNullOrEmpty(line) && line == _lastLine)
+        {
+            string retry = DialogueService.GetLineFor(profile, dialogueData, topic);
+            if (!string.IsNullOrEmpty(retry)) line = retry;
+        }
+
+        return line;
+    }
+
+    private bool IsResidentRequestWindow()
+    {
+        return DayNightShopLoopController.Instance != null
+            && DayNightShopLoopController.Instance.CurrentPhase == PADayNightPhase.DayPreparation;
+    }
+
+    private string ResolveResidentId()
+    {
+        if (!string.IsNullOrWhiteSpace(friendshipId))
+            return friendshipId.Trim();
+
+        NpcProfile profile = ResolveProfile();
+        if (profile != null && !string.IsNullOrWhiteSpace(profile.name))
+            return profile.name.Trim();
+
+        return gameObject.name;
+    }
+
+    private void GrantDailyDialoguePoints()
+    {
+        if (!string.IsNullOrEmpty(friendshipId) && FriendshipService.Instance != null)
+            FriendshipService.Instance.AddDialoguePoints(friendshipId);
+    }
+
+    private void MarkRequestSeen(string activityId)
+    {
+        _seenRequestId = activityId;
+        _seenRequestDay = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+    }
+
+    private bool HasSeenRequest(string activityId)
+    {
+        int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        return _seenRequestDay == day && _seenRequestId == activityId;
+    }
+
+    private static string RequestItemName(ResidentRequestState request)
+    {
+        return request.Item != null && !string.IsNullOrWhiteSpace(request.Item.itemName)
+            ? request.Item.itemName
+            : "재료";
     }
 
     // -------- 출력 래퍼 (추후 UI 교체 지점) --------

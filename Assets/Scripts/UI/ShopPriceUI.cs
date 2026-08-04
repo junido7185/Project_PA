@@ -10,7 +10,7 @@ using TMPro;
 // ─ 찬 슬롯:    가격 조정 모드 (현재 진열 아이템의 displayPrice 변경 + 회수)
 //
 // 🐾 자기완결 싱글톤: Awake 에서 Canvas 를 직접 빌드한다.
-// NPC 반응 힌트: displayPrice / basePrice 비율로 즉각 피드백 제공.
+// NPC 반응 힌트: displayPrice / (basePrice+quality 추천 기준가) 비율로 즉각 피드백 제공.
 //
 // PlayerController 이동 차단: PlayerController.Update() 에
 //   if (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) return;
@@ -27,7 +27,9 @@ public class ShopPriceUI : MonoBehaviour
     RectTransform   _panel;
     TextMeshProUGUI _titleTxt;       // "가격 설정" / "진열하기"
     TextMeshProUGUI _itemNameTxt;    // 아이템 이름
+    TextMeshProUGUI _merchandisingTxt; // 가격 파생 희귀/일반 구분 + 실제 품질
     TextMeshProUGUI _priceTxt;       // 현재 설정 가격
+    TextMeshProUGUI _recommendationTxt; // 기존 구매 기준 수식의 읽기 전용 추천가
     TextMeshProUGUI _reactionTxt;    // NPC 반응 힌트
     Image           _reactionBar;    // 색상으로 반응 강도 표현
     TextMeshProUGUI _reactionBarTxt; // 반응 바 안 설명
@@ -38,6 +40,10 @@ public class ShopPriceUI : MonoBehaviour
     // ── 상태 ─────────────────────────────────────────────────────────────────────
     ShopSlot _slot;
     int      _pendingPrice;
+
+    // 현재 sellable 카탈로그는 8~52G와 150~185G 두 가격대로 나뉜다.
+    // 별도 rarity 데이터가 생기기 전까지 그 사이인 100G를 명시적 "가격 파생값" 경계로 쓴다.
+    const int DerivedRareBasePrice = 100;
 
     // ── 색상 팔레트 (레퍼런스.html 기준) ────────────────────────────────────────
     static readonly Color C_PanelBG     = new Color(0.13f, 0.13f, 0.13f, 0.96f);
@@ -84,18 +90,18 @@ public class ShopPriceUI : MonoBehaviour
         blockerGO.GetComponent<Image>().color = new Color(0, 0, 0, 0.45f);
         blockerGO.GetComponent<Button>().onClick.AddListener(Close);
 
-        // ── 메인 패널 (중앙 고정, 400×340) ────────────────────────────────────
+        // ── 메인 패널 (중앙 고정, 400×390) ────────────────────────────────────
         var panelGO = new GameObject("ShopPricePanel", typeof(RectTransform), typeof(Image));
         _panel      = (RectTransform)panelGO.transform;
         _panel.SetParent(canvasParent, false);
         _panel.anchorMin        = new Vector2(0.5f, 0.5f);
         _panel.anchorMax        = new Vector2(0.5f, 0.5f);
         _panel.pivot            = new Vector2(0.5f, 0.5f);
-        _panel.sizeDelta        = new Vector2(400, 360);
+        _panel.sizeDelta        = new Vector2(400, 390);
         _panel.anchoredPosition = Vector2.zero;
         panelGO.GetComponent<Image>().color = C_PanelBG;
 
-        float y = 155f; // 상단부터 내려가며 배치 (anchoredPosition y 기준)
+        float y = 170f; // 상단부터 내려가며 배치 (anchoredPosition y 기준)
 
         // ── 헤더 타이틀 ──────────────────────────────────────────────────────────
         _titleTxt = CreateLabel(panelGO.transform, "TitleTxt", "가격 설정",
@@ -108,11 +114,25 @@ public class ShopPriceUI : MonoBehaviour
             Color.white, TextAlignmentOptions.Center);
         y -= 36;
 
+        // Task 023 — 현재 rarity 원본 필드가 없으므로 기본가 파생 구분임을 화면에 명시한다.
+        _merchandisingTxt = CreateLabel(panelGO.transform, "MerchandisingTxt",
+            "일반품 · 가격 파생값 · 품질 ×1.00",
+            new Rect(-180, y, 360, 24), 13, FontStyles.Bold,
+            new Color(0.74f, 0.86f, 0.72f), TextAlignmentOptions.Center);
+        y -= 30;
+
         // ── 가격 표시 ─────────────────────────────────────────────────────────
         _priceTxt = CreateLabel(panelGO.transform, "PriceTxt", "0 G",
             new Rect(-180, y, 360, 44), 28, FontStyles.Bold,
             C_Gold, TextAlignmentOptions.Center);
         y -= 50;
+
+        // Task 025 — 자동 적용하지 않는 읽기 전용 가격 결정 기준.
+        _recommendationTxt = CreateLabel(panelGO.transform, "RecommendationTxt",
+            "추천 기준가 — · 기본가+품질",
+            new Rect(-180, y, 360, 22), 13, FontStyles.Normal,
+            new Color(0.82f, 0.82f, 0.82f), TextAlignmentOptions.Center);
+        y -= 44;
 
         // ── +/- 버튼 행 ───────────────────────────────────────────────────────
         BuildAdjustRow(panelGO.transform, y, new[] { -1000, -100, -10, +10, +100, +1000 });
@@ -304,6 +324,16 @@ public class ShopPriceUI : MonoBehaviour
         Close();
     }
 
+    // PurchaseEvaluator의 실제 기준가와 동일한 읽기 전용 계산이다.
+    // 가격을 자동 변경하지 않으며, 플레이어가 비교할 숫자만 제공한다.
+    static int ResolveRecommendedPrice(ItemInstance instance)
+    {
+        if (instance?.data == null) return 0;
+
+        float qualityBoost = 0.5f * Mathf.Max(0f, instance.quality - 1f);
+        return Mathf.Max(1, Mathf.RoundToInt(instance.data.basePrice * (1f + qualityBoost)));
+    }
+
     void RefreshUI()
     {
         if (_slot == null) return;
@@ -325,6 +355,26 @@ public class ShopPriceUI : MonoBehaviour
                 : itemName;
         }
 
+        if (_merchandisingTxt != null)
+        {
+            if (occupied)
+            {
+                ItemInstance instance = _slot.currentItem;
+                bool isDerivedRare = instance.data.basePrice >= DerivedRareBasePrice;
+                string rarityLabel = isDerivedRare ? "희귀품" : "일반품";
+                float quality = Mathf.Max(0f, instance.quality);
+                _merchandisingTxt.text = $"{rarityLabel} · 가격 파생값 · 품질 ×{quality:F2}";
+                _merchandisingTxt.color = isDerivedRare
+                    ? C_Gold
+                    : new Color(0.74f, 0.86f, 0.72f);
+            }
+            else
+            {
+                _merchandisingTxt.text = "희귀/일반 구분은 기본가에서 파생";
+                _merchandisingTxt.color = new Color(0.72f, 0.72f, 0.72f);
+            }
+        }
+
         // 회수 버튼 활성 (빈 슬롯이면 회수 불필요)
         if (_retrieveBtn != null)
             _retrieveBtn.gameObject.SetActive(occupied);
@@ -332,6 +382,14 @@ public class ShopPriceUI : MonoBehaviour
         // 가격 표시
         if (_priceTxt != null)
             _priceTxt.text = $"{_pendingPrice:N0} G";
+
+        if (_recommendationTxt != null)
+        {
+            int recommendedPrice = occupied ? ResolveRecommendedPrice(_slot.currentItem) : 0;
+            _recommendationTxt.text = recommendedPrice > 0
+                ? $"추천 기준가 {recommendedPrice:N0} G · 기본가+품질"
+                : "추천 기준가 — · 기본가+품질";
+        }
 
         // NPC 반응 계산
         ComputeReaction(out string reaction, out Color barColor, out float barFill);
@@ -352,7 +410,7 @@ public class ShopPriceUI : MonoBehaviour
         }
     }
 
-    // 가격 비율 기반 NPC 반응 힌트 (PurchaseEvaluator 의 ratio 로직 단순화 버전)
+    // 추천 기준가 비율 기반 NPC 반응 힌트 (PurchaseEvaluator 의 ratio 로직 단순화 버전)
     void ComputeReaction(out string label, out Color color, out float fill)
     {
         if (_slot == null || _slot.IsEmpty || _slot.currentItem?.data == null)
@@ -363,8 +421,8 @@ public class ShopPriceUI : MonoBehaviour
             return;
         }
 
-        float basePrice = _slot.currentItem.data.basePrice;
-        float ratio     = basePrice > 0f ? (float)_pendingPrice / basePrice : 1f;
+        int recommendedPrice = ResolveRecommendedPrice(_slot.currentItem);
+        float ratio = recommendedPrice > 0 ? (float)_pendingPrice / recommendedPrice : 1f;
 
         if      (ratio > 3.0f) { label = "너무 비쌈 - 구매 거의 없음"; color = C_ReactionBad;  fill = 0.05f; }
         else if (ratio > 2.2f) { label = "많이 비쌈";                  color = C_ReactionBad;  fill = 0.15f; }

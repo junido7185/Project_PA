@@ -85,20 +85,53 @@ public class Inventory : MonoBehaviour
     }
 
     // ⭐ [호환 함수 2] 아이템 가지고 있는지 확인
+    public int CountItems(Item item)
+    {
+        if (item == null) return 0;
+
+        int currentCount = 0;
+        if (slots != null)
+        {
+            foreach (var slot in slots)
+                if (slot != null && !slot.IsEmpty && slot.item == item)
+                    currentCount += slot.count;
+        }
+
+        if (hotbar != null && hotbar.slots != null)
+        {
+            foreach (var slot in hotbar.slots)
+                if (slot != null && !slot.IsEmpty && slot.item == item)
+                    currentCount += slot.count;
+        }
+
+        return currentCount;
+    }
+
     public bool HasItems(Item item, int count)
     {
-        int currentCount = 0;
-        
-        // 인벤토리 검사
-        foreach (var slot in slots)
-            if (!slot.IsEmpty && slot.item == item) currentCount += slot.count;
-        
-        // 핫바 검사
-        if (hotbar != null)
-            foreach (var slot in hotbar.slots)
-                if (!slot.IsEmpty && slot.item == item) currentCount += slot.count;
+        return count <= 0 || CountItems(item) >= count;
+    }
 
-        return currentCount >= count;
+    // AddItem이 사용하는 일반 인벤토리 슬롯에 전량을 넣을 수 있는지 미리 검사한다.
+    // 수확처럼 실패 시 원본 상태를 보존해야 하는 흐름에서 사용한다.
+    public bool CanAddItems(Item item, int count)
+    {
+        if (item == null || count <= 0) return false;
+        if (slots == null) return false;
+
+        int capacity = 0;
+        int maxStack = Mathf.Max(1, item.maxStack);
+        foreach (InventorySlot slot in slots)
+        {
+            if (slot == null || slot.IsEmpty)
+                capacity += maxStack;
+            else if (slot.item == item)
+                capacity += Mathf.Max(0, maxStack - slot.count);
+
+            if (capacity >= count) return true;
+        }
+
+        return false;
     }
 
     // ⭐ [호환 함수 3] 아이템 제거 (핫바 -> 인벤토리 순으로 차감)
@@ -182,6 +215,41 @@ public class Inventory : MonoBehaviour
         return false; // 가방 꽉 참
     }
 
+    // quality / currentPrice 등 동적 메타를 보존하는 인스턴스를 전량 받을 수 있는지 검사한다.
+    // AddInstance와 같은 규칙(메타 일치 스택 우선, 남은 수량은 빈 슬롯 1칸)을 사용하며
+    // 슬롯이나 newInst를 변경하지 않는다.
+    public bool CanAddInstance(ItemInstance newInst)
+    {
+        if (newInst == null || newInst.data == null || newInst.count <= 0) return false;
+        if (slots == null) return false;
+
+        int remaining = newInst.count;
+        int maxStack = Mathf.Max(1, newInst.data.maxStack);
+        bool hasEmptySlot = false;
+
+        foreach (InventorySlot slot in slots)
+        {
+            if (slot == null)
+                continue;
+
+            if (slot.IsEmpty)
+            {
+                hasEmptySlot = true;
+                continue;
+            }
+
+            if (slot.instance == null || !slot.instance.CanStackWith(newInst))
+                continue;
+
+            remaining -= Mathf.Max(0, maxStack - slot.count);
+            if (remaining <= 0)
+                return true;
+        }
+
+        // AddInstance는 메타 일치 스택을 채운 뒤 남은 전량을 첫 빈 슬롯에 넣는다.
+        return remaining <= 0 || hasEmptySlot;
+    }
+
     // quality / currentPrice 등 동적 메타를 보존하는 인스턴스 추가 경로.
     // 가공·구매·드롭 등 "메타가 의미 있는 출처" 에서 호출한다.
     //
@@ -195,13 +263,16 @@ public class Inventory : MonoBehaviour
     public bool AddInstance(ItemInstance newInst)
     {
         if (newInst == null || newInst.data == null || newInst.count <= 0) return false;
+        // 아래 스택 병합은 newInst.count와 기존 슬롯을 변경한다.
+        // 먼저 전량 수용을 확인해 false 반환 시 어떤 아이템도 부분 이동하지 않게 한다.
+        if (!CanAddInstance(newInst)) return false;
 
         int maxStack = Mathf.Max(1, newInst.data.maxStack);
 
         // 1. 메타 일치 스택과 합치기 (CanStackWith 가 quality/currentPrice 도 비교)
         foreach (var slot in slots)
         {
-            if (slot.IsEmpty || slot.instance == null) continue;
+            if (slot == null || slot.IsEmpty || slot.instance == null) continue;
             if (!slot.instance.CanStackWith(newInst)) continue;
             if (slot.count >= maxStack) continue;
 
@@ -219,7 +290,7 @@ public class Inventory : MonoBehaviour
         // 2. 빈 슬롯에 통째로 주입 (메타 보존)
         foreach (var slot in slots)
         {
-            if (slot.IsEmpty)
+            if (slot != null && slot.IsEmpty)
             {
                 slot.SetInstance(newInst);
                 RefreshAllUI();
@@ -227,7 +298,8 @@ public class Inventory : MonoBehaviour
             }
         }
 
-        return false; // 가방 꽉 참
+        Debug.LogError("Inventory.AddInstance: 수용량 선검사 후 추가에 실패했습니다. 슬롯 상태 변경 콜백을 점검하세요.");
+        return false;
     }
 
     // 차감될 재료 count 개의 가중평균 quality 를 반환한다.

@@ -22,7 +22,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 9;
+    private const int CurrentSaveVersion = 10;
 
     void Awake()
     {
@@ -111,6 +111,16 @@ public class SaveManager : MonoBehaviour
 
         // 4-a. ShopSlot 진열 상태 — v5
         data.shopSlots = SerializeShopSlots();
+
+        // 4-b. Zone-aware shop furniture placement — v10.
+        var customization = ShopCustomizationController.Instance
+            ?? FindFirstObjectByType<ShopCustomizationController>();
+        if (customization != null && customization.IsReady)
+            customization.WriteSaveFields(data);
+        var outdoorPlacement = OutdoorPlacementController.Instance
+            ?? FindFirstObjectByType<OutdoorPlacementController>();
+        if (outdoorPlacement != null && outdoorPlacement.IsReady)
+            outdoorPlacement.WriteSaveFields(data);
 
         // 5. 감사 시스템
         data.lastAuditDay = AuditService.Instance != null ? AuditService.Instance.LastAuditDay : 0;
@@ -277,11 +287,32 @@ public class SaveManager : MonoBehaviour
             Inventory.instance.RefreshAllUI();
         }
 
+        // Furniture transforms/active state must be restored before ShopSlot contents,
+        // so moved shelves keep both their functional target and their stocked item.
+        var customization = ShopCustomizationController.Instance
+            ?? FindFirstObjectByType<ShopCustomizationController>();
+        if (customization != null && customization.IsReady)
+            customization.RestoreSavedState(data.placeables, data.placementStarterGranted);
+
+        var outdoorPlacement = OutdoorPlacementController.Instance
+            ?? FindFirstObjectByType<OutdoorPlacementController>();
+        if (outdoorPlacement != null && outdoorPlacement.IsReady)
+            outdoorPlacement.RestoreSavedState(data.placeables);
+
         DeserializeShopSlots(data.shopSlots);
 
         RestoreHiredNpcs(data.hiredNpcs);
 
         Debug.Log($"📂 로드 완료! (건물 {count}개, 인벤토리/핫바 복구)");
+    }
+
+    // Product-entry UI reads only save presence before offering Continue.
+    // Loading and migration still go through LoadGameAsync as the single authority.
+    public System.Threading.Tasks.Task<bool> HasSaveAsync()
+    {
+        return _repository != null
+            ? _repository.ExistsAsync(SaveKey)
+            : System.Threading.Tasks.Task.FromResult(false);
     }
 
     // 기존 동기 API 호환 — 핫키(F5/F9) 외에 외부에서 호출하는 코드가 있을 수 있어 유지.
@@ -395,6 +426,16 @@ public class SaveManager : MonoBehaviour
             data.villageCultureHintShown = false;
             data.version = 9;
             Debug.Log("[SaveManager] Migration v8->v9: village culture change fields added.");
+        }
+
+        // v9 -> v10: zone/cell/rotation-based shop furniture placement state.
+        // Empty placeables intentionally means "adopt the authored interior layout".
+        if (data.version < 10)
+        {
+            data.placementStarterGranted = false;
+            if (data.placeables == null) data.placeables = new List<PlaceableSaveData>();
+            data.version = 10;
+            Debug.Log("[SaveManager] Migration v9->v10: shop customization placement fields added.");
         }
 
         return data;

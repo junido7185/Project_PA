@@ -9,6 +9,15 @@ using UnityEngine;
 [DefaultExecutionOrder(40)]
 public class PlayerFootIkStabilizer : MonoBehaviour
 {
+    [Header("Walk Cadence")]
+    public bool synchronizeWalkPlayback = true;
+    public float fullMoveSpeed = 5f;
+    public float referenceClipSpeed = 1.174f;
+    public float minimumWalkPlayback = 1.15f;
+    public float maximumWalkPlayback = 2.25f;
+    public float playbackResponsiveness = 10f;
+    public float CurrentPlaybackSpeed { get; private set; } = 1f;
+
     [Header("Foot IK")]
     [Range(0f, 1f)] public float maxWeight = 0.85f;
     [Range(0f, 1f)] public float idleWeight = 0.25f;
@@ -34,6 +43,35 @@ public class PlayerFootIkStabilizer : MonoBehaviour
 
         _hasSpeed = _animator.parameters.Any(p => p.type == AnimatorControllerParameterType.Float && p.name == "Speed");
         _hasIsSitting = _animator.parameters.Any(p => p.type == AnimatorControllerParameterType.Bool && p.name == "IsSitting");
+    }
+
+    void Update()
+    {
+        if (_animator == null || !synchronizeWalkPlayback)
+            return;
+
+        bool sitting = _hasIsSitting && _animator.GetBool("IsSitting");
+        float normalizedSpeed = _hasSpeed ? Mathf.Clamp01(_animator.GetFloat("Speed")) : 0f;
+        float target = 1f;
+        if (!sitting && normalizedSpeed > 0.05f)
+        {
+            float physicalSpeed = normalizedSpeed * Mathf.Max(0.01f, fullMoveSpeed);
+            float matchedPlayback = physicalSpeed / Mathf.Max(0.01f, referenceClipSpeed);
+            target = Mathf.Clamp(matchedPlayback, minimumWalkPlayback, maximumWalkPlayback);
+        }
+
+        CurrentPlaybackSpeed = Mathf.MoveTowards(
+            CurrentPlaybackSpeed,
+            target,
+            Time.deltaTime * Mathf.Max(0.01f, playbackResponsiveness));
+        _animator.speed = CurrentPlaybackSpeed;
+    }
+
+    void OnDisable()
+    {
+        CurrentPlaybackSpeed = 1f;
+        if (_animator != null)
+            _animator.speed = 1f;
     }
 
     void OnAnimatorIK(int layerIndex)

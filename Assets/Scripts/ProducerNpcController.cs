@@ -24,8 +24,8 @@ using UnityEngine.AI;
 //
 // 납품 메커니즘:
 //   NPC 가 dropOffPoint 에 도착하면 각 아이템을 플레이어에게 자동으로 "판매 시도"한다.
-//   EconomyService.TrySpend(단가) 성공 → Inventory.AddItem()
-//   인벤토리 풀 또는 잔액 부족 시 → 해당 아이템은 NPC 인벤토리에 유지하고 다음에 재시도.
+//   Inventory.CanAddInstance() 전량 수용 확인 → EconomyService.TrySpend() → Inventory.AddInstance()
+//   인벤토리 풀 또는 잔액 부족 시 → 돈과 NPC 재고를 그대로 유지하고 다음에 재시도.
 public class ProducerNpcController : MonoBehaviour
 {
     public enum State { Idle, MovingToWorkspot, Working, MovingToDropOff, OfferingItems }
@@ -84,6 +84,7 @@ public class ProducerNpcController : MonoBehaviour
     private float _idleTimer;
     private float _productionTimer;
     private bool _restoredFromSave;
+    private float _nextDeliveryBubbleAt;
 
     // 작업 중 남은 생산량 (사이클당)
     private int _pendingProductionAmount;
@@ -307,7 +308,26 @@ public class ProducerNpcController : MonoBehaviour
             if (inst == null || inst.data == null) { _npcInventory.RemoveAt(i); continue; }
 
             int unitPrice = productionData != null ? productionData.EffectiveDeliveryPrice : inst.data.basePrice;
-            int totalCost = unitPrice * inst.count;
+            int deliveryCount = inst.count;
+            int totalCost = unitPrice * deliveryCount;
+
+            // AddInstance는 전량 수용 가능한 경우에만 변경되지만, 결제 전에 미리 검사해
+            // 가방이 가득 찬 정상 보류 흐름에서는 지출/환불 이벤트 자체가 발생하지 않게 한다.
+            if (Inventory.instance == null)
+            {
+                _debugLastAction = $"플레이어 가방 연결 대기 — {inst.data.itemName} 납품 보류";
+                Debug.LogWarning($"🚚 {DisplayName}: 플레이어 인벤토리를 찾지 못해 {inst.data.itemName}×{inst.count} 납품 보류");
+                ShowDeliveryBubble("납품할 가방을 찾지 못했어요.\n상품은 제가 보관할게요.");
+                continue;
+            }
+
+            if (!Inventory.instance.CanAddInstance(inst))
+            {
+                _debugLastAction = $"가방 가득 참 — {inst.data.itemName} 납품 보류";
+                Debug.Log($"🚚 {DisplayName}: 가방 가득 참 — 결제 없이 {inst.data.itemName}×{inst.count} 보관");
+                ShowDeliveryBubble($"가방이 가득 찼어요.\n{inst.data.itemName} ×{inst.count}은 제가 보관할게요.");
+                continue;
+            }
 
             // 플레이어 잔액 차감 시도
             if (EconomyService.Instance == null ||
@@ -315,29 +335,40 @@ public class ProducerNpcController : MonoBehaviour
             {
                 _debugLastAction = $"잔액 부족 — {inst.data.itemName} 납품 보류";
                 Debug.Log($"🚚 {DisplayName}: 잔액 부족 — {inst.data.itemName}×{inst.count} 납품 보류 ({totalCost}G 필요)");
+                ShowDeliveryBubble($"매입금 {totalCost}G가 필요해요.\n{inst.data.itemName}은 제가 보관할게요.");
                 continue;
             }
 
-            // 플레이어 인벤토리에 추가 시도
-            if (Inventory.instance == null || !Inventory.instance.AddItem(inst.data, inst.count))
+            // 메타데이터를 보존해 플레이어 인벤토리로 소유권 이전.
+            // 수용량 선검사 뒤 외부 슬롯 변경으로 실패한 경우에도 결제를 복구하고 NPC 재고를 유지한다.
+            if (!Inventory.instance.AddInstance(inst))
             {
-                // 인벤토리 풀 — 지출 취소는 불가능하므로 재고는 제거 (돈은 이미 빠짐)
-                // 설계: 인벤토리 풀 상태에서는 "버려진" 것으로 처리. 실제 서비스에서는 UI 경고 추가 권장.
-                Debug.LogWarning($"⚠️ {DisplayName}: 플레이어 인벤토리 풀 — {inst.data.itemName}×{inst.count} 유실. UI 경고 필요.");
-                _npcInventory.RemoveAt(i);
-                anySold = true;
+                bool refunded = EconomyService.Instance.TryModifyMoney(
+                    totalCost,
+                    $"NPC납품 환불[{DisplayName}]: {inst.data.itemName} 인벤토리 변동");
+                _debugLastAction = refunded
+                    ? $"가방 변동 — {inst.data.itemName} 결제 환불·납품 보류"
+                    : $"거래 복구 오류 — {inst.data.itemName} 납품 보류";
+                Debug.LogError(refunded
+                    ? $"🚚 {DisplayName}: 수용량 확인 뒤 가방이 변동되어 {totalCost}G 환불, {inst.data.itemName}×{inst.count} 보관"
+                    : $"🚚 {DisplayName}: {inst.data.itemName} 납품 실패 후 {totalCost}G 환불에도 실패. NPC 재고는 보존됨");
+                ShowDeliveryBubble(refunded
+                    ? "가방 상태가 바뀌어 결제를 돌려드렸어요.\n상품은 제가 보관할게요."
+                    : "납품 거래를 복구하지 못했어요.\n상품은 보관 중이에요.");
                 continue;
             }
 
-            Debug.Log($"🚚 {DisplayName}: {inst.data.itemName}×{inst.count} 납품! 플레이어 -{totalCost}G");
+            _debugLastAction = $"납품 완료: {inst.data.itemName} ×{deliveryCount}, {totalCost}G";
+            Debug.Log($"🚚 {DisplayName}: {inst.data.itemName}×{deliveryCount} 납품! 플레이어 -{totalCost}G");
+            ShowDeliveryBubble($"{inst.data.itemName} ×{deliveryCount} 납품 완료!\n매입금 {totalCost}G");
             _npcInventory.RemoveAt(i);
             anySold = true;
         }
 
         if (!anySold)
         {
-            // 돈이 부족해서 전혀 못 팔았을 경우 — 인벤토리 들고 Idle 복귀, 다음 사이클에 재시도
-            Debug.Log($"🚚 {DisplayName}: 납품 불가 (잔액 부족). 다음에 재시도.");
+            // 가방/잔액/서비스 연결 문제로 전혀 못 팔았을 경우 — 재고를 들고 다음 사이클에 재시도
+            Debug.Log($"🚚 {DisplayName}: 납품 보류 (가방 공간·잔액·서비스 상태 확인). 다음에 재시도.");
             ChangeState(State.Idle);
             return;
         }
@@ -348,6 +379,20 @@ public class ProducerNpcController : MonoBehaviour
             Debug.Log($"🚚 {DisplayName}: 납품 전량 완료. Idle로 복귀.");
         }
         ChangeState(State.Idle);
+    }
+
+    void ShowDeliveryBubble(string message)
+    {
+        if (string.IsNullOrEmpty(message) || Time.unscaledTime < _nextDeliveryBubbleAt)
+            return;
+
+        NpcBubbleUI bubble = GetComponentInChildren<NpcBubbleUI>(true);
+        if (bubble == null)
+            return;
+
+        const float duration = 3.5f;
+        bubble.Show(message, duration);
+        _nextDeliveryBubbleAt = Time.unscaledTime + duration;
     }
 
     // -------- NpcScheduleController 공개 API --------

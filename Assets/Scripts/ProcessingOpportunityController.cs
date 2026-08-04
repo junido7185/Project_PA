@@ -25,6 +25,15 @@ public class ProcessingOpportunityController : MonoBehaviour
             : 0f;
     }
 
+    // The player-facing Day 4+ checklist reads this projection instead of
+    // duplicating recipe, inventory, placement, shop, and sale rules.
+    public class FurnitureLoopGuide
+    {
+        public string label;
+        public bool complete;
+        public string pendingLabel;
+    }
+
     public static ProcessingOpportunityController Instance { get; private set; }
 
     [Header("Processing Advisor")]
@@ -36,6 +45,7 @@ public class ProcessingOpportunityController : MonoBehaviour
     public TextMeshProUGUI advisorText;
 
     RecipeData[] _recipes;
+    RecipeData _furnitureRecipe;
     Canvas _canvas;
     GameObject _panel;
     float _nextRefreshAt;
@@ -53,6 +63,7 @@ public class ProcessingOpportunityController : MonoBehaviour
 
         Instance = this;
         _recipes = Resources.LoadAll<RecipeData>("Recipes");
+        _furnitureRecipe = Resources.Load<RecipeData>("Recipes/Recipe_Furniture");
 
         if (autoCreateUI && advisorText == null)
             BuildUI();
@@ -137,6 +148,174 @@ public class ProcessingOpportunityController : MonoBehaviour
             hasInputs = hasInputs,
             unlocked = unlocked
         };
+    }
+
+    // Read-only bridge for the existing furniture secondary loop:
+    // Tier 1 -> B05 workbench -> Plank preparation -> Tier 2 -> craft -> stock -> sale.
+    // It never grants items, advances tiers, crafts, stocks, or records a sale.
+    public bool TryGetFurnitureLoopGuide(int gameDay, out FurnitureLoopGuide guide)
+    {
+        guide = null;
+        if (_furnitureRecipe == null)
+            _furnitureRecipe = Resources.Load<RecipeData>("Recipes/Recipe_Furniture");
+        if (_furnitureRecipe == null || _furnitureRecipe.outputItem == null)
+            return false;
+
+        Item output = _furnitureRecipe.outputItem;
+        TryGetPrimaryIngredient(_furnitureRecipe, out Item input, out int requiredInputCount);
+        int ownedInputCount = Inventory.instance != null && input != null
+            ? Inventory.instance.CountItems(input)
+            : 0;
+        int ownedOutputCount = Inventory.instance != null
+            ? Inventory.instance.CountItems(output)
+            : 0;
+        int currentTier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
+        bool hasWorkbench = HasActiveWorkbench(_furnitureRecipe.requiredWorkbench);
+        bool stocked = IsItemStocked(output);
+        bool soldToday = WasItemSoldOnDay(output, gameDay);
+
+        bool hasVisibleProgress = currentTier > 0 || hasWorkbench || stocked || soldToday
+            || ownedOutputCount > 0 || ownedInputCount > 0;
+        if (gameDay < visibleFromDay && !hasVisibleProgress)
+            return false;
+
+        guide = new FurnitureLoopGuide();
+        if (soldToday)
+        {
+            guide.complete = true;
+            guide.label = "가구 보조 루프: 오늘 판매 완료 · 정산에서 가구 문화 확인";
+            return true;
+        }
+
+        int requiredTier = Mathf.Max(0, _furnitureRecipe.requiredTier);
+        if (currentTier < requiredTier)
+        {
+            int nextTier = Mathf.Min(requiredTier, currentTier + 1);
+            if (currentTier >= 1 && !hasWorkbench)
+            {
+                guide.label = "가구 준비: 상점 배치 장부에서 목재 가공 작업대 받기·설치";
+                guide.pendingLabel = "지금";
+                return true;
+            }
+
+            if (currentTier >= 1 && input != null && ownedInputCount < requiredInputCount)
+            {
+                guide.label = $"Tier {requiredTier} 전 준비: 작업대에서 {input.itemName} {ownedInputCount}/{requiredInputCount} 제작";
+                guide.pendingLabel = "진행";
+                return true;
+            }
+
+            string prefix = currentTier >= 1 ? "가구 제작 해금" : "가구 준비";
+            guide.label = BuildTierProgressLabel(nextTier, prefix);
+            return true;
+        }
+
+        if (stocked)
+        {
+            guide.label = $"{output.itemName} 진열 완료 · 가격 확인 후 밤 손님에게 판매";
+            guide.pendingLabel = "진행";
+            return true;
+        }
+
+        if (ownedOutputCount > 0)
+        {
+            guide.label = $"{output.itemName} 보유 {ownedOutputCount}개 · 진열대에 놓고 가격 확정";
+            guide.pendingLabel = "지금";
+            return true;
+        }
+
+        if (FriendshipService.Instance != null
+            && !FriendshipService.Instance.IsRecipeUnlocked(_furnitureRecipe))
+        {
+            guide.label = "가구 제작법 잠금 · 주민 교류로 제작법 해금";
+            return true;
+        }
+
+        if (!hasWorkbench)
+        {
+            guide.label = "가구 제작: 상점 배치 장부에서 목재 가공 작업대 설치";
+            guide.pendingLabel = "지금";
+            return true;
+        }
+
+        if (input != null && ownedInputCount < requiredInputCount)
+        {
+            guide.label = $"가구 재료: 작업대에서 {input.itemName} {ownedInputCount}/{requiredInputCount} 제작";
+            guide.pendingLabel = "진행";
+            return true;
+        }
+
+        guide.label = $"작업대에서 {_furnitureRecipe.recipeName} · {input?.itemName ?? "재료"} {ownedInputCount}/{requiredInputCount}";
+        guide.pendingLabel = "지금";
+        return true;
+    }
+
+    static bool TryGetPrimaryIngredient(RecipeData recipe, out Item item, out int count)
+    {
+        item = null;
+        count = 0;
+        if (recipe == null || recipe.ingredients == null) return false;
+
+        foreach (RecipeIngredient ingredient in recipe.ingredients)
+        {
+            if (ingredient == null || ingredient.item == null || ingredient.count <= 0) continue;
+            item = ingredient.item;
+            count = ingredient.count;
+            return true;
+        }
+        return false;
+    }
+
+    static bool HasActiveWorkbench(WorkbenchType requiredType)
+    {
+        if (requiredType == WorkbenchType.None) return true;
+        foreach (Workbench workbench in UnityEngine.Object.FindObjectsByType<Workbench>(FindObjectsSortMode.None))
+            if (workbench != null && workbench.isActiveAndEnabled && workbench.workbenchType == requiredType)
+                return true;
+        return false;
+    }
+
+    static bool IsItemStocked(Item item)
+    {
+        if (item == null) return false;
+        foreach (ShopSlot slot in UnityEngine.Object.FindObjectsByType<ShopSlot>(FindObjectsSortMode.None))
+            if (slot != null && !slot.IsEmpty && slot.currentItem != null && slot.currentItem.data == item)
+                return true;
+        return false;
+    }
+
+    static bool WasItemSoldOnDay(Item item, int gameDay)
+    {
+        if (item == null || SalesLogManager.Instance == null) return false;
+        foreach (SaleRecord sale in SalesLogManager.Instance.GetRecent(100))
+            if (sale != null && sale.gameDay == gameDay
+                && string.Equals(sale.itemName, item.itemName, StringComparison.Ordinal))
+                return true;
+        return false;
+    }
+
+    static string BuildTierProgressLabel(int targetTier, string prefix)
+    {
+        TierDefinition definition = TierService.Instance != null
+            ? TierService.Instance.GetDefinition(targetTier)
+            : null;
+        if (definition == null) return $"{prefix}: Tier {targetTier} 해금 조건 확인";
+
+        if (definition.requiredCumulativeRevenue > 0)
+        {
+            long revenue = EconomyService.Instance != null ? EconomyService.Instance.CumulativeRevenue : 0L;
+            return $"{prefix}: Tier {targetTier} · 매출 {revenue:N0}/{definition.requiredCumulativeRevenue:N0}G";
+        }
+
+        if (definition.requiredReputation > 0)
+        {
+            int reputation = TierService.Instance != null ? TierService.Instance.Reputation : 0;
+            return $"{prefix}: Tier {targetTier} · 평판 {reputation}/{definition.requiredReputation}";
+        }
+
+        return definition.requiresManualApproval
+            ? $"{prefix}: Tier {targetTier} · 본사 승인 필요"
+            : $"{prefix}: Tier {targetTier} 승급 대기";
     }
 
     public void RefreshNow()

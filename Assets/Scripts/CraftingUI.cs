@@ -2,19 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// 가공(Crafting) 패널 UI.
-//
-// 두 가지 진입 경로:
-// 1) Workbench 에서 OpenForWorkbench(Workbench) 호출 — 정식 진입.
-//    - 해당 워크샵 종류와 일치하는 레시피만 표시.
-//    - 티어 잠긴 레시피는 회색 처리(클릭은 가능하나 CraftingService 가 차단).
-// 2) C 키 글로벌 토글 (디버그) — _activeWorkbench=null 로 동작.
-//    - requiredWorkbench == None 인 레시피만 표시.
-//    - 워크샵 진입 흐름이 미완성인 동안의 임시 도구.
-//
-// 클릭 시:
-// - CraftingService.TryCraft(recipe, _activeWorkbench) 로 모든 검사·차감·결과 생성을 위임.
-// - UI 는 패널 표시/필터링만 담당하고, 비즈니스 로직은 보유하지 않는다.
+// 제작 패널. C 키는 모든 기존 레시피와 필요한 작업대를 보여 주는 읽기 전용 도감,
+// Workbench.Interact는 해당 작업대에서 실제 제작하는 제품 진입점이다.
+// 재료 차감·결과 생성의 단일 권위는 계속 CraftingService.TryCraft에 둔다.
 public class CraftingUI : MonoBehaviour
 {
     public static CraftingUI instance;
@@ -30,12 +20,30 @@ public class CraftingUI : MonoBehaviour
 
     private RecipeData[] allRecipes;
     private Workbench _activeWorkbench;
+    private TextMeshProUGUI _titleText;
+    private TextMeshProUGUI _modeText;
+    private TextMeshProUGUI _statusText;
+    private PlayerInputHandler _input;
+    private bool _cursorCaptured;
+    private CursorLockMode _cursorLockBeforeOpen = CursorLockMode.Locked;
+    private bool _cursorVisibleBeforeOpen;
+
+    public bool IsOpen => craftingPanel != null && craftingPanel.activeSelf;
+    public bool IsRecipeBookMode => IsOpen && _activeWorkbench == null;
+    public Workbench ActiveWorkbench => _activeWorkbench;
 
     void Awake()
     {
-        if (instance != null && instance != this) { Destroy(gameObject); return; }
+        if (instance != null && instance != this)
+        {
+            // PA_RuntimeUI의 다른 UI 컴포넌트까지 파괴하지 않는다.
+            Destroy(this);
+            return;
+        }
+
         instance = this;
         allRecipes = Resources.LoadAll<RecipeData>("Recipes");
+        System.Array.Sort(allRecipes, CompareRecipes);
 
         if (craftingPanel == null || slotParent == null || slotPrefab == null)
             BuildRuntimeUI();
@@ -45,14 +53,25 @@ public class CraftingUI : MonoBehaviour
     {
         if (craftingPanel != null) craftingPanel.SetActive(false);
 
-        if (PlayerInputHandler.Instance != null)
-            PlayerInputHandler.Instance.OnCraftToggle += ToggleUI;
+        _input = PlayerInputHandler.Instance;
+        if (_input == null) return;
+
+        _input.OnCraftToggle += ToggleUI;
+        _input.OnInventoryToggle += CloseForOtherPanel;
+        _input.OnPhoneToggle += CloseForOtherPanel;
     }
 
     void OnDestroy()
     {
-        if (PlayerInputHandler.Instance != null)
-            PlayerInputHandler.Instance.OnCraftToggle -= ToggleUI;
+        if (_input != null)
+        {
+            _input.OnCraftToggle -= ToggleUI;
+            _input.OnInventoryToggle -= CloseForOtherPanel;
+            _input.OnPhoneToggle -= CloseForOtherPanel;
+        }
+
+        if (_cursorCaptured) RestoreCursor();
+        if (instance == this) instance = null;
     }
 
     // -------- 외부 진입점 --------
@@ -60,31 +79,101 @@ public class CraftingUI : MonoBehaviour
     // Workbench.Interact 에서 호출. 해당 작업대 종류에 맞는 레시피만 표시한다.
     public void OpenForWorkbench(Workbench wb)
     {
+        if (wb == null)
+        {
+            OpenRecipeBook();
+            return;
+        }
+
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
+        EnsureOpenState();
         _activeWorkbench = wb;
         GenerateSlotsForContext();
+        SetStatus($"{wb.displayName}에서 만들 상품을 선택하세요.");
+    }
 
-        if (craftingPanel != null) craftingPanel.SetActive(true);
+    // C 키는 원격 제작이 아니라 전체 레시피와 요구 작업대를 확인하는 도감이다.
+    public void OpenRecipeBook()
+    {
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
+        EnsureOpenState();
+        _activeWorkbench = null;
+        GenerateSlotsForContext();
+        SetStatus("도감에서는 제작할 수 없습니다. 월드의 작업대 앞에서 [Space]를 누르세요.");
+    }
+
+    public void ToggleUI()
+    {
+        if (IsOpen) Close();
+        else OpenRecipeBook();
+    }
+
+    public void Close()
+    {
+        Close(restoreCursor: true);
+    }
+
+    void Close(bool restoreCursor)
+    {
+        if (craftingPanel != null) craftingPanel.SetActive(false);
+        _activeWorkbench = null;
+
+        if (restoreCursor) RestoreCursor();
+        else _cursorCaptured = false;
+    }
+
+    void CloseForOtherPanel()
+    {
+        if (IsOpen)
+            Close(restoreCursor: false);
+    }
+
+    void EnsureOpenState()
+    {
+        if (craftingPanel == null || slotParent == null || slotPrefab == null)
+            BuildRuntimeUI();
+
+        if (!IsOpen)
+        {
+            CloseConflictingPanels();
+            CaptureCursor();
+        }
+
+        craftingPanel.transform.SetAsLastSibling();
+        craftingPanel.SetActive(true);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
-    // C 키 글로벌 디버그 토글. _activeWorkbench=null → requiredWorkbench=None 만 표시.
-    public void ToggleUI()
+    void CloseConflictingPanels()
     {
-        if (craftingPanel == null) return;
+        if (StorageUI.instance != null && StorageUI.instance.IsOpen)
+            StorageUI.instance.CloseBox();
 
-        if (craftingPanel.activeSelf)
-        {
-            craftingPanel.SetActive(false);
-            _activeWorkbench = null;
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-        else
-        {
-            // 디버그 글로벌 모드로 열기
-            OpenForWorkbench(null);
-        }
+        if (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen)
+            SmartphoneUI.instance.Toggle();
+
+        if (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf)
+            InventoryUI.instance.Toggle();
+    }
+
+    void CaptureCursor()
+    {
+        _cursorLockBeforeOpen = Cursor.lockState;
+        _cursorVisibleBeforeOpen = Cursor.visible;
+        _cursorCaptured = true;
+    }
+
+    void RestoreCursor()
+    {
+        if (!_cursorCaptured) return;
+        Cursor.lockState = _cursorLockBeforeOpen;
+        Cursor.visible = _cursorVisibleBeforeOpen;
+        _cursorCaptured = false;
     }
 
     // -------- 슬롯 생성 (컨텍스트 필터 적용) --------
@@ -98,117 +187,266 @@ public class CraftingUI : MonoBehaviour
 
         if (allRecipes == null) return;
 
+        int visibleCount = 0;
         foreach (RecipeData recipe in allRecipes)
         {
             if (recipe == null) continue;
             if (!PassesWorkbenchFilter(recipe)) continue;
+            visibleCount++;
 
-            bool unlocked = (TierService.Instance == null
-                             || TierService.Instance.IsUnlocked(recipe.requiredTier))
-                            && (FriendshipService.Instance == null
-                                || FriendshipService.Instance.IsRecipeUnlocked(recipe));
+            bool unlocked = IsUnlocked(recipe);
+            bool hasIngredients = HasAllIngredients(recipe);
+            bool canCraftHere = _activeWorkbench != null && ContextMatches(recipe, _activeWorkbench);
 
             GameObject newSlot = Instantiate(slotPrefab, slotParent);
             newSlot.SetActive(true);
+            newSlot.name = $"Recipe_{recipe.name}";
 
-            // 라벨 — 첫 재료를 미리보기로 표시 (다중 재료는 첫 재료 + ⋯ 로 압축)
-            TMP_Text slotText = newSlot.GetComponentInChildren<TMP_Text>();
+            TMP_Text slotText = newSlot.GetComponentInChildren<TMP_Text>(true);
             if (slotText != null)
-            {
                 slotText.text = BuildSlotLabel(recipe, unlocked);
+
+            Transform iconTransform = newSlot.transform.Find("Icon");
+            if (iconTransform != null && iconTransform.TryGetComponent(out Image icon))
+            {
+                icon.sprite = recipe.icon != null
+                    ? recipe.icon
+                    : recipe.outputItem != null ? recipe.outputItem.icon : null;
+                icon.enabled = icon.sprite != null;
             }
 
-            // 잠금 시 이미지 회색 처리
-            if (!unlocked)
-            {
-                foreach (var img in newSlot.GetComponentsInChildren<Image>())
-                {
-                    img.color = lockedColor;
-                }
-            }
+            if (newSlot.TryGetComponent(out Image card))
+                card.color = ResolveCardColor(unlocked, hasIngredients, canCraftHere);
 
             Button btn = newSlot.GetComponent<Button>();
             if (btn != null)
             {
-                RecipeData captured = recipe;       // 클로저 캡처
+                btn.interactable = unlocked && canCraftHere;
+                RecipeData captured = recipe;
                 Workbench wbCaptured = _activeWorkbench;
-                btn.onClick.AddListener(() => CraftingService.TryCraft(captured, wbCaptured));
+                btn.onClick.AddListener(() => TryCraftRecipe(captured, wbCaptured));
             }
         }
+
+        if (_titleText != null)
+            _titleText.text = _activeWorkbench == null
+                ? "제작 도감"
+                : $"{_activeWorkbench.displayName} 제작";
+
+        if (_modeText != null)
+            _modeText.text = _activeWorkbench == null
+                ? $"전체 레시피 {visibleCount}개 · 작업대에서 [Space]로 제작"
+                : $"{GetWorkbenchLabel(_activeWorkbench.workbenchType)} · 가능한 레시피 {visibleCount}개";
     }
 
     // 컨텍스트(작업대 종류)에 맞는지 판정한다.
     bool PassesWorkbenchFilter(RecipeData recipe)
     {
-        // 디버그 글로벌 모드: requiredWorkbench=None 만 보이게
+        // 도감은 전체 레시피를 보여 주되 버튼을 비활성화해 원격 제작을 차단한다.
         if (_activeWorkbench == null)
-            return recipe.requiredWorkbench == WorkbenchType.None;
+            return true;
 
-        // 정식 모드: None 은 어디서나, 그 외는 종류 일치 시
-        return recipe.requiredWorkbench == WorkbenchType.None
-            || recipe.requiredWorkbench == _activeWorkbench.workbenchType;
+        return ContextMatches(recipe, _activeWorkbench);
     }
 
     string BuildSlotLabel(RecipeData recipe, bool unlocked)
     {
-        string lockMark = unlocked ? "" : $"🔒 (Tier {recipe.requiredTier}) ";
-        string ingredientText;
+        string recipeName = string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
+        string outputName = recipe.outputItem != null ? recipe.outputItem.itemName : "결과 누락";
+        string lockMark = unlocked ? "" : $"<color=#E9A59A>잠김 · Tier {recipe.requiredTier}</color>  ";
+        string station = GetWorkbenchLabel(recipe.requiredWorkbench);
+        string ingredients = BuildIngredientText(recipe);
 
-        if (recipe.ingredients != null && recipe.ingredients.Count > 0 && recipe.ingredients[0] != null && recipe.ingredients[0].item != null)
+        return $"{lockMark}<b>{recipeName}</b>  →  {outputName} ×{Mathf.Max(1, recipe.outputCount)}\n" +
+               $"<size=78%><color=#C8D8CA>재료: {ingredients}</color></size>\n" +
+               $"<size=72%><color=#91B69A>{station}</color></size>";
+    }
+
+    string BuildIngredientText(RecipeData recipe)
+    {
+        if (recipe.ingredients == null || recipe.ingredients.Count == 0)
+            return "재료 정보 없음";
+
+        System.Text.StringBuilder result = new System.Text.StringBuilder();
+        foreach (RecipeIngredient ingredient in recipe.ingredients)
         {
-            var first = recipe.ingredients[0];
-            string firstName = first.item.itemName;
-            string suffix = recipe.ingredients.Count > 1 ? $" 외 {recipe.ingredients.Count - 1}종" : "";
-            ingredientText = $"{firstName} ×{first.count}{suffix}";
-        }
-        else
-        {
-            ingredientText = "재료 누락";
+            if (ingredient == null || ingredient.item == null || ingredient.count <= 0) continue;
+            if (result.Length > 0) result.Append(" · ");
+
+            int owned = Inventory.instance != null ? Inventory.instance.CountItems(ingredient.item) : 0;
+            string color = owned >= ingredient.count ? "#CDE7C9" : "#F0B39E";
+            result.Append($"<color={color}>{ingredient.item.itemName} {owned}/{ingredient.count}</color>");
         }
 
-        return $"{lockMark}{recipe.recipeName}\n<size=80%>({ingredientText})</size>";
+        return result.Length > 0 ? result.ToString() : "재료 정보 없음";
+    }
+
+    void TryCraftRecipe(RecipeData recipe, Workbench workbench)
+    {
+        if (recipe == null || workbench == null)
+        {
+            SetStatus("도감에서는 제작할 수 없습니다. 필요한 작업대를 이용하세요.", true);
+            return;
+        }
+
+        bool success = CraftingService.TryCraft(recipe, workbench);
+        GenerateSlotsForContext();
+
+        string recipeName = string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
+        SetStatus(success
+            ? $"{recipeName} 제작 완료 · 가방과 핫바를 갱신했습니다."
+            : BuildFailureMessage(recipe), !success);
+    }
+
+    string BuildFailureMessage(RecipeData recipe)
+    {
+        if (!IsUnlocked(recipe))
+            return $"Tier {recipe.requiredTier} 또는 주민 교류 조건이 아직 잠겨 있습니다.";
+
+        if (Inventory.instance == null)
+            return "플레이어 인벤토리를 찾지 못했습니다.";
+
+        if (!HasAllIngredients(recipe))
+            return "재료가 부족합니다. 카드의 보유량/필요량을 확인하세요.";
+
+        return "제작하지 못했습니다. 결과물을 받을 가방 공간을 확인하세요.";
+    }
+
+    bool IsUnlocked(RecipeData recipe)
+    {
+        return (TierService.Instance == null || TierService.Instance.IsUnlocked(recipe.requiredTier))
+            && (FriendshipService.Instance == null || FriendshipService.Instance.IsRecipeUnlocked(recipe));
+    }
+
+    bool HasAllIngredients(RecipeData recipe)
+    {
+        if (Inventory.instance == null || recipe.ingredients == null || recipe.ingredients.Count == 0)
+            return false;
+
+        foreach (RecipeIngredient ingredient in recipe.ingredients)
+        {
+            if (ingredient == null || ingredient.item == null || ingredient.count <= 0) continue;
+            if (!Inventory.instance.HasItems(ingredient.item, ingredient.count)) return false;
+        }
+
+        return true;
+    }
+
+    static bool ContextMatches(RecipeData recipe, Workbench workbench)
+    {
+        return recipe != null && workbench != null
+            && (recipe.requiredWorkbench == WorkbenchType.None
+                || recipe.requiredWorkbench == workbench.workbenchType);
+    }
+
+    Color ResolveCardColor(bool unlocked, bool hasIngredients, bool canCraftHere)
+    {
+        if (!unlocked) return lockedColor;
+        if (!canCraftHere) return new Color(0.12f, 0.16f, 0.14f, 0.90f);
+        return hasIngredients
+            ? new Color(0.15f, 0.34f, 0.23f, 0.98f)
+            : new Color(0.31f, 0.22f, 0.15f, 0.96f);
+    }
+
+    void SetStatus(string message, bool isError = false)
+    {
+        if (_statusText == null) return;
+        _statusText.text = message;
+        _statusText.color = isError
+            ? new Color(1f, 0.67f, 0.57f, 1f)
+            : new Color(0.77f, 0.88f, 0.79f, 1f);
+    }
+
+    static int CompareRecipes(RecipeData left, RecipeData right)
+    {
+        if (ReferenceEquals(left, right)) return 0;
+        if (left == null) return 1;
+        if (right == null) return -1;
+
+        int workbench = left.requiredWorkbench.CompareTo(right.requiredWorkbench);
+        if (workbench != 0) return workbench;
+        int tier = left.requiredTier.CompareTo(right.requiredTier);
+        if (tier != 0) return tier;
+        return string.Compare(left.recipeName, right.recipeName, System.StringComparison.Ordinal);
+    }
+
+    static string GetWorkbenchLabel(WorkbenchType type)
+    {
+        switch (type)
+        {
+            case WorkbenchType.BasicWorkbench: return "목재 가공 작업대";
+            case WorkbenchType.Kitchen: return "주방 작업대";
+            case WorkbenchType.Forge: return "대장간 작업대";
+            case WorkbenchType.SewingTable: return "재봉 작업대";
+            default: return "기본 제작";
+        }
     }
 
     void BuildRuntimeUI()
     {
+        // 씬의 부분 직렬화 패널이 세 참조를 모두 갖추지 못했다면 화면만 숨기고
+        // 재현 가능한 런타임 제품 UI를 별도로 구성한다.
+        if (craftingPanel != null)
+            craftingPanel.SetActive(false);
+
         Transform parent = ResolveUiParent();
 
-        craftingPanel = new GameObject("CraftingPanel", typeof(RectTransform), typeof(Image));
-        var panelRT = (RectTransform)craftingPanel.transform;
-        panelRT.SetParent(parent, false);
+        craftingPanel = new GameObject("CraftingOverlay", typeof(RectTransform), typeof(Image));
+        var overlayRT = (RectTransform)craftingPanel.transform;
+        overlayRT.SetParent(parent, false);
+        Stretch(overlayRT);
+        craftingPanel.GetComponent<Image>().color = new Color(0.015f, 0.025f, 0.02f, 0.78f);
+
+        var window = new GameObject("CraftingPanel", typeof(RectTransform), typeof(Image));
+        var panelRT = (RectTransform)window.transform;
+        panelRT.SetParent(craftingPanel.transform, false);
         panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
         panelRT.pivot = new Vector2(0.5f, 0.5f);
-        panelRT.sizeDelta = new Vector2(560f, 640f);
+        panelRT.sizeDelta = new Vector2(720f, 720f);
         panelRT.anchoredPosition = Vector2.zero;
-
-        var bg = craftingPanel.GetComponent<Image>();
-        bg.color = new Color(0.96f, 0.90f, 0.78f, 0.98f);
+        window.GetComponent<Image>().color = new Color(0.055f, 0.085f, 0.068f, 0.985f);
 
         var titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
         var titleRT = (RectTransform)titleGO.transform;
-        titleRT.SetParent(craftingPanel.transform, false);
+        titleRT.SetParent(window.transform, false);
         titleRT.anchorMin = new Vector2(0f, 1f);
         titleRT.anchorMax = new Vector2(1f, 1f);
         titleRT.pivot = new Vector2(0.5f, 1f);
-        titleRT.sizeDelta = new Vector2(0f, 52f);
-        titleRT.anchoredPosition = Vector2.zero;
+        titleRT.sizeDelta = new Vector2(0f, 48f);
+        titleRT.anchoredPosition = new Vector2(0f, -12f);
 
-        var title = titleGO.GetComponent<TextMeshProUGUI>();
-        title.text = "제작";
-        title.fontSize = 26;
-        title.fontStyle = FontStyles.Bold;
-        title.alignment = TextAlignmentOptions.Center;
-        title.color = new Color(0.18f, 0.13f, 0.08f, 1f);
-        title.raycastTarget = false;
+        _titleText = titleGO.GetComponent<TextMeshProUGUI>();
+        _titleText.text = "제작 도감";
+        _titleText.fontSize = 30;
+        _titleText.fontStyle = FontStyles.Bold;
+        _titleText.alignment = TextAlignmentOptions.Center;
+        _titleText.color = Color.white;
+        _titleText.raycastTarget = false;
+
+        var modeGO = new GameObject("Mode", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var modeRT = (RectTransform)modeGO.transform;
+        modeRT.SetParent(window.transform, false);
+        modeRT.anchorMin = new Vector2(0f, 1f);
+        modeRT.anchorMax = new Vector2(1f, 1f);
+        modeRT.pivot = new Vector2(0.5f, 1f);
+        modeRT.sizeDelta = new Vector2(-100f, 30f);
+        modeRT.anchoredPosition = new Vector2(0f, -57f);
+
+        _modeText = modeGO.GetComponent<TextMeshProUGUI>();
+        _modeText.text = "전체 레시피";
+        _modeText.fontSize = 16f;
+        _modeText.alignment = TextAlignmentOptions.Center;
+        _modeText.color = new Color(0.65f, 0.78f, 0.68f, 1f);
+        _modeText.raycastTarget = false;
 
         var closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
         var closeRT = (RectTransform)closeGO.transform;
-        closeRT.SetParent(craftingPanel.transform, false);
+        closeRT.SetParent(window.transform, false);
         closeRT.anchorMin = closeRT.anchorMax = new Vector2(1f, 1f);
         closeRT.pivot = new Vector2(1f, 1f);
         closeRT.sizeDelta = new Vector2(72f, 36f);
         closeRT.anchoredPosition = new Vector2(-12f, -10f);
-        closeGO.GetComponent<Image>().color = new Color(0.22f, 0.18f, 0.14f, 0.9f);
+        closeGO.GetComponent<Image>().color = new Color(0.55f, 0.27f, 0.22f, 0.96f);
 
         var closeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         var closeTextRT = (RectTransform)closeTextGO.transform;
@@ -221,15 +459,15 @@ public class CraftingUI : MonoBehaviour
         closeText.alignment = TextAlignmentOptions.Center;
         closeText.color = Color.white;
         closeText.raycastTarget = false;
-        closeGO.GetComponent<Button>().onClick.AddListener(ToggleUI);
+        closeGO.GetComponent<Button>().onClick.AddListener(Close);
 
         var scrollGO = new GameObject("RecipeScroll", typeof(RectTransform), typeof(ScrollRect));
         var scrollRT = (RectTransform)scrollGO.transform;
-        scrollRT.SetParent(craftingPanel.transform, false);
+        scrollRT.SetParent(window.transform, false);
         scrollRT.anchorMin = Vector2.zero;
         scrollRT.anchorMax = Vector2.one;
-        scrollRT.offsetMin = new Vector2(18f, 18f);
-        scrollRT.offsetMax = new Vector2(-18f, -64f);
+        scrollRT.offsetMin = new Vector2(20f, 76f);
+        scrollRT.offsetMax = new Vector2(-20f, -96f);
 
         var viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
         var viewportRT = (RectTransform)viewportGO.transform;
@@ -258,9 +496,27 @@ public class CraftingUI : MonoBehaviour
         scroll.content = contentRT;
         scroll.horizontal = false;
         scroll.vertical = true;
+        scroll.scrollSensitivity = 34f;
+
+        var statusGO = new GameObject("Status", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var statusRT = (RectTransform)statusGO.transform;
+        statusRT.SetParent(window.transform, false);
+        statusRT.anchorMin = new Vector2(0f, 0f);
+        statusRT.anchorMax = new Vector2(1f, 0f);
+        statusRT.pivot = new Vector2(0.5f, 0f);
+        statusRT.sizeDelta = new Vector2(-40f, 56f);
+        statusRT.anchoredPosition = new Vector2(0f, 12f);
+
+        _statusText = statusGO.GetComponent<TextMeshProUGUI>();
+        _statusText.text = "작업대에서 [Space]를 누르면 제작할 수 있습니다.";
+        _statusText.fontSize = 15f;
+        _statusText.alignment = TextAlignmentOptions.Center;
+        _statusText.color = new Color(0.77f, 0.88f, 0.79f, 1f);
+        _statusText.textWrappingMode = TextWrappingModes.Normal;
+        _statusText.raycastTarget = false;
 
         slotParent = contentRT;
-        slotPrefab = CreateRuntimeSlotPrefab(craftingPanel.transform);
+        slotPrefab = CreateRuntimeSlotPrefab(window.transform);
         craftingPanel.SetActive(false);
     }
 
@@ -269,22 +525,35 @@ public class CraftingUI : MonoBehaviour
         var go = new GameObject("RecipeSlot_RuntimePrefab", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         go.transform.SetParent(parent, false);
         go.SetActive(false);
-        go.GetComponent<Image>().color = new Color(0.22f, 0.18f, 0.14f, 0.92f);
-        go.GetComponent<LayoutElement>().preferredHeight = 68f;
+        go.GetComponent<Image>().color = new Color(0.13f, 0.20f, 0.16f, 0.96f);
+        go.GetComponent<LayoutElement>().preferredHeight = 96f;
+
+        var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        var iconRT = (RectTransform)iconGO.transform;
+        iconRT.SetParent(go.transform, false);
+        iconRT.anchorMin = iconRT.anchorMax = new Vector2(0f, 0.5f);
+        iconRT.pivot = new Vector2(0f, 0.5f);
+        iconRT.anchoredPosition = new Vector2(14f, 0f);
+        iconRT.sizeDelta = new Vector2(68f, 68f);
+        var icon = iconGO.GetComponent<Image>();
+        icon.preserveAspect = true;
+        icon.raycastTarget = false;
+        icon.enabled = false;
 
         var labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
         var labelRT = (RectTransform)labelGO.transform;
         labelRT.SetParent(go.transform, false);
         labelRT.anchorMin = Vector2.zero;
         labelRT.anchorMax = Vector2.one;
-        labelRT.offsetMin = new Vector2(12f, 6f);
-        labelRT.offsetMax = new Vector2(-12f, -6f);
+        labelRT.offsetMin = new Vector2(94f, 8f);
+        labelRT.offsetMax = new Vector2(-14f, -8f);
 
         var label = labelGO.GetComponent<TextMeshProUGUI>();
-        label.fontSize = 17;
-        label.fontStyle = FontStyles.Bold;
-        label.alignment = TextAlignmentOptions.Center;
+        label.fontSize = 16.5f;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
         label.color = Color.white;
+        label.textWrappingMode = TextWrappingModes.Normal;
+        label.overflowMode = TextOverflowModes.Ellipsis;
         label.raycastTarget = false;
 
         return go;

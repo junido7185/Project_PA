@@ -174,3 +174,9 @@ Future Codex work should follow this order:
 Before starting T010 Market Stall Visual Migration, read this document first.
 
 T010 should not be framed as making a prettier stall. It should be framed as making the shop/stall a readable operating hub where the reverse supply-chain economy can be seen by a player, evaluator, or viewer within the first few moments of the demo.
+
+## WORLD-000 Design Intent Addendum
+
+The player-customizable island is a spatial extension of the same reverse supply-chain loop. Terrain and building placement must clarify where stock is gathered, processed, delivered, displayed, purchased, and reflected back into village life. They must not replace `Shop`, `EconomyService`, `PurchaseEvaluator`, NPC roles, or the Day/Night loop.
+
+Architecture is fixed before map decoration: 2m logical cells, 16×16-cell chunks, limited 1m elevation steps, custom chunk mesh terrain, seed plus sparse modification delta, and role-anchor NPC destinations. Final island silhouette, plaza composition, decoration density, lighting, and landmarks remain later art/design decisions. New world work targets WorldSandbox until integration gates pass; the Golden Regression Scene is not an experiment surface.

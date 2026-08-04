@@ -82,3 +82,11 @@ For loop/dry-run work, also update:
 - `Automation/LoopEngineering/State/loop-state.json`
 
 Do not only write a commit message. Keep the project records current.
+
+## WORLD Scene Rules
+
+- `Assets/Scenes/Prototype_FirstDay.unity` is the Golden Regression Scene. Do not use it for WorldGrid, procedural island, chunk terrain, or terraforming experiments.
+- WORLD tickets target an explicitly approved `Assets/Scenes/WorldSandbox.unity` unless their scope says otherwise. WORLD-000 does not create that scene.
+- `Assets/Scenes/MainGame.unity` remains read-only until the World Data, Terrain, Building, Navigation, and Existing Gameplay integration gates pass and a separate human-approved integration ticket exists.
+- Prefer an editor builder/setup utility, object/reference validator, Unity save, diff/Missing Reference review, then human Game View. Do not broadly edit scene serialization or replace serialized references by name.
+- Reuse existing Project P.A. services through adapters/sidecars; do not create duplicate Shop, Economy, Inventory, NPC, Clock, Save, Grid, or registry authorities in WorldSandbox.

@@ -258,3 +258,13 @@ Required:
 6. Make product categories drive village changes.
 7. Reuse existing shop, economy, inventory, NPC, tier, audit, and save systems incrementally.
 8. Treat Project_D and VisualTargets only as visual/readability references.
+
+## Procedural Island World Promise — WORLD-000
+
+The existing creative loop remains authoritative: daytime life and preparation lead into nighttime shop operation, and sold product categories change resident life and the village. The long-term world adds one player-facing promise without replacing that loop: **the player also shapes the island terrain, paths, and facility locations that support the loop**.
+
+- Use a seeded natural island and limited 2m cell-based terraforming, not an unbounded voxel survival game.
+- Make building relocation, paths, water, cliffs, and role anchors improve life/shop decisions rather than become a separate construction game.
+- Preserve `Prototype_FirstDay.unity` as the Golden Regression Scene.
+- Develop the new world in an approved `Assets/Scenes/WorldSandbox.unity`; integrate with MainGame only after the documented World Data, Terrain, Building, Navigation, and Existing Gameplay gates.
+- Detailed authority: `PROJECT_PA_WORLD_NORTH_STAR.md` and `Docs/WorldArchitecture/WORLD_ARCHITECTURE_PLAN.md`.

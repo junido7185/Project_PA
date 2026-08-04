@@ -49,10 +49,10 @@ Existing FG-001/FG-002/FG-003/FG-004 work remains valid, but should now support 
 ## FG-001 Core Multi-Day Loop
 
 - Goal: Make Day 2+ repeatable with clear daily objectives, next-day transition, revenue review, and weekly progression.
-- Current state: Day 1 is playable; `GameClock` supports days; first pass adds and validates `LongPlayProgressionController` for Days 2-7.
+- Current state: Day 1 is playable; `GameClock` supports days; Days 2-7 have the validated first-week loop and Task 112 connects Days 8-14 to real storage, processing-sale, hiring, category, Tier, and village-change state. Live Week 2 validation is pending.
 - Needed files/systems: `GameClock`, `PlayableDayScenarioController`, `LongPlayProgressionController`, `MoneyHUD`, `AuditResultUI`, `SaveManager`.
 - Risk: Medium. It touches progression state and UI, but can remain sidecar if kept small.
-- Validation: Compile, enter Play Mode, advance/simulate Day 2-7, confirm day/objective/revenue state.
+- Validation: Compile, enter Play Mode, advance from Day 2 through representative Day 8-14 objectives, confirm day/objective/revenue and real milestone state.
 - Priority: P0.
 
 ## FG-002 NPC Producer Economy
@@ -130,7 +130,7 @@ Existing FG-001/FG-002/FG-003/FG-004 work remains valid, but should now support 
 ## FG-010 Inventory / Storage / Logistics
 
 - Goal: Turn storage and logistics into management choices, not only item containers.
-- Current state: Inventory/hotbar exist; storage box scripts exist.
+- Current state: Inventory/hotbar, B09 24-slot `StorageBox`, v10 `storedItems` persistence exist. Task 102 now guarantees a runtime 6×4 storage screen with metadata-preserving selected-hotbar deposit, `Inventory.AddInstance` withdrawal, full-bag safety, and ESC/cursor priority; live Unity transfer/save-load validation remains pending.
 - Needed files/systems: `Inventory`, `Hotbar`, `StorageBox`, `StorageUI`, `ItemInstance`, `SaveManager`.
 - Risk: Medium-high. Item metadata and stacking must stay reliable.
 - Validation: Move goods between inventory/storage/shop, save/load, and confirm counts/quality/price persist.
@@ -296,3 +296,99 @@ Milestone 1 customer-type requirement is now met. Next safe steps:
 - Validation status: VC-001A validator plus required regressions passed.
 - Evidence: `Docs/VillageCulture/VC-001A.md` and `Logs/VillageCultureVisual/20260626_145257/`.
 - Next backlog direction: add category variants for `Raw`, `Utility`, and `Luxury` only after human review confirms the first visual reads well.
+
+## Task 103 — Crafting Recipe Book And Workbench Product Flow (2026-07-18, PARTIAL)
+
+- `[C] 제작` now exposes all eight existing recipes as a read-only recipe book instead of an empty debug panel; every card identifies its required station and cannot craft remotely.
+- B05–B08 interactions retain the existing `Workbench → CraftingUI → CraftingService` authority and now show item art, all ingredient counts, output, locks, and transaction feedback.
+- Full-screen input blocking, panel mutual exclusion, cursor restoration, and crafting-first ESC handling are implemented.
+- Runtime/Editor builds and 16/16 static contracts pass. Live 1920×1080 and click validation waits for the approved safe Unity capture path.
+
+## Task 104 — Tripo Policy And B11 Fountain Collision (2026-07-18, PARTIAL)
+
+- The Grid customization and Tripo directives are now durable ADRs over the existing P1–P5 placement architecture: per-asset classification, character identity preservation, functional furniture access/save contracts, source preservation, and provenance gates.
+- B11 keeps its existing cozy circular model. Runtime collision now follows its actual Visual meshes instead of the square 6×6 wrapper BoxCollider, with a safe fallback when no mesh is available.
+- The existing capsule carving obstacle, source FBX, prefab, scene, placement, and role remain unchanged.
+- Runtime/Editor builds and 12/12 static contracts pass. Live walking, NPC avoidance, and a same-camera After capture wait for the approved safe Unity path.
+
+## Task 105 — Late-Night Customer Flow (2026-07-18, PARTIAL)
+
+- The 18–23 shop window no longer loses every resident when existing schedules enter Rest at 19–20. Only Rest residents can borrow a temporary shop-visit lease; Work, Sleep, and the schedule phase itself remain untouched.
+- Both the Tier 0 outdoor arrival sidecar and Tier 1 interior customer sidecar retain their existing customer caps and purchase FSM authority while recording the visitor's original position and shop reference.
+- Completion, failed start, timeout, and shop close all release shopping priority and restore position, shop targeting, and the original Rest behavior.
+- Runtime/Editor builds complete with zero errors and 18/18 static contracts pass. Live 18:30/20:30/22:30 arrival density and 23:00 recall wait for the approved safe Unity path.
+
+## Task 106 — Processed Village Visual Real-Asset Replacement (2026-07-18, PARTIAL)
+
+- Removed all five primitive cubes and runtime materials from the first Processed next-day village-change visual.
+- The replacement loads the existing B05 definition but instantiates only its validated `Visual` child, then layers the Project P.A. wood-to-plank preparation kit and labeled sign. The functional wrapper is never cloned.
+- Runtime copies contain no Workbench, Collider, Rigidbody, NavMeshObstacle, behavior, or extra Light, so the signal cannot become a duplicate station or invisible route blocker.
+- Raw exclusivity and the existing v10 pending/active category strings remain authoritative. Runtime/Editor builds complete with zero errors and 18/18 contracts pass; same-camera composition waits for the approved safe Unity path.
+
+## Task 109 — Hiring Candidate Product Flow (2026-07-27, PARTIAL)
+
+- Repairs the existing smartphone hiring dead end: all eight candidate assets had valid roles and costs but no dedicated spawn prefab.
+- Explicit future prefabs remain authoritative. The current fallback reuses only a role-exact existing resident with `NpcController` and a real skinned character; hired runtime clones are excluded as templates.
+- New hires and v10 restore share one resolver and receive candidate identity, schedule, dialogue/friendship, and specialty. Specialists receive only existing recipes for their matching workbench.
+- Existing economy, tier, save, NPC FSM, candidate assets, scene, prefabs, and character source files remain unchanged.
+- Runtime/Editor builds and corrected 36/36 static contracts pass. Live hiring, work behavior, restore, and 1920×1080 UI checks wait for the approved safe Unity path.
+
+## Task 110 — Week-One Hiring Milestone (2026-07-27, PARTIAL)
+
+- Converts Day 5 from abstract hiring preparation into a real P.A. Phone hiring action using the existing Task 109 flow.
+- Day 5+ objectives and the existing operation checklist show no-hire guidance or the actual hired candidate names, Korean roles, and count.
+- The week-one completion summary records the same deterministic hired roster, connecting manual early work to NPC support as a visible growth result.
+- The presentation reads `HiringService` state and listens to `OnHired`; it does not own hiring, spending, spawning, work behavior, or persistence.
+- Runtime/Editor builds and 29/29 static contracts pass. Live Day 5 transition, Day 7 summary, and 1920×1080 readability wait for the approved safe Unity path.
+
+## Task 111 — Atomic Producer Delivery (2026-07-27, PARTIAL)
+
+- Repaired the actual producer buy-in path that previously charged the player and deleted producer stock when the player inventory was full.
+- `Inventory.AddInstance` now performs an exact, read-only full-stack capacity check before mutating matching stacks, so a false return cannot leave partial goods behind.
+- Producers now check capacity before spending, preserve their stock on full-bag or insufficient-funds outcomes, transfer the original `ItemInstance` metadata on success, and refund through the existing economy authority if an unexpected post-charge add fails.
+- Existing NPC bubbles explain successful delivery, required buy-in money, full-bag holding, and exceptional refund outcomes.
+- Runtime/Editor builds and 30/30 static contracts pass. Live full-bag hold → free-space → retry delivery and bubble readability wait for the approved safe Unity path.
+
+## Task 112 — Week-Two Operations Campaign (2026-07-27, PARTIAL)
+
+- Day 7 still saves and advances to Day 8, but Days 8+ previously fell back to one generic operations sentence. Days 8–14 now have explicit storage, processing, workforce, category-mix, Tier, village-response, and assortment goals.
+- The visible Day 2+ checklist reads real B09 stored units, same-day `SalesLogManager` records, the existing hired roster, `TierService`, and the active next-day village culture state. It performs no economy, inventory, craft, hire, tier, or save mutation.
+- Automatic onboarding supply remains limited to Days 2–7. Week 2 asks the player to gather, buy from producers, process, and organize stock through the actual systems.
+- Runtime/Editor builds and 40/40 static contracts pass. Live Day 7→8, representative Day 8–14 state transitions, and 1920×1080 readability wait for the approved safe Unity path.
+
+## Task 113 — Tripo Re-Audit And B12 Trade-Port Collision Hardening (2026-07-27, PARTIAL)
+
+- Reconfirmed the long-term Tripo policy over the existing Grid/Placeable architecture: classify every asset individually, preserve player/resident identity, require functional furniture access/save contracts, keep source files untouched, and treat provenance as a deployment gate.
+- Recounted 174 FBX, 150 OBJ, zero GLB, and zero Blend files; all 24 non-Nature-Pack project FBX files remain represented in the audit.
+- B12's historical 10×5m Box/Obstacle exceeded its measured Visual bounds of roughly 3.63×1.96m, recreating an invisible coastal barrier and oversized NPC carving area.
+- The active map/legacy instance now computes Visual-local bounds from eight transformed mesh corners and shrinks only clearly oversized root Box/Obstacle axes. Missing meshes preserve existing physics and no axis grows.
+- Trade interaction, Placeable registration, save state, source FBX, wrapper prefab, main scene, BuildingData, and blueprints remain unchanged.
+- Runtime/Editor builds and 20/20 static contracts pass. Live coastal traversal, visible-boundary stopping, NPC avoidance, and same-camera evidence wait for the approved safe Unity path.
+
+## Task 114 — Month-One Operations Campaign And Day-30 Completion (2026-07-27, PARTIAL)
+
+- Replaced the generic Day 15+ long-play fallback with sixteen authored plans covering reserve storage, repeated processing, a multi-role workforce, category/product variety, Tier growth, and visible village response.
+- The continuation checklist reads existing `StorageBox`, same-day `SalesLogManager`, `HiringService`, `TierService`, and `VillageCultureVisualController` state. It does not grant items, hire, craft, unlock, spend, or persist new state.
+- Day 30 Settlement now presents a first-month completion record with cumulative revenue, money, Tier, reputation, hired roster, active village direction, and final-day decisions.
+- Continue uses Day 30 save → existing next-day authority → Day 31 save; quit remains save-success-first. Day 7 automatic supply and week-one completion remain separate.
+- Sequential Runtime/Editor builds complete with zero warnings and zero errors; 56/56 static contracts pass. Live representative Day 15–30 transitions, both Day 30 actions, Day 31 continuation, and 1920×1080 readability wait for the approved safe Unity path.
+
+## Task 115 — Tier-1 Forge And Tool-Set Value Chain (2026-07-27, PARTIAL)
+
+- Corrected the player-facing B07 placement progression from Tier 3 to Tier 1, matching its existing BuildingData, blueprint, Forge recipe, and Tool Set item. B05 remains a separate starter reward, B06 remains Tier 2, and B08 remains Tier 3.
+- Tier-1 ledger rewards are duplicate-safe and the checklist can read whether the real B07 placement is active.
+- Day 23 now requires active B07 + exact same-day Tool Set + another product. Day 24 requires active B07 + exact Tool Set + a Processed sale, replacing the seed bypass and pre-Tier-2 Luxury dead end.
+- Corrected the displayed cumulative target curve so it no longer drops from Day-14 15,000G to Day-15 3,900G; it reaches 31,000G on Day 30 and continues upward.
+- No TierDefinition, recipe/item/building/prefab/scene, craft/sale/economy/save authority, or package changed.
+- Sequential Runtime/Editor builds complete with zero errors; existing CS8785/CS0414 warnings remain. Executable source contracts pass 39/39. Live reward, placement/access, crafting/sales, checklist, and 1920×1080 validation wait for the approved safe Unity path.
+
+## WORLD Track — Procedural Island and Grid Terraforming
+
+- **WORLD-000 — Architecture Reframe (documentation complete / human review):** 2m custom chunk mesh, 16×16 chunks, 1m levels 0~6, seed+sparse delta, role anchors, chunk navigation, scene separation, impact map and bounded backlog. No game file changed.
+- **WORLD-001~004 — WorldSandbox data/terrain:** read-only grid, height mesh, raise/lower, ground/path/water.
+- **WORLD-005~008 — WorldSandbox systems:** one relocatable building, minimal seeded island, delta save/load, local navigation and reachability.
+- **WORLD-009~010 — Existing gameplay integration:** one existing shop plus customer/producer/sign/slots/Day-Night, then representative home/work/shop NPC anchors.
+- **WORLD-011~012 — affordances and dressing:** bridges/ramps/cliff navigation, then provenance-known decoration/tree/flower/fence/path placement.
+- **WORLD-MAIN-001 — separate integration gate:** use MainGame or a new integration scene only after Gates 1~5 and explicit human approval. Prototype_FirstDay remains the Golden Regression Scene.
+
+Detailed scopes, path limits, validators and stop conditions are authoritative in `Docs/WorldArchitecture/WORLD_BOUNDED_BACKLOG.md`. These tickets must not be merged into one world-engine sprint.

@@ -12,8 +12,8 @@
 | 페이즈/영업 상태 | **DONE** | `DayNightShopLoopController` 스트립 — 이번 패스로 한국어 통일 ("1일차 07:00 · 낮 준비 / 상점: 준비 중…") | |
 | 핫바/인벤토리 | **DONE** | `HotbarUI` 하단 (아이콘+수량+선택 하이라이트), I 인벤토리, 드래그&드롭 | |
 | 상호작용 힌트 | **DONE** | `InteractPromptUI` "[Space] 판매대에 상품 진열" 등 — 채집/간판 프롬프트 이번 패스로 한국어화 | |
-| 가격 설정 | **DONE** | `ShopPriceUI` (진열 수량 + 가격 조정/확정/회수 + NPC 반응 힌트 + 구매율) | Task 018: `아이템 · 재고 N개` 추가 |
-| 구매 반응 | **DONE** | `NpcBubbleUI` 말풍선 "Farmer_01: 가격 적정, 구매 (71%)" + 거절 이유 | |
+| 가격 설정 | **DONE** | `ShopPriceUI` (진열 수량 + 가격 파생 일반/희귀 + 실제 품질 + 읽기 전용 추천 기준가 + 가격 조정/확정/회수 + NPC 반응 힌트 + 구매율) | Task 018 수량, Task 023 분류/품질, Task 025 `basePrice+quality` 추천가 추가 |
+| 구매 반응 | **DONE** | `NpcBubbleUI`의 별도 `[주민]/[관광객]` 계층 태그 + 기존 "Farmer_01: 가격 적정, 구매 (71%)" 본문/거절 이유 | Task 031은 현재 8명 전원을 실제 일과표 기반 주민으로 표시하며 구매 수학은 변경하지 않음 |
 | 영업 결과(정산) | **DONE** | Day 요약 (매출/돈 변화/판매 수/피드백/다음 행동/성장 목표) — 이번 패스로 본문 잘림(410/360) 수복 | |
 | 마을 변화 알림 | **DONE** | `VillageCultureVisualController` 다음날 힌트 패널 + 가공품 코너 활성 / 요약 내 "Village direction" 섹션 | 요약 섹션 제목이 아직 영어 — 후속 한국어화 후보 |
 | 감사/성장 앱 | **DONE** | `SmartphoneUI` 폰(P) + `AuditResultUI` (티어 요건/카운트다운) | |

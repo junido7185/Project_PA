@@ -25,3 +25,8 @@ MonoBehaviour:
       \uB54C \uC774\uC57C\uAE30\uB97C \uB4E4\uC5B4\uC694."
     - "\uC644\uC131\uB41C \uAC00\uAD6C\uB97C \uC190\uB2D8\uC774 \uAE30\uBED0\uD558\uBA74
       \uADF8\uAC8C \uC81C\uC77C \uBCF4\uB78C\uCC28\uC694!"
+  - topic: 6
+    thinkingLines:
+    - "제작 일정에 필요한 목재가 부족해. 수량을 확인해 줘."
+    feelingLines:
+    - "마을에 쓸 물건을 만들려는데 나무가 조금 부족해요. 같이 준비해 줄래요?"

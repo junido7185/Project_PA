@@ -24,3 +24,8 @@ MonoBehaviour:
       \uBA4B\uC9C4 \uB3C4\uAD6C\uAC00 \uC644\uC131\uB420 \uB54C \uBFCC\uB4EF\uD574\uC694."
     - "\uC88B\uC740 \uB3C4\uAD6C\uB294 \uC0AC\uB78C\uC758 \uB9C8\uC74C\uC744 \uC124\uB808\uAC8C
       \uD574\uC694."
+  - topic: 6
+    thinkingLines:
+    - "작업에 쓸 원재료 재고가 부족해. 필요한 수량을 맞춰 줘."
+    feelingLines:
+    - "오늘 대장간 불을 지피려는데 재료가 조금 모자라요. 도와줄래요?"

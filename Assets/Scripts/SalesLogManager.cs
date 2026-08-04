@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,10 @@ public class SalesLogManager : MonoBehaviour
 
     public static SalesLogManager Instance { get; private set; }
 
+    // 판매 권한은 RecordSale에 그대로 두고, 오디오/UI 같은 표현 계층만 완료 결과를 관찰한다.
+    // 구독자 하나가 실패해도 이미 성립한 거래와 다른 구독자의 피드백을 막지 않는다.
+    public static event Action<SaleRecord> OnSaleRecorded;
+
     [Tooltip("최대 보관 건수. 초과 시 가장 오래된 항목부터 삭제.")]
     public int maxRecords = 100;
 
@@ -36,7 +41,7 @@ public class SalesLogManager : MonoBehaviour
     public void RecordSale(string itemName, string category, int price, float quality,
                            string buyerName, int gameDay, int gameHour)
     {
-        _records.Add(new SaleRecord
+        var record = new SaleRecord
         {
             itemName  = itemName,
             category  = category,
@@ -45,7 +50,9 @@ public class SalesLogManager : MonoBehaviour
             buyerName = buyerName,
             gameDay   = gameDay,
             gameHour  = gameHour,
-        });
+        };
+
+        _records.Add(record);
 
         while (_records.Count > maxRecords)
             _records.RemoveAt(0);
@@ -54,6 +61,7 @@ public class SalesLogManager : MonoBehaviour
         _purchasesByDay.TryGetValue(safeDay, out int purchases);
         _purchasesByDay[safeDay] = purchases + 1;
         LogDailyStats(safeDay, $"구매: {buyerName} / {itemName}");
+        NotifySaleRecorded(record);
     }
 
     // Task 034 — 구매 판단 결과가 보류일 때 기존 읽기 전용 관찰 훅이 호출한다.
@@ -108,5 +116,23 @@ public class SalesLogManager : MonoBehaviour
     {
         DailyDecisionStats stats = GetDailyDecisionStats(gameDay);
         Debug.Log($"📊 [일일 상점 통계] Day {gameDay}: {BuildDailyDecisionSummary(gameDay)} · 최근 {latest}");
+    }
+
+    static void NotifySaleRecorded(SaleRecord record)
+    {
+        Action<SaleRecord> handlers = OnSaleRecorded;
+        if (handlers == null) return;
+
+        foreach (Delegate callback in handlers.GetInvocationList())
+        {
+            try
+            {
+                ((Action<SaleRecord>)callback)(record);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
     }
 }

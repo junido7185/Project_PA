@@ -277,7 +277,8 @@ MonoBehaviour:
   - {fileID: 1691304920079830775}
   - {fileID: 8332480825027549507}
   timePerStage: 3
-  harvestItem: {fileID: 11400000, guid: 0792a62749dae7547a9b0156c8af5891, type: 2}
+  harvestItem: {fileID: 11400000, guid: f09473d97a45ad04d9b309533695a0de, type: 2}
+  harvestCount: 3
   isFullyGrown: 0
 --- !u!65 &-7225235984545466569
 BoxCollider:

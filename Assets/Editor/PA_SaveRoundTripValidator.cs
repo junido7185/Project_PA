@@ -219,7 +219,7 @@ public static class PA_SaveRoundTripValidator
         string saveFile = Path.Combine(output, "savegame.json");
         Require(File.Exists(saveFile), "isolated savegame.json was written");
         var savedData = JsonUtility.FromJson<SaveData>(File.ReadAllText(saveFile));
-        Require(savedData != null && savedData.version == 9, "saved JSON is schema v9");
+        Require(savedData != null && savedData.version == 10, "saved JSON is schema v10");
         Require(savedData.villageCultureHasPendingChange
             && savedData.villageCulturePendingSaleDay == 2
             && savedData.villageCulturePendingCategory == "Processed",

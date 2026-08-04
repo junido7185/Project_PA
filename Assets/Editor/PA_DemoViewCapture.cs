@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -28,9 +29,8 @@ public static class PA_DemoViewCapture
     static bool _entered;
     static bool _ran;
     static bool _hadError;
-    static int _step;
     static double _startedAt;
-    static double _nextStepAt;
+    static Task _runtimeTask;
 
     static PA_DemoViewCapture()
     {
@@ -60,9 +60,8 @@ public static class PA_DemoViewCapture
         _entered = false;
         _ran = false;
         _hadError = false;
-        _step = 0;
+        _runtimeTask = null;
         _startedAt = EditorApplication.timeSinceStartup;
-        _nextStepAt = _startedAt;
 
         SessionState.SetBool(ActiveKey, true);
         SessionState.SetBool(EnteredKey, false);
@@ -95,7 +94,6 @@ public static class PA_DemoViewCapture
         {
             _entered = true;
             _startedAt = EditorApplication.timeSinceStartup;
-            _nextStepAt = _startedAt + 3.0;
             SessionState.SetBool(EnteredKey, true);
         }
 
@@ -121,12 +119,24 @@ public static class PA_DemoViewCapture
             return;
         }
 
-        if (!_ran && EditorApplication.isPlaying)
+        if (!_ran && EditorApplication.isPlaying && _runtimeTask == null && elapsed > 3.0)
         {
-            if (EditorApplication.timeSinceStartup < _nextStepAt)
-                return;
+            _runtimeTask = RunRuntimeCaptureAsync();
+            return;
+        }
 
-            RunNextStep();
+        if (!_ran && _runtimeTask != null && _runtimeTask.IsCompleted)
+        {
+            if (_runtimeTask.IsFaulted)
+            {
+                _hadError = true;
+                SessionState.SetBool(HadErrorKey, true);
+                Debug.LogError($"PA DemoViewCapture failed: {_runtimeTask.Exception?.GetBaseException()}");
+            }
+
+            _ran = true;
+            SessionState.SetBool(RanKey, true);
+            EditorApplication.ExitPlaymode();
             return;
         }
 
@@ -137,36 +147,15 @@ public static class PA_DemoViewCapture
         }
     }
 
-    static void RunNextStep()
+    static async Task RunRuntimeCaptureAsync()
     {
-        try
-        {
-            switch (_step)
-            {
-                case 0:
-                    PrepareRuntimeState();
-                    break;
-                case 1:
-                    CapturePlayCamera();
-                    _ran = true;
-                    SessionState.SetBool(RanKey, true);
-                    EditorApplication.ExitPlaymode();
-                    break;
-            }
+        PrepareRuntimeState();
 
-            _step++;
-            // v3 — 손님 NPC 가 판매대에 도착할 시간을 확보 (스테이징 후 이동 시간).
-            _nextStepAt = EditorApplication.timeSinceStartup + 4.5;
-        }
-        catch (Exception ex)
-        {
-            _hadError = true;
-            SessionState.SetBool(HadErrorKey, true);
-            Debug.LogError($"PA DemoViewCapture failed: {ex.Message}\n{ex}");
-            _ran = true;
-            SessionState.SetBool(RanKey, true);
-            EditorApplication.ExitPlaymode();
-        }
+        // v3 — 손님 NPC 가 판매대에 도착할 시간을 확보 (스테이징 후 이동 시간).
+        // P4 실내 샷은 입구→예약 접근셀까지 실제로 걷는 두 손님을 기다린다.
+        int settleMilliseconds = Environment.GetEnvironmentVariable("PA_SHOT_INSIDE") == "1" ? 11000 : 4500;
+        await Task.Delay(settleMilliseconds);
+        await CapturePlayCameraAsync();
     }
 
     // 사용자 스크린샷과 같은 조건: 온보딩 닫힘 + Day 1 오후 + 실제 추적 카메라 유지.
@@ -204,7 +193,9 @@ public static class PA_DemoViewCapture
         var loop = DayNightShopLoopController.Instance;
         if (loop != null)
         {
-            loop.SimulatePhaseForValidation(19.5f, 2);
+            // 18:15 — 전문직 Shopping 창(18~20시) 초입. 19.5 는 20:00 Rest 강제 귀가까지
+            // 실시간 30초뿐이라 손님 연출이 레이스로 사라질 수 있었다.
+            loop.SimulatePhaseForValidation(18.25f, 2);
             loop.SetShopOpenedForValidation(true);
         }
 
@@ -213,16 +204,21 @@ public static class PA_DemoViewCapture
 
         string[] items = { "Items/Item_BreadLoaf", "Items/Item_Carrot", "Items/Item_Ore", "Items/Item_Wheat" };
         var slots = interior.GetComponentsInChildren<ShopSlot>(true);
-        for (int i = 0; i < slots.Length && i < items.Length; i++)
+        for (int i = 0; i < slots.Length; i++)
         {
-            var item = Resources.Load<Item>(items[i]);
+            var item = Resources.Load<Item>(items[i % items.Length]);
             if (item == null) continue;
             slots[i].currentItem = new ItemInstance(item, 1) { quality = 1f, currentPrice = item.basePrice };
             slots[i].displayPrice = item.basePrice;
             slots[i].RefreshDisplay();
         }
 
-        InteriorCustomerController.Instance?.TryInviteOne();
+        // P4 — 서로 다른 진열대 앞자리를 예약하는 동시 손님 2명을 실제 게임 카메라로 확인한다.
+        if (InteriorCustomerController.Instance != null)
+        {
+            InteriorCustomerController.Instance.TryInviteOne();
+            InteriorCustomerController.Instance.TryInviteOne();
+        }
 
         var player = GameObject.FindGameObjectWithTag("Player") ?? GameObject.Find("Player");
         var door = GameObject.Find("PA_StoreDoor_Out");
@@ -275,82 +271,36 @@ public static class PA_DemoViewCapture
         }
     }
 
-    static void CapturePlayCamera()
+    static async Task CapturePlayCameraAsync()
     {
         string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "DemoViewShots"));
         Directory.CreateDirectory(root);
         string file = Path.Combine(root, $"{ShotLabel()}_{DateTime.Now:yyyyMMdd_HHmmss}.png");
 
-        WriteCameraCapture(file);
-        Debug.Log($"PA DemoViewCapture: saved {file}");
-    }
-
-    // PA_CustomerPanelLayoutValidator.WriteCameraCapture 와 동일 방식 (해상도만 2560x1440).
-    static void WriteCameraCapture(string file)
-    {
-        var camera = Camera.main;
+        var camera = Camera.main ?? Object.FindFirstObjectByType<Camera>();
         if (camera == null)
             throw new InvalidOperationException("Main camera not found for capture.");
 
-        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        var modes = new RenderMode[canvases.Length];
-        var canvasCameras = new Camera[canvases.Length];
-        var planeDistances = new float[canvases.Length];
-
-        var oldTarget = camera.targetTexture;
-        int oldCullingMask = camera.cullingMask;
-        var oldActive = RenderTexture.active;
-
-        var rt = new RenderTexture(CaptureWidth, CaptureHeight, 24, RenderTextureFormat.ARGB32);
-        var tex = new Texture2D(CaptureWidth, CaptureHeight, TextureFormat.RGBA32, false);
-
+        var cameraController = camera.GetComponent<CameraController>()
+            ?? camera.GetComponentInParent<CameraController>();
+        bool controllerWasEnabled = cameraController != null && cameraController.enabled;
+        if (cameraController != null)
+            cameraController.enabled = false;
         try
         {
-            for (int i = 0; i < canvases.Length; i++)
+            // 실제 추적 카메라가 준비한 현재 구도를 고정한 뒤 일반 GameView 프레임만 캡처한다.
+            await PA_SafeGameViewCapture.CaptureAsync(file, camera, captureCamera =>
             {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-
-                modes[i] = canvas.renderMode;
-                canvasCameras[i] = canvas.worldCamera;
-                planeDistances[i] = canvas.planeDistance;
-
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    canvas.renderMode = RenderMode.ScreenSpaceCamera;
-                    canvas.worldCamera = camera;
-                    canvas.planeDistance = Mathf.Max(camera.nearClipPlane + 0.5f, 1f);
-                }
-            }
-
-            camera.cullingMask = -1;
-            camera.targetTexture = rt;
-            RenderTexture.active = rt;
-            camera.Render();
-
-            tex.ReadPixels(new Rect(0, 0, CaptureWidth, CaptureHeight), 0, 0);
-            tex.Apply();
-            File.WriteAllBytes(file, tex.EncodeToPNG());
+                captureCamera.cullingMask = -1;
+            }, CaptureWidth, CaptureHeight, 1000);
         }
         finally
         {
-            camera.targetTexture = oldTarget;
-            camera.cullingMask = oldCullingMask;
-            RenderTexture.active = oldActive;
-
-            for (int i = 0; i < canvases.Length; i++)
-            {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-                canvas.renderMode = modes[i];
-                canvas.worldCamera = canvasCameras[i];
-                canvas.planeDistance = planeDistances[i];
-            }
-
-            Object.DestroyImmediate(tex);
-            rt.Release();
-            Object.DestroyImmediate(rt);
+            if (cameraController != null)
+                cameraController.enabled = controllerWasEnabled;
         }
+
+        Debug.Log($"PA DemoViewCapture: saved {file}");
     }
 
     static void MarkFailedAndExit()
@@ -386,6 +336,7 @@ public static class PA_DemoViewCapture
     {
         EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
         EditorApplication.update -= OnEditorUpdate;
+        _runtimeTask = null;
     }
 }
 #endif

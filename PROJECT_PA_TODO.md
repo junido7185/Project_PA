@@ -2,6 +2,102 @@
 
 Inspection date: 2026-06-19
 
+## Sprint: B02~B04 Shop Evolution Visual Finalization — 2026-07-16
+
+Status: 구현·동일 구도 시각 검토·D3D11 단계 전환/출입/판매 회귀 완료.
+
+- [x] B02~B04 원본 FBX·래퍼·bounds/polycount·4면·콜라이더·Shop/ShopSlot 구성을 Unity Editor API로 감사.
+- [x] 세 모델의 실제 정면이 로컬 `-X`이며 코지 마을 단계형 외관으로 유지 가능한지 게임 카메라에서 확인.
+- [x] 원본 Visual만 참조하는 Shop/ShopSlot 없는 파생 외관 프리팹 3개 생성.
+- [x] 보이는 모델과 일치하는 BoxCollider/NavMeshObstacle 및 Entrance/Sign 기준점 구성.
+- [x] 기존 `currentTier`에서 Tier 0=B10, Tier 1=B02, Tier 2=B03, Tier 3+=B04 외관을 파생.
+- [x] 기존 외부 문·스폰·BuildingEntrance·간판을 활성 모델의 실제 문에 정렬.
+- [x] Tier 1/2/3 실제 Play Mode 동일 카메라 캡처 후 B02 입구 anchor 방향 오류 수정·재캡처.
+- [x] 각 단계에서 외관 1개, Shop 중복 0, 기존 실내 배치 스냅샷 완전 보존 검증.
+- [x] Tier 잠금/개방·입장·진열·가격·퇴장과 FinalDemoRoute 30G 회귀 PASS.
+- [x] P5 상점 진화·배치 해금 완료. Tier 변화가 기존 배치를 삭제하지 않고 zone·진열 한도·작업대 카탈로그를 확장하며, Processed 테마와 v10 복원까지 연결했다.
+
+## Sprint: Tripo Character Unity Finalization — 2026-07-16
+
+Status: 구현·시각 검토·D3D11 walking 및 고객/최종루트 회귀 완료.
+
+- [x] C-01~C-09 FBX, Humanoid import/Avatar, 메시·텍스처, polycount, Idle/Walk 클립을 Unity Editor API로 감사.
+- [x] 게임 카메라 기준 원본 lineup과 런타임 동일 구도 idle/walking 기준 캡처 생성.
+- [x] 원본 외형을 유지하고 주민별 실제 렌더 높이를 1.75m로 정규화.
+- [x] 주민 발 접지, 그림자, CapsuleCollider `1.8/0.4`, NavMeshAgent `1.8/0.4/0.75` 구현.
+- [x] NPC 절차 보행 cadence를 실제 이동 거리/명목 보폭 기준으로 변경.
+- [x] 플레이어 기존 Foot IK에 Walk 클립/이동 속도 기반 제한 재생 속도 동기화 구현.
+- [x] D3D11 컴파일과 실제 Play idle 수치/After 캡처 확인.
+- [x] 검증 스테이징에서 시작 온보딩을 닫고 `Time.timeScale=1`을 복원해 walking 최종 검증 PASS.
+- [x] 실제 도로/게임 카메라 `character_walk_after.png`를 직접 확인하고 InteriorCustomer/CustomerArrival/FinalDemoRoute 회귀 PASS.
+- [ ] 사용자 확인: C-03/C-04 역할 인상 불일치, C-05 Farmer/Fisher 중복, C-02 미사용의 최종 주민 매핑.
+- [x] B02~B04 상점 진화 모델의 입구·스케일·카메라 가림·Tier 전환 시 기존 배치 보존을 실제 캡처로 검증.
+
+## Sprint: B05 Workbench Functional Art — 2026-07-16
+
+Status: Implemented, visually reviewed, and D3D11 verified.
+
+- [x] Audit the source FBX, wrapper prefab, mesh bounds/polycount, four faces, collider, obstacle, and real 2×2 runtime placement.
+- [x] Preserve the modeled workbench identity and choose existing Wood→Plank processing as its minimum day-prep role.
+- [x] Align the modeled work surface with the existing local `-Z` interaction/clearance contract without overwriting source assets.
+- [x] Correct the runtime physical collider and carving obstacle while preserving prefab dimensions used by the 2×2 footprint calculation.
+- [x] Generate a persistent low-poly preparation kit using only Project PA-owned materials: raw Wood, guide surface, finished Plank, and clamp.
+- [x] Add short clamp/light feedback only after a successful existing crafting transaction.
+- [x] Verify actual CraftingUI Wood 2→Plank 1, inventory delta, feedback, and UI close in Play Mode.
+- [x] Review same-camera before/after captures and reduce excessive feedback light intensity.
+- [x] Re-run processing chain, shop customization/save, enterable shop, and final demo route regressions.
+- [x] Same-angle player/NPC walking, grounding, stride, collider, and NavMeshAgent finalization completed while preserving character identity.
+
+## Sprint: B10 Cottage Visual Finalization — 2026-07-16
+
+Status: Implemented, visually reviewed, and D3D11 verified.
+
+- [x] Audit the Tripo source FBX, wrapper prefab, scene instances, collider, and detached overlay with Unity Editor API.
+- [x] Confirm the source mesh is grounded/intact and identify authored facade as local `-X`.
+- [x] Face all three map cottages toward the plaza without overwriting the source FBX, wrapper prefab, or main scene.
+- [x] Disable the legacy Static B10 duplicate only when authoritative map cottages exist.
+- [x] Hide the detached primitive door/sign renderers while preserving BuildingEntrance, collider, tier gate, and spawn references.
+- [x] Generate a purpose-built beveled wood/cream shop sign mesh and prefab with Unity Editor API.
+- [x] Verify fixed-angle Before/After and Play Mode MainCamera captures; remove billboard intersection and make the full sign text readable.
+- [x] Re-run Tier 0→Tier 1 interior shop round trip and FinalDemoRoute 30G regressions.
+- [x] Finalize B05 Workbench functional art around the existing day-prep/processing/placement role.
+- [x] Same-angle player/NPC walking, grounding, stride, collider, and NavMeshAgent review completed.
+
+## Sprint: Shop Customer Approach P4 — 2026-07-16
+
+Status: Implemented and D3D11 verified.
+
+- [x] Reuse placeable definition `interaction` cells as explicit ShopSlot front positions.
+- [x] Rotate the approach cell with the moved shelf; `(4,0)/r3` resolves to `(3,0)`.
+- [x] Reserve a ShopSlot approach by NPC owner before travel so two customers do not converge on one point.
+- [x] Reject blocked authored cells and select another stocked, reachable shelf.
+- [x] Require `NavMesh.SamplePosition` and `CalculatePath=PathComplete` before setting the destination.
+- [x] Re-select if a shelf moves or rotates during a visit.
+- [x] Stop at the reserved point, face the shelf, and preserve existing claim/purchase math.
+- [x] Verify real interior reserve→approach→15G purchase→return and simultaneous reservation ownership.
+- [x] Re-run CustomerArrival and FinalDemoRoute regressions.
+- [x] Repair B10 Cottage detached/floating door-wall pieces without overwriting the Tripo source or main scene YAML.
+- [x] Finalize B05 workbench functional art around the existing day-prep/processing role.
+
+## Sprint: Outdoor Placement P3 — 2026-07-16
+
+Status: Implemented and D3D11 verified.
+
+- [x] Register shared 2m `village.outdoor` zone without a parallel grid.
+- [x] Protect north-south/east-west roads, shop plaza, exterior entrances, and spawn cells.
+- [x] Connect `BuildManager` to owner-based collider footprint and front clearance.
+- [x] Keep R/click building controls and add M relocate/X safe recovery with player-facing hint.
+- [x] Define B09 as an external 24-slot village storage shed after game-camera review.
+- [x] Keep the authored B09 movable but non-recoverable; reject recovery of storage containing items.
+- [x] Persist authored/player-built B09 zone, cell, rotation, and contents in save v10.
+- [x] Suppress active legacy duplicate B09 renderer/collider at runtime.
+- [x] Verify D3D11 road/plaza rejection, B09 9-cell footprint, move/build/recover, and v10 load.
+- [x] Re-run SaveRoundTrip, ShopCustomization, and FinalDemoRoute regressions.
+- [x] P4: ShopSlot interaction/approach cells, multi-customer reservation, and `NavMesh.CalculatePath` reachability completed.
+- [x] Visual: repair B10 Cottage detached/floating door-wall pieces without overwriting the Tripo source.
+- [x] Functional art: finalize B05 workbench silhouette around the existing prep/processing role.
+- [x] Character pass: same-angle player/NPC walking capture, grounding, stride, collider, and agent tuning.
+
 ## Sprint: Day 1-3 Core Game Slice
 
 Goal:
@@ -826,10 +922,533 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] Task 042 — 자동 낚시→판매 PASS와 사람이 직접 확인할 이동·대기·NPC 접근 절차를 스모크 체크리스트에 고정.
 - [x] Task 043 — Crop/Farmland·광질 데이터 호환성 감사와 광질 우선 구현 경계 확정.
 - [x] `quarry-mining` — 실제 Ore 2개 획득→1개 진열→Miner 15G 판매·v9 격리 저장/일일 리셋 D3D11 PASS.
-- [ ] 다음 단일 작업 — 비주얼 도구체인 감사: Unity/URP/패키지/Cinemachine/Navigation/Rigging/Blender/Codex MCP/라이선스/캡처를 기록하고, 검토된 안정 Unity MCP를 프로젝트 범위로 연결해 가장 큰 비주얼 문제에 실제 사용.
-- [ ] `Docs/Codex/VISUAL_TOOLCHAIN.md`, `ASSET_AND_TOOL_PROVENANCE.md`, `ART_DIRECTION.md` 작성 또는 현행화. primitive 기반 채굴 표식은 최종 아트로 인정하지 않는다.
-- [ ] 농사 F1 — 씨앗/수확 Item 참조 복구 후 고정 밭 상호작용 설계대로 구현.
+- [x] 비주얼 도구체인 감사: Unity/URP/패키지/Cinemachine/Navigation/Rigging/Blender/Codex MCP/라이선스/캡처 기록.
+- [x] Unity MCP 9.7.0 안정 태그/lock hash 고정, 프로젝트 범위 loopback 연결, Editor/씬/프리팹/Play Mode 직접 확인.
+- [x] `VISUAL_TOOLCHAIN.md`, `ASSET_AND_TOOL_PROVENANCE.md`, `ART_DIRECTION.md`, `TRIPO_ASSET_AUDIT.md` 작성.
+- [x] 중앙 원시 박스 상점을 기존 B01 노점 Visual로 교체하고 겹친 임시 충돌 제거. Shop/경제/저장/씬/프리팹 원본 무변경.
+- [x] 그리드 기반 커스터마이징 P1/P2 — 기존 GridService/BuildManager/save/inventory/shop/interior 감사, 병렬 그리드 없이 상점 실내 배치 MVP 연결.
+- [x] `PLACEMENT_SYSTEM_ARCHITECTURE.md`, `CUSTOMIZATION_ROADMAP.md`, `PLACEABLE_ASSET_GUIDE.md`와 1×1·다중 셀 배치/회전/이동/회수/저장, protected cell, 상호작용 면, NPC 경로 검사 구현·검증.
+- [x] 저장 v10 — zone/definition/instance/cell/rotation/recovered/function 상태와 v9→v10 마이그레이션, 이동 ShopSlot 상품/가격 재로드 PASS.
+- [x] P3 야외 `village.outdoor` 완료 — 47×47 공유 GridService zone, 도로·광장·출입구 212셀 보호, B09 외부 24칸 보관함의 9셀 footprint·전면 clearance·이동·안전 회수·v10 저장을 구현하고 D3D11 검증했다.
+- [x] P4 ShopSlot 전면 approach 셀·NPC 예약·실제 NavMesh 도달성 완료 — 이동 선반 앞셀 회전, owner 예약, 완전 경로, 실제 15G 구매를 D3D11에서 확인했다.
+- [x] B10 Cottage 분리·부유 문/벽 파츠를 원본 비파괴 방식으로 수복하고 실제 Play Mode 카메라·Tier 왕복으로 검증했다.
+- [x] B05 작업대를 기존 Wood→Plank 가공·인벤토리·2×2 배치와 연결되는 최소 준비 기능 및 일관된 실루엣으로 최종화했다. 원본은 덮어쓰지 않았다.
+- [x] 플레이어/NPC 보행을 같은 구도에서 캡처하고 접지·발미끄럼·Animator speed·Collider·NavMeshAgent를 외형 보존 우선으로 최종화했다.
+- [ ] primitive 기반 채굴 표식은 최종 아트로 인정하지 않으며, 배치 MVP를 방해하지 않는 체크포인트에서 목적형 에셋으로 교체.
+- [~] Task 089 농사 F1/F2 구현 — Seed→Crop→Wheat 참조, 낮 씨앗 주머니 2개, 농부 작업 지점 인근 고정 밭 2칸, 씨앗 1개 심기→성장 안내→가방 용량 확인→Wheat 3 수확을 연결했다. 컴파일/정적 계약 PASS, Unity 실플레이 확인은 대기한다.
+- [~] Task 090 Day 2+ 운영 체크리스트 — 실제 낮 활동·판매 상품 2종·진열/가격·개점·당일 판매·정산 상태와 단계별 상단 목표를 0.5초마다 갱신한다. 컴파일/정적 계약 PASS, Unity 1920×1080 상태 전환/가독성 확인은 대기한다.
+- [~] Task 091 가공 안전 트랜잭션 — 현재 8개 레시피 모두 결과 메타 스택/재료 소비 후 빈 슬롯을 먼저 검사하고, 공간 부족이면 재료를 차감하지 않는다. 컴파일/정적 계약 PASS, Unity 가방 3분기 확인은 대기한다.
 - [ ] 승인 후 농사 F3 — 날짜 기반 성장과 밭/작물 상태 저장 마이그레이션.
 - [ ] 결정 후 구현: 밤 영업 18~23시와 NPC 휴식 20시 이후의 손님 시간 창 확대.
 - [ ] 최종 통합: 새 게임부터 Day 3 정산까지 사람 연속 플레이 + 저장 종료/재실행.
 - [ ] 사람 확인: 1920x1080 Tier 1 해금 패널 가독성 및 기존 HUD 비겹침.
+- [x] P5 확장 조명의 Unity 가짜 null 오류를 명시적 Unity null 검사로 수정했다.
+- [x] P5 전용 D3D11 전체 검증 — Tier 0→4 zone/진열 한도/B05~B08 보상, 확장 NavMesh 완전 경로, 추가 ShopSlot 기능, Processed 테마, v10 저장·복원 PASS.
+- [x] P5 동일 구도 `tier0_shop.png`/`tier3_expanded_shop.png`를 직접 비교하고 진행 원장 상태 문구와 테마 버튼 겹침을 보정했다.
+- [x] ShopCustomization/EnterableShop/SaveRoundTrip/FinalDemoRoute 회귀 PASS.
+- [x] Task 044 주민 의뢰 표시 설계 — `DESIGN_RESIDENT_REQUEST.md`에서 기존 Dialogue/Demand/전문가 레시피/Inventory/Friendship/일일 활동을 감사하고, Chef의 Wheat 3 요청을 첫 비퀘스트엔진 계약으로 확정했다.
+- [~] Task 088 주민 재료 요청 구현 — Chef Wheat3, Blacksmith Ore2, Carpenter Wood2를 실제 담당 레시피에서 파생해 보유량 프롬프트→정확 차감→당일 완료 저장 문자열→친밀도 보상을 연결했다. Tailor의 잘못된 Bread 배정은 작업대 불일치로 제외한다. 컴파일/정적 계약 PASS, Unity 실제 전달·저장 왕복·UI 확인은 안전 캡처 경로 승인 뒤 완료한다.
+- [x] Task 045 낮 활동 결과→재고 연결 문서 동기화 — 현재 6개 일일 재고 원천과 Fish 18G/Ore 15G 실제 낮→밤 왕복을 `DAYTIME_ACTIVITIES.md`와 게임 루프 표에 반영했다.
+- [x] Task 046 카테고리별 판매 통계 조사 — 거래 1건/총 결제액, 최근 40건, `count×1000+revenue`, Processed 다음 날 변화와 런타임/저장 경계를 `VILLAGE_TREND.md`에 확정했다.
+- [x] Task 047 트렌드 점수 데이터 설계 — Fish/생선구이/목제 가구의 정확한 판매 매핑, 캠핑 비활성, 점수 상한·일차/주간 창·동점 규칙을 `VILLAGE_TREND.md`에 확정했다.
+- [x] Task 051 시설 해금 신호 표시 연결 — 성공 판매의 Village direction을 감사 앱의 다음 시설 후보 예고로 연결하고, 실제 해금 권한은 기존 Tier/감사 조건에 유지했다.
+- [x] Task 052 이벤트 해금 후보 설계 — `해변 풍어제`의 판매 기반 해금·다음 날 행사·낮 낚시→밤 판매·정산·저장/승인 경계를 확정하고 독립 정적 검사를 통과했다.
+- [x] Task 054 판매 통계 저장 확장 설계 — 현재 v10 다음의 v11로 최근 원거래·일차 판단·카테고리 판매·7일 명명 트렌드, 빈 기본값 마이그레이션, 소유권·복원·검증 경계를 `SAVE_SCHEMA.md`에 확정했다.
+- [ ] 승인 대기: Task 055 v11 판매 통계 저장 구현 — `SaveData`/`SaveManager`와 최소 `SalesLogManager`/공용 명명 트렌드/검증기 범위를 작업 전 보고하고 사용자 승인 후 구현한다.
+- [ ] 저장 문서 후속: Task 060 저장 버전 관리 정책 문서 — Task 054 v11 설계와 현재 v0→v10 체인을 기준으로 전용 정책을 동기화한다.
+- [x] Task 023 희귀품/일반품 구분 — `일반품|희귀품 · 가격 파생값 · 품질 ×N.NN` 표시, 일반/희귀 FinalPresentation 캡처와 FinalDemoRoute 회귀 PASS.
+- [x] Task 025 읽기 전용 추천 기준가 — `basePrice+quality` 기준, 일반 30G·고품질 186G, 현재가 자동 변경 없음, FinalPresentation/FinalRoute PASS.
+- [x] Task 031 주민/관광객 계층 표시 — 현재 8명은 실제 일과표 기반 `[주민]`, 일과표 없는 향후 방문 손님은 `[관광객]` 폴백. 기본 머리 위 말풍선 태그와 D3D11 30G 회귀 PASS.
+- [x] Task 024 테마 코너 설계 — 기존 `ShopSlot`과 placement footprint를 재사용해 같은 카테고리 4방향 인접 2칸 이상을 코너로 파생하고, 기존 상점 전체 테마·저장·구매 수학과 분리했다.
+- [~] Task 086 상품 진열 테마 코너 구현 — 전용 D3D11에서 양성/음성 인접·품절/재진열·회수/이동·실제 판매 3건·Processed 마을 신호·v10 저장 재파생까지 PASS. 기존 ShopCustomization 회귀의 직접 `Camera.Render()`가 같은 네이티브 충돌을 두 번째로 재현해 전체 회귀와 기본 화면 라벨 가독성은 미완이다.
+- [ ] 재개 전 필수: validator registry의 직접 `Camera.Render()` 사용처를 한 번에 감사해 안전한 공용 GameView 캡처 경로로 교체한다. 같은 직접 렌더 경로의 세 번째 Unity 실행은 금지한다.
+- [x] Task 087 사용자 추가 장기 지침 1차 통합 — `TRIPO_ASSET_AUDIT.md`에 전수 실사용, 8분류, B06~B08 기능/격자, B11/B12 정적 역할, 원본·출처·라이선스·배포 게이트를 정합화했다.
+- [~] Task 094 장기 최종화 정책/실제 정리 — 캐릭터 정체성 보존·Unity/Blender 경계·Placeable 온보딩을 장기 지침에 고정하고 Froggy Chair 런타임 생성 2곳을 제거했다. 컴파일/정적 계약 PASS, GameCamera 빈자리/초점 확인 대기.
+- [ ] 사용자 증빙: C-01~C-09/walking/B01~B12의 Tripo 생성 계정·생성일·상업 이용 범위. 증빙 전 최종 배포 확정 금지.
+- [ ] Froggy Chair: 플레이어 런타임 참조는 0. 최종 빌드 전 라이선스 증빙을 확보하거나 `Resources` 파생물을 보존 가능한 격리 경로로 이동/검증된 기존·자체 에셋으로 교체.
+- [ ] Unity 재실행 안전 경로 승인 후 B06 Kitchen부터 동일 게임 카메라로 정면·2×2 통로·콜라이더·Bread 제작 피드백 최종화. 이어 B07 Forge, B08 Sewing 순서.
+- [ ] B11 Fountain 광장 횡단 동선/물리 정합, B12 TradePort 해안 동선/물리 정합. 교역 기능은 Task 079 선행 조건 전 추가 금지.
+- [x] 사용자 제공 Grid-Based Player Customization 지침 재대조 — 기존 P1~P5의 footprint·clearance·interaction·zone·회전·저장·NPC 접근은 구현/검증됨을 확인하고 Tripo/외부 에셋 온보딩 게이트만 문서에 보강했다. 집/마당/벽/상판 surface는 P6 백로그 유지.
+- [~] Task 092 Raw 다음 날 변화 — 실제 Raw 판매를 기존 v10 카테고리 pending/active 계약에 연결하고, CC0 통나무·바위와 Project P.A. 간판 메시의 무충돌 `원자재 수거처`를 구현했다. Runtime/Editor/정적 계약 PASS, 안전 캡처 경로 승인 후 같은 GameCamera에서 당일 없음→다음 날 등장·간판 방향·스케일·ShopSlot/NPC 동선 비겹침을 확인한다.
+- [~] Task 093 당일 낚시·가구 명명 트렌드 — Fish/생선구이/목제 가구의 실제 성공 판매만 `낚시 생활|가구 문화`로 집계해 기존 결산 카테고리 아래에 표시한다. Runtime/Editor 오류 0, 정적 계약 18개 PASS. 안전 캡처 경로 승인 후 결산 가독성과 생선구이·목제 가구 실제 판매를 확인한다.
+
+## Task 095 가구 보조 루프 단계 안내 — 2026-07-17
+
+- [x] 기존 `Recipe_Furniture`·Plank3·BasicWorkbench·Tier2·ShopSlot·당일 SalesLog 경로를 단일 권위로 재사용.
+- [x] Day 4+ 체크리스트에 현재 잠금 또는 다음 실제 행동 한 줄 연결.
+- [x] Tier 1/2 누적 매출은 실제 `TierDefinition`에서 읽고 10,000G/100,000G 값을 변경하지 않음.
+- [x] 지급·강제 승급·자동 제작/진열/판매 없는 읽기 전용 계약 및 Runtime/Editor 오류 0 확인.
+- [ ] 안전 Unity 경로 승인 뒤 Tier 0/1/2, Plank 0~3, 제작품 보유, 진열, 당일 판매 문구가 1920×1080 패널에서 잘리지 않는지 확인.
+- [ ] 같은 실행에서 B05→Plank3→목제 가구 제작→진열·가격→실제 구매→정산 `가구 문화` 전체 왕복 확인.
+- [ ] 100,000G가 장기 플레이 시간과 맞는지 사용자/기획 판단. 승인 없이 수익·Tier 임계치를 낮추지 않음.
+
+## Task 096 새 게임·이어하기 제품형 진입 — 2026-07-17
+
+- [x] 기존 첫날 Canvas 맨 앞에 PROJECT P.A. 타이틀·핵심 판타지·새 게임/이어하기 선택 연결.
+- [x] `ExistsAsync` 기반 저장 유무 확인과 저장 없음 비활성 상태 구현.
+- [x] 이어하기는 기존 v10 `LoadGameAsync`→`RestoreSavedSession`, 새 게임은 기존 이름 등록 이후 흐름 재사용.
+- [x] 로드 실패 복귀, 결산 닫기 버튼, F5/F9 보존 및 저장 삭제·자동 로드·스키마 무변경 확인.
+- [x] Runtime/Editor 오류 0, 상태 전이 15개와 읽기 전용 호출 계약 PASS.
+- [ ] 안전 Unity 경로 승인 뒤 저장 없음/있음 타이틀 화면, 버튼 가독성, 새 게임→이름 등록을 확인.
+- [ ] 격리 v10 세이브로 이어하기→이름/지도/일차/시간/돈/Tier/인벤토리/진열/배치 실제 복원 확인.
+
+## Task 097 Pause 메뉴 제품 제어 — 2026-07-17
+
+- [x] 계속하기·게임 저장·저장본 불러오기·저장 후 종료 버튼 연결.
+- [x] Pause 전 `Time.timeScale`·커서 잠금·표시 상태 저장과 Resume/파괴 시 복구.
+- [x] 저장 존재 기반 Load 비활성, 비동기 중복 입력 잠금, 예외 상태 문구 구현.
+- [x] 기존 `SaveManager` 공개 API만 사용하고 저장 성공 뒤에만 `Application.Quit` 호출.
+- [x] Runtime/Editor 오류 0, 정적 계약 11/11, `git diff --check` PASS.
+- [ ] 안전 Unity 경로 승인 뒤 타이틀에서 ESC 차단, 플레이 중 ESC 열기/닫기, 네 버튼 클릭을 확인.
+- [ ] 1920×1080 가독성, 저장 없음/있음 Load 상태, 실제 빌드의 저장 후 종료와 재실행 이어하기를 확인.
+
+## Task 098 Day 7 첫 주 완주 — 2026-07-17
+
+- [x] Day 7 Settlement 단일 감지와 `첫 주 운영 완료` 모달 연결.
+- [x] 기존 플레이어 이름·매출·돈·Tier·평판·Day 7 정산 읽기 전용 요약.
+- [x] Day 7 저장→기존 다음 날 전환→Day 8 재저장 경로 구현.
+- [x] 저장 성공 뒤 종료, 저장/전환 실패 복구, 배경 간판 진행 차단 구현.
+- [x] timeScale/커서 보존·복구와 Runtime/Editor 오류 0, 정적 계약 12/12 PASS.
+- [ ] 안전 Unity 경로 승인 뒤 Day 7 정산에서 모달 단일 표시, 1920×1080 줄바꿈/버튼 가독성을 확인.
+- [ ] 두 버튼으로 Day 8 저장/계속과 실제 빌드 종료→타이틀 이어하기→Day 7 모달 재진입을 확인.
+
+## Task 099 실제 입력 기반 시작 조작 안내 — 2026-07-17
+
+- [x] 기존 `StartupStep`을 재사용해 Phone 지급 뒤 조작 안내 단계 연결.
+- [x] WASD/방향키·Space·I/P/C·1~9/휠·좌클릭/R/M/X·F5/F9/ESC를 실제 입력 권위와 대조.
+- [x] 안내가 상태를 변경하지 않고 기존 보급품→도착→Day 1 흐름으로 이어지는 계약 확인.
+- [x] Runtime/Editor 오류 0, 입력·단계·기존 흐름 기능 계약 11/11 PASS.
+- [ ] 안전 Unity 경로 승인 뒤 1920×1080에서 다섯 줄 본문이 잘리지 않고 키 그룹이 읽히는지 확인.
+- [ ] `조작 확인` 클릭이 보급품→도착→첫날 시작으로 한 단계씩 이어지고 타이틀/이어하기가 그대로 동작하는지 확인.
+
+## Task 100 타이틀 게임 종료 경로 — 2026-07-18
+
+- [x] 기존 시작 Canvas/helper에 타이틀 전용 `게임 종료` 버튼 연결.
+- [x] 종료/이어하기/새 게임 3버튼 배치와 비Title·Day 1 결산 숨김 처리.
+- [x] 이어하기 로딩 중 종료 잠금, 실제 빌드 Quit, Editor 안전 안내 구현.
+- [x] 종료 경로의 저장 비침범과 기존 타이틀/조작 안내/진행 흐름 보존 확인.
+- [x] Runtime/Editor 오류 0, 상태 계약 14/14 PASS.
+- [ ] 안전 Unity 경로 승인 뒤 1920×1080에서 세 버튼이 겹치지 않고 저장 없음/있음 양쪽에서 종료가 활성인지 확인.
+- [ ] Windows 빌드에서 타이틀 `게임 종료` 클릭 시 프로세스가 정상 종료되는지 확인.
+
+## Task 101 기존 저장 보호 새 게임 확인 — 2026-07-18
+
+- [x] 타이틀 저장 존재 확인이 끝날 때까지 새 게임 잠금.
+- [x] 저장 없음은 기존 이름 등록으로 직행하고 저장 있음은 덮어쓰기 경고 표시.
+- [x] 경고 승인→이름 등록, 취소→타이틀 복귀·저장 상태 재조회 연결.
+- [x] 확인 화면 저장/삭제 비침범과 기존 이어하기·종료·조작 안내 보존 확인.
+- [x] Runtime/Editor 오류 0, 저장 보호 상태 계약 15/15 PASS.
+- [ ] 안전 Unity 경로 승인 뒤 저장 없음/있음 각각의 실제 버튼 분기와 타이틀 재조회 확인.
+- [ ] 1920×1080 경고 문구·두 버튼 가독성 및 새 게임 뒤 첫 F5에서 기존 슬롯을 덮어쓰는 실제 제품 동작 확인.
+
+## Task 102 B09 외부 창고 실제 사용 UI — 2026-07-18
+
+- [x] 메인 씬 `StorageUI` 0개와 B09 `Interact→OpenBox` 무화면 단절 확인.
+- [x] 기존 `PA_UIRoot`에 `StorageUI` 단일 런타임 폴백 연결.
+- [x] B09 24칸 6×4, 실제 아이콘·수량·품질·유효 가격 표시.
+- [x] 선택 핫바 스택의 메타를 복사하고 성공 뒤 해당 슬롯만 정확히 1개 차감.
+- [x] 클릭 회수·가방 가득 참 보존·커서 복구·ESC/Pause 우선순위·다른 패널 상호배타 구현.
+- [x] Runtime/Editor 오류 0, 창고 기능·v10 저장 비침범 계약 14/14 PASS.
+- [ ] 안전 Unity 경로 승인 뒤 B09 문 앞 `[Space]`→24칸 화면→보관/회수→ESC를 실제 확인.
+- [ ] 1920×1080 아이콘/한국어/버튼 가독성과 보관 전후 v10 저장→로드 수량·품질·가격 왕복 확인.
+
+## Task 103 제작 도감·작업대 제작 UI 제품 흐름 — 2026-07-18
+
+- [x] 기존 8개가 모두 작업대 전용이라 C 패널이 비어 있던 원인 확인.
+- [x] `[C]` 전체 레시피 도감과 필요한 작업대 표시, 원격 제작 차단.
+- [x] B05~B08 작업대 컨텍스트별 실제 아이콘·출력·전체 재료 보유/필요량·잠금 표시.
+- [x] 기존 `CraftingService.TryCraft` 단일 권위로 제작하고 성공/실패 뒤 카드와 상태 갱신.
+- [x] 전체 화면 입력 차단, 인벤토리·스마트폰·창고 상호배제, 커서 복원과 ESC 우선순위 구현.
+- [x] Runtime/Editor 오류 0, 제작 기능 계약 16/16, `git diff --check` PASS.
+- [ ] 안전 Unity 경로 승인 뒤 `[C]` 도감 8개와 B05~B08 `[Space]` 필터/제작/실패 피드백을 실제 클릭으로 확인.
+- [ ] 1920×1080 카드 세 줄·아이콘·스크롤·상태 문구와 ESC/다른 패널 전환을 같은 화면에서 확인.
+
+## Task 104 Tripo 장기 정책·B11 분수 충돌 정합 — 2026-07-18
+
+- [x] 기존 Tripo 전수 감사·P1~P5 Placeable·출처 문서를 첨부 Grid/에셋 지침과 대조.
+- [x] 에셋별 1~8 판정, 캐릭터 정체성 보존, 기능 가구의 footprint/clearance/interaction·저장, 원본/라이선스 게이트를 ADR로 고정.
+- [x] B11 6×6 사각 루트 BoxCollider와 원형 Visual 불일치 확인.
+- [x] 실제 Visual mesh별 비볼록 정적 MeshCollider 구성 뒤에만 루트 Box를 끄는 안전한 런타임 보정 구현.
+- [x] 기존 캡슐형 carving obstacle, B11 모델·재질·배치, 메인 씬·프리팹·원본 FBX/텍스처 보존.
+- [x] Runtime/Editor 오류 0, 물리/폴백/중복/금지 경계 계약 12/12, `git diff --check` PASS.
+- [ ] 안전 Unity 경로 승인 뒤 분수 둘레 네 방향 이동, 보이는 석재 경계, 벤치 접근과 NPC 우회를 실제 확인.
+- [ ] 기존 GameCamera 구도의 Before와 같은 조건으로 After를 만들고 스케일·동선·충돌 정합이 명확히 개선됐는지 판정.
+
+## Task 105 20~23시 영업 손님 흐름 복구 — 2026-07-18
+
+- [x] 18~23시 영업과 19~20시 주민 Rest 시작의 시간 창 단절 확인.
+- [x] 실제 phase를 바꾸지 않는 Rest 전용·멱등 방문 override 구현. Work·Sleep 제외.
+- [x] Tier 0 외부 초대의 성공·실패·timeout·폐점 lease와 원위치/Shop/Rest 복구 구현.
+- [x] Tier 1 실내 초대의 시작 실패·구매 후 퇴장 복구와 기존 동시 손님 상한 보존.
+- [x] 기존 Day 1, `NpcController` FSM, 구매 수학, schedule 에셋, 저장, 씬·프리팹·패키지 비침범.
+- [x] Runtime/Editor 오류 0, 기능 계약 18/18, `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 18:30/20:30/22:30 외부·실내 손님 유입과 기존 동시 손님 상한 확인.
+- [ ] 23:00 폐점과 timeout 뒤 임시 손님이 남지 않고 원래 위치·Shop·Rest로 복귀하는지 확인.
+
+## Task 106 Processed 다음 날 변화 실제 에셋 전환 — 2026-07-18
+
+- [x] `PA_VillageCulture_Processed`의 원시 큐브 5개·런타임 재질 구성 확인.
+- [x] `Building_B05_Workbench` 래퍼 대신 `prefab/Visual`만 복제해 실제 실루엣 사용.
+- [x] 기존 B05 목재→판재 준비 키트와 Project P.A. 간판 `가공 준비대` 결합.
+- [x] Y 180° 작업면 보정·0.58배 광장 점유 범위 적용.
+- [x] Workbench·Collider·Rigidbody·NavMeshObstacle·MonoBehaviour·추가 Light 제거, 가짜 기능/충돌 차단.
+- [x] Raw 상호배타·pending→다음 날·v10 category 저장/복원과 B05 원본/기능/배치 비침범.
+- [x] Runtime/Editor 오류 0, 기능 계약 18/18, `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 같은 GameCamera의 판매 전/다음 날 스케일·정면·간판·상점/분수 겹침을 확인.
+- [ ] 플레이어와 NPC가 시각 루트를 통과할 수 있고 기능 작업대로 오인되지 않는지 확인.
+
+## Task 107 Utility 다음 날 공구 수리대 변화 — 2026-07-27
+
+- [x] 판매 가능한 `Item_12_ToolSet` Utility와 `Recipe_ToolSet`→Forge→B07 실제 데이터 경로 확인.
+- [x] Utility 성공 판매를 기존 pending→다음 DayPreparation→v10 category 문자열 계약에 연결.
+- [x] `Building_B07_BlacksmithForge` 래퍼 대신 `prefab/Visual`만 0.44배 비충돌 시각으로 복제.
+- [x] Project P.A. 간판 `공구 수리대`와 Utility 전용 다음 날 힌트 연결.
+- [x] Workbench·Collider·Rigidbody·NavMeshObstacle·MonoBehaviour·Light 제거와 Processed/Raw 상호배타 구현.
+- [x] Runtime/Editor 오류 0, 기능 계약 23/23 PASS.
+- [ ] 안전 Unity 경로에서 Utility 판매 당일 없음→다음 DayPreparation 등장과 v10 저장/복원을 실제 확인.
+- [ ] 같은 GameCamera에서 B07 축소 시각의 스케일·정면·간판·상점/분수 겹침, 플레이어/NPC 동선과 실제 기능 Forge와의 구분을 확인.
+
+## Task 108 Luxury 다음 날 공예 전시대 변화 — 2026-07-27
+
+- [x] 판매 가능한 `Item_11_Furniture`/`Item_13_Clothes` Luxury와 기존 Furniture/Sewing 레시피 경로 확인.
+- [x] Luxury 성공 판매를 기존 pending→다음 DayPreparation→v10 category 문자열 계약에 연결.
+- [x] `Building_B08_SewingTable` 래퍼 대신 `prefab/Visual`만 0.48배 비충돌 시각으로 복제.
+- [x] Project P.A. 간판 `공예 전시대`와 Luxury 전용 다음 날 힌트 연결.
+- [x] Workbench·Collider·Rigidbody·NavMeshObstacle·MonoBehaviour·Light 제거와 Processed/Raw/Utility 상호배타 구현.
+- [x] Runtime/Editor 오류 0, 수정된 기능 계약 27/27 PASS.
+- [ ] 안전 Unity 경로에서 Luxury 판매 당일 없음→다음 DayPreparation 등장과 v10 저장/복원을 실제 확인.
+- [ ] 같은 GameCamera에서 B08 축소 시각의 스케일·정면·간판·상점/분수 겹침, 플레이어/NPC 동선과 실제 기능 Sewing Table과의 구분을 확인.
+
+## Task 109 채용 후보 제품 흐름 — 2026-07-27
+
+- [x] 후보 8명의 `spawnPrefab`이 모두 비어 실제 고용이 실패하는 원인 확인.
+- [x] 명시 프리팹 우선과 같은 전문 분야의 기존 Producer/Specialist 원본 폴백 구현.
+- [x] `NpcController`·실제 SkinnedMesh 요구와 런타임 채용 clone 원본 재사용 차단.
+- [x] 후보·티어·원본·잔액을 비용 차감 전에 검사하고 기존 `EconomyService.TrySpend` 권위 보존.
+- [x] 신규 채용/v10 복원 공통 resolver와 profile/specialty/schedule/dialogue/후보별 친밀도 주입.
+- [x] Specialist의 WorkbenchType에 맞는 기존 `Resources/Recipes`만 할당.
+- [x] 첫 열기 카드 생성과 소개·한글 역할·비용·잠금·성공/실패 UI 피드백 구현.
+- [x] Runtime/Editor 오류 0, 수정된 정적 계약 36/36, `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 충분/부족 잔액, Producer/Specialist 실제 채용과 역할 행동·중복 차단을 확인.
+- [ ] 저장 후 재실행 복원과 스마트폰 1920×1080 카드/피드백 가독성을 확인.
+
+## Task 110 첫 주 채용 성장 목표 — 2026-07-27
+
+- [x] Day 5의 추상적인 채용 준비 문구를 실제 P.A. Phone 채용 행동으로 교체.
+- [x] Day 5 이후 미고용 상태의 낮 목표와 운영 체크리스트 안내 구현.
+- [x] 고용 뒤 실제 후보 이름·한글 역할·총 인원수를 체크리스트 완료 상태로 표시.
+- [x] `HiringService.OnHired` 구독/해제로 LongPlay 목표 즉시 갱신.
+- [x] 후보 roster를 실제 `GetHiredCandidates()`에서 이름순으로 결정론 생성.
+- [x] Day 7 첫 주 결산에 총 인원·최대 3명 roster·`외 N명` 요약 추가.
+- [x] Day 1~4와 기존 생활 활동·상품 2종·진열/가격·개점·판매/정산 체크리스트 보존.
+- [x] Runtime/Editor 오류 0, 정적 계약 29/29 PASS.
+- [ ] 안전 Unity 경로에서 Day 5 미고용→채용 성공 직후 목표/체크리스트 전환을 실제 확인.
+- [ ] Day 7 첫 주 결산 roster 일치와 1920×1080 긴 이름·역할 가독성을 확인.
+
+## Task 111 생산자 납품 원자 거래 — 2026-07-27
+
+- [x] 기존 돈 선차감→가방 실패→NPC 상품 삭제 유실 경로 확인.
+- [x] 메타 일치 스택/빈 슬롯의 전량 수용을 변경 없이 검사하는 `Inventory.CanAddInstance` 구현.
+- [x] `AddInstance` 실패 시 기존 슬롯과 전달 인스턴스가 부분 변경되지 않는 원자성 복구.
+- [x] Producer의 가방 연결/전량 공간 확인을 `TrySpend`보다 앞으로 이동.
+- [x] 가방 가득 참·잔액 부족 시 결제 없음/NPC 재고 유지.
+- [x] 결제 뒤 예상 밖 추가 실패의 기존 Economy 전액 환불/NPC 재고 유지.
+- [x] 성공 시 원본 ItemInstance 메타 이전 뒤에만 NPC 재고 제거.
+- [x] 성공·공간/잔액 보류·환불을 기존 NPC 말풍선으로 표시.
+- [x] Runtime/Editor 오류 0, 정적 거래 계약 30/30, `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 메타 불일치 스택까지 가득 찬 가방의 돈·양쪽 재고 무변경을 실제 확인.
+- [ ] 공간 확보 뒤 같은 생산물의 정확 수량/비용 납품과 성공/보류 말풍선을 확인.
+
+## Task 112 2주차 운영 캠페인 — 2026-07-27
+
+- [x] Day 8+ 일반 반복 문구와 Day 8 전환 뒤 실제 성장 목표 단절 확인.
+- [x] Day 8~14 보관·가공·채용·상품 구성·Tier·마을 변화·주간 다양화 계획 추가.
+- [x] 실제 B09 보관량과 당일 Processed/카테고리/상품 판매 기록 판정.
+- [x] 실제 채용 roster, Tier 1, 활성 다음 날 마을 변화 판정.
+- [x] 2주차 자동 온보딩 보급 미추가와 직접 채집/생산자/가공/정리 안내.
+- [x] Day 1~7·Day 7 완주/Day 8 저장 전환·기본 생활–상점 체크리스트 보존.
+- [x] 경제·인벤토리·판매·제작·채용·Tier·저장 권위 비침범.
+- [x] Runtime/Editor 오류 0, 정적 계약 40/40, `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 Day 7 저장→Day 8 시작과 Day 8~14 대표 목표의 0.5초 완료 전환 확인.
+- [ ] 1920×1080에서 2주차 목표/체크리스트가 기존 HUD와 겹치거나 잘리지 않는지 확인.
+
+## Task 113 Tripo 재감사·B12 항구 충돌 방지 — 2026-07-27
+
+- [x] 첨부 Grid/Tripo 지침을 기존 8분류·Placeable·출처 ADR과 재대조.
+- [x] FBX 174/OBJ 150/GLB 0/Blend 0과 Nature Pack 외 고유 FBX 24개 재집계.
+- [x] C-01~C-09 `.meta`의 `tripo_node_*`, B01~B12 제작 문서/GUID 사용처를 출처 추정 근거로 기록.
+- [x] B12 10×5m 물리와 실제 약 3.63×1.96m Visual 차이 및 box형 carving obstacle 재발 경로 확인.
+- [x] 활성 map/legacy B12의 Visual 로컬 bounds 8모서리 계산 구현.
+- [x] 명백히 큰 루트 BoxCollider/NavMeshObstacle의 축소 전용 정합과 메시 실패 보존 구현.
+- [x] B12를 정적 Protected/Developer 세계 에셋으로 유지하고 교역/Placeable/가짜 접근점 미추가.
+- [x] Runtime/Editor 오류 0, 정적 계약 20/20, 대상 `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 기존 10×5m 투명 벽 영역 통과와 보이는 부두 경계 정지를 확인.
+- [ ] NPC carving 우회와 동일 GameCamera Before/After를 확인.
+- [ ] 최종 배포 전 B12를 포함한 Tripo 개별 생성 계정·생성일·상업 이용 증빙 확보.
+
+## Task 114 첫 달 운영 캠페인·Day 30 완주점 — 2026-07-27
+
+- [x] Day 14 이후 일반 반복 문구 공백 확인.
+- [x] Day 15~30 보관·가공·고용·상품 구성·Tier·마을 변화 기반 운영 계획 16개 등록.
+- [x] 각 날짜에 기존 런타임 상태만 읽는 첫 달 체크리스트 목표 연결.
+- [x] Day 30 Settlement 첫 달 완주 모달과 누적 성과/당일 정산 요약 구현.
+- [x] 저장 후 Day 31 계속과 저장 성공 뒤 종료 분기 연결.
+- [x] Day 7 자동 보급 종료·첫 주 완주·Day 8 저장 전환 보존.
+- [x] 저장 스키마·경제·판매·제작·채용·Tier·마을 변화 권위 비침범.
+- [x] Runtime/Editor 순차 빌드 경고 0·오류 0, 정적 계약 56/56, 대상 `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 대표 Day 15~30 목표 완료 전환과 Day 30 모달 표시를 확인.
+- [ ] Day 30 저장→Day 31→재저장, 저장→종료→이어하기 두 분기를 격리 저장으로 확인.
+- [ ] 1920×1080에서 첫 달 요약·버튼·기존 HUD 겹침과 잘림을 확인.
+
+## Task 115 Tier 1 대장간·철제 도구 첫 달 가치사슬 — 2026-07-27
+
+- [x] Day 15~30 목표를 BuildingData·설계도·레시피·상품·Tier 요구까지 역추적.
+- [x] B07 BuildingData/설계도/ToolSet 레시피/ToolSet 상품은 Tier 1인데 배치만 Tier 3인 불일치 확인.
+- [x] B07 카탈로그 태그·최소 Tier·장부 보상을 Tier 1에 정합.
+- [x] B05 starter, B06 Tier 2, B08 Tier 3, Tier 1=10,000G/Tier 2=100,000G 보존.
+- [x] 중복 설계도 방지: 보유 또는 배치 상태면 재지급하지 않음.
+- [x] 활성 B07 배치를 읽는 비변경 조회 연결.
+- [x] Day 23을 활성 B07+정확한 철제 도구+다른 상품 1종 판매로 교체.
+- [x] Day 24를 활성 B07+정확한 철제 도구+Processed 1건 판매로 교체.
+- [x] 빈 진열대 두 칸 회수와 Plank1+Ore4→IronBar2→ToolSet1 경로 안내.
+- [x] Day 15=16,000G→Day 30=31,000G→Day 31 이후 단조 증가 표시 목표로 역행 제거.
+- [x] Runtime/Editor 순차 빌드 오류 0, 기존 CS8785/CS0414만 유지.
+- [x] 실행 가능 소스 계약 39/39, 대상 `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 Tier 1 장부 첫 열기에 B05/B07 설계도가 함께 지급되는지 확인.
+- [ ] 빈 진열대 두 칸 회수→B07 3×2 배치, 전면 접근·콜라이더·NavMesh 통로 확인.
+- [ ] Wood/Ore 확보→Plank/IronBar/ToolSet 제작→ToolSet+일상 상품/Processed 판매 실제 왕복 확인.
+- [ ] Day 23/24 체크리스트 즉시 전환과 1920×1080 문구 가독성 확인.
+
+## Task 116 안전 GameView 캡처 기반 1차 전환 — 2026-07-27
+
+- [x] `Assets/Editor` 직접 `camera.Render()` 실제 호출 12곳 전수 감사.
+- [x] ThemeCorner의 일반 GameView `ScreenCapture` 흐름을 공용 `PA_SafeGameViewCapture`로 추출.
+- [x] 1920×1080 해상도, Canvas/TMP 갱신, 안정화 대기, 새 PNG freshness/최소 크기 판정 구현.
+- [x] camera target/transform/orthographic/FOV/culling/viewport와 이전 화면 상태 `finally` 복원.
+- [x] 알려진 두 번째 충돌 지점 `PA_ShopCustomizationValidator`를 공용 비동기 캡처로 전환.
+- [x] Task 115용 `PA_ShopProgressionUnlockValidator`의 Tier 0/Tier 3 캡처 2회를 공용 경로로 전환.
+- [x] 대상 세 파일의 실제 직접 `camera.Render()` 호출 0 확인.
+- [x] Runtime 경고/오류 0, Editor 오류 0(기존 CS8785/CS0414 경고 2), 계약 28/28, 대상 diff 검사 PASS.
+- [ ] 남은 직접 렌더 10곳을 파일 수 경계에 맞춰 후속 분할 전환.
+- [ ] 저장소 전체 실제 직접 `camera.Render()` 호출 0을 정적으로 확인.
+- [ ] 사람 승인 뒤 D3D11 격리 GameView 캡처 1회로 PNG와 상태 복원을 확인.
+- [ ] ShopCustomization과 ShopProgression을 순차 실행해 이전 네이티브 충돌이 재발하지 않는지 확인.
+
+## Task 117 안전 GameView 캡처 기반 2차 전환 — 2026-07-27
+
+- [x] 남은 직접 렌더 10곳에서 VillageCulture/CustomerPanelLayout/FinalPresentation 3개를 2차 대상으로 확정.
+- [x] 세 검증기를 중복 실행 방지 `Task` 가드와 캡처 완료 대기 async/await 순서로 전환.
+- [x] VillageCulture의 Day 1/판매 당일/다음 날 캡처 3장을 공용 GameView 경로로 전환.
+- [x] CustomerPanelLayout의 1920×1080 패널 캡처를 공용 GameView 경로로 전환.
+- [x] FinalPresentation의 시장/일반 가격/희귀 가격/NPC/감사/정산 6장 캡처를 공용 GameView 경로로 전환.
+- [x] 시장 마커, FOV 46, 전체 레이어, 1920×1080 구도와 기존 캡처 실패 정책/출력 목록 보존.
+- [x] 세 대상의 `RenderTexture`·`ReadPixels`·실제 직접 `camera.Render()` 호출 0 확인.
+- [x] Runtime 경고/오류 0, Editor 오류 0(기존 CS8785/CS0414 경고 2), 교정 계약 38/38, 대상 diff 검사 PASS.
+- [x] 저장소 잔여 직접 렌더를 Character/Cottage/DemoView/GatheringShop/OutdoorPlacement/ShopEvolution/Workbench 7곳으로 축소.
+- [ ] 남은 직접 렌더 7곳을 파일 수 경계에 맞춰 후속 분할 전환.
+- [ ] 저장소 전체 실제 직접 `camera.Render()` 호출 0을 정적으로 확인.
+- [ ] 사람 승인 뒤 D3D11 격리 GameView 캡처 1회와 VillageCulture/CustomerPanel/FinalPresentation 순차 검증.
+
+## Task 118 안전 GameView 캡처 기반 3차 전환 — 2026-07-27
+
+- [x] 남은 직접 렌더 7곳에서 DemoView/GatheringShop/OutdoorPlacement 3개를 3차 대상으로 확정.
+- [x] DemoView를 중복 실행 방지 `Task` 가드와 공용 GameView 캡처 완료 대기 흐름으로 전환.
+- [x] 실내 11초/외부 4.5초 준비, 실제 추적 카메라, 2560×1440 출력 보존.
+- [x] GatheringShop의 낮 채집→수집 후→밤 상점→고객 반응→다음 날 정산 5개 1920×1080 캡처 전환.
+- [x] OutdoorPlacement의 baseline/final 동일 직교 구도 2개 1280×720 캡처와 PNG 최소 크기 판정 보존.
+- [x] 세 검증기에서 캡처 중 `CameraController` 동결과 `finally` 복원 구현.
+- [x] 세 대상의 `RenderTexture`·`ReadPixels`·실제 직접 `camera.Render()` 호출 0 확인.
+- [x] Runtime 경고/오류 0, Editor 오류 0(기존 CS8785/CS0414 경고 2), 계약 35/35, 대상 diff 검사 PASS.
+- [x] 저장소 잔여 직접 렌더를 Character/Cottage/ShopEvolution/Workbench 4곳으로 축소.
+- [ ] 남은 직접 렌더 4곳을 파일 수 경계에 맞춰 후속 분할 전환.
+- [ ] 저장소 전체 실제 직접 `camera.Render()` 호출 0을 정적으로 확인.
+- [ ] 사람 승인 뒤 D3D11 격리 GameView 캡처 1회와 전환된 검증기 순차 실행.
+
+## Task 119 안전 GameView 캡처 기반 4차 전환 — 2026-07-27
+
+- [x] 남은 직접 렌더 4곳에서 Character/Cottage/Workbench 3개를 4차 대상으로 확정.
+- [x] Character의 소스 lineup과 runtime idle/walk를 단일 `Task` 가드·await GameView 흐름으로 전환.
+- [x] Character의 1600×900 구도, 0.35초 준비·0.6초 이동·0.25초 종료와 접지/보행 판정 보존.
+- [x] Cottage의 전경·4방향·최종·runtime 7개 1920×1080 캡처와 renderer 격리 복원 보존.
+- [x] Workbench의 감사/최종 4방향과 runtime baseline/final 1920×1080 캡처 전환.
+- [x] Workbench의 접근 방향·콜라이더·Wood→Plank 실제 제작·피드백 판정 보존.
+- [x] 실제 게임 카메라 캡처 중 `CameraController` 동결과 `finally` 복원 구현.
+- [x] 세 대상의 `RenderTexture`·`ReadPixels`·실제 직접 `camera.Render()` 호출 0 확인.
+- [x] Runtime 경고/오류 0, Editor 오류 0(기존 CS8785/CS0414 경고 2), 계약 42/42, 대상 공백 검사 PASS.
+- [x] 저장소 잔여 직접 렌더를 `PA_ShopEvolutionVisualFinalizer` 1곳으로 축소.
+- [ ] 마지막 ShopEvolution 직접 렌더를 공용 GameView 경로로 전환.
+- [ ] 저장소 전체 실제 직접 `camera.Render()` 호출 0을 정적으로 확인.
+- [ ] 사람 승인 뒤 D3D11 격리 GameView 캡처 1회와 전환된 검증기 순차 실행.
+
+## Task 120 안전 GameView 캡처 기반 최종 전환 — 2026-07-27
+
+- [x] 마지막 `PA_ShopEvolutionVisualFinalizer` 직접 렌더를 최종 전환 대상으로 확정.
+- [x] B02~B04 4방향 소스 감사 12장을 중복 실행 가드·await GameView 흐름으로 전환.
+- [x] runtime baseline과 Tier 1~3 after를 단일 `Task` 가드로 순차 처리.
+- [x] 기존 1600×900, 초기 4초, 단계별 0.75초, orthographic size 6.6, 파일명과 구도 보존.
+- [x] 실제 게임 카메라의 `CameraController`·`clearFlags`를 `finally`에서 복원.
+- [x] Tier 전후 `ShopCustomizationController.WriteSaveFields` JSON 동등성 판정 보존.
+- [x] 대상 `RenderTexture`·`ReadPixels`·실제 직접 `camera.Render()` 호출 0 확인.
+- [x] 저장소 전체 실제 직접 `camera.Render()` 호출 0 정적 확인.
+- [x] Runtime 경고/오류 0, Editor 오류 0(기존 CS8785/CS0414 경고 2), 계약 36/36 PASS.
+- [ ] 사람 판단 뒤 D3D11 격리 GameView PNG 1회로 freshness·파일 크기·가독성·카메라/화면 복원 확인.
+- [ ] 격리 캡처 성공 뒤 ShopEvolution부터 전환된 검증기를 순차 실행.
+
+## Task 121 Day 31~45 두 번째 달 진입 캠페인 — 2026-07-27
+
+- [x] Day 30 이후의 일반 장기 운영 안내를 다음 단일 플레이 루프 단절로 확정.
+- [x] `LongPlayProgressionController`에 Day 31~45 계획 15개와 두 번째 달 제목/캠페인 범위 추가.
+- [x] `PlayableDayScenarioController`에 Day 31~45 실제 상태 완료 판정 15개 연결.
+- [x] 보관 10/12개, Processed 2/3건, 지원 인력 3명, 상품 3/4종, 3카테고리, B07/ToolSet, 활성 마을 변화, 영업 전 4상품 준비 판정.
+- [x] 기존 목표 수식을 공용 읽기 API로 사용해 Day 31 32,500G→Day 45 53,500G 보존.
+- [x] Day 1~30·Day 30 완주 UI·Tier 2 100,000G·B06 Tier 2·B08 Tier 3·저장 스키마 비침범.
+- [x] Runtime/Editor 오류 0, 기존 CS8785/CS0414 경고만 확인.
+- [x] Day 31~45 캠페인 정적 계약 23/23 PASS.
+- [ ] 사람 판단 뒤 안전 Unity 경로에서 Day 30 저장→Day 31 시작과 대표 Day 35/40/45 상태 전환 확인.
+- [ ] 1920×1080 상단 목표·체크리스트 가독성과 Day 46 기존 장기 운영 폴백 확인.
+
+## Task 122 Day 46~76 Tier 2 성장 캠페인 — 2026-07-27
+
+- [x] Tier2.asset의 누적 매출 100,000G·평판 0·자동 승급과 Day 76 기존 목표 수식 100,000G 정합 확인.
+- [x] `LongPlayProgressionController`에 Day 46~75 7단계 운영 리듬 30일과 Day 76 Tier 2 돌파 계획 추가.
+- [x] `PlayableDayScenarioController`에 같은 7단계 실제 상태 완료 판정과 Day 76 `CurrentTier >= 2` 판정 연결.
+- [x] 보관 12→20개, Processed 2→4건, 지원 인력 3명+상품 4종 준비, 3카테고리 목표 연결.
+- [x] 활성 B07+정확한 ToolSet+Processed, 활성 마을 변화+상품 4종, 주간 누적 매출 점검 연결.
+- [x] Day 1~45·Tier 2 100,000G·B06 Tier 2·B08 Tier 3·저장/경제/제작/채용 권위 비침범.
+- [x] Runtime/Editor 오류 0, 기존 CS8785/CS0414 경고만 확인.
+- [x] Day 46~76/Tier 2 캠페인 정적 계약 34/34 PASS.
+- [ ] 사람 판단 뒤 안전 Unity 경로에서 대표 Day 46/52/59/66/73 상태 전환 확인.
+- [ ] Day 76 매출 도달→자동 Tier 2 승급과 1920×1080 목표/체크리스트, Day 77 폴백 확인.
+
+## Task 123 Day 77~90 Tier 2 주방 가치사슬 캠페인 — 2026-07-27
+
+- [x] B06 BuildingData/Blueprint/Prefab의 Tier 2 배치 권위와 Kitchen 작업대 타입 확인.
+- [x] BreadLoaf·구운 감자·생선구이 세 기존 레시피의 재료·출력·Kitchen 요구와 출력 Item 경로 확인.
+- [x] `LongPlayProgressionController`에 Day 77~90 계획 14개와 주방 캠페인 제목/범위 추가.
+- [x] `PlayableDayScenarioController`에 B06 배치, 세 상품 판매/준비, Chef, 3카테고리, Processed 변화 실제 상태 판정 연결.
+- [x] Day 90 활성 B06+세 주방 상품 당일 판매+Processed 마을 방향 가치사슬 완주 조건 연결.
+- [x] Day 1~76·Tier/경제/제작/채용/마을 변화/저장 권위와 기존 리소스 비침범.
+- [x] Runtime/Editor 오류 0, 기존 CS8785/CS0414 경고만 확인.
+- [ ] 호출부 2개를 3개로 잘못 기대한 정적 검사식을 폐기하고 정확한 기대값으로 계약 검사 1회 수행.
+- [ ] 사람 판단 뒤 안전 Unity 경로에서 B06 지급/배치와 BreadLoaf·구운 감자·생선구이 제작→판매 확인.
+- [ ] Chef 고용, Processed 다음 날 변화, Day 90 완료와 1920×1080 목표/체크리스트 가독성 확인.
+
+## Task 124 Task 123 주방 캠페인 정적 계약 복구 — 2026-07-27
+
+- [x] `TryResolveTierTwoKitchenMilestone(day` 목표/체크리스트 호출부 기대값을 실제 2개로 정정해 PASS 확인.
+- [x] Day 77~90 계획 14개와 런타임 case 14개 확인.
+- [x] 단일 판정 정의, Day 76 Tier 2 경계, 캠페인 제목/보급 경계 확인.
+- [x] B06 프리팹 Kitchen 타입, 세 레시피 Kitchen 요구, 세 출력 Processed category와 요구 리소스 존재 확인.
+- [x] `ShopCustomizationController`의 B06 최소 Tier 실제 C# 행을 명시 경로에서 확인.
+- [x] 구운 감자·생선구이 Item asset의 실제 `itemName` YAML 행을 명시 경로에서 확인.
+- [x] 결합 검증을 재실행하지 않고 세 직접 권위 행으로 검사 표현 불일치를 확정.
+
+## Task 125 B06 Tier·출력 Item 이름 권위 행 감사 — 2026-07-27
+
+- [x] B06 실제 C# 행 `case "Blueprint_B06_KitchenStation": return 2;` 확인.
+- [x] BakedPotato YAML `"\uAD6C\uC6B4 \uAC10\uC790"`를 `구운 감자`로 해석 확인.
+- [x] GrilledFish YAML `"\uC0DD\uC120\uAD6C\uC774"`를 `생선구이`로 해석 확인.
+- [x] 실제 데이터 결함 없음, 검사 표현 불일치로 분류.
+- [x] Task 124 DONE 및 Task 123 정적 계약 47/47 확정.
+- [x] 다음 단일 구현: Day 91 이후 장기 플레이가 일반 폴백으로 돌아가는 지점을 기존 시스템으로 연결.
+
+## Task 126 Day 91~105 Tier 3 공동 공방 캠페인 — 2026-07-27
+
+- [x] Tier 3 평판 3·자동 승인과 `AddReputation` 미호출 도달 불가 경로 감사.
+- [x] 전문 주민 요청 완료→기존 일일 활동 표식→Tier 2 동안 하루 1 평판 연결.
+- [x] Day 91~105 계획/상태 판정 15개와 목표·체크리스트 두 경로 연결.
+- [x] B08 Tier 3, 의류 Sewing(4), 가구 BasicWorkbench(1), 두 Item Luxury(3) 권위 재사용.
+- [x] Runtime/Editor 순차 빌드 오류 0, 기존 CS8785/CS0414만 유지.
+- [x] 정적 계약 24/24와 대상 `git diff --check` PASS.
+- [ ] 안전 Unity 경로에서 주민 요청 3일→평판 3→Tier 3 자동 승급 확인.
+- [ ] Tier 3 장부 B08 지급·배치→의류/가구 준비·판매→Luxury 다음 날 변화 확인.
+- [ ] Day 91~105 목표/체크리스트 상태 전환과 1920×1080 가독성 확인.
+- [ ] 기존 GRID P1/P2/P4/P5와 Tripo 감사 문서에서 B06/B07/B08/B09/B05 남은 기능성 에셋 결함 하나를 다음 단일 작업으로 선정.
+
+## Task 127 B05~B08 전문 주민 전면 접근 연결 — 2026-07-27
+
+- [x] B05~B08 footprint/clearance/interaction과 Specialist 원점 목적지 단절 감사.
+- [x] Workbench 배치의 회전된 interaction 셀을 읽기 전용 접근점으로 투영.
+- [x] 활성 동일 타입 작업대의 NavMesh 완전 경로 선택과 셀 단위 예약/해제 연결.
+- [x] 이동·회수 시 이동/가공 중단, 도착 후 정면 보기, 저장 상태 복원 후 재접근 연결.
+- [x] 씬·프리팹·FBX·재질·저장·레시피·경제 권위 비침범.
+- [x] 확인된 `Assembly-CSharp.csproj`→`Assembly-CSharp-Editor.csproj` 순차 빌드 오류 0.
+- [x] 원점 목적지 호출 0, Workbench interaction 투영, 완전 경로, 예약/해제, 이동·회수 무효화 정적 계약 29/29 PASS.
+- [ ] 사람 판단 뒤 안전 Unity 경로에서 B06/B07/B08 전문 주민 접근·정면·겹침 방지·실제 제작 확인.
+- [x] 다음 단일 구현 후보: 기존 고객/NPC 권위를 감사해 실제 관광객 계층이 라벨뿐인지 확인하고, 가장 작은 정상 플레이 진입 단절 하나를 선정.
+
+## Task 128 관광객 손님 정상 플레이 진입 — 2026-08-04
+
+- [x] `NpcController`/`NpcScheduleController` 직렬화와 씬 생성기·기존 검증기에서 작성 고객 8명=주민, 관광객 0명 확인.
+- [x] Day 2+ 실제 개점에 영업당 최대 2명/동시 1명 세션 한정 관광객 진입 연결.
+- [x] 주민의 SkinnedMesh/Avatar 시각만 복제하고 런타임 프로필 이름·`[관광객]` 표시 연결.
+- [x] 관광객의 일과표·생산/전문가·대화/친밀도·채용·저장 기록 미생성.
+- [x] 가게 주변 NavMesh 완전 경로 진입점→기존 쇼핑 FSM/구매 수학→같은 진입점 퇴장 연결.
+- [x] Day 1 시나리오, 주민 Rest lease, 기존 동시 고객 상한·경제/저장 권위 보존.
+- [x] Runtime/Editor 순차 빌드 오류 0, 기존 CS8785/CS0414만 유지.
+- [x] 관광객 진입·분류·역할 비복제·비영속·퇴장·기존 흐름 정적 계약 46/46과 대상 공백 검사 PASS.
+- [ ] 사람 판단 뒤 안전 Unity 경로에서 Day 2+ 개점→관광객 입장→`[관광객]` 말풍선/성향→구매 또는 거절→퇴장을 확인.
+- [ ] 주민/관광객 동시 손님, Tier 0 외부·Tier 1 실내 주변 동선, 1920×1080 가독성을 확인.
+- [x] 다음 단일 구현 후보: Day 105 뒤 일반 폴백 구간을 감사해 기존 성장 권위로 연결할 실제 단절 하나를 선정.
+
+## Task 129 Day 106+ 본사 감사·Tier 4 최종 완주 — 2026-08-04
+
+- [x] 정상 플레이 평판 공급 1곳과 기존 AuditService 500,000G/평판5/고용3 조건을 대조해 Tier4 도달 불가 확인.
+- [x] Day 106+ Tier3 전문 주민 요청→기존 일일 저장 표식→감사 요구 평판까지 하루 1점 연결.
+- [x] 실제 평판·고용·누적 매출·다음 감사일을 Day106+ 상단 목표와 운영 체크리스트에 연결.
+- [x] AuditService 단독 `TryManualAdvance`와 Tier4 수동 승인·조건 수치 보존.
+- [x] Tier4 첫 Settlement→전체 캠페인 기록→저장 후 다음 날 자유 운영/저장 후 종료 연결.
+- [x] 새 저장 필드 없이 기존 `lastAuditDay`로 저장 후 계속한 완주 확인 복원.
+- [x] Runtime/Editor 순차 빌드 오류 0, 기존 CS8785/CS0414만 유지.
+- [x] 최종 감사·평판 상한·일일 중복 방지·목표/체크리스트·완주 저장 흐름 40개 자동+1개 직접 권위 PASS.
+- [ ] 사람 판단 뒤 안전 Unity 경로에서 Day106/107 요청→평판4/5→정기 감사→Tier4 확인.
+- [ ] Tier4 첫 정산 완주 화면, 저장→자유 운영→재실행, 저장 후 종료, 1920×1080 가독성 확인.
+- [x] 다음 단일 구현 후보: Tier4 감사 성공/실패와 최종 해금이 플레이어 화면에서 실제로 읽히는지 감사하고 로그 전용 단절 하나를 연결.
+
+## Task 130 본사 감사 성공·실패 플레이어 피드백 — 2026-08-04
+
+- [x] 기존 감사 앱이 날짜만 표시하고 실제 결과는 로그 전용임을 확인.
+- [x] AuditService에 현재 매출·평판·고용/조건 완료/다음 감사일/최근 결과 읽기 API와 갱신 이벤트 추가.
+- [x] 감사 실패·통과·최고 등급·내부 승급 보류 결과를 한 경로로 발행.
+- [x] 감사 앱에 실제 3조건 현재값·완료/부족·최근 결과·다음 행동 표시.
+- [x] 수동 승인 Tier 진행 바를 감사 3조건의 실제 부분 진행과 연결.
+- [x] 고정 폰 높이 안에서 Tier/매출/시설/감사 카드 재배치.
+- [x] 500,000G/평판5/고용3/7일, 단독 수동 승급, LastAuditDay 저장, 씬/프리팹/저장 스키마 보존.
+- [x] Runtime/Editor 순차 빌드 오류 0, 정적 계약 48/48 PASS.
+- [ ] 사람 판단 뒤 조건 미달 감사→실패/다음 행동, 조건 충족 감사→Tier4 해금 앱 갱신 확인.
+- [ ] 1920×1080에서 Tier/시설/감사 카드 텍스트 잘림·겹침과 열린 앱의 날짜 전환 즉시 갱신 확인.
+- [x] 다음 단일 구현 후보: 기존 AudioManager/프로젝트 내 출처 확인 클립을 감사해 구매·개점·정산 중 가장 영향력 큰 무음 피드백 하나 연결.
+
+## Task 131 Tripo 장기 정책 재확인·B06 Kitchen 보정 — 2026-08-04
+
+- [x] 첨부 GRID/Tripo 요구와 기존 `GridService` P1~P5, v10 저장, Placeable 가이드/Tripo 감사의 중복 여부 대조.
+- [x] FBX 174/OBJ 150/GLB 0/Blend 0, non-Nature 고유 FBX 24개 재확인.
+- [x] 1~8 개별 분류, 플레이어/주민 정체성 보존, 기능 가구 역할 우선, 원본 비파괴, 출처 배포 게이트 장기 지침 유지.
+- [x] B06 기존 Visual renderer bounds 기반으로 명백히 큰 X/Z Box를 축소 전용 정합.
+- [x] box형 NavMeshObstacle을 같은 center/size로 정합하고 메시 누락·이미 작은 축 보존.
+- [x] 로컬 `-Z` 물리 앞 `PA_KitchenInteractionAnchor`와 성공 제작 뒤 0.72초/최대 3.5% 모델 pulse 연결.
+- [x] B05 기능 아트, B06 Tier 2/2×2/Kitchen 레시피, 전문 주민 접근, 저장 권위 보존.
+- [x] FBX·프리팹·메인 씬·재질·BuildingData·설계도·패키지 무변경.
+- [x] Runtime/Editor 순차 빌드 오류 0, 정적 계약 30/30 PASS.
+- [ ] 사람 판단 뒤 안전 Unity에서 B06 배치, 플레이어/Chef 전면 접근, 모델-물리 경계, Bread 제작 pulse 확인.
+- [ ] 같은 GameCamera Before/After에서 통로·스케일·그림자·UI 겹침 개선 확인.
+- [ ] 최종 배포 전 B06 포함 Tripo 개별 생성 계정·생성일·상업 이용 증빙 확보.
+- [x] 다음 단일 후보: B07 Forge 전면/열원/물리/성공 피드백 감사 또는 기존 오디오 피드백 우선순위 복귀.
+
+## WORLD-000 Procedural Island Architecture — 2026-08-04
+
+- [x] 현재 loop-state/dirty Git/선행 변경을 감사하고 기존 변경을 보존했다.
+- [x] 월드/건설/저장/생활/NPC/상점/씬/NavMesh 실제 코드와 필드를 분류했다.
+- [x] Unity Terrain/custom chunk mesh/voxel을 비교하고 custom chunk mesh를 권장안으로 확정했다.
+- [x] 2m cell, 16×16 Chunk, 1m elevation 0~6, seed+sparse delta, building transaction, role anchor, chunk nav 전략을 문서화했다.
+- [x] Prototype_FirstDay/WorldSandbox/MainGame 역할과 Gate 1~5를 분리했다.
+- [x] WORLD-001~012 bounded backlog와 별도 MainGame integration gate를 작성했다.
+- [x] WORLD-000에서는 코드·씬·에셋·SaveData·Packages·ProjectSettings를 수정하지 않았다.
+- [ ] **WORLD-001 전 사람 확인:** Prototype_FirstDay를 Golden Regression Scene으로 보존하고 신규 `Assets/Scenes/WorldSandbox.unity`를 별도 생성하는 전략 승인.
+- [ ] **WORLD-001 전 사람 확인:** 2m/16×16/1m·custom mesh를 prototype baseline으로 승인. 최종 미감 승인이 아니라 WORLD-002에서 재검토 가능.
+- [ ] **WORLD-001 전 사람 확인:** WORLD-001의 단일 범위·최대 12경로·scene builder/validator 방식 승인.
+- [ ] **별도 티켓:** 중단된 `AudioManager.cs`/`SalesLogManager.cs` 변경의 의도와 검증 상태를 정리. WORLD 티켓에 섞지 않음.
+- [ ] **WORLD-007 전:** additive save schema/version/migration/격리 왕복 승인.
+- [ ] **WORLD-008 전:** per-Chunk NavMeshSurface와 D3D11 안전 runtime 검증 승인.
+- [ ] **Gate 1~5 후:** MainGame 사용 vs 새 integration scene, Prototype_FirstDay 장기 tutorial 유지 여부 승인.
+- [ ] WORLD-001은 새 지시 전 자동 실행하지 않는다.

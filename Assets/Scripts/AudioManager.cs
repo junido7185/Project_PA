@@ -10,6 +10,8 @@ using UnityEngine;
 [DefaultExecutionOrder(-50)]
 public class AudioManager : MonoBehaviour
 {
+    public const string SaleConfirmedSfxName = "sale.confirm";
+
     public static AudioManager Instance { get; private set; }
 
     [Serializable]
@@ -39,6 +41,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] int sfxPoolSize = 8;
     AudioSource[] _sfxPool;
     int           _sfxIdx;
+    AudioClip     _generatedSaleConfirmedClip;
 
     Coroutine _crossfadeCoroutine;
 
@@ -70,6 +73,27 @@ public class AudioManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         BuildAudioSources();
+        BuildGeneratedSaleConfirmedClip();
+    }
+
+    void OnEnable()
+    {
+        if (Instance == null || Instance == this)
+            SalesLogManager.OnSaleRecorded += HandleSaleRecorded;
+    }
+
+    void OnDisable()
+    {
+        SalesLogManager.OnSaleRecorded -= HandleSaleRecorded;
+    }
+
+    void OnDestroy()
+    {
+        if (Instance != this) return;
+
+        Instance = null;
+        if (_generatedSaleConfirmedClip != null)
+            Destroy(_generatedSaleConfirmedClip);
     }
 
     void BuildAudioSources()
@@ -83,8 +107,9 @@ public class AudioManager : MonoBehaviour
             src.volume      = 0f;
         }
 
-        _sfxPool = new AudioSource[sfxPoolSize];
-        for (int i = 0; i < sfxPoolSize; i++)
+        int safePoolSize = Mathf.Max(1, sfxPoolSize);
+        _sfxPool = new AudioSource[safePoolSize];
+        for (int i = 0; i < safePoolSize; i++)
         {
             var src = gameObject.AddComponent<AudioSource>();
             src.loop        = false;
@@ -140,6 +165,8 @@ public class AudioManager : MonoBehaviour
     void PlaySFXInternal(string clipName)
     {
         AudioClip clip = FindClip(sfxClips, clipName);
+        if (clip == null && clipName == SaleConfirmedSfxName)
+            clip = _generatedSaleConfirmedClip;
         if (clip == null) return;
 
         AudioSource src = _sfxPool[_sfxIdx % _sfxPool.Length];
@@ -147,6 +174,61 @@ public class AudioManager : MonoBehaviour
 
         src.volume = sfxVolume;
         src.PlayOneShot(clip);
+    }
+
+    void HandleSaleRecorded(SaleRecord record)
+    {
+        if (record == null) return;
+        PlaySFXInternal(SaleConfirmedSfxName);
+    }
+
+    // 프로젝트 내부에서 결정적으로 생성하는 짧은 판매 확인음이다.
+    // 외부 샘플이나 라이선스가 필요한 음원을 사용하지 않으며, Inspector 클립이 있으면 그쪽이 우선한다.
+    void BuildGeneratedSaleConfirmedClip()
+    {
+        const float duration = 0.30f;
+        int sampleRate = Mathf.Clamp(AudioSettings.outputSampleRate, 22050, 48000);
+        int sampleCount = Mathf.CeilToInt(duration * sampleRate);
+        var samples = new float[sampleCount];
+        float peak = 0f;
+
+        for (int i = 0; i < sampleCount; i++)
+        {
+            float time = i / (float)sampleRate;
+            float first = BuildMalletTone(time, 659.25f, 13f);
+            float second = BuildMalletTone(time - 0.075f, 830.61f, 14f);
+            float woodenBody = BuildMalletTone(time, 329.63f, 18f);
+            float attack = Mathf.Clamp01(time / 0.006f);
+            float release = Mathf.Clamp01((duration - time) / 0.05f);
+
+            float sample = (first * 0.18f + second * 0.20f + woodenBody * 0.045f)
+                         * attack * release;
+            samples[i] = sample;
+            peak = Mathf.Max(peak, Mathf.Abs(sample));
+        }
+
+        const float maximumPeak = 0.42f;
+        if (peak > maximumPeak)
+        {
+            float gain = maximumPeak / peak;
+            for (int i = 0; i < samples.Length; i++)
+                samples[i] *= gain;
+        }
+
+        _generatedSaleConfirmedClip = AudioClip.Create(
+            "PA_Generated_SaleConfirmed", sampleCount, 1, sampleRate, false);
+        _generatedSaleConfirmedClip.SetData(samples, 0);
+    }
+
+    static float BuildMalletTone(float time, float frequency, float decay)
+    {
+        if (time < 0f) return 0f;
+
+        float phase = Mathf.PI * 2f * frequency * time;
+        float harmonics = Mathf.Sin(phase)
+                        + Mathf.Sin(phase * 2f) * 0.22f
+                        + Mathf.Sin(phase * 3f) * 0.07f;
+        return harmonics * Mathf.Exp(-decay * time);
     }
 
     // ── 헬퍼 ────────────────────────────────────────────────────────────────────

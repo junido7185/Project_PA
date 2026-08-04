@@ -1,38 +1,37 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 그리드 점유맵 서비스.
-//
-// 역할:
-// - 월드 좌표 ↔ 그리드 셀 좌표 변환.
-// - 셀 점유 상태 관리 (건물이 차지하고 있는 칸을 기록).
-// - BuildManager 가 건설 전에 IsOccupied() 로 빠르게 점유 여부를 확인할 수 있다.
-//   기존 Physics.OverlapBox 판정은 시각적 안내에만 유지하고,
-//   실제 건설 가부 판정은 GridService 를 1차 필터로 사용한다.
-//
-// 좌표 체계:
-//   셀 (0,0) 은 월드 원점 근처. cellSize=2.0 이면 셀 (3,5) 는 월드 (6, ?, 10) 에 대응.
-//   Y 축은 무시 — 2D 평면 점유만 추적.
-//
-// 저장/로드:
-//   직접 직렬화하지 않는다. SaveManager 가 buildings 를 복원할 때
-//   RegisterBuilding(pos) 로 점유를 재등록하면 된다.
+// Shared grid authority for both the legacy outdoor builder and zone-aware customization.
+// The legacy one-cell API is intentionally preserved for BuildManager/SaveManager.
 [DefaultExecutionOrder(-50)]
 public class GridService : MonoBehaviour
 {
     public static GridService Instance { get; private set; }
 
-    [Header("그리드 설정")]
-    [Tooltip("셀 한 변의 크기 (미터). BuildManager.gridSize 와 일치시킨다.")]
+    [Header("Grid Settings")]
+    [Tooltip("World size of one grid cell in metres. Must match BuildManager.gridSize.")]
     public float cellSize = 2.0f;
 
-    // 점유된 셀 집합.
-    private readonly HashSet<Vector2Int> _occupied = new HashSet<Vector2Int>();
+    readonly HashSet<Vector2Int> _occupied = new HashSet<Vector2Int>();
+    readonly Dictionary<string, ZoneRuntime> _zones = new Dictionary<string, ZoneRuntime>();
 
-    /// <summary>현재 점유된 셀 수.</summary>
     public int OccupiedCount => _occupied.Count;
 
-    // -------- Unity 생명주기 --------
+    sealed class ZoneRuntime
+    {
+        public string id;
+        public Transform root;
+        public Vector3 localOrigin;
+        public Vector2Int size;
+        public Vector2Int entryCell;
+        public Vector2Int serviceCell;
+        public readonly HashSet<Vector2Int> protectedCells = new HashSet<Vector2Int>();
+        public readonly Dictionary<Vector2Int, string> blockingOwners = new Dictionary<Vector2Int, string>();
+        public readonly Dictionary<Vector2Int, HashSet<string>> clearanceOwners = new Dictionary<Vector2Int, HashSet<string>>();
+        public readonly Dictionary<string, List<Vector2Int>> ownerBlocking = new Dictionary<string, List<Vector2Int>>();
+        public readonly Dictionary<string, List<Vector2Int>> ownerClearance = new Dictionary<string, List<Vector2Int>>();
+    }
 
     void Awake()
     {
@@ -40,45 +39,26 @@ public class GridService : MonoBehaviour
         Instance = this;
     }
 
-    // -------- 좌표 변환 --------
+    // -------- Legacy world grid --------
 
-    /// <summary>월드 좌표 → 셀 좌표. Y 축은 무시된다.</summary>
     public Vector2Int WorldToCell(Vector3 worldPos)
     {
         float safe = Mathf.Max(0.01f, cellSize);
-        return new Vector2Int(
-            Mathf.RoundToInt(worldPos.x / safe),
-            Mathf.RoundToInt(worldPos.z / safe)
-        );
+        return new Vector2Int(Mathf.RoundToInt(worldPos.x / safe), Mathf.RoundToInt(worldPos.z / safe));
     }
 
-    /// <summary>셀 좌표 → 월드 좌표 (Y=0).</summary>
-    public Vector3 CellToWorld(Vector2Int cell)
-    {
-        return new Vector3(cell.x * cellSize, 0f, cell.y * cellSize);
-    }
+    public Vector3 CellToWorld(Vector2Int cell) => new Vector3(cell.x * cellSize, 0f, cell.y * cellSize);
 
-    /// <summary>월드 좌표를 그리드에 스냅한다 (Y 는 원본 유지).</summary>
     public Vector3 SnapToGrid(Vector3 worldPos)
     {
         float safe = Mathf.Max(0.01f, cellSize);
-        float x = Mathf.Round(worldPos.x / safe) * safe;
-        float z = Mathf.Round(worldPos.z / safe) * safe;
-        return new Vector3(x, worldPos.y, z);
+        return new Vector3(Mathf.Round(worldPos.x / safe) * safe, worldPos.y,
+            Mathf.Round(worldPos.z / safe) * safe);
     }
 
-    // -------- 점유 관리 --------
-
-    /// <summary>셀이 점유 중인지 확인.</summary>
     public bool IsOccupied(Vector2Int cell) => _occupied.Contains(cell);
-
-    /// <summary>월드 좌표 기반 점유 확인 편의 함수.</summary>
     public bool IsOccupiedWorld(Vector3 worldPos) => IsOccupied(WorldToCell(worldPos));
 
-    /// <summary>
-    /// 셀 점유를 시도한다. 이미 점유 중이면 false.
-    /// BuildManager.BuildIt() 에서 성공 후 호출한다.
-    /// </summary>
     public bool TryOccupy(Vector2Int cell)
     {
         if (_occupied.Contains(cell)) return false;
@@ -86,27 +66,283 @@ public class GridService : MonoBehaviour
         return true;
     }
 
-    /// <summary>월드 좌표 기반 점유 편의 함수.</summary>
     public bool TryOccupyWorld(Vector3 worldPos) => TryOccupy(WorldToCell(worldPos));
-
-    /// <summary>셀 점유 해제 (건물 철거 시).</summary>
     public void Release(Vector2Int cell) => _occupied.Remove(cell);
-
-    /// <summary>월드 좌표 기반 해제 편의 함수.</summary>
     public void ReleaseWorld(Vector3 worldPos) => Release(WorldToCell(worldPos));
 
-    /// <summary>모든 점유 해제 (씬 로드 전 초기화).</summary>
-    public void Clear() => _occupied.Clear();
+    // Save loads clear occupancy, but retain zone definitions registered by runtime controllers.
+    public void Clear()
+    {
+        _occupied.Clear();
+        foreach (var zone in _zones.Values)
+        {
+            zone.blockingOwners.Clear();
+            zone.clearanceOwners.Clear();
+            zone.ownerBlocking.Clear();
+            zone.ownerClearance.Clear();
+        }
+    }
 
-    // -------- 디버그 --------
+    // -------- Zone-aware grid --------
+
+    public bool RegisterZone(string zoneId, Transform root, Vector3 localOrigin, Vector2Int size,
+        IEnumerable<Vector2Int> protectedCells, Vector2Int entryCell, Vector2Int serviceCell)
+    {
+        if (string.IsNullOrWhiteSpace(zoneId) || root == null || size.x <= 0 || size.y <= 0)
+            return false;
+
+        if (!_zones.TryGetValue(zoneId, out var zone))
+        {
+            zone = new ZoneRuntime { id = zoneId };
+            _zones.Add(zoneId, zone);
+        }
+
+        zone.root = root;
+        zone.localOrigin = localOrigin;
+        zone.size = size;
+        zone.entryCell = entryCell;
+        zone.serviceCell = serviceCell;
+        zone.protectedCells.Clear();
+        if (protectedCells != null)
+            foreach (var cell in protectedCells)
+                if (IsInBounds(zone, cell)) zone.protectedCells.Add(cell);
+        return true;
+    }
+
+    public bool HasZone(string zoneId) => !string.IsNullOrEmpty(zoneId) && _zones.ContainsKey(zoneId);
+
+    public Vector2Int GetZoneSize(string zoneId)
+    {
+        return TryGetZone(zoneId, out var zone) ? zone.size : Vector2Int.zero;
+    }
+
+    public bool IsZoneCellProtected(string zoneId, Vector2Int cell)
+    {
+        return TryGetZone(zoneId, out var zone) && zone.protectedCells.Contains(cell);
+    }
+
+    public bool IsZoneCellInBounds(string zoneId, Vector2Int cell)
+    {
+        return TryGetZone(zoneId, out var zone) && IsInBounds(zone, cell);
+    }
+
+    public Vector2Int WorldToZoneCell(string zoneId, Vector3 worldPosition)
+    {
+        if (!TryGetZone(zoneId, out var zone) || zone.root == null) return Vector2Int.zero;
+        Vector3 local = zone.root.InverseTransformPoint(worldPosition) - zone.localOrigin;
+        float safe = Mathf.Max(0.01f, cellSize);
+        return new Vector2Int(Mathf.RoundToInt(local.x / safe), Mathf.RoundToInt(local.z / safe));
+    }
+
+    public Vector3 ZoneCellToWorld(string zoneId, Vector2Int cell, float localY = 0f)
+    {
+        if (!TryGetZone(zoneId, out var zone) || zone.root == null) return Vector3.zero;
+        Vector3 local = zone.localOrigin + new Vector3(cell.x * cellSize, localY, cell.y * cellSize);
+        return zone.root.TransformPoint(local);
+    }
+
+    public Vector3 GetZonePlacementWorld(string zoneId, Vector2Int anchor,
+        IReadOnlyList<Vector2Int> footprint, int quarterTurns, float localY = 0f)
+    {
+        List<Vector2Int> cells = BuildCells(anchor, footprint, quarterTurns);
+        if (cells.Count == 0) return ZoneCellToWorld(zoneId, anchor, localY);
+        Vector3 sum = Vector3.zero;
+        foreach (var cell in cells) sum += ZoneCellToWorld(zoneId, cell, localY);
+        return sum / cells.Count;
+    }
+
+    public IReadOnlyList<Vector2Int> GetZoneFootprintCells(Vector2Int anchor,
+        IReadOnlyList<Vector2Int> offsets, int quarterTurns)
+    {
+        return BuildCells(anchor, offsets, quarterTurns);
+    }
+
+    public string GetZoneOwner(string zoneId, Vector2Int cell)
+    {
+        if (!TryGetZone(zoneId, out var zone)) return null;
+        return zone.blockingOwners.TryGetValue(cell, out string owner) ? owner : null;
+    }
+
+    public bool CanOccupyZone(string zoneId, string ownerId, Vector2Int anchor,
+        IReadOnlyList<Vector2Int> footprint, IReadOnlyList<Vector2Int> clearance,
+        int quarterTurns, bool preservePath, out string reason)
+    {
+        reason = string.Empty;
+        if (!TryGetZone(zoneId, out var zone)) { reason = "배치 구역을 찾을 수 없습니다."; return false; }
+        if (string.IsNullOrWhiteSpace(ownerId)) { reason = "배치 인스턴스 ID가 없습니다."; return false; }
+
+        List<Vector2Int> blocking = BuildCells(anchor, footprint, quarterTurns);
+        List<Vector2Int> access = BuildCells(anchor, clearance, quarterTurns);
+        if (blocking.Count == 0) { reason = "점유 셀이 정의되지 않았습니다."; return false; }
+
+        foreach (var cell in blocking)
+        {
+            if (!IsInBounds(zone, cell)) { reason = "상점 바닥 범위를 벗어납니다."; return false; }
+            if (zone.protectedCells.Contains(cell)) { reason = "출입구 보호 셀에는 놓을 수 없습니다."; return false; }
+            if (zone.blockingOwners.TryGetValue(cell, out string blocker) && blocker != ownerId)
+            { reason = "다른 가구와 겹칩니다."; return false; }
+            if (HasOtherClearanceOwner(zone, cell, ownerId))
+            { reason = "다른 가구의 사용 공간을 가립니다."; return false; }
+        }
+
+        foreach (var cell in access)
+        {
+            if (!IsInBounds(zone, cell)) { reason = "가구 앞 사용 공간이 벽 밖으로 나갑니다."; return false; }
+            if (zone.blockingOwners.TryGetValue(cell, out string blocker) && blocker != ownerId)
+            { reason = "가구 앞 사용 공간이 막힙니다."; return false; }
+        }
+
+        if (preservePath && !HasConnectedPath(zone, ownerId, blocking))
+        { reason = "출입구에서 상점 안쪽으로 이어지는 통로가 막힙니다."; return false; }
+
+        return true;
+    }
+
+    public bool TryOccupyZone(string zoneId, string ownerId, Vector2Int anchor,
+        IReadOnlyList<Vector2Int> footprint, IReadOnlyList<Vector2Int> clearance,
+        int quarterTurns, bool preservePath, out string reason)
+    {
+        if (!CanOccupyZone(zoneId, ownerId, anchor, footprint, clearance, quarterTurns, preservePath, out reason))
+            return false;
+
+        ZoneRuntime zone = _zones[zoneId];
+        ReleaseZoneOwner(zoneId, ownerId);
+
+        List<Vector2Int> blocking = BuildCells(anchor, footprint, quarterTurns);
+        List<Vector2Int> access = BuildCells(anchor, clearance, quarterTurns);
+        zone.ownerBlocking[ownerId] = blocking;
+        zone.ownerClearance[ownerId] = access;
+        foreach (var cell in blocking) zone.blockingOwners[cell] = ownerId;
+        foreach (var cell in access)
+        {
+            if (!zone.clearanceOwners.TryGetValue(cell, out var owners))
+            {
+                owners = new HashSet<string>();
+                zone.clearanceOwners[cell] = owners;
+            }
+            owners.Add(ownerId);
+        }
+        return true;
+    }
+
+    public void ReleaseZoneOwner(string zoneId, string ownerId)
+    {
+        if (!TryGetZone(zoneId, out var zone) || string.IsNullOrEmpty(ownerId)) return;
+        if (zone.ownerBlocking.TryGetValue(ownerId, out var blocking))
+        {
+            foreach (var cell in blocking)
+                if (zone.blockingOwners.TryGetValue(cell, out string current) && current == ownerId)
+                    zone.blockingOwners.Remove(cell);
+            zone.ownerBlocking.Remove(ownerId);
+        }
+        if (zone.ownerClearance.TryGetValue(ownerId, out var access))
+        {
+            foreach (var cell in access)
+            {
+                if (!zone.clearanceOwners.TryGetValue(cell, out var owners)) continue;
+                owners.Remove(ownerId);
+                if (owners.Count == 0) zone.clearanceOwners.Remove(cell);
+            }
+            zone.ownerClearance.Remove(ownerId);
+        }
+    }
+
+    public bool HasZonePath(string zoneId)
+    {
+        return TryGetZone(zoneId, out var zone) && HasConnectedPath(zone, null, null);
+    }
+
+    bool TryGetZone(string id, out ZoneRuntime zone)
+    {
+        zone = null;
+        return !string.IsNullOrEmpty(id) && _zones.TryGetValue(id, out zone) && zone.root != null;
+    }
+
+    static bool IsInBounds(ZoneRuntime zone, Vector2Int cell)
+    {
+        return cell.x >= 0 && cell.y >= 0 && cell.x < zone.size.x && cell.y < zone.size.y;
+    }
+
+    static bool HasOtherClearanceOwner(ZoneRuntime zone, Vector2Int cell, string ownerId)
+    {
+        if (!zone.clearanceOwners.TryGetValue(cell, out var owners)) return false;
+        foreach (string owner in owners) if (owner != ownerId) return true;
+        return false;
+    }
+
+    static List<Vector2Int> BuildCells(Vector2Int anchor, IReadOnlyList<Vector2Int> offsets, int turns)
+    {
+        var cells = new List<Vector2Int>();
+        if (offsets == null) return cells;
+        int rotation = ((turns % 4) + 4) % 4;
+        for (int i = 0; i < offsets.Count; i++)
+        {
+            Vector2Int rotated = Rotate(offsets[i], rotation);
+            Vector2Int cell = anchor + rotated;
+            if (!cells.Contains(cell)) cells.Add(cell);
+        }
+        return cells;
+    }
+
+    static Vector2Int Rotate(Vector2Int value, int turns)
+    {
+        return turns switch
+        {
+            1 => new Vector2Int(-value.y, value.x),
+            2 => new Vector2Int(-value.x, -value.y),
+            3 => new Vector2Int(value.y, -value.x),
+            _ => value
+        };
+    }
+
+    static bool HasConnectedPath(ZoneRuntime zone, string ignoredOwner, List<Vector2Int> pendingBlocking)
+    {
+        if (!IsInBounds(zone, zone.entryCell) || !IsInBounds(zone, zone.serviceCell)) return false;
+        var pending = pendingBlocking != null ? new HashSet<Vector2Int>(pendingBlocking) : null;
+        bool IsBlocked(Vector2Int cell)
+        {
+            if (pending != null && pending.Contains(cell)) return true;
+            return zone.blockingOwners.TryGetValue(cell, out string owner) && owner != ignoredOwner;
+        }
+
+        if (IsBlocked(zone.entryCell) || IsBlocked(zone.serviceCell)) return false;
+        var queue = new Queue<Vector2Int>();
+        var visited = new HashSet<Vector2Int> { zone.entryCell };
+        queue.Enqueue(zone.entryCell);
+        Vector2Int[] directions = { Vector2Int.right, Vector2Int.left, Vector2Int.up, Vector2Int.down };
+        while (queue.Count > 0)
+        {
+            Vector2Int current = queue.Dequeue();
+            if (current == zone.serviceCell) return true;
+            foreach (var direction in directions)
+            {
+                Vector2Int next = current + direction;
+                if (!IsInBounds(zone, next) || visited.Contains(next) || IsBlocked(next)) continue;
+                visited.Add(next);
+                queue.Enqueue(next);
+            }
+        }
+        return false;
+    }
 
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
         foreach (var cell in _occupied)
+            Gizmos.DrawCube(CellToWorld(cell) + Vector3.up * 0.1f,
+                new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
+
+        foreach (var zone in _zones.Values)
         {
-            Vector3 center = CellToWorld(cell) + Vector3.up * 0.1f;
-            Gizmos.DrawCube(center, new Vector3(cellSize * 0.9f, 0.1f, cellSize * 0.9f));
+            if (zone.root == null) continue;
+            foreach (var pair in zone.blockingOwners)
+            {
+                Gizmos.color = zone.protectedCells.Contains(pair.Key)
+                    ? new Color(1f, 0.3f, 0.2f, 0.35f)
+                    : new Color(0.45f, 0.75f, 0.45f, 0.28f);
+                Gizmos.DrawCube(ZoneCellToWorld(zone.id, pair.Key, 0.08f),
+                    new Vector3(cellSize * 0.88f, 0.08f, cellSize * 0.88f));
+            }
         }
     }
 }

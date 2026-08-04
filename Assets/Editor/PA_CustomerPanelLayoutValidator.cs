@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -31,10 +32,9 @@ public static class PA_CustomerPanelLayoutValidator
     static bool _entered;
     static bool _ran;
     static bool _hadError;
-    static int _step;
     static double _startedAt;
-    static double _nextStepAt;
     static string _outputDir;
+    static Task _runtimeTask;
 
     static PA_CustomerPanelLayoutValidator()
     {
@@ -65,9 +65,8 @@ public static class PA_CustomerPanelLayoutValidator
         _entered = false;
         _ran = false;
         _hadError = false;
-        _step = 0;
+        _runtimeTask = null;
         _startedAt = EditorApplication.timeSinceStartup;
-        _nextStepAt = _startedAt;
         _outputDir = CreateOutputDirectory();
 
         SessionState.SetBool(ActiveKey, true);
@@ -108,7 +107,6 @@ public static class PA_CustomerPanelLayoutValidator
         {
             _entered = true;
             _startedAt = EditorApplication.timeSinceStartup;
-            _nextStepAt = _startedAt + 2.5;
             SessionState.SetBool(EnteredKey, true);
         }
 
@@ -134,12 +132,24 @@ public static class PA_CustomerPanelLayoutValidator
             return;
         }
 
-        if (!_ran && EditorApplication.isPlaying)
+        if (!_ran && EditorApplication.isPlaying && _runtimeTask == null && elapsed > 2.5)
         {
-            if (EditorApplication.timeSinceStartup < _nextStepAt)
-                return;
+            _runtimeTask = RunRuntimeChecksAsync();
+            return;
+        }
 
-            RunNextStep();
+        if (!_ran && _runtimeTask != null && _runtimeTask.IsCompleted)
+        {
+            if (_runtimeTask.IsFaulted)
+            {
+                _hadError = true;
+                SessionState.SetBool(HadErrorKey, true);
+                Debug.LogError($"PA CustomerPanelLayout failed: {_runtimeTask.Exception?.GetBaseException()}");
+            }
+
+            _ran = true;
+            SessionState.SetBool(RanKey, true);
+            EditorApplication.ExitPlaymode();
             return;
         }
 
@@ -150,36 +160,12 @@ public static class PA_CustomerPanelLayoutValidator
         }
     }
 
-    static void RunNextStep()
+    static async Task RunRuntimeChecksAsync()
     {
-        try
-        {
-            switch (_step)
-            {
-                case 0:
-                    PrepareRuntimeState();
-                    break;
-                case 1:
-                    RunLayoutChecks();
-                    Capture("customer_panels_1920x1080");
-                    _ran = true;
-                    SessionState.SetBool(RanKey, true);
-                    EditorApplication.ExitPlaymode();
-                    break;
-            }
-
-            _step++;
-            _nextStepAt = EditorApplication.timeSinceStartup + 1.2;
-        }
-        catch (Exception ex)
-        {
-            _hadError = true;
-            SessionState.SetBool(HadErrorKey, true);
-            Debug.LogError($"PA CustomerPanelLayout failed: {ex.Message}\n{ex}");
-            _ran = true;
-            SessionState.SetBool(RanKey, true);
-            EditorApplication.ExitPlaymode();
-        }
+        PrepareRuntimeState();
+        await Task.Delay(1200);
+        RunLayoutChecks();
+        await CaptureAsync("customer_panels_1920x1080");
     }
 
     // 화면을 1920x1080 으로 고정하고, 두 패널에 실제 내용이 보이도록 채운다(스크린샷 가독성용).
@@ -223,20 +209,28 @@ public static class PA_CustomerPanelLayoutValidator
         var preference = Object.FindFirstObjectByType<CustomerPreferencePresentationController>();
         var npcs = Object.FindObjectsByType<NpcController>(FindObjectsSortMode.None);
         int forced = 0;
+        NpcController firstResident = null;
         foreach (var npc in npcs)
         {
             if (npc == null || npc.profile == null) continue;
             npc.currentState = NpcController.State.MovingToShop;
+            firstResident ??= npc;
             if (++forced >= 3) break;
         }
         if (preference != null)
             preference.RefreshNow();
+
+        // Task 031 — 기본 플레이에서 보이는 기존 머리 위 말풍선에 별도 주민 태그를 띄워 캡처한다.
+        var bubble = firstResident != null ? firstResident.GetComponentInChildren<NpcBubbleUI>(true) : null;
+        if (bubble != null)
+            bubble.Show("진열대를 둘러보는 중...", 30f);
     }
 
     static void RunLayoutChecks()
     {
         var preference = RequireRect("CustomerPreferencePanel");
         var feedback = RequireRect("PurchaseFeedbackPanel");
+        var bubble = Object.FindFirstObjectByType<NpcBubbleUI>();
 
         var money = OptionalRect("MoneyHudPanel");
         var demand = OptionalRect("CustomerDemandInsightPanel");
@@ -258,6 +252,12 @@ public static class PA_CustomerPanelLayoutValidator
 
         // 4) 두 신규 패널은 서로 겹치지 않아야 한다.
         Require(!ScreenRectsOverlap(preference, feedback), "preference panel and feedback panel do not overlap each other");
+
+        // Task 031 — 플레이어에게 실제 보이는 머리 위 계층 태그도 화면 경계 안에 있어야 한다.
+        Require(bubble != null && bubble.CurrentCustomerClassLabel == "[주민]",
+            "active player-facing NPC bubble displays the resident class label");
+        Require(bubble.customerClassText != null && IsWithinScreen(bubble.customerClassText.rectTransform, 2f),
+            "resident class tag stays within the visible screen bounds");
 
         // 5) '손님 반응'은 핫바(하단 중앙)와 겹치지 않아야 한다.
         if (TryGetHotbarRect(out Rect hotbar))
@@ -329,7 +329,7 @@ public static class PA_CustomerPanelLayoutValidator
 
     // ---------- 스크린샷 (PA_FinalPresentationReviewer 와 동일 방식) ----------
 
-    static void Capture(string name)
+    static async Task CaptureAsync(string name)
     {
         try
         {
@@ -337,83 +337,27 @@ public static class PA_CustomerPanelLayoutValidator
                 _outputDir = CreateOutputDirectory();
 
             string file = Path.Combine(_outputDir, $"{name}.png");
-            WriteCameraCapture(file);
+            var camera = Camera.main ?? Object.FindFirstObjectByType<Camera>();
+            if (camera == null)
+                throw new InvalidOperationException("Main camera not found for capture.");
+
+            var marker = GameObject.Find("PA_ScreenshotCameraMarker_MarketHub");
+            await PA_SafeGameViewCapture.CaptureAsync(file, camera, captureCamera =>
+            {
+                if (marker != null)
+                {
+                    captureCamera.transform.SetPositionAndRotation(marker.transform.position, marker.transform.rotation);
+                    captureCamera.fieldOfView = 46f;
+                }
+
+                captureCamera.cullingMask = -1;
+            }, 1920, 1080, 1000);
             Debug.Log($"PA CustomerPanelLayout Capture: {file}");
         }
         catch (Exception ex)
         {
             // 캡처 실패는 레이아웃 검증 실패로 보지 않는다(헤드리스 환경 등).
             Debug.LogWarning($"PA CustomerPanelLayout: screenshot capture skipped: {ex.Message}");
-        }
-    }
-
-    static void WriteCameraCapture(string file)
-    {
-        var camera = Camera.main;
-        if (camera == null)
-            throw new InvalidOperationException("Main camera not found for capture.");
-
-        const int width = 1920;
-        const int height = 1080;
-
-        var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        var modes = new RenderMode[canvases.Length];
-        var canvasCameras = new Camera[canvases.Length];
-        var planeDistances = new float[canvases.Length];
-
-        var oldTarget = camera.targetTexture;
-        int oldCullingMask = camera.cullingMask;
-        var oldActive = RenderTexture.active;
-
-        var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-        var tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-
-        try
-        {
-            for (int i = 0; i < canvases.Length; i++)
-            {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-
-                modes[i] = canvas.renderMode;
-                canvasCameras[i] = canvas.worldCamera;
-                planeDistances[i] = canvas.planeDistance;
-
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    canvas.renderMode = RenderMode.ScreenSpaceCamera;
-                    canvas.worldCamera = camera;
-                    canvas.planeDistance = Mathf.Max(camera.nearClipPlane + 0.5f, 1f);
-                }
-            }
-
-            camera.cullingMask = -1;
-            camera.targetTexture = rt;
-            RenderTexture.active = rt;
-            camera.Render();
-
-            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            tex.Apply();
-            File.WriteAllBytes(file, tex.EncodeToPNG());
-        }
-        finally
-        {
-            camera.targetTexture = oldTarget;
-            camera.cullingMask = oldCullingMask;
-            RenderTexture.active = oldActive;
-
-            for (int i = 0; i < canvases.Length; i++)
-            {
-                var canvas = canvases[i];
-                if (canvas == null) continue;
-                canvas.renderMode = modes[i];
-                canvas.worldCamera = canvasCameras[i];
-                canvas.planeDistance = planeDistances[i];
-            }
-
-            Object.DestroyImmediate(tex);
-            rt.Release();
-            Object.DestroyImmediate(rt);
         }
     }
 

@@ -1,29 +1,41 @@
 {
-  "ticketId": "VC-001A",
-  "status": "passed",
-  "goal": "Implement one next-day plaza/market visual change driven by an actual sold product category.",
+  "previousTicket": {
+  "ticketId": "Task-131",
+  "status": "completed",
+  "goal": "Reconfirm the attached GRID and Tripo long-term asset policies against the existing placement architecture, then improve the next high-exposure incomplete functional asset by aligning B06 Kitchen physics, interaction, and successful-craft feedback without replacing its identity or source assets.",
   "designReference": [
     "PROJECT_PA_CREATIVE_NORTH_STAR.md",
     "PROJECT_PA_DESIGN_INTENT.md",
-    "PROJECT_PA_CURRENT_MILESTONE.md",
+    "AI_WORKFLOW/01_IDENTITY/PROJECT_PA_GAME_LOOP.md",
     "PROJECT_PA_FULL_GAME_BACKLOG.md",
+    "PROJECT_PA_CORE_SLICE_PLAN.md",
+    "Docs/Codex/PLACEMENT_SYSTEM_ARCHITECTURE.md",
+    "Docs/Codex/PLACEABLE_ASSET_GUIDE.md",
+    "Docs/Codex/TRIPO_ASSET_AUDIT.md",
+    "Docs/02_경제_및_아이템_설계.md",
+    "Docs/08_아트_및_씬_구성_가이드.md",
+    "AI_WORKFLOW/04_VERIFICATION/VERIFICATION_RULES.md",
+    "PROJECT_PA_CRASH_REPORT_20260717.md",
     "Docs/AgentWorkflow/CONTEXT_INDEX.md",
     "Automation/LoopEngineering/loop-policy.json",
     "Automation/LoopEngineering/State/crash-resolution.json"
   ],
   "allowedPaths": [
-    "Assets/Scripts/",
-    "Assets/Scripts/UI/",
-    "Assets/Editor/",
-    "Assets/Scenes/Prototype_FirstDay.unity",
-    "Assets/Scenes/_Backups/",
-    "Docs/VillageCulture/",
+    "Assets/Scripts/Workbench.cs",
+    "Docs/Codex/TRIPO_ASSET_AUDIT.md",
+    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "AI_WORKFLOW/03_TASKS/TASK_QUEUE.md",
+    "AI_WORKFLOW/03_TASKS/CURRENT_COMPLETION_MATRIX.md",
+    "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
+    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "PROJECT_PA_STATUS.md",
     "PROJECT_PA_TODO.md",
     "PROJECT_PA_SESSION_REPORT.md",
-    "PROJECT_PA_CURRENT_MILESTONE.md",
-    "PROJECT_PA_FULL_GAME_BACKLOG.md",
-    "Automation/LoopEngineering/"
+    "Docs/07_개발일지.md",
+    "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
+    "AI_WORKFLOW/01_IDENTITY/PROJECT_PA_GAME_LOOP.md",
+    "Automation/LoopEngineering/progress.md",
+    "Automation/LoopEngineering/State/loop-state.json"
   ],
   "forbiddenPaths": [
     "C:/Users/sdjsd/Desktop/Unity/Project_D/Project_D",
@@ -37,105 +49,234 @@
     "Save schema files",
     "Git add/commit/push/reset/clean"
   ],
-  "selectedCategory": "Processed",
-  "selectedCategoryBasis": [
-    "Default Day 1 route sells BreadLoaf.",
-    "BreadLoaf is an existing Project_PA Processed item.",
-    "ShopSlot.TryPurchaseByNpc already records category through SalesLogManager.",
-    "VillageChangeSignalController already reads recent category sales."
+  "campaignBasis": [
+    "The attached GRID directive is already represented by the shared 2m GridService zones, multi-cell footprint/clearance/interaction, rotation, move/recover, NPC reservation, and v10 placeable persistence, so no parallel placement system is allowed.",
+    "The Tripo audit already classifies assets individually, preserves player and resident identity, keeps source files immutable, and treats provenance as a deployment gate.",
+    "The current inventory remains 174 FBX, 150 OBJ, zero GLB, zero Blend, and 24 non-Nature project FBX files.",
+    "B06 is the next high-exposure incomplete functional asset: it already owns Kitchen recipes, Tier 2, a 2x2 footprint, specialist access, and persistence, but lacks player-visible craft feedback and runtime visible-bounds physical alignment.",
+    "B05 behavior, B06 gameplay authority, source FBX, prefabs, scenes, materials, BuildingData, save schema, packages, and ProjectSettings must remain unchanged."
   ],
   "validators": [
     {
-      "name": "Tools/LoopEngineering/Invoke-ProjectPAPreflight.ps1",
+      "name": "dotnet build Assembly-CSharp.csproj",
       "status": "passed",
-      "result": "READY_FOR_BOUNDED_TICKET_LOOP"
+      "result": "0 errors in sequential build; existing CS8785 source-generator warning only"
     },
     {
-      "name": "PA_VillageCultureVisualValidator.RunVillageCultureVisualValidation",
+      "name": "dotnet build Assembly-CSharp-Editor.csproj",
       "status": "passed",
-      "log": "Logs/Codex_VC001A_VillageCultureVisual.log"
+      "result": "0 errors in sequential build; existing CS8785 and PA_ErrorTracker CS0414 baseline warnings only"
     },
     {
-      "name": "PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation",
+      "name": "Task 131 target whitespace and implementation scope",
       "status": "passed",
-      "log": "Logs/Codex_VC001A_FinalDemoRouteRegression.log"
+      "result": "Target whitespace checks passed; implementation is confined to Workbench runtime presentation and the Tripo audit/documentation set"
     },
     {
-      "name": "PA_DayNightShopLoopValidator.RunDayNightShopLoopValidation",
+      "name": "Task 131 B06 functional-asset static contract",
       "status": "passed",
-      "log": "Logs/Codex_VC001A_DayNightRegression.log"
+      "result": "30 automated contracts passed: model counts and 1-8 policy; B05 preservation; B06 existing Visual reuse; renderer-bounds shrink-only Box/Obstacle; local -Z anchor; success-only model pulse; Tier 2 and 2x2 authority"
     },
     {
-      "name": "PA_VillageChangeSignalValidator.RunVillageChangeSignalValidation",
-      "status": "passed",
-      "log": "Logs/Codex_VC001A_VillageSignalRegression.log"
-    },
-    {
-      "name": "PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation",
-      "status": "passed",
-      "log": "Logs/Codex_VC001A_LongPlayRegression.log"
-    },
-    {
-      "name": "PA_CustomerPresentationValidator.RunCustomerPresentationValidation",
-      "status": "passed",
-      "log": "Logs/Codex_VC001A_CustomerPresentationRegression.log"
-    },
-    {
-      "name": "PA_CustomerPanelLayoutValidator.RunCustomerPanelLayoutValidation",
-      "status": "passed",
-      "log": "Logs/Codex_VC001A_CustomerPanelLayoutRegression.log"
+      "name": "Unity Task 131 B06 placement, approach, physics, craft-feedback, and same-camera validation",
+      "status": "pending",
+      "result": "Not launched because the same native cause has already crashed twice; human judgment remains required before a third Unity attempt"
     }
   ],
   "preflightResult": {
-    "status": "READY_FOR_BOUNDED_TICKET_LOOP",
-    "dirtyGit": false,
+    "status": "PASS_TASK131_B06_FUNCTIONAL_VISUAL_STATIC_30_NO_UNITY",
+    "dirtyGit": true,
     "unityProcessCount": 0,
-    "latestCrashReport": "PROJECT_PA_CRASH_REPORT_20260625.md",
+    "latestCrashReport": "PROJECT_PA_CRASH_REPORT_20260717.md",
     "crashResolutionValid": true,
-    "crashResolutionStatus": "human_verified_d3d11_stable",
+    "crashResolutionStatus": "direct_render_native_crash_repeated_twice_no_third_attempt",
     "approvedGraphicsBackend": "D3D11",
     "policyMode": "bounded-ticket-loop"
   },
-  "screenshotEvidence": [
-    "Logs/VillageCultureVisual/20260626_145257/vc001a_day1_default_no_change.png",
-    "Logs/VillageCultureVisual/20260626_145257/vc001a_after_processed_sale_same_day.png",
-    "Logs/VillageCultureVisual/20260626_145257/vc001a_day2_preparation_visual_active.png"
-  ],
+  "screenshotEvidence": [],
   "humanGates": [
-    "Human visual quality approval is still required after screenshots.",
-    "D3D12 remains not approved and not verified."
+    "Obtain human judgment before the third Unity attempt.",
+    "Run one isolated D3D11 GameView PNG capture and inspect freshness, size, UI readability, and restored camera/screen state before gameplay validation.",
+    "Verify B06 can be placed as the existing Tier 2 2x2 Kitchen while its front clearance remains reachable.",
+    "Verify the player and Chef use the visible local -Z side without entering the collider or overlapping each other.",
+    "Verify the BoxCollider and carving obstacle stop at the visible model boundary without opening a walk-through gap.",
+    "Verify a successful Bread craft pulses the existing B06 model while failure branches do not, and compare the same GameCamera before/after.",
+    "Do not make a third attempt through the twice-crashed direct Camera.Render path."
   ],
   "attemptCount": 1,
   "repeatedFailureCount": 0,
   "changedPaths": [
-    "Assets/Scripts/VillageCultureVisualController.cs",
-    "Assets/Scripts/VillageCultureVisualController.cs.meta",
-    "Assets/Editor/PA_VillageCultureVisualValidator.cs",
-    "Assets/Editor/PA_VillageCultureVisualValidator.cs.meta",
-    "Docs/VillageCulture/VC-001A.md",
+    "Assets/Scripts/Workbench.cs",
+    "Docs/Codex/TRIPO_ASSET_AUDIT.md",
+    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "AI_WORKFLOW/03_TASKS/TASK_QUEUE.md",
+    "AI_WORKFLOW/03_TASKS/CURRENT_COMPLETION_MATRIX.md",
+    "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
+    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "PROJECT_PA_STATUS.md",
     "PROJECT_PA_TODO.md",
     "PROJECT_PA_SESSION_REPORT.md",
-    "PROJECT_PA_CURRENT_MILESTONE.md",
-    "PROJECT_PA_FULL_GAME_BACKLOG.md",
-    "Automation/LoopEngineering/State/loop-state.json",
-    "Automation/LoopEngineering/progress.md"
+    "Docs/07_개발일지.md",
+    "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
+    "AI_WORKFLOW/01_IDENTITY/PROJECT_PA_GAME_LOOP.md",
+    "Automation/LoopEngineering/progress.md",
+    "Automation/LoopEngineering/State/loop-state.json"
   ],
-  "evidencePaths": [
-    "Logs/Codex_VC001A_VillageCultureVisual.log",
-    "Logs/Codex_VC001A_FinalDemoRouteRegression.log",
-    "Logs/Codex_VC001A_DayNightRegression.log",
-    "Logs/Codex_VC001A_VillageSignalRegression.log",
-    "Logs/Codex_VC001A_LongPlayRegression.log",
-    "Logs/Codex_VC001A_CustomerPresentationRegression.log",
-    "Logs/Codex_VC001A_CustomerPanelLayoutRegression.log",
-    "Logs/VillageCultureVisual/20260626_145257/vc001a_day1_default_no_change.png",
-    "Logs/VillageCultureVisual/20260626_145257/vc001a_after_processed_sale_same_day.png",
-    "Logs/VillageCultureVisual/20260626_145257/vc001a_day2_preparation_visual_active.png"
-  ],
-  "startedAt": "2026-06-26",
-  "stoppedAt": "2026-06-26",
-  "stopReason": null,
+  "evidencePaths": [],
+  "startedAt": "2026-08-04",
+  "stoppedAt": "2026-08-04",
+  "stopReason": "Task 131 implementation, sequential builds, documentation, and 30 automated contracts are complete; Unity B06 runtime and same-camera visual evidence remains under the separate human-judgment gate.",
   "implementationStarted": true,
-  "nextAction": "Human reviews the processed-goods market visual, then a future ticket can add Raw, Utility, and Luxury variants."
+  "nextAction": "After safe Unity approval, validate B06 placement, player/Chef front approach, visible-boundary physics, successful Bread pulse, and same-camera improvement once. If Unity remains gated, choose one separate bounded task: B07 Forge functional presentation or the provenance-known purchase/open/settlement audio gap."
+  },
+  "ticketId": "WORLD-000",
+  "status": "needs_human_review",
+  "goal": "Audit the current Project P.A. world, placement, save, life-activity, NPC, shop, scene, and navigation architecture; select a bounded procedural-island and grid-terraforming architecture; preserve the playable scenes; and document WORLD-001 through WORLD-012 without implementing game systems.",
+  "scopeType": "investigation-design-documentation-only",
+  "previousWorkProtection": {
+    "task131LoopState": "completed",
+    "dirtyGit": true,
+    "dirtyPathCountAtPreflight": 136,
+    "preservedUnverifiedPaths": [
+      "Assets/Scripts/AudioManager.cs",
+      "Assets/Scripts/SalesLogManager.cs"
+    ],
+    "action": "Preserved without modification, validation, rollback, staging, or inclusion in WORLD-000."
+  },
+  "designReference": [
+    "PROJECT_PA_CREATIVE_NORTH_STAR.md",
+    "PROJECT_PA_DESIGN_INTENT.md",
+    "PROJECT_PA_WORLD_NORTH_STAR.md",
+    "Docs/WorldArchitecture/WORLD_ARCHITECTURE_PLAN.md",
+    "Docs/WorldArchitecture/WORLD_SYSTEM_IMPACT_MAP.md",
+    "Docs/WorldArchitecture/WORLD_BOUNDED_BACKLOG.md",
+    "Docs/WorldArchitecture/WORLD_DECISIONS.md",
+    "Docs/AgentWorkflow/CONTEXT_INDEX.md",
+    "Automation/LoopEngineering/loop-policy.json"
+  ],
+  "allowedPaths": [
+    "PROJECT_PA_WORLD_NORTH_STAR.md",
+    "Docs/WorldArchitecture/WORLD_ARCHITECTURE_PLAN.md",
+    "Docs/WorldArchitecture/WORLD_SYSTEM_IMPACT_MAP.md",
+    "Docs/WorldArchitecture/WORLD_BOUNDED_BACKLOG.md",
+    "Docs/WorldArchitecture/WORLD_DECISIONS.md",
+    "PROJECT_PA_CREATIVE_NORTH_STAR.md",
+    "PROJECT_PA_DESIGN_INTENT.md",
+    "PROJECT_PA_MASTER_DEVELOPMENT_PLAN.md",
+    "PROJECT_PA_FULL_GAME_BACKLOG.md",
+    "PROJECT_PA_CURRENT_MILESTONE.md",
+    "PROJECT_PA_TODO.md",
+    "PROJECT_PA_STATUS.md",
+    "PROJECT_PA_SESSION_REPORT.md",
+    "Docs/07_개발일지.md",
+    "Docs/AgentWorkflow/CONTEXT_INDEX.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "Automation/LoopEngineering/progress.md",
+    "Automation/LoopEngineering/State/loop-state.json",
+    "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
+    "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md"
+  ],
+  "policyException": "The user explicitly required 19 documentation paths in one WORLD-000 deliverable; two repository-mandated handoff logs were added. This documentation-only scope is an explicit exception to the general 15-path ticket cap and authorizes no gameplay files.",
+  "forbiddenPaths": [
+    "Assets runtime code implementation",
+    "Assets/Scenes/Prototype_FirstDay.unity",
+    "Assets/Scenes/MainGame.unity",
+    "Assets/Scenes/WorldSandbox.unity",
+    "SaveData schema files",
+    "Packages/",
+    "ProjectSettings/",
+    "C:/Users/sdjsd/Desktop/Unity/Project_D/Project_D",
+    "Git add/commit/push/reset/clean"
+  ],
+  "auditEvidence": {
+    "unityVersion": "6000.3.2f1",
+    "aiNavigationVersion": "2.0.12",
+    "saveSchemaVersion": 10,
+    "currentGridCellSizeMeters": 2.0,
+    "outdoorZone": "47x47 cells at 2m with origin (-46,-46)",
+    "currentTerrain": "Primitive/mesh flat map built by PA_MapLayoutBuilder; no TerrainData or TerrainCollider evidence",
+    "sceneSerialization": "Prototype_FirstDay and MainGame are Unity 6 binary serialization in this workspace",
+    "localNavApi": "NavMeshSurface.UpdateNavMesh(NavMeshData) calls NavMeshBuilder.UpdateNavMeshDataAsync; CollectObjects.Volume bounds are supported",
+    "worldSandboxExists": false,
+    "unityProcessCountAtPreflight": 0
+  },
+  "recommendedArchitecture": {
+    "terrain": "cell/chunk custom mesh limited heightfield",
+    "cellSizeMeters": 2.0,
+    "chunkSizeCells": 16,
+    "elevationStepMeters": 1.0,
+    "elevationLevels": "0..6",
+    "defaultWorldSizeCells": "128x128",
+    "save": "worldSeed + generationVersion + sparse modified cells/buildings/decorations/resources/bridges/ramps/paths",
+    "navigation": "cell-graph preflight plus independently owned dirty chunk/sector NavMeshSurface update and final complete-path proof",
+    "existingGridRelationship": "WorldGridService is future outdoor topology authority; GridService remains the legacy/interior placement facade and delegates through a single-writer adapter"
+  },
+  "sceneStrategy": {
+    "Assets/Scenes/Prototype_FirstDay.unity": "Golden Regression Scene; preserve Core Slice and validators; no new-world experiments",
+    "Assets/Scenes/WorldSandbox.unity": "Future approved New World Technology Testbed; not created by WORLD-000",
+    "Assets/Scenes/MainGame.unity": "Read-only integration candidate until Gates 1 through 5 and a separate human-approved ticket"
+  },
+  "validators": [
+    {
+      "name": "WORLD-000 required-document presence and section contract",
+      "status": "passed",
+      "result": "21/21 planned documents exist; WORLD-001 through WORLD-012 each contain all 12 required bounded-ticket fields; scene Gate labels and four official world definitions passed direct recovery checks."
+    },
+    {
+      "name": "loop-state JSON parse",
+      "status": "passed",
+      "result": "PowerShell ConvertFrom-Json parsed the nested previous Task-131 state and current WORLD-000 fields; a final parse is required after this status update."
+    },
+    {
+      "name": "WORLD-000 path-scope and game-file audit",
+      "status": "passed",
+      "result": "All write operations were confined to the declared 21 documentation/handoff paths. Preserved AudioManager and SalesLogManager diffs remain exactly 84/2 and 28/2, matching the 112 insertions and 4 deletions recorded at preflight. No Unity or gameplay-file write was performed."
+    },
+    {
+      "name": "Unity/runtime validation",
+      "status": "not_applicable",
+      "result": "WORLD-000 implemented no runtime, scene, asset, save schema, package, or ProjectSettings change; Unity was not launched."
+    }
+  ],
+  "humanGates": [
+    "Approve the scene-separation strategy and creation of Assets/Scenes/WorldSandbox.unity before WORLD-001.",
+    "Accept custom chunk mesh with 2m cells, 16x16 chunks, and 1m elevation steps as the prototype baseline; visual scale remains reviewable in WORLD-002.",
+    "Approve the bounded WORLD-001 scope and maximum 12 changed paths through a new explicit instruction.",
+    "Approve additive save schema/version/migration before WORLD-007.",
+    "Approve the per-chunk NavMeshSurface D3D11 runtime validation before WORLD-008; do not use the twice-crashed direct Camera.Render path.",
+    "After Gates 1 through 5, decide whether MainGame is the final integration scene or a new integration scene is needed.",
+    "Handle the preserved AudioManager/SalesLogManager edits as a separate bounded ticket."
+  ],
+  "attemptCount": 1,
+  "repeatedFailureCount": 0,
+  "changedPaths": [
+    "PROJECT_PA_WORLD_NORTH_STAR.md",
+    "Docs/WorldArchitecture/WORLD_ARCHITECTURE_PLAN.md",
+    "Docs/WorldArchitecture/WORLD_SYSTEM_IMPACT_MAP.md",
+    "Docs/WorldArchitecture/WORLD_BOUNDED_BACKLOG.md",
+    "Docs/WorldArchitecture/WORLD_DECISIONS.md",
+    "PROJECT_PA_CREATIVE_NORTH_STAR.md",
+    "PROJECT_PA_DESIGN_INTENT.md",
+    "PROJECT_PA_MASTER_DEVELOPMENT_PLAN.md",
+    "PROJECT_PA_FULL_GAME_BACKLOG.md",
+    "PROJECT_PA_CURRENT_MILESTONE.md",
+    "PROJECT_PA_TODO.md",
+    "PROJECT_PA_STATUS.md",
+    "PROJECT_PA_SESSION_REPORT.md",
+    "Docs/07_개발일지.md",
+    "Docs/AgentWorkflow/CONTEXT_INDEX.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "Automation/LoopEngineering/progress.md",
+    "Automation/LoopEngineering/State/loop-state.json",
+    "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
+    "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md"
+  ],
+  "startedAt": "2026-08-04",
+  "stoppedAt": "2026-08-04",
+  "stopReason": "WORLD-000 investigation, architecture selection, scene-separation decision, impact map, migration strategy, and bounded backlog are documented. Follow-up implementation requires explicit human gates, so WORLD-001 was not started.",
+  "implementationStarted": false,
+  "actualGameFilesModified": false,
+  "nextAction": "Stop after reporting WORLD-000. Wait for a new explicit bounded-ticket instruction and the WORLD-001 scene/baseline/scope approvals."
 }

@@ -8,14 +8,13 @@ using UnityEngine;
 // 역할:
 // 1) 이용 가능한 채용 후보 풀을 관리 (티어 잠금 필터링 포함).
 // 2) 선택된 후보를 검증(비용/티어) 후 EconomyService.TrySpend 로 비용 차감.
-// 3) 후보 프리팹을 지정된 스폰 포인트에 Instantiate 하고 profile/specialty 를 주입.
+// 3) 후보 전용 프리팹 또는 같은 역할의 기존 주민 구성을 스폰 포인트에 복제하고 정체성을 주입.
 // 4) 고용된 NPC 명단을 보관 → AuditService/FriendshipService 등이 조회할 수 있다.
 //
 // 설계 원칙:
 // - UI 무관. TryHire(candidate) 한 줄로 호출 가능 — 디버그 콘솔/자동 테스트/채용 UI 모두 재사용.
 // - 결정론 없음 (채용은 플레이어 의사결정). 후보 풀 셔플이 필요하면 상위 UI 에서 처리.
-// - 저장/로드: 현재는 씬에 고용된 NPC GameObject 를 그대로 씬 저장에 의존. 후속 SaveData 확장에서
-//   hiredCandidateIds 리스트를 추가해 씬 로드 시 재스폰할 수 있게 확장 가능 (Task #24).
+// - 저장/로드: 기존 SaveManager v4+가 이 서비스의 런타임 기록과 RestoreHiredNpc 경로를 사용한다.
 [DefaultExecutionOrder(-60)]   // EconomyService/TierService 이후, 일반 게임플레이보다 이른 초기화.
 public class HiringService : MonoBehaviour
 {
@@ -36,6 +35,7 @@ public class HiringService : MonoBehaviour
     private readonly HashSet<NpcCandidateData> _hired = new HashSet<NpcCandidateData>();
     private readonly Dictionary<NpcCandidateData, GameObject> _spawnedByCandidate = new Dictionary<NpcCandidateData, GameObject>();
     private readonly Dictionary<NpcCandidateData, string> _hiredIds = new Dictionary<NpcCandidateData, string>();
+    private readonly HashSet<int> _runtimeSpawnInstanceIds = new HashSet<int>();
 
     // 스폰 포인트 라운드 로빈 인덱스.
     private int _spawnRotationIdx = 0;
@@ -95,60 +95,102 @@ public class HiringService : MonoBehaviour
     }
 
     /// <summary>
+    /// 현재 상태에서 후보를 실제로 고용할 수 있는지와 플레이어에게 보여 줄 이유를 반환한다.
+    /// 명시 프리팹이 없는 기존 후보는 같은 전문 분야의 원본 주민 구성을 사용한다.
+    /// </summary>
+    public bool CanHire(NpcCandidateData candidate, out string reason)
+    {
+        if (candidate == null)
+        {
+            reason = "후보 정보가 없습니다.";
+            return false;
+        }
+
+        if (_hired.Contains(candidate))
+        {
+            reason = "이미 고용한 주민입니다.";
+            return false;
+        }
+
+        int currentTier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
+        if (candidate.requiredTier > currentTier)
+        {
+            reason = $"Tier {candidate.requiredTier}부터 고용할 수 있습니다.";
+            return false;
+        }
+
+        if (ResolveSpawnTemplate(candidate) == null)
+        {
+            reason = $"{candidate.specialty} 역할의 주민 모델을 찾지 못했습니다.";
+            return false;
+        }
+
+        if (candidate.hireCost > 0 && EconomyService.Instance != null
+            && EconomyService.Instance.Money < candidate.hireCost)
+        {
+            int shortage = candidate.hireCost - EconomyService.Instance.Money;
+            reason = $"고용 비용이 {shortage:N0} G 부족합니다.";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    /// <summary>
     /// 후보를 고용한다. 검사 → 비용 차감 → 스폰 → 이벤트 발생 순.
     /// 하나라도 실패하면 부분 상태가 남지 않도록 전체 롤백한다 (비용은 성공 확인 후 차감).
     /// 성공 시 spawnedNpc 에 생성된 GameObject 를 반환.
     /// </summary>
     public bool TryHire(NpcCandidateData candidate, out GameObject spawnedNpc)
     {
+        return TryHire(candidate, out spawnedNpc, out _);
+    }
+
+    /// <summary>UI가 실패 원인을 즉시 설명할 수 있는 고용 경로.</summary>
+    public bool TryHire(NpcCandidateData candidate, out GameObject spawnedNpc, out string failureReason)
+    {
         spawnedNpc = null;
+        failureReason = string.Empty;
 
-        // 1. 기본 유효성
-        if (candidate == null)
+        // 1. 후보·티어·스폰 원본·잔액을 비용 차감 전에 모두 검사한다.
+        if (!CanHire(candidate, out failureReason))
         {
-            Debug.LogWarning("📝 HiringService: 후보가 null 입니다.");
-            return false;
-        }
-        if (_hired.Contains(candidate))
-        {
-            Debug.Log($"📝 [{candidate.ResolveDisplayName()}] 은(는) 이미 고용된 상태입니다.");
-            return false;
-        }
-        if (candidate.spawnPrefab == null)
-        {
-            Debug.LogWarning($"📝 [{candidate.ResolveDisplayName()}] spawnPrefab 이 비어 있습니다.");
+            Debug.LogWarning($"📝 HiringService: {failureReason}");
             return false;
         }
 
-        // 2. 티어 검사
-        int currentTier = TierService.Instance != null ? TierService.Instance.CurrentTier : 0;
-        if (candidate.requiredTier > currentTier)
+        GameObject spawnTemplate = ResolveSpawnTemplate(candidate);
+        if (spawnTemplate == null)
         {
-            Debug.Log($"🔒 [{candidate.ResolveDisplayName()}] Tier {candidate.requiredTier} 이상 필요 (현재 Tier {currentTier})");
+            failureReason = $"{candidate.ResolveDisplayName()}의 스폰 원본을 준비하지 못했습니다.";
+            Debug.LogWarning($"📝 HiringService: {failureReason}");
             return false;
         }
 
-        // 3. 비용 차감 (EconomyService 없으면 무상 고용 허용 — 디버그 편의)
+        // 2. 비용 차감 (EconomyService 없으면 기존 디버그 편의를 유지한다.)
         if (candidate.hireCost > 0 && EconomyService.Instance != null)
         {
             if (!EconomyService.Instance.TrySpend(candidate.hireCost,
                     $"HiringService.TryHire: {candidate.ResolveDisplayName()}"))
             {
-                Debug.Log($"💸 [{candidate.ResolveDisplayName()}] 고용 비용 {candidate.hireCost}G 가 부족합니다.");
+                failureReason = $"고용 비용 {candidate.hireCost:N0} G가 부족합니다.";
+                Debug.Log($"💸 [{candidate.ResolveDisplayName()}] {failureReason}");
                 return false;
             }
         }
 
-        // 4. 스폰
+        // 3. 스폰
         Vector3 spawnPos = ResolveSpawnPosition();
         Quaternion spawnRot = ResolveSpawnRotation();
-        spawnedNpc = Instantiate(candidate.spawnPrefab, spawnPos, spawnRot);
+        spawnedNpc = Instantiate(spawnTemplate, spawnPos, spawnRot);
         spawnedNpc.name = candidate.ResolveDisplayName();
 
-        // 5. profile 주입 — 프리팹에 어떤 컨트롤러가 붙어 있든 공통으로 적용.
+        // 4. 후보 정체성 주입 — 원본 주민의 외형·기능 구성은 유지한다.
         InjectProfile(spawnedNpc, candidate);
+        spawnedNpc.SetActive(true);
 
-        // 6. 기록
+        // 5. 기록
         RegisterHired(candidate, spawnedNpc, BuildHiredNpcId(candidate));
         Debug.Log($"📝 고용 완료: [{candidate.ResolveDisplayName()}] ({candidate.specialty}) -{candidate.hireCost}G");
 
@@ -186,7 +228,7 @@ public class HiringService : MonoBehaviour
         out GameObject spawnedNpc)
     {
         spawnedNpc = null;
-        if (candidate == null || candidate.spawnPrefab == null) return false;
+        if (candidate == null) return false;
 
         if (_hired.Contains(candidate))
         {
@@ -202,9 +244,17 @@ public class HiringService : MonoBehaviour
             _hiredIds.Remove(candidate);
         }
 
-        spawnedNpc = Instantiate(candidate.spawnPrefab, position, rotation);
+        GameObject spawnTemplate = ResolveSpawnTemplate(candidate);
+        if (spawnTemplate == null)
+        {
+            Debug.LogWarning($"📝 HiringService: [{candidate.ResolveDisplayName()}] 저장 복원용 주민 원본을 찾지 못했습니다.");
+            return false;
+        }
+
+        spawnedNpc = Instantiate(spawnTemplate, position, rotation);
         spawnedNpc.name = string.IsNullOrEmpty(objectName) ? candidate.ResolveDisplayName() : objectName;
         InjectProfile(spawnedNpc, candidate);
+        spawnedNpc.SetActive(true);
         RegisterHired(candidate, spawnedNpc, string.IsNullOrEmpty(hiredNpcId) ? BuildHiredNpcId(candidate) : hiredNpcId);
         OnHired?.Invoke(candidate, spawnedNpc);
         return true;
@@ -255,16 +305,30 @@ public class HiringService : MonoBehaviour
         if (consumer != null && profile != null) consumer.profile = profile;
 
         var producer = npcGo.GetComponent<ProducerNpcController>();
-        if (producer != null && profile != null) producer.profile = profile;
+        if (producer != null)
+        {
+            if (profile != null) producer.profile = profile;
+            producer.specialty = candidate.specialty;
+        }
 
-        // 대화 컴포넌트도 있으면 profile override 로 주입 (프리팹에 기본 연결이 없을 때).
+        var specialist = npcGo.GetComponent<SpecialistNpcController>();
+        if (specialist != null)
+        {
+            if (profile != null) specialist.profile = profile;
+            specialist.ApplySpecialty(candidate.specialty);
+            AssignMatchingSpecialistRecipes(specialist, candidate.specialty);
+        }
+
+        var schedule = npcGo.GetComponent<NpcScheduleController>();
+        if (schedule != null && profile != null) schedule.profile = profile;
+
+        // 원본 주민의 대화 데이터는 역할별로 재사용하되 친밀도 키는 고용 후보별로 분리한다.
         var dialogue = npcGo.GetComponent<NpcDialogue>();
-        if (dialogue != null && profile != null && dialogue.overrideProfile == null)
-            dialogue.overrideProfile = profile;
-
-        // SpecialistNpcController 는 Task #19 에서 추가. 컴파일 순서 문제를 피하기 위해
-        // GetComponent<MonoBehaviour>() 로 받고 SendMessage 로 주입하면 리플렉션 없이 연결할 수 있다.
-        npcGo.SendMessage("ApplySpecialty", candidate.specialty, SendMessageOptions.DontRequireReceiver);
+        if (dialogue != null)
+        {
+            if (profile != null) dialogue.overrideProfile = profile;
+            dialogue.friendshipId = BuildHiredNpcId(candidate);
+        }
     }
 
     private void RegisterHired(NpcCandidateData candidate, GameObject spawnedNpc, string hiredNpcId)
@@ -272,12 +336,83 @@ public class HiringService : MonoBehaviour
         if (candidate == null) return;
         _hired.Add(candidate);
         _hiredIds[candidate] = string.IsNullOrEmpty(hiredNpcId) ? BuildHiredNpcId(candidate) : hiredNpcId;
-        if (spawnedNpc != null) _spawnedByCandidate[candidate] = spawnedNpc;
+        if (spawnedNpc != null)
+        {
+            _spawnedByCandidate[candidate] = spawnedNpc;
+            _runtimeSpawnInstanceIds.Add(spawnedNpc.GetInstanceID());
+        }
     }
 
     private string BuildHiredNpcId(NpcCandidateData candidate)
     {
         return candidate != null ? candidate.name : string.Empty;
+    }
+
+    private void AssignMatchingSpecialistRecipes(SpecialistNpcController specialist, NpcSpecialty specialty)
+    {
+        if (specialist == null) return;
+
+        WorkbenchType workbenchType = NpcSpecialtyMapping.GetWorkbenchType(specialty);
+        if (workbenchType == WorkbenchType.None) return;
+
+        var matching = new List<RecipeData>();
+        RecipeData[] recipes = Resources.LoadAll<RecipeData>("Recipes");
+        foreach (RecipeData recipe in recipes)
+        {
+            if (recipe == null || recipe.outputItem == null) continue;
+            if (recipe.requiredWorkbench != workbenchType) continue;
+            matching.Add(recipe);
+        }
+
+        matching.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+        specialist.assignedRecipes = matching;
+    }
+
+    // -------- 내부: 스폰 원본 해결 --------
+
+    private GameObject ResolveSpawnTemplate(NpcCandidateData candidate)
+    {
+        if (candidate == null) return null;
+
+        // 향후 후보에 전용 프리팹이 연결되면 데이터가 계속 우선권을 가진다.
+        if (candidate.spawnPrefab != null) return candidate.spawnPrefab;
+
+        if (NpcSpecialtyMapping.IsCraftingSpecialty(candidate.specialty))
+        {
+            SpecialistNpcController[] specialists = FindObjectsByType<SpecialistNpcController>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (SpecialistNpcController specialist in specialists)
+            {
+                if (specialist == null || specialist.specialty != candidate.specialty) continue;
+                if (IsUsableResidentTemplate(specialist.gameObject)) return specialist.gameObject;
+            }
+        }
+        else if (candidate.specialty != NpcSpecialty.None)
+        {
+            ProducerNpcController[] producers = FindObjectsByType<ProducerNpcController>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (ProducerNpcController producer in producers)
+            {
+                if (producer == null || producer.specialty != candidate.specialty) continue;
+                if (IsUsableResidentTemplate(producer.gameObject)) return producer.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    private bool IsUsableResidentTemplate(GameObject source)
+    {
+        if (source == null || source.GetComponent<NpcController>() == null) return false;
+        if (source.GetComponentInChildren<SkinnedMeshRenderer>(true) == null) return false;
+        if (_runtimeSpawnInstanceIds.Contains(source.GetInstanceID())) return false;
+
+        foreach (GameObject hiredInstance in _spawnedByCandidate.Values)
+        {
+            if (hiredInstance == source) return false;
+        }
+
+        return true;
     }
 
     // -------- 내부: 스폰 위치 해석 --------

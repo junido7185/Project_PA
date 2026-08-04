@@ -46,6 +46,9 @@ public class NpcScheduleController : MonoBehaviour
     [SerializeField] private SchedulePhase _activePhase;     // 실제 수행 중 (P형 이탈 포함)
     [SerializeField] private string _debugStatus = "초기화 전";
 
+    private bool _hasAppliedPhase; // 첫 EvaluateAndApply 이전에는 same-phase 스킵 금지
+    private bool _shopOpenVisitOverrideActive;
+
     private System.Random _rng;
     private NavMeshAgent _agent;
 
@@ -135,6 +138,17 @@ public class NpcScheduleController : MonoBehaviour
             _debugStatus = $"페이즈:{resolved} ({hour:F1}시)";
         }
 
+        // 같은 페이즈 재적용 금지 — ApplyPhase 는 무조건 Pause() 부터 걸기 때문에
+        // 매 정각마다 진행 중인 쇼핑 FSM 이 조용히 Idle 로 초기화되던 버그가 있었다
+        // (실내 손님이 구매 전에 튕겨나가는 S5 회귀 원인). 페이즈가 실제로 바뀔 때만
+        // Pause→Resume 게이팅을 적용한다. Shopping 진입 시 TryForceShop 도 원래 의도
+        // ("페이즈 진입 시")대로 최초 1회만 발동된다.
+        if (_hasAppliedPhase && resolved == _activePhase) return;
+
+        // 정규 페이즈가 바뀌면 임시 영업 방문권은 즉시 만료된다. 새 페이즈의
+        // ApplyPhase가 원래 컨트롤러 게이트를 다시 적용한다.
+        _shopOpenVisitOverrideActive = false;
+        _hasAppliedPhase = true;
         _activePhase = resolved;
         ApplyPhase(resolved);
     }
@@ -220,6 +234,38 @@ public class NpcScheduleController : MonoBehaviour
     /// GameClock 의 정각 이벤트 없이도 페이즈를 갱신할 때 사용한다.
     /// </summary>
     public void ForceReevaluate() => EvaluateAndApply();
+
+    // 상점 영업은 23시까지지만 현재 주민 시간표는 19~20시부터 Rest다.
+    // 시간표 자체를 바꾸지 않고 Rest 주민 한 명을 손님으로 잠시 빌려 주는 제한적 lease.
+    // Sleep/Work/Evening 등 다른 페이즈에는 절대 적용하지 않는다.
+    public bool TryBeginShopOpenVisitOverride()
+    {
+        if (_shopOpenVisitOverrideActive) return true;
+        if (!_hasAppliedPhase || _activePhase != SchedulePhase.Rest) return false;
+        if (consumerController == null) return false;
+
+        consumerController.SetShoppingPriority(true);
+        consumerController.Resume();
+        if (consumerController.IsSchedulePaused) return false;
+
+        _shopOpenVisitOverrideActive = true;
+        _debugStatus = $"페이즈:{_activePhase} · 영업 방문 중";
+        return true;
+    }
+
+    public void EndShopOpenVisitOverride()
+    {
+        if (!_shopOpenVisitOverrideActive) return;
+
+        _shopOpenVisitOverrideActive = false;
+        // 실제 _activePhase는 계속 Rest다. 동일한 기존 ApplyPhase 경로로 Pause와
+        // homePoint 복귀를 다시 적용해 임시 방문이 일과표를 영구 변경하지 않게 한다.
+        ApplyPhase(_activePhase);
+        _debugStatus = $"페이즈:{_activePhase} · 영업 방문 복귀";
+    }
+
+    public bool IsShopOpenVisitOverrideActive => _shopOpenVisitOverrideActive;
+    public SchedulePhase ActivePhase => _activePhase;
 
     // -------- 헬퍼 --------
 
