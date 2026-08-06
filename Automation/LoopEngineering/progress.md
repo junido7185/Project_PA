@@ -510,3 +510,17 @@ Append-only log for guarded automation and dry-run loop work.
 - Runtime and Editor compilation passed with zero errors. Final ticket logs contain zero blocking exception/crash patterns and no new crash report. The exact Input Manager notice remains covered by the previously approved human smoke result and did not appear in these batch runs.
 - Game View capture was not attempted because the known timeout had already reached its retry boundary. Hierarchy, alpha, geometry, bounds, and functional evidence passed, so this remains `CAPTURE_EVIDENCE_DEBT` rather than a ticket failure.
 - Final state: `BASELINE_READY_FOR_WORLD_001`. WORLD-001 and WorldSandbox were not started; wait for the next explicit bounded ticket.
+
+## 2026-08-06 — WORLD-001 WorldSandbox Bootstrap and Read-Only World Cell Grid
+
+- Started from clean `master` at `befc1738dd868d24b06a2c8f673a13293b60d36b`, synchronized with `origin/master`, using Unity 6000.3.2f1 and D3D11.
+- Created `Assets/Scenes/WorldSandbox.unity` only through an Editor builder. The authored scene contains exactly Main Camera, Directional Light, and WorldGrid roots; no shop, NPC, save, or gameplay-manager copy is authored.
+- Added the deterministic read-only baseline: 16×16 cells, 2 m cell size, one 16×16 chunk, 1 m elevation steps with allowed levels 0..6, initial elevation 0, Default ground, Empty occupancy, and world origin at the centre of cell (0,0).
+- Added cell/index/world/chunk conversion and safe `Try*` bounds APIs. Storage is a read-only row-major collection and no public cell mutation API exists.
+- Added a runtime line-only debug view for regular cells, chunk boundary, origin, sparse coordinates, and hover inspection. It does not generate terrain, water, paths, save data, or editable world state.
+- Recovery: the first reload exposed Unity's MonoBehaviour filename requirement. The existing editor-tool asset GUID was moved to the matching `WorldGridDebugView.cs` filename, then the scene was rebuilt. A second validator-only assumption was narrowed from exactly three runtime roots to exactly three authored roots plus zero duplicated runtime managers. Both recoveries are recorded in `BUG_LOG.md`.
+- Final D3D11 validation passed: 256 unique cells; four corners and out-of-bounds behavior; 256 index round trips; chunk (0,0); 10,000 seeded world/cell round trips; immutable data/API contracts; deterministic checksum `AD517449E587DBE5`; debug geometry; scene references; and blocking Console Error/Exception/Assert 0.
+- Runtime and Editor compilation passed with no errors. Only pre-existing CS8785 and CS0414 warnings remain. No new crash was created.
+- `Prototype_FirstDay.unity`, `MainGame.unity`, SaveData/SaveManager/repository authority, Packages, and ProjectSettings remain byte-for-byte unchanged from the ticket baseline.
+- Capture was not attempted. This is `CAPTURE_EVIDENCE_DEBT`, not a functional failure, because hierarchy, geometry, bounds, determinism, and D3D11 Play Mode checks passed.
+- Final state: `WORLD_001_COMPLETE`. Stop here; WORLD-002 requires a new explicit bounded ticket and is not started.

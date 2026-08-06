@@ -455,3 +455,13 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 시도한 것: 존재하지 않는 계획 경로 1회, 존재하지 않는 loop-state 경로 1회, 잘못된 wildcard 인자 1회. 같은 추측 경로와 wildcard 명령은 재사용하지 않았다.
 - 해결: `Get-ChildItem -Recurse -File -Filter`로 실제 경로를 한 번씩 확정한 뒤 루트 계획 문서와 `Automation/LoopEngineering/State/loop-state.json`을 명시 경로로 읽었다. 이후 검색은 확인된 개별 파일/디렉터리만 사용했다.
 - 영향: 모두 코드 수정 전후의 읽기 전용 조회 실패다. 씬·프리팹·에셋·저장·패키지·Unity 상태에는 영향이 없고, Task 131 Runtime/Editor 순차 빌드와 30/30 계약은 별도로 통과했다.
+
+## [RESOLVED] 2026-08-06 — WORLD-001 WorldGridDebugView 스크립트 자산명 불일치
+
+- 증상: `WorldSandbox` builder 직후의 같은 도메인 검사는 `WorldGridDebugView` 1개를 확인했지만, 첫 D3D11 validator 프로세스가 씬을 다시 연 뒤에는 `WorldGridService`만 남고 `WorldGridDebugView` 수가 0이어서 Play Mode 진입 전에 중단됐다.
+- 원인: 12경로 상한을 지키려고 두 `MonoBehaviour`를 `WorldGridService.cs` 한 파일에 함께 선언했다. Unity 씬 재로드에 필요한 스크립트 자산명과 `WorldGridDebugView` 클래스명이 일치하지 않아, 같은 도메인의 `AddComponent<T>`는 성공해도 다음 Editor 프로세스에서 해당 컴포넌트를 복원할 수 없었다.
+- 시도한 것: builder 1회 PASS 뒤 전용 validator 1회 실패. 좌표/데이터 검사는 시작 전이었고 기존 씬·저장·Packages·ProjectSettings는 변경되지 않았다.
+- 복구 계획: 이미 만든 Editor 도구 파일과 `.meta`를 `Assets/Scripts/World/WorldGridDebugView.cs`로 이동해 GUID를 재사용하고, 실제 컴포넌트 이름과 파일명을 맞춘다. debug 구현은 공통 base에 두며 Editor 도구는 같은 파일의 `UNITY_EDITOR` 구간에 유지한다. WorldSandbox만 builder로 다시 저장한 뒤 전용 validator를 한 번만 재실행한다.
+- 중단 조건: 같은 `WorldGridDebugView` 재로드 실패가 반복되면 세 번째 실행 없이 중단한다.
+- 복구 진행: 파일명/GUID 복구 후 builder는 재로드 가능한 `WorldGridDebugView` 1개와 Missing Script/Reference 0으로 PASS했다. 다음 validator는 해당 원인이 아니라 기존 `PA_RuntimeSceneBinder`가 Play Mode에서 전역 서비스 root를 만드는 동안 runtime root도 정확히 3개라고 가정한 validator 계약 때문에 멈췄다. Edit Mode의 authored root 3개/manager 0 계약은 유지하고, Play Mode는 필수 root 보존·동일 manager 중복 0·Shop/NPC instance 0을 검사하도록 분리한다.
+- 해결: 수정된 계약으로 `WorldSandbox`를 다시 열어 D3D11 Play Mode 검증을 완료했다. authored root 3개, `WorldGridDebugView` 1개, Missing Script/Reference 0, runtime 전역 manager 중복 0, Shop/NPC instance 0을 확인했고 256셀·10,000회 좌표 왕복·경계·chunk·읽기 전용·debug geometry 검사가 모두 PASS했다. 최종 로그는 `Logs/WORLD001_Validation_Final.log`이며 blocking Console Error/Exception/Assert와 신규 crash는 0이다.

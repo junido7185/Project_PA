@@ -1483,3 +1483,17 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] `INVENTORY-DRAG-GHOST-UI-DEBT`, `DEVELOPMENT_OVERLAY_LAYOUT_POLISH`, `PHONE-HIRING-FEED-INCOMPLETE`, `SHOP-READABILITY-AND-MAP-COMPOSITION-DEBT`, `SHOP-FURNITURE-PLACEMENT-001`, 판매음/B06 미감, 커스터마이징/Tier 캡처를 비차단 backlog로 유지.
 - [x] 최종 판정 `BASELINE_READY_FOR_WORLD_001`.
 - [ ] WORLD-001은 이번 보고에서 시작하지 않고 다음 명시적 bounded ticket으로만 시작한다.
+
+## WORLD-001 WorldSandbox Bootstrap and Read-Only World Cell Grid — 2026-08-06
+
+- [x] clean `master@befc1738dd868d24b06a2c8f673a13293b60d36b`, `origin/master` 일치, Unity 6000.3.2f1 D3D11 확인.
+- [x] Editor builder로 별도 `Assets/Scenes/WorldSandbox.unity` 생성; authored root 3개와 manager 사본 0 확인.
+- [x] 16×16셀·2m·16×16 chunk·1m elevation·level 0..6·초기 0·Default/Empty 읽기 전용 모델 구현.
+- [x] cell/world/index/chunk 변환, 경계 `Try*`, row-major 읽기 전용 열거 구현.
+- [x] 일반 셀·chunk 경계·원점·희소 좌표·hover용 line-only debug view 구현.
+- [x] D3D11에서 256셀, 네 모서리, OOB, 256 index 왕복, chunk, seeded 10,000회 좌표 왕복, checksum `AD517449E587DBE5` PASS.
+- [x] Runtime/Editor compile 오류 0, Missing Reference 0, manager 중복 0, blocking Console 0, 신규 crash 0.
+- [x] Prototype_FirstDay/MainGame, Save schema/authority, Packages, ProjectSettings byte-for-byte 무변경 확인.
+- [x] 자동 캡처는 실행하지 않고 `CAPTURE_EVIDENCE_DEBT`로 기록.
+- [x] 최종 상태 `WORLD_001_COMPLETE`.
+- [ ] WORLD-002는 자동 시작하지 않는다. 새 명시적 bounded ticket과 해당 시각 스케일 승인 기준을 받은 뒤 시작한다.

@@ -1,5 +1,5 @@
 {
-  "previousTicket": {
+  "worldArchitectureApproval": {
     "ticketId": "WORLD-000",
     "status": "approved",
     "decisions": {
@@ -16,16 +16,16 @@
     },
     "implementationStarted": false
   },
-  "ticketId": "BASELINE-CRAFTING-UI-FIX-001",
+  "ticketId": "WORLD-001",
   "status": "completed",
-  "finalState": "BASELINE_READY_FOR_WORLD_001",
-  "goal": "Restore visible Basic Crafting recipe cards and close the last functional baseline blocker.",
+  "finalState": "WORLD_001_COMPLETE",
+  "goal": "Bootstrap WorldSandbox and implement a deterministic read-only 16x16 world-cell grid without changing protected scenes, save authority, Packages, or ProjectSettings.",
   "baseline": {
     "branch": "master",
-    "commit": "0b07d71e7dc6d259713a97d2011d181efa73b200",
+    "commit": "befc1738dd868d24b06a2c8f673a13293b60d36b",
     "upstream": "origin/master",
-    "cleanAtStart": false,
-    "preflight": "ACCEPTED_7_INTENDED_DIRTY_PATHS",
+    "cleanAtStart": true,
+    "preflight": "PASS",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
@@ -35,13 +35,15 @@
     "duplicateGuidGroups": 0,
     "unresolvedNewAssetReferences": 0,
     "dirtyScenesAtStart": 0,
-    "trackedSubmissionPackageZips": 0,
-    "historyBlobsOver100MB": 0,
     "newCrashArtifacts": 0,
+    "prototypeFirstDayChanged": false,
+    "mainGameChanged": false,
+    "saveAuthorityChanged": false,
+    "packagesChanged": false,
     "projectSettingsContentChanged": false,
-    "dynamicFontVerificationDirtPreserved": false
+    "dirtyPathCountAtStop": 12
   },
-  "humanRuntimeReview": {
+  "baselinePrerequisite": {
     "inputSmoke": "PASS",
     "consoleGate": "PASS_WITH_EXACT_ALLOWLIST",
     "inputState": "BOTH_SYSTEMS_ACTIVE_AND_WORKING",
@@ -49,100 +51,91 @@
     "additionalManualCaptureRequired": false
   },
   "builds": {
-    "runtime": "PASS: 0 compile errors",
-    "editor": "PASS: 0 compile errors"
+    "runtime": "PASS: 0 compile errors; pre-existing CS8785 only",
+    "editor": "PASS: 0 compile errors; pre-existing CS8785 and CS0414 only"
   },
   "validators": {
     "passed": [
-      "FinalDemoRoute",
-      "DayNightShopLoop",
-      "LongPlayProgression",
-      "CoreSlicePlayability",
-      "GatheringShopGate",
-      "SaveRoundTrip",
-      "CustomerArrival",
-      "CustomerPresentation",
-      "InteriorCustomer",
-      "CustomerPanelLayout after one minimal fix and rerun",
-      "CraftingRecipeCards: D3D11 recipes=2 cards=2 active/bounds/alpha/material-state/craft/pulse PASS",
-      "ProcessingChain regression PASS"
-    ],
-    "needsHumanReview": [],
-    "notRunAfterRepeatedFailureStop": [
-      "VillageChangeSignal",
-      "VillageCultureVisual",
-      "CustomerDemandInsight",
-      "MiningShopLoop",
-      "OutdoorPlacement",
-      "remaining visual/prefab runtime validators"
-    ],
-    "notAvailable": [
-      "farming-specific validator",
-      "farm-plot-specific validator",
-      "Task 131 B06-specific runtime validator"
+      "Edit Mode authored scene contract",
+      "D3D11 Play Mode entry",
+      "256 deterministic cells with unique row-major indices",
+      "four corners, boundary and out-of-bounds safety",
+      "256 index round trips",
+      "single chunk mapping at (0,0)",
+      "10000 seeded world/cell round trips",
+      "read-only data and no public cell mutation API",
+      "deterministic checksum AD517449E587DBE5",
+      "runtime debug geometry and coordinate overlay",
+      "Missing Script/Reference 0",
+      "runtime manager duplicates 0 and Shop/NPC instances 0",
+      "blocking Console Error/Exception/Assert 0"
     ]
   },
-  "minimalFix": {
-    "path": "Assets/Scripts/CraftingUI.cs",
-    "change": "Changed the runtime Viewport Mask graphic from transparent to opaque while keeping showMaskGraphic=false, and forced the generated Content layout before the first visible frame.",
-    "reason": "The transparent Mask graphic discarded both generated Basic recipe cards even though the recipe count and card objects existed.",
-    "rerun": "PASS: 2 recipes, 2 visible cards"
+  "worldGrid": {
+    "widthCells": 16,
+    "heightCells": 16,
+    "cellCount": 256,
+    "cellSizeMeters": 2,
+    "chunkSizeCells": 16,
+    "chunkCount": 1,
+    "elevationStepMeters": 1,
+    "minimumElevationLevel": 0,
+    "maximumElevationLevel": 6,
+    "initialElevationLevel": 0,
+    "initialGround": "Default",
+    "initialOccupancy": "Empty",
+    "worldOriginAuthority": "centre of cell (0,0)",
+    "storage": "read-only row-major z*width+x",
+    "mutationApi": false
+  },
+  "scene": {
+    "path": "Assets/Scenes/WorldSandbox.unity",
+    "createdByEditorBuilder": true,
+    "authoredRoots": [
+      "Main Camera",
+      "Directional Light",
+      "WorldGrid"
+    ],
+    "authoredGameplayManagerCopies": 0,
+    "terrainMeshCreated": false,
+    "addedToBuildSettings": false
+  },
+  "recoveries": {
+    "scriptAssetName": "Resolved by reusing the editor-tool asset GUID at WorldGridDebugView.cs so Unity can persist the matching MonoBehaviour.",
+    "runtimeRootContract": "Resolved by keeping exactly-three-roots as an authored-scene contract and validating zero duplicate runtime managers after PA_RuntimeSceneBinder bootstrap.",
+    "failureLog": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "finalLog": "Logs/WORLD001_Validation_Final.log"
   },
   "save": {
     "schema": 10,
-    "roundTrip": "PASS",
-    "migration": "v9 to v10 placement migration present",
-    "schemaChanged": false
-  },
-  "audioAndSales": {
-    "staticValidation": "PASS",
-    "actualHearing": "DEFERRED_TO_MILESTONE_INTEGRATION_PLAYTEST"
-  },
-  "task131B06": {
-    "staticValidation": "bounds shrink-only collider, matching carving, local -Z anchor, success pulse present",
-    "runtimeVisualAndFeel": "DEFERRED_TO_MILESTONE_INTEGRATION_PLAYTEST"
-  },
-  "repeatedFailure": {
-    "signature": "GameView capture was not written in time",
-    "count": 2,
-    "validators": [
-      "ShopCustomization",
-      "ShopProgressionUnlock"
-    ],
-    "action": "Classified as CAPTURE_EVIDENCE_DEBT; functional automation may continue without further capture retries."
+    "schemaChanged": false,
+    "saveRuntimeUsedByWorldGrid": false
   },
   "capture": {
     "attemptedThisTicket": false,
     "result": "CAPTURE_EVIDENCE_DEBT",
-    "reason": "Known GameView capture timeout was not retried; card hierarchy, geometry, alpha, viewport bounds, and Play Mode behavior passed."
+    "reason": "Optional capture was not attempted; hierarchy, geometry, bounds, determinism, and D3D11 Play Mode contracts passed."
   },
-  "nonBlockingDebt": [
-    "INVENTORY-DRAG-GHOST-UI-DEBT",
-    "DEVELOPMENT_OVERLAY_LAYOUT_POLISH",
-    "PHONE-HIRING-FEED-INCOMPLETE",
-    "SHOP-READABILITY-AND-MAP-COMPOSITION-DEBT",
-    "SHOP-FURNITURE-PLACEMENT-001",
-    "sale fallback tone",
-    "B06 pulse feel",
-    "customization and Tier capture evidence"
-  ],
   "changedPaths": [
-    "Assets/Scripts/CraftingUI.cs",
-    "Assets/Editor/PA_CraftingRecipeCardValidator.cs",
-    "Assets/Editor/PA_CraftingRecipeCardValidator.cs.meta",
-    "Assets/Scripts/UI/CustomerPreferencePresentationController.cs",
+    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "Assets/Scenes/WorldSandbox.unity",
+    "Assets/Scenes/WorldSandbox.unity.meta",
+    "Assets/Scripts/World.meta",
+    "Assets/Scripts/World/WorldGridService.cs",
+    "Assets/Scripts/World/WorldGridService.cs.meta",
+    "Assets/Scripts/World/WorldGridDebugView.cs",
+    "Assets/Scripts/World/WorldGridDebugView.cs.meta",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
     "PROJECT_PA_STATUS.md",
-    "PROJECT_PA_SESSION_REPORT.md",
-    "PROJECT_PA_TODO.md",
-    "Docs/07_개발일지.md"
+    "PROJECT_PA_TODO.md"
   ],
   "forbiddenWorkPerformed": false,
-  "world001Started": false,
-  "worldSandboxCreated": false,
-  "startedAt": "2026-08-05",
-  "stoppedAt": "2026-08-05",
-  "stopReason": "Ticket completed with automated D3D11 evidence; stop before WORLD-001 as instructed.",
-  "nextAction": "WORLD-001 may start only as the next explicit bounded ticket."
+  "world001Started": true,
+  "worldSandboxCreated": true,
+  "world002Started": false,
+  "startedAt": "2026-08-06",
+  "stoppedAt": "2026-08-06",
+  "stopReason": "WORLD-001 completed with automated D3D11 evidence; stop before WORLD-002 as instructed.",
+  "nextAction": "Wait for a new explicit bounded WORLD-002 ticket; do not auto-continue."
 }

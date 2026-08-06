@@ -2029,3 +2029,15 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 자동 Game View 캡처는 알려진 timeout 재시도 한계를 존중해 실행하지 않았다. `CAPTURE_EVIDENCE_DEBT`이며 기능 차단이 아니다.
 - 남은 항목은 드래그 ghost, 개발 overlay, Phone Hiring/Feed, 상점/맵 가독성, 이동식 판매대, 음색/B06 미감, 커스터마이징/Tier 캡처 증거의 비차단 backlog다.
 - 최종 판정은 `BASELINE_READY_FOR_WORLD_001`. WORLD-001은 시작하지 않았으며 다음 명시적 bounded ticket에서만 진행한다.
+
+## 2026-08-06 WORLD-001 WorldSandbox Bootstrap and Read-Only World Cell Grid — COMPLETE
+
+- clean `master@befc1738dd868d24b06a2c8f673a13293b60d36b`에서 시작했고 `origin/master`와 일치했다. Unity 6000.3.2f1, D3D11만 사용했다.
+- Editor builder로만 신규 `Assets/Scenes/WorldSandbox.unity`를 생성했다. 저장된 root는 Main Camera, Directional Light, WorldGrid 정확히 3개이며 상점·NPC·Save·게임플레이 manager 사본은 없다.
+- 2m, 16×16셀, 16×16 chunk 1개, 1m elevation step, 허용 level 0..6, 초기 level 0, Default ground, Empty occupancy의 결정론적 읽기 전용 grid를 구현했다. cell (0,0)의 중심이 world origin이다.
+- cell/world/index/chunk 변환과 안전한 경계 `Try*` API, row-major 읽기 전용 열거를 제공한다. 지형 mesh·물·길·저장·편집 mutation은 아직 만들지 않았다.
+- line-only debug view는 일반 셀, chunk 경계, 원점, 희소 좌표와 hover 정보를 표시한다. 월드 데이터는 변경하지 않는다.
+- D3D11 최종 validator는 256셀, 네 모서리, 경계 밖 처리, 256 index 왕복, chunk (0,0), seeded 10,000회 world/cell 왕복, 불변 계약, checksum `AD517449E587DBE5`, debug geometry, Missing Reference 0, manager 중복 0을 통과했다.
+- Runtime/Editor compile 오류 0, blocking Console Error/Exception/Assert 0, 신규 crash 0이다. 기존 CS8785·CS0414 경고만 남는다.
+- Prototype_FirstDay/MainGame, Save schema/authority, Packages, ProjectSettings는 시작 기준과 byte-for-byte 동일하다. 캡처는 시도하지 않아 `CAPTURE_EVIDENCE_DEBT`로 남긴다.
+- 최종 판정은 `WORLD_001_COMPLETE`. WORLD-002는 시작하지 않았고 다음 명시적 bounded ticket을 기다린다.
