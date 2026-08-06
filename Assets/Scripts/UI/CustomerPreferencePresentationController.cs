@@ -188,7 +188,7 @@ public class CustomerPreferencePresentationController : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-20f, -394f);
+        rt.anchoredPosition = new Vector2(-20f, -414f);
         rt.sizeDelta = new Vector2(470f, 110f);
 
         var bg = _panel.GetComponent<Image>();
