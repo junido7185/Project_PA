@@ -235,7 +235,9 @@ public static class PA_WorldSandboxTools
         Require(debugView.IsRuntimeGeometryReady,
             $"runtime debug line mesh is ready ({debugView.DebugLineVertexCount} vertices)");
         Require(debugView.CoordinateOverlayEnabled, "runtime coordinate overlay is enabled");
-        MeshFilter debugFilter = debugView.GetComponentInChildren<MeshFilter>(true);
+        MeshFilter debugFilter = debugView.GetComponentsInChildren<MeshFilter>(true)
+            .SingleOrDefault(filter => filter.sharedMesh != null &&
+                                       filter.sharedMesh.name == "WorldGridDebugLineMesh");
         Require(debugFilter != null && debugFilter.sharedMesh != null, "debug mesh renderer has a mesh");
         Require(debugFilter.sharedMesh.subMeshCount == 3, "grid/chunk/origin use three debug submeshes");
         Require(debugFilter.sharedMesh.GetIndexCount(1) > 0, "chunk boundary has differentiated line indices");
@@ -376,9 +378,13 @@ public static class PA_WorldSandboxTools
             "WorldCellData is a readonly value type");
 
         var coordinates = new HashSet<Vector2Int>();
+        var elevationHistogram = new int[7];
         foreach (WorldCellData cell in service.EnumerateCells())
         {
-            Require(cell.ElevationLevel == 0, $"cell {cell.Coordinate} initial elevation is 0", false);
+            Require(cell.ElevationLevel >= definition.MinElevationLevel &&
+                    cell.ElevationLevel <= definition.MaxElevationLevel,
+                $"cell {cell.Coordinate} elevation is within definition bounds", false);
+            elevationHistogram[cell.ElevationLevel]++;
             Require(cell.GroundType == WorldGroundType.Default, $"cell {cell.Coordinate} ground is Default", false);
             Require(!cell.HasWater && !cell.HasPath, $"cell {cell.Coordinate} has no water/path", false);
             Require(cell.Occupancy == WorldCellOccupancy.Empty, $"cell {cell.Coordinate} occupancy is Empty", false);
@@ -386,6 +392,11 @@ public static class PA_WorldSandboxTools
                 throw new InvalidOperationException($"Duplicate cell coordinate {cell.Coordinate}");
         }
         Require(coordinates.Count == 256, "all 256 coordinates are unique");
+        if (service.BootstrapProfile == WorldGridBootstrapProfile.Flat)
+            Require(elevationHistogram[0] == 256, "flat bootstrap keeps all 256 cells at level 0");
+        else
+            Require(elevationHistogram.All(count => count > 0),
+                "terrain bootstrap keeps authoritative elevations across levels 0..6");
 
         var corners = new[]
         {

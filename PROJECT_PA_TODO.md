@@ -1497,3 +1497,16 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 자동 캡처는 실행하지 않고 `CAPTURE_EVIDENCE_DEBT`로 기록.
 - [x] 최종 상태 `WORLD_001_COMPLETE`.
 - [ ] WORLD-002는 자동 시작하지 않는다. 새 명시적 bounded ticket과 해당 시각 스케일 승인 기준을 받은 뒤 시작한다.
+
+## WORLD-002 Chunk Testbed + Height Level Mesh Prototype — 2026-08-06
+
+- [x] `World002Terraces` 결정론적 bootstrap으로 level 0~6을 모두 포함하는 16×16 높이 데이터 구성.
+- [x] 셀별 GameObject 없이 한 Chunk의 상면·노출 절벽 custom mesh, normal, UV, index 생성.
+- [x] 상면 256, 절벽면 280, 정점 2,144, checksum `ADF9201BC8265BC5` 검증.
+- [x] 합성 2-Chunk의 상면 seam 17지점 정확 일치 검증.
+- [x] 시각/collider mesh 분리, `MeshCollider`, 재질 2슬롯, visual/collider 선택 dirty rebuild 검증.
+- [x] D3D11 Edit/Play, WORLD-001 회귀, Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0.
+- [x] Prototype_FirstDay/MainGame, Save schema/authority, Packages, ProjectSettings 무변경.
+- [x] 선택 캡처는 실행하지 않고 `CAPTURE_EVIDENCE_DEBT`로 기록.
+- [x] 최종 상태 `WORLD_002_COMPLETE`.
+- [ ] 다음 단일 티켓: WORLD-003 Single-Cell Raise/Lower Terraforming. 생성기·저장·NavMesh·건물/상점 통합은 아직 시작하지 않는다.

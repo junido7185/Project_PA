@@ -2041,3 +2041,13 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Runtime/Editor compile 오류 0, blocking Console Error/Exception/Assert 0, 신규 crash 0이다. 기존 CS8785·CS0414 경고만 남는다.
 - Prototype_FirstDay/MainGame, Save schema/authority, Packages, ProjectSettings는 시작 기준과 byte-for-byte 동일하다. 캡처는 시도하지 않아 `CAPTURE_EVIDENCE_DEBT`로 남긴다.
 - 최종 판정은 `WORLD_001_COMPLETE`. WORLD-002는 시작하지 않았고 다음 명시적 bounded ticket을 기다린다.
+
+## 2026-08-06 WORLD-002 Chunk Testbed + Height Level Mesh Prototype — COMPLETE
+
+- `WorldSandbox`의 16×16 셀을 높이 level 0~6의 결정론적 동심 테라스로 초기화하고, Unity Terrain 없이 제한 높이 custom chunk mesh를 생성한다.
+- 한 Chunk는 상면 256개, 노출 절벽면 280개, 정점 2,144개와 checksum `ADF9201BC8265BC5`를 가진다. 인접 셀보다 높은 면과 월드 경계만 절벽을 생성한다.
+- 시각 mesh와 collider mesh를 분리하고 `MeshCollider`, 프로젝트 소유 runtime 재질 2슬롯, visual/collider 선택 dirty revision을 제공한다. 셀별 GameObject는 만들지 않는다.
+- 합성 2-Chunk의 상면 seam 17지점 일치, winding/normal/UV/index/finite 값, mesh/collider bounds, 선택 rebuild가 D3D11 Edit/Play Mode에서 통과했다.
+- WORLD-001 전체 회귀, Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0을 확인했다. 기존 CS8785/CS0414 경고만 남는다.
+- `Prototype_FirstDay`, `MainGame`, Save schema/authority, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 판정은 `WORLD_002_COMPLETE`. M70 자동 진행 규칙에 따라 로컬 커밋 뒤 WORLD-003만 다음 활성 티켓으로 전환한다.

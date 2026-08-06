@@ -2575,3 +2575,24 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - 최종 상태: `BASELINE_READY_FOR_WORLD_001`.
 - 별도 비차단 backlog: `INVENTORY-DRAG-GHOST-UI-DEBT`, `DEVELOPMENT_OVERLAY_LAYOUT_POLISH`, `PHONE-HIRING-FEED-INCOMPLETE`, `SHOP-READABILITY-AND-MAP-COMPOSITION-DEBT`, `SHOP-FURNITURE-PLACEMENT-001`, 판매 fallback 음색, B06 pulse 미감, 커스터마이징/Tier 캡처 증거.
 - WORLD-001과 WorldSandbox는 시작하지 않았다. 다음 명시적 bounded ticket을 기다린다.
+
+## 2026-08-06 — WORLD-002 Chunk Testbed + Height Level Mesh Prototype
+
+### 구현
+
+- `WorldGridService`에 기본 Flat 계약을 보존한 `World002Terraces` bootstrap profile을 추가했다. 셀 가장자리부터의 거리로 level 0~6을 결정해 동일 입력에서 동일 높이를 만든다.
+- `WorldChunkMeshBuilder`가 셀 상면과 외곽·내리막 방향의 노출 절벽만 순수 데이터로 생성한다. `WorldChunkTerrain`은 시각 mesh와 collider mesh를 분리 소유하고 `MeshCollider`, 두 runtime 재질, 선택 dirty revision으로 반영한다.
+- `WorldSandbox`는 Editor API builder로 다시 저장했으며 authored root 3개 계약과 gameplay manager 사본 0을 유지한다.
+
+### 검증
+
+- D3D11 최종 로그: `Logs/WORLD002_Validation_Final.log`. 256 top / 280 cliff / 2,144 vertices / checksum `ADF9201BC8265BC5`, 정상 winding·normal·UV·index·finite 값, 합성 2-Chunk 상면 seam, collider bounds, 선택 rebuild, Console 0이 PASS했다.
+- D3D11 회귀 로그: `Logs/WORLD002_WORLD001_Regression_Final.log`. WORLD-001의 256셀, 10,000회 좌표 왕복, read-only, debug mesh, blocking Console 0이 PASS했다.
+- Runtime/Editor compile은 오류 0이다. 기존 CS8785와 CS0414만 남고 신규 crash report는 없다.
+- 첫 seam false negative와 잘못된 WORLD-001 배치 진입점은 각각 원인을 좁혀 한 번만 복구했고 `BUG_LOG.md`에 해결 상태로 기록했다.
+
+### 판정
+
+- `Prototype_FirstDay`, `MainGame`, Save authority/schema, Packages, ProjectSettings는 변경하지 않았다.
+- 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`로 남겼다.
+- 최종 상태는 `WORLD_002_COMPLETE`. 로컬 커밋 후 WORLD-003만 다음 bounded ticket으로 자동 시작한다.

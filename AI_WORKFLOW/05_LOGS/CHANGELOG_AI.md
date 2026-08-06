@@ -927,3 +927,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - Runtime/Editor compile 오류 0, 기존 ProcessingChain 회귀 PASS, blocking exception/crash pattern 0, 신규 crash 0이다.
 - Game View capture는 알려진 timeout 재시도 한계 때문에 실행하지 않고 `CAPTURE_EVIDENCE_DEBT`로 유지했다. 씬·프리팹·Save schema·Packages·ProjectSettings는 변경하지 않았다.
 - 최종 판정 `BASELINE_READY_FOR_WORLD_001`. WORLD-001/WorldSandbox는 시작하지 않았고 Git add/commit/push는 수행하지 않았다.
+
+## 2026-08-06 — Codex — WORLD-002 Chunk Testbed + Height Level Mesh Prototype (DONE)
+
+- `WorldGridService`에 결정론적 level 0~6 테라스 bootstrap profile을 추가했다.
+- 신규 `WorldChunkMeshBuilder`/`WorldChunkTerrain`이 16×16 상면 256개와 노출 절벽면 280개를 한 Chunk mesh와 `MeshCollider`로 생성한다. Unity Terrain과 셀별 GameObject는 사용하지 않는다.
+- 시각/collider mesh, runtime 재질 2슬롯, visual/collider dirty revision을 분리했다.
+- 합성 두 Chunk 상면 seam, mesh streams, winding, normal, UV, index, finite 값, bounds, 선택 rebuild를 D3D11 Edit/Play Mode에서 검증했다. checksum은 `ADF9201BC8265BC5`다.
+- WORLD-001 D3D11 회귀와 Runtime/Editor compile이 오류 0으로 통과했고 blocking Console 0, 신규 crash 0이다.
+- `WorldSandbox`만 Editor API로 갱신했으며 Prototype_FirstDay/MainGame, Save schema, Packages, ProjectSettings는 변경하지 않았다.
+- 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_002_COMPLETE`다.

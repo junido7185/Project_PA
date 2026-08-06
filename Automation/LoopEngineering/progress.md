@@ -524,3 +524,14 @@ Append-only log for guarded automation and dry-run loop work.
 - `Prototype_FirstDay.unity`, `MainGame.unity`, SaveData/SaveManager/repository authority, Packages, and ProjectSettings remain byte-for-byte unchanged from the ticket baseline.
 - Capture was not attempted. This is `CAPTURE_EVIDENCE_DEBT`, not a functional failure, because hierarchy, geometry, bounds, determinism, and D3D11 Play Mode checks passed.
 - Final state: `WORLD_001_COMPLETE`. Stop here; WORLD-002 requires a new explicit bounded ticket and is not started.
+
+## 2026-08-06 — WORLD-002 Chunk Testbed and Height-Level Mesh Prototype
+
+- Continued M70 on `milestone/world-alpha-70` from WORLD-001 commit `776fd3a`; no protected scene, Save authority, Package, or ProjectSettings path was changed.
+- Added deterministic `World002Terraces` bootstrap levels 0..6 and a pure chunk mesh builder. The single 16×16 chunk produces 256 top faces, 280 exposed cliff faces, 2,144 vertices, normals/UVs and checksum `ADF9201BC8265BC5` without Unity Terrain or per-cell GameObjects.
+- `WorldChunkTerrain` owns separate runtime visual/collider meshes, two project-owned runtime material slots, a `MeshCollider`, and isolated visual/collider dirty revisions for later selective rebuilds.
+- The first synthetic seam check included lower cliff-cap vertices in an upper-edge count. The contract was narrowed to the 17 top-edge positions; the one allowed rerun passed. A WORLD-001 regression command typo was also corrected once to its actual public entry point. Both are recorded in `BUG_LOG.md`.
+- Final D3D11 Edit/Play validation passed mesh streams, winding, finite values, deterministic checksum, two-chunk seam equality, collider/bounds, dirty-rebuild isolation, one chunk object, and blocking Console 0.
+- WORLD-001 D3D11 regression passed all 256-cell, 10,000-round-trip, debug-view and read-only contracts. Runtime/Editor builds passed with zero errors; only existing CS8785/CS0414 warnings remain; new crash count is zero.
+- Optional capture was skipped and recorded as `CAPTURE_EVIDENCE_DEBT` because geometry, seams, collider, bounds, materials and Play Mode contracts passed.
+- Final state: `WORLD_002_COMPLETE`. After the local ticket commit, continue automatically to existing backlog ticket WORLD-003 only.

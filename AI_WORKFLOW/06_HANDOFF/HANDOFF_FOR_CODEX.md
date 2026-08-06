@@ -304,3 +304,15 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **캡처:** 알려진 Game View timeout을 재시도하지 않았다. 기능 계측이 통과했으므로 `CAPTURE_EVIDENCE_DEBT`; 사람에게 개별 캡처를 다시 요구하지 않는다.
 - **비차단 backlog:** inventory drag ghost, developer overlay layout, Phone Hiring/Feed, shop/map readability, movable sales display, sale fallback tone, B06 pulse feel, customization/Tier capture evidence.
 - **다음 우선순위:** 사용자가 `WORLD-001` bounded ticket을 명시하면 승인된 2m cell/16×16 chunk/1m level 0~6 custom mesh prototype을 `WorldSandbox` 전용으로 시작한다. `Prototype_FirstDay`는 Golden Regression Scene으로 보존하고 MainGame 통합·Save schema·Packages·ProjectSettings는 별도 승인을 유지한다.
+
+## 12. M70 / WORLD-002 인계 — 2026-08-06
+
+- **현재 milestone:** `M70 PLAYABLE WORLD ALPHA`, branch `milestone/world-alpha-70`. 사람 승인 baseline checkpoint는 `23ceda6`, WORLD-001 commit은 `776fd3a`다.
+- **완료 상태:** WORLD-002는 `WORLD_002_COMPLETE`. 16×16 WorldSandbox의 level 0~6 terrace, 상면 256/절벽 280/정점 2,144 custom mesh, checksum `ADF9201BC8265BC5`, `MeshCollider`, 재질 2슬롯, 선택 dirty rebuild가 구현됐다.
+- **증거:** `Logs/WORLD002_Validation_Final.log`와 `Logs/WORLD002_WORLD001_Regression_Final.log`. D3D11 Edit/Play, WORLD-001 회귀, blocking Console 0, Runtime/Editor 오류 0, 신규 crash 0이다.
+- **복구 기록:** 첫 합성 seam 검사는 cliff cap까지 센 false negative였다. 상면 17지점 계약으로 좁힌 단일 재검증이 통과했다. WORLD-001 회귀의 첫 배치 명령은 공개 메서드 이름 오기였고 실제 `PA_WorldSandboxTools.RunValidation` 한 번으로 통과했다.
+- **보호 상태:** Prototype_FirstDay/MainGame, Save schema/authority, Packages, ProjectSettings는 WORLD-002에서 변경하지 않았다. WorldSandbox는 Build Settings에 넣지 않았다.
+- **다음 활성 ticket:** 기존 `WORLD_BOUNDED_BACKLOG.md` 순서의 WORLD-003 Single-Cell Raise/Lower Terraforming만 시작한다. generator, water/path, building, save, navigation, shop/NPC integration은 섞지 않는다.
+- **다음 구현 기준:** level 0..6 clamp, 한 셀 raise/lower, 셀과 경계를 공유하는 Chunk만 dirty, mesh/collider 동기화, 실패 원자성, 취소/안전 경로, D3D11 검증을 최소 범위로 만든다.
+- **캡처:** WORLD-002 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`다. 사람 캡처는 요구하지 않는다.
+- **Git:** 로컬 ticket commit만 허용되고 push/rebase/reset-hard/clean은 금지다. 현재 ticket commit 뒤 자동 진행하되 M70 완료, WORLD-010 완료, ticket commit 12개, hard blocker 또는 안전 실행 한계에서 멈춘다.

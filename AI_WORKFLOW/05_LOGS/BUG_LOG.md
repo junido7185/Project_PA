@@ -465,3 +465,20 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 중단 조건: 같은 `WorldGridDebugView` 재로드 실패가 반복되면 세 번째 실행 없이 중단한다.
 - 복구 진행: 파일명/GUID 복구 후 builder는 재로드 가능한 `WorldGridDebugView` 1개와 Missing Script/Reference 0으로 PASS했다. 다음 validator는 해당 원인이 아니라 기존 `PA_RuntimeSceneBinder`가 Play Mode에서 전역 서비스 root를 만드는 동안 runtime root도 정확히 3개라고 가정한 validator 계약 때문에 멈췄다. Edit Mode의 authored root 3개/manager 0 계약은 유지하고, Play Mode는 필수 root 보존·동일 manager 중복 0·Shop/NPC instance 0을 검사하도록 분리한다.
 - 해결: 수정된 계약으로 `WorldSandbox`를 다시 열어 D3D11 Play Mode 검증을 완료했다. authored root 3개, `WorldGridDebugView` 1개, Missing Script/Reference 0, runtime 전역 manager 중복 0, Shop/NPC instance 0을 확인했고 256셀·10,000회 좌표 왕복·경계·chunk·읽기 전용·debug geometry 검사가 모두 PASS했다. 최종 로그는 `Logs/WORLD001_Validation_Final.log`이며 blocking Console Error/Exception/Assert와 신규 crash는 0이다.
+
+## [RESOLVED] 2026-08-06 — WORLD-002 합성 Chunk seam 검사 범위 오류
+
+- 증상: 첫 D3D11 WORLD-002 validator에서 단일 Chunk의 256 top face, 280 cliff face, winding/normal/index, 결정론 checksum까지 통과한 뒤 합성 2-Chunk seam의 `17개` 기대 검사만 실패했다.
+- 원인: 경계 X 좌표의 모든 정점을 모아 상면 17개뿐 아니라 월드 남·북 외곽 cliff cap의 동일한 아래쪽 정점까지 포함했다. 두 Chunk의 경계 위치 집합은 같은 방식으로 생성되지만 검사 수량의 범위가 상면 seam 계약보다 넓었다.
+- 시도한 것: 구현/씬을 바꾸지 않고 첫 validator를 중단했다. 로그는 `Logs/WORLD002_Validation.log`이며 Unity native crash, compile error, scene/save/package 변경은 없다.
+- 복구 계획: 합성 평면의 권위 높이 2m에 있는 상면 경계 정점만 모아 Z=-1..31의 17개 위치와 양쪽 집합 동일성을 검사한다. 수정 뒤 같은 validator는 한 번만 재실행한다.
+- 중단 조건: 같은 상면 seam 불일치가 반복되면 세 번째 실행 없이 WORLD-002를 중단한다.
+- 해결: 상면 경계 높이로 한정한 두 번째 D3D11 검사에서 두 Chunk의 17개 경계 위치가 정확히 일치했다. 최종 WORLD-002 Edit/Play Mode 검증도 top face 256, cliff face 280, checksum `ADF9201BC8265BC5`, blocking Console 0으로 통과했다. 증거는 `Logs/WORLD002_Validation_Final.log`에 남겼다.
+
+## [RESOLVED] 2026-08-06 — WORLD-001 회귀 검증 배치 진입점 이름 오기
+
+- 증상: WORLD-002 완료 직전 WORLD-001 D3D11 회귀 명령이 `executeMethod method 'RunWorldSandboxValidation' ... could not be found`로 검증 본문 진입 전에 종료됐다.
+- 원인: 실제 공개 진입점 `PA_WorldSandboxTools.RunValidation` 대신 존재하지 않는 메서드 이름을 명령 인자로 전달했다.
+- 영향: Unity 스크립트 컴파일은 오류 0으로 끝났고 코드·씬·에셋은 변경되지 않았다. 기능 실패나 회귀 결과가 아니다.
+- 해결: 잘못된 명령을 재사용하지 않고 실제 공개 진입점으로 한 번만 다시 실행해 D3D11 회귀 결과를 확정한다. 같은 진입 오류가 반복되면 세 번째 실행 없이 중단한다.
+- 최종 결과: `PA_WorldSandboxTools.RunValidation` 재실행에서 Edit/Play 검증, 256셀 결정성, 10,000회 좌표 왕복, debug mesh, blocking Console 0이 모두 통과했다. 증거는 `Logs/WORLD002_WORLD001_Regression_Final.log`에 남겼다.

@@ -15,6 +15,12 @@ public enum WorldCellOccupancy
     Occupied = 1
 }
 
+public enum WorldGridBootstrapProfile
+{
+    Flat = 0,
+    World002Terraces = 1
+}
+
 [Serializable]
 public sealed class WorldGridDefinition
 {
@@ -110,6 +116,7 @@ public sealed class WorldGridService : MonoBehaviour
     [SerializeField] int maxElevationLevel = World001MaxElevation;
     [SerializeField] int initialElevationLevel = World001InitialElevation;
     [SerializeField] WorldGroundType initialGroundType = WorldGroundType.Default;
+    [SerializeField] WorldGridBootstrapProfile bootstrapProfile = WorldGridBootstrapProfile.Flat;
 
     WorldGridDefinition _definition;
     WorldCellData[] _cells;
@@ -145,6 +152,7 @@ public sealed class WorldGridService : MonoBehaviour
 
     public int InitialElevationLevel => initialElevationLevel;
     public WorldGroundType InitialGroundType => initialGroundType;
+    public WorldGridBootstrapProfile BootstrapProfile => bootstrapProfile;
 
     void Awake()
     {
@@ -159,6 +167,12 @@ public sealed class WorldGridService : MonoBehaviour
 #if UNITY_EDITOR
     void OnValidate()
     {
+        _initialized = false;
+    }
+
+    internal void ConfigureBootstrapProfileForEditor(WorldGridBootstrapProfile profile)
+    {
+        bootstrapProfile = profile;
         _initialized = false;
     }
 #endif
@@ -299,7 +313,7 @@ public sealed class WorldGridService : MonoBehaviour
                 int index = z * _definition.Width + x;
                 _cells[index] = new WorldCellData(
                     new Vector2Int(x, z),
-                    initialElevationLevel,
+                    ResolveBootstrapElevation(x, z),
                     initialGroundType,
                     false,
                     false,
@@ -309,6 +323,15 @@ public sealed class WorldGridService : MonoBehaviour
 
         _readOnlyCells = Array.AsReadOnly(_cells);
         _initialized = true;
+    }
+
+    int ResolveBootstrapElevation(int x, int z)
+    {
+        if (bootstrapProfile != WorldGridBootstrapProfile.World002Terraces)
+            return initialElevationLevel;
+
+        int distanceFromEdge = Mathf.Min(x, z, width - 1 - x, height - 1 - z);
+        return Mathf.Clamp(distanceFromEdge, minElevationLevel, maxElevationLevel);
     }
 }
 
@@ -380,28 +403,31 @@ public class WorldGridDebugViewBase : MonoBehaviour
         var originIndices = new List<int>();
 
         float halfCell = definition.CellSize * 0.5f;
-        float minX = definition.WorldOrigin.x - halfCell;
-        float minZ = definition.WorldOrigin.z - halfCell;
-        float maxX = minX + definition.Width * definition.CellSize;
-        float maxZ = minZ + definition.Height * definition.CellSize;
-        float y = definition.WorldOrigin.y + lineHeightOffset;
-
-        for (int x = 0; x <= definition.Width; x++)
+        for (int z = 0; z < definition.Height; z++)
         {
-            float worldX = minX + x * definition.CellSize;
-            List<int> target = x % definition.ChunkSize == 0 || x == definition.Width
-                ? chunkIndices
-                : regularIndices;
-            AddLine(vertices, target, new Vector3(worldX, y, minZ), new Vector3(worldX, y, maxZ));
-        }
+            for (int x = 0; x < definition.Width; x++)
+            {
+                var coordinate = new Vector2Int(x, z);
+                if (!_grid.CellToWorld(coordinate, out Vector3 center)) continue;
+                float y = center.y + lineHeightOffset;
+                Vector3 southWest = new Vector3(center.x - halfCell, y, center.z - halfCell);
+                Vector3 northWest = new Vector3(center.x - halfCell, y, center.z + halfCell);
+                Vector3 northEast = new Vector3(center.x + halfCell, y, center.z + halfCell);
+                Vector3 southEast = new Vector3(center.x + halfCell, y, center.z - halfCell);
 
-        for (int z = 0; z <= definition.Height; z++)
-        {
-            float worldZ = minZ + z * definition.CellSize;
-            List<int> target = z % definition.ChunkSize == 0 || z == definition.Height
-                ? chunkIndices
-                : regularIndices;
-            AddLine(vertices, target, new Vector3(minX, y, worldZ), new Vector3(maxX, y, worldZ));
+                List<int> westTarget = x % definition.ChunkSize == 0 ? chunkIndices : regularIndices;
+                List<int> eastTarget = (x + 1) % definition.ChunkSize == 0 || x == definition.Width - 1
+                    ? chunkIndices
+                    : regularIndices;
+                List<int> southTarget = z % definition.ChunkSize == 0 ? chunkIndices : regularIndices;
+                List<int> northTarget = (z + 1) % definition.ChunkSize == 0 || z == definition.Height - 1
+                    ? chunkIndices
+                    : regularIndices;
+                AddLine(vertices, westTarget, southWest, northWest);
+                AddLine(vertices, eastTarget, southEast, northEast);
+                AddLine(vertices, southTarget, southWest, southEast);
+                AddLine(vertices, northTarget, northWest, northEast);
+            }
         }
 
         float originArm = definition.CellSize * 0.42f;
@@ -453,9 +479,27 @@ public class WorldGridDebugViewBase : MonoBehaviour
             Vector2 guiMouse = Event.current.mousePosition;
             var screenMouse = new Vector3(guiMouse.x, Screen.height - guiMouse.y, 0f);
             Ray ray = _debugCamera.ScreenPointToRay(screenMouse);
-            var plane = new Plane(Vector3.up, definition.WorldOrigin);
-            if (plane.Raycast(ray, out float distance) &&
-                _grid.WorldToCell(ray.GetPoint(distance), out Vector2Int coordinate) &&
+            Vector3 pointerWorld = default;
+            bool hasPointerWorld = false;
+            WorldChunkTerrain terrain = GetComponent<WorldChunkTerrain>();
+            if (terrain != null && terrain.TerrainCollider != null &&
+                terrain.TerrainCollider.Raycast(ray, out RaycastHit terrainHit, 500f))
+            {
+                pointerWorld = terrainHit.point;
+                hasPointerWorld = true;
+            }
+            else
+            {
+                var plane = new Plane(Vector3.up, definition.WorldOrigin);
+                if (plane.Raycast(ray, out float distance))
+                {
+                    pointerWorld = ray.GetPoint(distance);
+                    hasPointerWorld = true;
+                }
+            }
+
+            if (hasPointerWorld &&
+                _grid.WorldToCell(pointerWorld, out Vector2Int coordinate) &&
                 _grid.TryGetCell(coordinate, out WorldCellData cell) &&
                 _grid.CellToChunk(coordinate, out Vector2Int chunk))
             {
@@ -464,7 +508,9 @@ public class WorldGridDebugViewBase : MonoBehaviour
         }
 
         GUILayout.BeginArea(new Rect(18f, 18f, 430f, 116f), _panelStyle);
-        GUILayout.Label("WORLD-001  READ-ONLY WORLD CELL GRID");
+        GUILayout.Label(_grid.BootstrapProfile == WorldGridBootstrapProfile.World002Terraces
+            ? "WORLD-002  STEPPED CHUNK TERRAIN"
+            : "WORLD-001  READ-ONLY WORLD CELL GRID");
         GUILayout.Label($"{definition.Width}×{definition.Height} cells = {_grid.TotalCellCount}  |  cell {definition.CellSize:0.##}m  |  chunk {definition.ChunkSize}×{definition.ChunkSize}");
         GUILayout.Label($"Origin = cell (0,0) center {definition.WorldOrigin}  |  elevation {definition.MinElevationLevel}..{definition.MaxElevationLevel}");
         GUILayout.Label(pointerText);
