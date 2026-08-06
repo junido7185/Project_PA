@@ -946,3 +946,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - WorldSandbox debug에 좌클릭 선택, `R/F` 높이 변경, `Z` undo와 상태 overlay를 연결했다.
 - WORLD-003 D3D11 Edit/Play 및 WORLD-002·001 회귀, Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0이다.
 - scene/Save schema/Packages/ProjectSettings는 변경하지 않았고 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_003_COMPLETE`다.
+
+## 2026-08-06 — Codex — WORLD-004 Ground/Path Paint and Water Cell Prototype (DONE)
+
+- `WorldCellData`에 grass/soil/sand/rock 지면, dirt/stone 길, 별도 water surface level/depth와 farmable/walkability 파생 계약을 추가했다.
+- `WorldSurfaceEditService`가 protected/invalid water/path-under-water를 원자적으로 거부하고 ground/path/water 편집 및 마지막 성공 편집 1단계 undo를 제공한다.
+- Chunk 시각 mesh를 8개 지면·길·절벽·물 재질 슬롯으로 분리하고 물 상면과 노출 shoreline face를 생성했다. 물 triangle은 terrain `MeshCollider`에서 제외돼 collider가 바닥 높이를 유지한다.
+- WorldSandbox debug에 `G` 지면, `T` 길, `V` 물, `X` surface undo를 연결했다. 편집은 in-memory이며 Scene/Save를 dirty 처리하지 않는다.
+- Runtime/Editor compile 오류 0, WORLD-004 D3D11 Edit/Play PASS, WORLD-003·002·001 회귀 PASS, blocking Console 0, 신규 crash 0이다. 컴파일 지역 변수와 collider validator의 잘못된 vertex 순서 가정은 `BUG_LOG.md`에 해결 기록했다.
+- Prototype_FirstDay/WorldSandbox/MainGame Scene, Prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_004_COMPLETE`다.
+- Git add/commit/push는 수행하지 않았다. WORLD-005는 시작하지 않고 다음 명시적 지시를 기다린다.

@@ -2061,3 +2061,13 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - WORLD-003 D3D11 Edit/Play와 WORLD-002·001 회귀, Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0을 확인했다.
 - 씬, Save schema/authority, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 판정은 `WORLD_003_COMPLETE`; 로컬 커밋 뒤 WORLD-004만 다음 활성 티켓이다.
+
+## 2026-08-06 WORLD-004 Ground/Path Paint and Water Cell Prototype — COMPLETE
+
+- `WorldCellData`가 Grass/Soil/Sand/Rock, Dirt/Stone, water surface level/depth를 표현하고 농사 가능/보행 가능 상태를 단일 원본 데이터에서 파생한다.
+- surface transaction은 protected cell, 잘못된 수면, dry drain, path-under-water를 원자적으로 거부한다. 성공한 ground/path/water 편집과 1단계 undo만 revision 및 owner/seam dirty Chunk를 발행한다.
+- Chunk visual mesh는 grass/soil/sand/rock/dirt/stone/cliff/water 8슬롯이며 물 상면과 shoreline face를 표시한다. 물은 collider triangle stream에서 제외되고 Play Mode raycast는 terrain bed를 유지한다.
+- WorldSandbox debug는 `G/T/V/X`를 제공하며 surface 편집은 visual mesh만 갱신한다. 기존 terraforming collider와 `R/F/Z` 계약은 회귀 통과했다.
+- Runtime/Editor compile 오류 0, WORLD-004와 WORLD-003~001 D3D11 회귀 PASS, blocking Console 0, 신규 crash 0이다. 기존 CS8785/CS0414만 남는다.
+- Prototype_FirstDay/WorldSandbox/MainGame, Prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 판정 `WORLD_004_COMPLETE`. 아직 commit하지 않았으며 WORLD-005는 시작하지 않는다.

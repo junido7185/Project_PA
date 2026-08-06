@@ -5,7 +5,7 @@
     "status": "in_progress",
     "branch": "milestone/world-alpha-70",
     "checkpointCommit": "23ceda6",
-    "completedTicketCommits": 3,
+    "completedTicketCommits": 4,
     "commitLimit": 12
   },
   "worldArchitectureApproval": {
@@ -24,18 +24,34 @@
     },
     "implementationStarted": true
   },
-  "ticketId": "WORLD-003",
+  "m70ContinuationApproval": {
+    "status": "preapproved",
+    "approvedOn": "2026-08-06",
+    "approvedTickets": [
+      "WORLD-005",
+      "WORLD-006",
+      "WORLD-006B",
+      "WORLD-007",
+      "WORLD-008",
+      "WORLD-009",
+      "WORLD-010"
+    ],
+    "requiresIntermediateHumanApproval": false,
+    "localTicketCommitsAllowed": true,
+    "pushAllowed": false
+  },
+  "ticketId": "WORLD-004",
   "status": "completed",
-  "finalState": "WORLD_003_COMPLETE",
-  "goal": "Provide atomic one-cell raise/lower editing with protected-cell, 0..6 clamp, seam-aware dirty chunks, synchronized mesh/collider rebuild, debug selection and one-step undo.",
+  "finalState": "WORLD_004_COMPLETE",
+  "goal": "Provide atomic grass/soil/sand/rock ground paint, dirt/stone paths and bounded water cells with shoreline geometry, derived farmability/walkability, safe rejection and one-step rollback.",
   "baseline": {
     "branch": "milestone/world-alpha-70",
-    "commit": "f6ac77d",
+    "commit": "de1ada54edb4db2f5719c11ffc0826f9007c73ff",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 10,
+    "dirtyPathCountAtStop": 11,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
@@ -49,21 +65,21 @@
     "editor": "PASS: 0 compile errors; pre-existing CS8785 and CS0414 only"
   },
   "validators": {
-    "world003Log": "Logs/WORLD003_Validation.log",
-    "world002RegressionLog": "Logs/WORLD003_WORLD002_Regression.log",
-    "world001RegressionLog": "Logs/WORLD003_WORLD001_Regression.log",
+    "world004Log": "Logs/WORLD004_Validation.log",
+    "world003RegressionLog": "Logs/WORLD004_WORLD003_Regression.log",
+    "world002RegressionLog": "Logs/WORLD004_WORLD002_Regression.log",
+    "world001RegressionLog": "Logs/WORLD004_WORLD001_Regression.log",
     "passed": [
       "Unity D3D11 Edit Mode and Play Mode",
-      "out-of-bounds, protected, minimum and maximum edits fail atomically",
-      "one selected cell changes by exactly one 1m level",
-      "non-elevation cell data remains unchanged",
-      "adjacent cliff mask updates immediately",
-      "interior cell dirties only its owner chunk",
-      "chunk-edge cells dirty both seam-sharing chunks",
-      "visual and collider revisions advance exactly once per success",
-      "MeshCollider raycast follows the edited cell top",
-      "one-step undo restores the complete baseline cell hash",
-      "debug grid rebuilds without per-cell GameObjects",
+      "grass/soil/sand/rock and dirt/stone data/material slots",
+      "protected, invalid water, dry drain and path-under-water failures are atomic",
+      "water surface/depth invariant and visible shoreline faces",
+      "water vertices are excluded from terrain collider triangle streams",
+      "farmable and walkability derivation",
+      "surface changes rebuild visual mesh only and keep collider on the terrain bed",
+      "one-step undo restores complete baseline cell hashes",
+      "debug G/T/V/X surface controls",
+      "WORLD-003 terraform regression",
       "WORLD-002 terrain regression",
       "WORLD-001 grid regression",
       "blocking Console Error/Exception/Assert 0"
@@ -93,12 +109,31 @@
     "debugUndo": "Z",
     "savePersistence": false
   },
+  "surface": {
+    "groundTypes": ["Grass", "Soil", "Sand", "Rock"],
+    "pathTypes": ["Dirt", "Stone"],
+    "waterModel": "bounded cell surface level plus derived depth; no fluid simulation",
+    "shorelineFaces": true,
+    "waterCollider": false,
+    "farmableDerived": true,
+    "walkabilityDerived": true,
+    "failedEditAtomic": true,
+    "oneStepUndo": true,
+    "debugGround": "G",
+    "debugPath": "T",
+    "debugWater": "V",
+    "debugUndo": "X",
+    "savePersistence": false
+  },
   "terrain": {
     "implementation": "limited-height stepped custom chunk mesh",
     "unityTerrainUsed": false,
     "baselineChecksum": "ADF9201BC8265BC5",
     "meshCollider": true,
-    "world002Regression": "PASS"
+    "world002Regression": "PASS",
+    "materialSlots": 8,
+    "waterSurfaceAndShoreline": true,
+    "waterExcludedFromCollider": true
   },
   "scene": {
     "path": "Assets/Scenes/WorldSandbox.unity",
@@ -113,9 +148,10 @@
   "capture": {
     "attemptedThisTicket": false,
     "result": "CAPTURE_EVIDENCE_DEBT",
-    "reason": "The optional capture was skipped; selection, one-step edit, cliff, mesh/collider and undo behavior passed in D3D11 Play Mode."
+    "reason": "The optional capture was skipped; ground/path material routing, water shoreline, bed collider, derived state and rollback passed in D3D11 Play Mode."
   },
   "changedPaths": [
+    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
     "Assets/Scripts/World/WorldChunkTerrain.cs",
@@ -131,9 +167,11 @@
   "world001Completed": true,
   "world002Completed": true,
   "world003Completed": true,
-  "world004Started": false,
+  "world004Completed": true,
+  "world005Started": false,
+  "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-06",
   "stoppedAt": "2026-08-06",
-  "stopReason": "WORLD-003 completed with automated D3D11 evidence; close the bounded ticket before automatic WORLD-004 transition.",
-  "nextAction": "Commit WORLD-003 locally, then start WORLD-004 Ground/Path Paint and Water Cell Prototype as the only active bounded ticket."
+  "stopReason": "The former human-approval wait was superseded by explicit M70 continuation preapproval on 2026-08-06.",
+  "nextAction": "Create the verified WORLD-004 local commit, then activate the mapped WORLD-005 bounded ticket without another approval request."
 }

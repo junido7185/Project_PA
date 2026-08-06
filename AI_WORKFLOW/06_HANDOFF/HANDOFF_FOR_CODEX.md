@@ -326,3 +326,14 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **보호 상태:** WORLD-003에서 scene, Save schema/authority, Packages, ProjectSettings는 변경하지 않았다. water/path/building/NPC/NavMesh도 시작하지 않았다.
 - **다음 활성 ticket:** 기존 backlog의 WORLD-004 Ground/Path Paint and Water Cell Prototype만 시작한다. ground/path/water transaction과 최소 prototype rendering/walkability까지만 다루며 save/building/nav는 섞지 않는다.
 - **캡처/Git:** 캡처는 `CAPTURE_EVIDENCE_DEBT`. 로컬 ticket commit만 허용하며 push/rebase/reset-hard/clean은 금지다.
+
+## 2026-08-06 WORLD-004 Ground/Path Paint and Water Cell Prototype — COMPLETE
+
+- 기준은 `milestone/world-alpha-70@de1ada54edb4db2f5719c11ffc0826f9007c73ff`이며 완료 변경은 아직 commit하지 않았다.
+- `WorldCellData`는 Grass/Soil/Sand/Rock, Dirt/Stone, water surface/depth를 보유하고 `IsFarmable`/`IsWalkable`을 dry/path/ground 상태에서 파생한다.
+- `WorldSurfaceEditService`는 ground/path/water 편집을 preflight 뒤 원자 commit한다. 보호 셀, 최대 초과 수면, dry drain, path-under-water는 cell hash/revision/dirty Chunk를 바꾸지 않는다. 마지막 성공 편집만 `X`로 한 단계 되돌린다.
+- `WorldChunkMeshBuilder`는 8개 visual material slot을 사용하고 물 상면·shoreline을 생성한다. water vertex와 terrain collider triangle stream의 교집합은 0이며 Play Mode raycast는 물 표면이 아니라 terrain bed를 맞는다.
+- WorldSandbox 조작은 기존 좌클릭 선택/R/F/Z를 보존하면서 `G` ground, `T` path, `V` water, `X` surface undo를 추가한다. surface 변경은 visual revision만 올리고 collider revision은 유지한다.
+- 검증 로그: `Logs/WORLD004_Validation.log`, `Logs/WORLD004_WORLD003_Regression.log`, `Logs/WORLD004_WORLD002_Regression.log`, `Logs/WORLD004_WORLD001_Regression.log`. 모두 Unity 6000.3.2f1 D3D11에서 PASS했고 blocking Console 0, 신규 crash 0이다.
+- Runtime/Editor compile 오류 0이며 기존 CS8785/CS0414 경고만 남는다. 세 Scene의 working blob은 HEAD와 동일하고 Prefab/Save/Packages/ProjectSettings diff는 없다.
+- 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`다. 최종 상태 `WORLD_004_COMPLETE`; Git add/commit/push 없이 정지했다. WORLD-005는 명시적 다음 지시 전 시작하지 않는다.

@@ -29,6 +29,19 @@ public enum WorldCliffMask
     North = 1 << 3
 }
 
+public static class WorldSurfaceMaterialSlots
+{
+    public const int Grass = 0;
+    public const int Soil = 1;
+    public const int Sand = 2;
+    public const int Rock = 3;
+    public const int DirtPath = 4;
+    public const int StonePath = 5;
+    public const int Cliff = 6;
+    public const int Water = 7;
+    public const int Count = 8;
+}
+
 public sealed class WorldChunkMeshData
 {
     public Vector3[] Vertices { get; }
@@ -36,10 +49,14 @@ public sealed class WorldChunkMeshData
     public Vector2[] Uvs { get; }
     public int[] TopIndices { get; }
     public int[] CliffIndices { get; }
+    public int[][] VisualSubmeshIndices { get; }
+    public int[] WaterIndices { get; }
     public Bounds Bounds { get; }
 
     public int TopFaceCount => TopIndices.Length / 6;
     public int CliffFaceCount => CliffIndices.Length / 6;
+    public int WaterSurfaceFaceCount { get; }
+    public int ShorelineFaceCount { get; }
 
     public WorldChunkMeshData(
         Vector3[] vertices,
@@ -47,6 +64,10 @@ public sealed class WorldChunkMeshData
         Vector2[] uvs,
         int[] topIndices,
         int[] cliffIndices,
+        int[][] visualSubmeshIndices,
+        int[] waterIndices,
+        int waterSurfaceFaceCount,
+        int shorelineFaceCount,
         Bounds bounds)
     {
         Vertices = vertices;
@@ -54,6 +75,10 @@ public sealed class WorldChunkMeshData
         Uvs = uvs;
         TopIndices = topIndices;
         CliffIndices = cliffIndices;
+        VisualSubmeshIndices = visualSubmeshIndices;
+        WaterIndices = waterIndices;
+        WaterSurfaceFaceCount = waterSurfaceFaceCount;
+        ShorelineFaceCount = shorelineFaceCount;
         Bounds = bounds;
     }
 }
@@ -133,6 +158,12 @@ public static class WorldChunkMeshBuilder
         var uvs = new List<Vector2>(vertices.Capacity);
         var topIndices = new List<int>((endX - startX) * (endZ - startZ) * 6);
         var cliffIndices = new List<int>(topIndices.Capacity);
+        var waterIndices = new List<int>();
+        var visualSubmeshIndices = new List<int>[WorldSurfaceMaterialSlots.Count];
+        for (int i = 0; i < visualSubmeshIndices.Length; i++)
+            visualSubmeshIndices[i] = new List<int>();
+        int waterSurfaceFaceCount = 0;
+        int shorelineFaceCount = 0;
 
         for (int z = startZ; z < endZ; z++)
         {
@@ -147,11 +178,16 @@ public static class WorldChunkMeshBuilder
                 Vector3 northWest = new Vector3(centerX - halfCell, topY, centerZ + halfCell);
                 Vector3 northEast = new Vector3(centerX + halfCell, topY, centerZ + halfCell);
                 Vector3 southEast = new Vector3(centerX + halfCell, topY, centerZ - halfCell);
+                int topVertexStart = vertices.Count;
                 AddQuad(vertices, normals, uvs, topIndices,
                     southWest, northWest, northEast, southEast, Vector3.up, 1f);
+                AddQuadIndices(
+                    visualSubmeshIndices[ResolveTopMaterialSlot(cell)],
+                    topVertexStart);
 
                 AddCliffIfNeeded(definition, cells, x, z, -1, 0, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
+                    visualSubmeshIndices[WorldSurfaceMaterialSlots.Cliff],
                     bottomY => new[]
                     {
                         new Vector3(centerX - halfCell, bottomY, centerZ - halfCell),
@@ -161,6 +197,7 @@ public static class WorldChunkMeshBuilder
                     }, Vector3.left);
                 AddCliffIfNeeded(definition, cells, x, z, 1, 0, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
+                    visualSubmeshIndices[WorldSurfaceMaterialSlots.Cliff],
                     bottomY => new[]
                     {
                         new Vector3(centerX + halfCell, bottomY, centerZ - halfCell),
@@ -170,6 +207,7 @@ public static class WorldChunkMeshBuilder
                     }, Vector3.right);
                 AddCliffIfNeeded(definition, cells, x, z, 0, -1, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
+                    visualSubmeshIndices[WorldSurfaceMaterialSlots.Cliff],
                     bottomY => new[]
                     {
                         new Vector3(centerX - halfCell, bottomY, centerZ - halfCell),
@@ -179,6 +217,7 @@ public static class WorldChunkMeshBuilder
                     }, Vector3.back);
                 AddCliffIfNeeded(definition, cells, x, z, 0, 1, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
+                    visualSubmeshIndices[WorldSurfaceMaterialSlots.Cliff],
                     bottomY => new[]
                     {
                         new Vector3(centerX - halfCell, bottomY, centerZ + halfCell),
@@ -186,17 +225,58 @@ public static class WorldChunkMeshBuilder
                         northEast,
                         northWest
                     }, Vector3.forward);
+
+                if (cell.HasWater)
+                {
+                    AddWaterGeometry(
+                        definition,
+                        cells,
+                        x,
+                        z,
+                        cell,
+                        centerX,
+                        centerZ,
+                        halfCell,
+                        topY,
+                        vertices,
+                        normals,
+                        uvs,
+                        waterIndices,
+                        visualSubmeshIndices[WorldSurfaceMaterialSlots.Water],
+                        ref waterSurfaceFaceCount,
+                        ref shorelineFaceCount);
+                }
             }
         }
 
         Bounds bounds = CalculateBounds(vertices);
+        var visualIndices = new int[WorldSurfaceMaterialSlots.Count][];
+        for (int i = 0; i < visualIndices.Length; i++)
+            visualIndices[i] = visualSubmeshIndices[i].ToArray();
         return new WorldChunkMeshData(
             vertices.ToArray(),
             normals.ToArray(),
             uvs.ToArray(),
             topIndices.ToArray(),
             cliffIndices.ToArray(),
+            visualIndices,
+            waterIndices.ToArray(),
+            waterSurfaceFaceCount,
+            shorelineFaceCount,
             bounds);
+    }
+
+    static int ResolveTopMaterialSlot(WorldCellData cell)
+    {
+        if (cell.PathType == WorldPathType.Dirt) return WorldSurfaceMaterialSlots.DirtPath;
+        if (cell.PathType == WorldPathType.Stone) return WorldSurfaceMaterialSlots.StonePath;
+        return (int)cell.GroundType switch
+        {
+            1 => WorldSurfaceMaterialSlots.Soil,
+            2 => WorldSurfaceMaterialSlots.Sand,
+            3 => WorldSurfaceMaterialSlots.Rock,
+            _ => WorldSurfaceMaterialSlots.Grass
+        };
     }
 
     static void AddCliffIfNeeded(
@@ -212,6 +292,7 @@ public static class WorldChunkMeshBuilder
         List<Vector3> normals,
         List<Vector2> uvs,
         List<int> indices,
+        List<int> visualIndices,
         Func<float, Vector3[]> corners,
         Vector3 normal)
     {
@@ -228,8 +309,138 @@ public static class WorldChunkMeshBuilder
         if (bottomY >= topY - 0.0001f) return;
         Vector3[] face = corners(bottomY);
         float verticalUvScale = Mathf.Max(1f, (topY - bottomY) / definition.CellSize);
+        int vertexStart = vertices.Count;
         AddQuad(vertices, normals, uvs, indices,
             face[0], face[1], face[2], face[3], normal, verticalUvScale);
+        AddQuadIndices(visualIndices, vertexStart);
+    }
+
+    static void AddWaterGeometry(
+        WorldGridDefinition definition,
+        IReadOnlyList<WorldCellData> cells,
+        int x,
+        int z,
+        WorldCellData cell,
+        float centerX,
+        float centerZ,
+        float halfCell,
+        float bedY,
+        List<Vector3> vertices,
+        List<Vector3> normals,
+        List<Vector2> uvs,
+        List<int> waterIndices,
+        List<int> visualWaterIndices,
+        ref int waterSurfaceFaceCount,
+        ref int shorelineFaceCount)
+    {
+        float waterY = definition.WorldOrigin.y +
+                       cell.WaterSurfaceLevel * definition.ElevationStep;
+        Vector3 southWest = new Vector3(centerX - halfCell, waterY, centerZ - halfCell);
+        Vector3 northWest = new Vector3(centerX - halfCell, waterY, centerZ + halfCell);
+        Vector3 northEast = new Vector3(centerX + halfCell, waterY, centerZ + halfCell);
+        Vector3 southEast = new Vector3(centerX + halfCell, waterY, centerZ - halfCell);
+        int topStart = vertices.Count;
+        AddQuad(vertices, normals, uvs, waterIndices,
+            southWest, northWest, northEast, southEast, Vector3.up, 1f);
+        AddQuadIndices(visualWaterIndices, topStart);
+        waterSurfaceFaceCount++;
+
+        AddShorelineIfNeeded(definition, cells, x, z, -1, 0, bedY, waterY,
+            vertices, normals, uvs, waterIndices, visualWaterIndices,
+            bottomY => new[]
+            {
+                new Vector3(centerX - halfCell, bottomY, centerZ - halfCell),
+                new Vector3(centerX - halfCell, bottomY, centerZ + halfCell),
+                northWest,
+                southWest
+            }, Vector3.left, ref shorelineFaceCount);
+        AddShorelineIfNeeded(definition, cells, x, z, 1, 0, bedY, waterY,
+            vertices, normals, uvs, waterIndices, visualWaterIndices,
+            bottomY => new[]
+            {
+                new Vector3(centerX + halfCell, bottomY, centerZ - halfCell),
+                southEast,
+                northEast,
+                new Vector3(centerX + halfCell, bottomY, centerZ + halfCell)
+            }, Vector3.right, ref shorelineFaceCount);
+        AddShorelineIfNeeded(definition, cells, x, z, 0, -1, bedY, waterY,
+            vertices, normals, uvs, waterIndices, visualWaterIndices,
+            bottomY => new[]
+            {
+                new Vector3(centerX - halfCell, bottomY, centerZ - halfCell),
+                southWest,
+                southEast,
+                new Vector3(centerX + halfCell, bottomY, centerZ - halfCell)
+            }, Vector3.back, ref shorelineFaceCount);
+        AddShorelineIfNeeded(definition, cells, x, z, 0, 1, bedY, waterY,
+            vertices, normals, uvs, waterIndices, visualWaterIndices,
+            bottomY => new[]
+            {
+                new Vector3(centerX - halfCell, bottomY, centerZ + halfCell),
+                new Vector3(centerX + halfCell, bottomY, centerZ + halfCell),
+                northEast,
+                northWest
+            }, Vector3.forward, ref shorelineFaceCount);
+    }
+
+    static void AddShorelineIfNeeded(
+        WorldGridDefinition definition,
+        IReadOnlyList<WorldCellData> cells,
+        int x,
+        int z,
+        int offsetX,
+        int offsetZ,
+        float bedY,
+        float waterY,
+        List<Vector3> vertices,
+        List<Vector3> normals,
+        List<Vector2> uvs,
+        List<int> waterIndices,
+        List<int> visualWaterIndices,
+        Func<float, Vector3[]> corners,
+        Vector3 normal,
+        ref int shorelineFaceCount)
+    {
+        int neighborX = x + offsetX;
+        int neighborZ = z + offsetZ;
+        float bottomY = bedY;
+        if (neighborX >= 0 && neighborX < definition.Width &&
+            neighborZ >= 0 && neighborZ < definition.Height)
+        {
+            WorldCellData neighbor = cells[neighborZ * definition.Width + neighborX];
+            if (neighbor.HasWater)
+            {
+                float neighborWaterY = definition.WorldOrigin.y +
+                                       neighbor.WaterSurfaceLevel * definition.ElevationStep;
+                if (neighborWaterY >= waterY - 0.0001f) return;
+                bottomY = Mathf.Max(bedY, neighborWaterY);
+            }
+            else
+            {
+                float neighborGroundY = definition.WorldOrigin.y +
+                                        neighbor.ElevationLevel * definition.ElevationStep;
+                bottomY = Mathf.Max(bedY, neighborGroundY);
+            }
+        }
+
+        if (bottomY >= waterY - 0.0001f) return;
+        Vector3[] face = corners(bottomY);
+        int start = vertices.Count;
+        AddQuad(vertices, normals, uvs, waterIndices,
+            face[0], face[1], face[2], face[3], normal,
+            Mathf.Max(1f, (waterY - bottomY) / definition.CellSize));
+        AddQuadIndices(visualWaterIndices, start);
+        shorelineFaceCount++;
+    }
+
+    static void AddQuadIndices(List<int> indices, int start)
+    {
+        indices.Add(start);
+        indices.Add(start + 1);
+        indices.Add(start + 2);
+        indices.Add(start);
+        indices.Add(start + 2);
+        indices.Add(start + 3);
     }
 
     static void AddQuad(
@@ -336,7 +547,7 @@ public sealed class WorldChunkTerrain : MonoBehaviour
         if ((dirtyFlags & WorldChunkDirtyFlags.Visual) != 0)
         {
             if (_visualMesh == null) _visualMesh = CreateMesh("WorldChunk_0_0_Visual");
-            ApplyMeshData(_visualMesh, data);
+            ApplyVisualMeshData(_visualMesh, data);
             _filter.sharedMesh = _visualMesh;
             EnsureMaterials();
             _renderer.sharedMaterials = _materials;
@@ -346,7 +557,7 @@ public sealed class WorldChunkTerrain : MonoBehaviour
         if ((dirtyFlags & WorldChunkDirtyFlags.Collider) != 0)
         {
             if (_colliderMesh == null) _colliderMesh = CreateMesh("WorldChunk_0_0_Collider");
-            ApplyMeshData(_colliderMesh, data);
+            ApplyColliderMeshData(_colliderMesh, data);
             _collider.sharedMesh = null;
             _collider.sharedMesh = _colliderMesh;
             ColliderRevision++;
@@ -374,12 +585,15 @@ public sealed class WorldChunkTerrain : MonoBehaviour
         if (_grid == null) return;
         _grid.Terraform.Changed -= OnTerraformChanged;
         _grid.Terraform.Changed += OnTerraformChanged;
+        _grid.SurfaceEditor.Changed -= OnSurfaceChanged;
+        _grid.SurfaceEditor.Changed += OnSurfaceChanged;
     }
 
     void UnsubscribeTerraform()
     {
         if (_grid == null) return;
         _grid.Terraform.Changed -= OnTerraformChanged;
+        _grid.SurfaceEditor.Changed -= OnSurfaceChanged;
     }
 
     void OnTerraformChanged(WorldTerraformEditResult result)
@@ -388,6 +602,16 @@ public sealed class WorldChunkTerrain : MonoBehaviour
         {
             if (result.DirtyChunks[i] != chunkCoordinate) continue;
             Rebuild(WorldChunkDirtyFlags.All);
+            return;
+        }
+    }
+
+    void OnSurfaceChanged(WorldSurfaceEditResult result)
+    {
+        for (int i = 0; i < result.DirtyChunks.Count; i++)
+        {
+            if (result.DirtyChunks[i] != chunkCoordinate) continue;
+            Rebuild(WorldChunkDirtyFlags.Visual);
             return;
         }
     }
@@ -402,7 +626,20 @@ public sealed class WorldChunkTerrain : MonoBehaviour
         };
     }
 
-    static void ApplyMeshData(Mesh mesh, WorldChunkMeshData data)
+    static void ApplyVisualMeshData(Mesh mesh, WorldChunkMeshData data)
+    {
+        mesh.Clear();
+        mesh.vertices = data.Vertices;
+        mesh.normals = data.Normals;
+        mesh.uv = data.Uvs;
+        mesh.subMeshCount = WorldSurfaceMaterialSlots.Count;
+        for (int i = 0; i < WorldSurfaceMaterialSlots.Count; i++)
+            mesh.SetTriangles(data.VisualSubmeshIndices[i], i, false);
+        mesh.bounds = data.Bounds;
+        mesh.UploadMeshData(false);
+    }
+
+    static void ApplyColliderMeshData(Mesh mesh, WorldChunkMeshData data)
     {
         mesh.Clear();
         mesh.vertices = data.Vertices;
@@ -417,12 +654,22 @@ public sealed class WorldChunkTerrain : MonoBehaviour
 
     void EnsureMaterials()
     {
-        if (_materials != null && _materials.Length == 2 &&
-            _materials[0] != null && _materials[1] != null) return;
+        if (_materials != null && _materials.Length == WorldSurfaceMaterialSlots.Count)
+        {
+            bool valid = true;
+            for (int i = 0; i < _materials.Length; i++) valid &= _materials[i] != null;
+            if (valid) return;
+        }
         _materials = new[]
         {
-            CreateTerrainMaterial("WorldTerrainTop_Runtime", topColor),
-            CreateTerrainMaterial("WorldTerrainCliff_Runtime", cliffColor)
+            CreateTerrainMaterial("WorldTerrainGrass_Runtime", topColor),
+            CreateTerrainMaterial("WorldTerrainSoil_Runtime", new Color(0.48f, 0.31f, 0.18f, 1f)),
+            CreateTerrainMaterial("WorldTerrainSand_Runtime", new Color(0.78f, 0.68f, 0.43f, 1f)),
+            CreateTerrainMaterial("WorldTerrainRock_Runtime", new Color(0.42f, 0.44f, 0.43f, 1f)),
+            CreateTerrainMaterial("WorldTerrainDirtPath_Runtime", new Color(0.56f, 0.39f, 0.23f, 1f)),
+            CreateTerrainMaterial("WorldTerrainStonePath_Runtime", new Color(0.53f, 0.55f, 0.52f, 1f)),
+            CreateTerrainMaterial("WorldTerrainCliff_Runtime", cliffColor),
+            CreateTerrainMaterial("WorldTerrainWater_Runtime", new Color(0.22f, 0.55f, 0.72f, 1f))
         };
     }
 
@@ -626,14 +873,15 @@ public static class PA_WorldChunkTerrainTools
             Scene scene = SceneManager.GetActiveScene();
             WorldChunkTerrain terrain = FindSingle<WorldChunkTerrain>(scene);
             Require(terrain.IsReady, "runtime terrain visual and collider meshes are ready");
-            Require(terrain.VisualMesh.subMeshCount == 2, "runtime mesh has top and cliff submeshes");
+            Require(terrain.VisualMesh.subMeshCount == WorldSurfaceMaterialSlots.Count,
+                "runtime mesh preserves ground, path, cliff and water material slots");
             Require(terrain.VisualMesh.vertexCount > 1024, "runtime stepped mesh includes top and cliff vertices");
             Require(terrain.TerrainCollider != null && terrain.TerrainCollider.sharedMesh == terrain.ColliderMesh,
                 "MeshCollider uses the generated collider mesh");
             Require(Approximately(terrain.VisualMesh.bounds, terrain.ColliderMesh.bounds),
                 "visual and collider bounds match");
-            Require(terrain.GetComponent<MeshRenderer>().sharedMaterials.Length == 2,
-                "runtime terrain exposes two readable material slots");
+            Require(terrain.GetComponent<MeshRenderer>().sharedMaterials.Length == WorldSurfaceMaterialSlots.Count,
+                "runtime terrain exposes all project-owned surface material slots");
 
             int visualBefore = terrain.VisualRevision;
             int colliderBefore = terrain.ColliderRevision;
@@ -706,6 +954,9 @@ public static class PA_WorldChunkTerrainTools
         Require(first.CliffFaceCount > 64, $"mesh includes required outer and terrace cliff faces ({first.CliffFaceCount})");
         Require(first.Vertices.Length == first.Normals.Length && first.Vertices.Length == first.Uvs.Length,
             "vertex, normal, and UV streams have equal length");
+        Require(first.VisualSubmeshIndices.Length == WorldSurfaceMaterialSlots.Count &&
+                first.WaterIndices.Length == 0,
+            "baseline terrain has stable surface slots and no water geometry");
         ValidateIndexBounds(first.TopIndices, first.Vertices.Length, "top");
         ValidateIndexBounds(first.CliffIndices, first.Vertices.Length, "cliff");
         ValidateTriangleWinding(first, first.TopIndices, "top");
@@ -1283,6 +1534,368 @@ public static class PA_WorldTerraformTools
     {
         if (!condition) throw new InvalidOperationException(message);
         Debug.Log($"[WORLD-003] PASS {message}");
+    }
+}
+
+public static class PA_WorldSurfaceTools
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.WORLD004.Active";
+    const string FailedKey = "PA.WORLD004.Failed";
+    const string ConsoleErrorKey = "PA.WORLD004.ConsoleErrors";
+    const string WaitFramesKey = "PA.WORLD004.WaitFrames";
+
+    [InitializeOnLoadMethod]
+    static void ResumeValidationAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        SubscribeCallbacks();
+        if (EditorApplication.isPlaying) EditorApplication.update += ValidateRuntime;
+    }
+
+    [MenuItem("Project PA/World/WORLD-004/Validate Ground Path Water Prototype")]
+    public static void RunSurfaceValidation()
+    {
+        RunSurfaceValidationInternal();
+    }
+
+    public static void RunSurfaceValidationBatch()
+    {
+        RunSurfaceValidationInternal();
+    }
+
+    static void RunSurfaceValidationInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(WaitFramesKey, 0);
+            SubscribeCallbacks();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && scene.path == ScenePath,
+                "validator targets only WorldSandbox");
+            Require(!scene.isDirty, "WorldSandbox starts clean");
+            Require(FindComponents<Terrain>(scene).Count == 0 &&
+                    FindComponents<TerrainCollider>(scene).Count == 0,
+                "surface prototype uses no Unity Terrain component");
+            WorldGridService grid = FindSingle<WorldGridService>(scene);
+            ValidateSurfaceTransactions(grid);
+            Require(!scene.isDirty, "surface transactions remain in memory and do not dirty the scene");
+            Debug.Log("[WORLD-004] EDIT_MODE_PASS");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void ValidateSurfaceTransactions(WorldGridService grid)
+    {
+        WorldSurfaceEditService editor = grid.SurfaceEditor;
+        ulong baselineHash = ComputeCellHash(grid.Cells);
+        int baselineRevision = editor.Revision;
+        int eventCount = 0;
+        editor.Changed += _ => eventCount++;
+
+        AssertFailure(editor.PaintGround(Vector2Int.zero, WorldGroundType.Soil),
+            WorldSurfaceEditFailure.ProtectedCell, baselineHash, baselineRevision,
+            grid, editor, "protected ground paint");
+        AssertFailure(editor.FillWater(new Vector2Int(7, 7), 7),
+            WorldSurfaceEditFailure.InvalidWaterLevel, baselineHash, baselineRevision,
+            grid, editor, "water above maximum level");
+        AssertFailure(editor.DrainWater(new Vector2Int(1, 0)),
+            WorldSurfaceEditFailure.WaterNotPresent, baselineHash, baselineRevision,
+            grid, editor, "drain on a dry cell");
+
+        var groundCell = new Vector2Int(4, 4);
+        WorldSurfaceEditResult soil = editor.PaintGround(groundCell, WorldGroundType.Soil);
+        Require(soil.Succeeded && soil.Kind == WorldSurfaceEditKind.PaintGround,
+            "soil paint transaction succeeds");
+        Require(grid.TryGetCell(groundCell, out WorldCellData soilCell) &&
+                soilCell.GroundType == WorldGroundType.Soil && soilCell.IsFarmable && soilCell.IsWalkable,
+            "soil is visibly typed, farmable and walkable");
+        WorldChunkMeshData soilMesh = WorldChunkMeshBuilder.Build(
+            grid.Definition, grid.Cells, Vector2Int.zero);
+        Require(soilMesh.VisualSubmeshIndices[WorldSurfaceMaterialSlots.Soil].Length == 6,
+            "one soil cell occupies exactly one soil material quad");
+        Require(editor.UndoLast().Succeeded && ComputeCellHash(grid.Cells) == baselineHash,
+            "soil paint undo restores the baseline");
+
+        WorldSurfaceEditResult rock = editor.PaintGround(groundCell, WorldGroundType.Rock);
+        Require(rock.Succeeded && grid.TryGetCell(groundCell, out WorldCellData rockCell) &&
+                rockCell.GroundType == WorldGroundType.Rock && !rockCell.IsFarmable && rockCell.IsWalkable,
+            "rock paint updates non-farmable walkability derivation");
+        Require(editor.UndoLast().Succeeded && ComputeCellHash(grid.Cells) == baselineHash,
+            "rock paint undo restores the baseline");
+
+        var pathCell = new Vector2Int(5, 5);
+        WorldSurfaceEditResult dirtPath = editor.PaintPath(pathCell, WorldPathType.Dirt);
+        Require(dirtPath.Succeeded && grid.TryGetCell(pathCell, out WorldCellData path) &&
+                path.PathType == WorldPathType.Dirt && path.HasPath &&
+                path.IsWalkable && !path.IsFarmable,
+            "dirt path is walkable and not farmable");
+        WorldChunkMeshData pathMesh = WorldChunkMeshBuilder.Build(
+            grid.Definition, grid.Cells, Vector2Int.zero);
+        Require(pathMesh.VisualSubmeshIndices[WorldSurfaceMaterialSlots.DirtPath].Length == 6,
+            "one dirt path cell occupies exactly one path material quad");
+        ulong pathHash = ComputeCellHash(grid.Cells);
+        int pathRevision = editor.Revision;
+        AssertFailure(editor.FillWaterOneLevel(pathCell),
+            WorldSurfaceEditFailure.PathUnderWater, pathHash, pathRevision,
+            grid, editor, "water fill on a path");
+        Require(editor.UndoLast().Succeeded && ComputeCellHash(grid.Cells) == baselineHash,
+            "path paint undo restores the baseline");
+
+        var waterCell = new Vector2Int(1, 0);
+        WorldSurfaceEditResult water = editor.FillWater(waterCell, 1);
+        WorldCellData pond = default;
+        Require(water.Succeeded, "one-level water edit succeeds");
+        Require(grid.TryGetCell(waterCell, out pond), "edited water cell remains addressable");
+        Require(pond.HasWater && pond.WaterSurfaceLevel == 1 && pond.WaterDepthLevels == 1,
+            "one-level water cell satisfies surface/depth invariant");
+        Require(!pond.IsWalkable && !pond.IsFarmable && !pond.HasPath,
+            "water cell is non-walkable, non-farmable and path-free");
+        WorldChunkMeshData waterMesh = WorldChunkMeshBuilder.Build(
+            grid.Definition, grid.Cells, Vector2Int.zero);
+        Require(waterMesh.WaterSurfaceFaceCount == 1 &&
+                waterMesh.ShorelineFaceCount > 0 && waterMesh.WaterIndices.Length >= 12,
+            "one water cell generates a top surface and visible shoreline faces");
+        Require(waterMesh.VisualSubmeshIndices[WorldSurfaceMaterialSlots.Water].Length ==
+                waterMesh.WaterIndices.Length,
+            "water top and shoreline use the dedicated water material slot");
+        var waterVertexIndices = new HashSet<int>(waterMesh.WaterIndices);
+        Require(waterMesh.TopIndices.All(index => !waterVertexIndices.Contains(index)) &&
+                waterMesh.CliffIndices.All(index => !waterVertexIndices.Contains(index)),
+            "water geometry is excluded from terrain collider triangle streams");
+
+        ulong waterHash = ComputeCellHash(grid.Cells);
+        int waterRevision = editor.Revision;
+        AssertFailure(editor.PaintPath(waterCell, WorldPathType.Stone),
+            WorldSurfaceEditFailure.PathUnderWater, waterHash, waterRevision,
+            grid, editor, "path paint under water");
+        Require(editor.UndoLast().Succeeded && ComputeCellHash(grid.Cells) == baselineHash,
+            "water fill undo removes water and restores the baseline");
+
+        Require(editor.Revision == baselineRevision + 8 && eventCount == 8,
+            "four surface edits and four undo operations are the only published revisions");
+        Require(!editor.CanUndo, "surface undo is limited to the last successful edit");
+    }
+
+    static void AssertFailure(
+        WorldSurfaceEditResult result,
+        WorldSurfaceEditFailure expected,
+        ulong expectedHash,
+        int expectedRevision,
+        WorldGridService grid,
+        WorldSurfaceEditService editor,
+        string label)
+    {
+        Require(!result.Succeeded && result.Failure == expected,
+            $"{label} fails with {expected}");
+        Require(result.DirtyChunks.Count == 0 &&
+                editor.Revision == expectedRevision &&
+                ComputeCellHash(grid.Cells) == expectedHash,
+            $"{label} is atomic and publishes no dirty chunk");
+    }
+
+    static void SubscribeCallbacks()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SessionState.SetInt(WaitFramesKey, 0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            FinishValidation();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(WaitFramesKey, 0) + 1;
+        SessionState.SetInt(WaitFramesKey, frames);
+        if (frames < 4) return;
+        EditorApplication.update -= ValidateRuntime;
+
+        try
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            WorldGridService grid = FindSingle<WorldGridService>(scene);
+            WorldChunkTerrain terrain = FindSingle<WorldChunkTerrain>(scene);
+            WorldGridDebugView debug = FindSingle<WorldGridDebugView>(scene);
+            Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+            Require(terrain.IsReady &&
+                    terrain.VisualMesh.subMeshCount == WorldSurfaceMaterialSlots.Count &&
+                    terrain.GetComponent<MeshRenderer>().sharedMaterials.Length == WorldSurfaceMaterialSlots.Count,
+                "runtime terrain exposes eight ground/path/cliff/water material slots");
+
+            int visual = terrain.VisualRevision;
+            int collider = terrain.ColliderRevision;
+            var groundCell = new Vector2Int(4, 4);
+            Require(debug.TrySelectCell(groundCell), "debug selects a ground cell");
+            WorldSurfaceEditResult soil = debug.CycleSelectedGround();
+            Require(soil.Succeeded && soil.CurrentCell.GroundType == WorldGroundType.Soil,
+                "G cycles selected grass to soil");
+            Require(terrain.VisualRevision == visual + 1 && terrain.ColliderRevision == collider,
+                "ground paint rebuilds visual mesh only");
+            Require(terrain.VisualMesh.GetTriangles(WorldSurfaceMaterialSlots.Soil).Length == 6,
+                "runtime soil material receives one cell quad");
+            Require(debug.UndoLastSurfaceEdit().Succeeded,
+                "X restores the last surface edit");
+
+            visual = terrain.VisualRevision;
+            collider = terrain.ColliderRevision;
+            var pathCell = new Vector2Int(5, 5);
+            Require(debug.TrySelectCell(pathCell), "debug selects a path candidate");
+            WorldSurfaceEditResult path = debug.CycleSelectedPath();
+            Require(path.Succeeded && path.CurrentCell.PathType == WorldPathType.Dirt,
+                "T cycles selected empty path to dirt");
+            Require(terrain.VisualRevision == visual + 1 && terrain.ColliderRevision == collider &&
+                    terrain.VisualMesh.GetTriangles(WorldSurfaceMaterialSlots.DirtPath).Length == 6,
+                "path paint updates only its visual material slot");
+            Require(debug.UndoLastSurfaceEdit().Succeeded,
+                "surface undo restores the path cell");
+
+            visual = terrain.VisualRevision;
+            collider = terrain.ColliderRevision;
+            var waterCell = new Vector2Int(1, 0);
+            Require(debug.TrySelectCell(waterCell), "debug selects a water candidate");
+            WorldSurfaceEditResult water = debug.ToggleSelectedWater();
+            Require(water.Succeeded && water.CurrentCell.HasWater &&
+                    water.CurrentCell.WaterSurfaceLevel == 1,
+                "V fills selected low cell with one level of water");
+            Require(terrain.VisualRevision == visual + 1 && terrain.ColliderRevision == collider,
+                "water fill rebuilds visual shoreline but preserves ground collider");
+            Require(terrain.VisualMesh.GetTriangles(WorldSurfaceMaterialSlots.Water).Length >= 12,
+                "runtime water material contains surface and shoreline triangles");
+
+            Require(grid.CellToWorld(waterCell, out Vector3 bedWorld),
+                "water cell resolves its terrain bed position");
+            Physics.SyncTransforms();
+            Ray ray = new Ray(bedWorld + Vector3.up * 10f, Vector3.down);
+            Require(terrain.TerrainCollider.Raycast(ray, out RaycastHit hit, 20f) &&
+                    Mathf.Abs(hit.point.y - bedWorld.y) < 0.01f,
+                "water is non-colliding and MeshCollider remains on the terrain bed");
+            int visualBeforeBlockedPath = terrain.VisualRevision;
+            WorldSurfaceEditResult blockedPath = debug.CycleSelectedPath();
+            Require(!blockedPath.Succeeded &&
+                    blockedPath.Failure == WorldSurfaceEditFailure.PathUnderWater &&
+                    terrain.VisualRevision == visualBeforeBlockedPath,
+                "path-under-water input is rejected without rebuild");
+            Require(debug.UndoLastSurfaceEdit().Succeeded &&
+                    grid.TryGetCell(waterCell, out WorldCellData restored) && !restored.HasWater,
+                "surface undo drains the prototype water cell back to baseline");
+
+            int visualAfterUndo = terrain.VisualRevision;
+            WorldSurfaceEditResult secondUndo = debug.UndoLastSurfaceEdit();
+            Require(!secondUndo.Succeeded &&
+                    secondUndo.Failure == WorldSurfaceEditFailure.NoUndoAvailable &&
+                    terrain.VisualRevision == visualAfterUndo,
+                "second surface undo fails atomically");
+            Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                "blocking runtime Console Error/Exception/Assert count is 0");
+            Debug.Log("[WORLD-004] PLAY_MODE_PASS");
+            EditorApplication.ExitPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static ulong ComputeCellHash(IReadOnlyList<WorldCellData> cells)
+    {
+        const ulong offset = 14695981039346656037UL;
+        const ulong prime = 1099511628211UL;
+        ulong hash = offset;
+        unchecked
+        {
+            for (int i = 0; i < cells.Count; i++)
+            {
+                WorldCellData cell = cells[i];
+                hash = (hash ^ (uint)cell.Coordinate.x) * prime;
+                hash = (hash ^ (uint)cell.Coordinate.y) * prime;
+                hash = (hash ^ (uint)cell.ElevationLevel) * prime;
+                hash = (hash ^ (uint)cell.GroundType) * prime;
+                hash = (hash ^ (uint)cell.PathType) * prime;
+                hash = (hash ^ (uint)cell.WaterSurfaceLevel) * prime;
+                hash = (hash ^ (uint)cell.WaterDepthLevels) * prime;
+                hash = (hash ^ (uint)cell.Occupancy) * prime;
+            }
+        }
+        return hash;
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+        SessionState.SetInt(ConsoleErrorKey, SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[WORLD-004] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else FinishValidation();
+    }
+
+    static void FinishValidation()
+    {
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int consoleErrors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(WaitFramesKey);
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Debug.Log(failed
+            ? $"[WORLD-004] FINISHED_WITH_ERRORS consoleErrors={consoleErrors}"
+            : "[WORLD-004] FINISHED_PASS ground=4 path=2 water=true shoreline=true walkability=true rollback=true");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static List<T> FindComponents<T>(Scene scene) where T : Component
+    {
+        var result = new List<T>();
+        foreach (GameObject root in scene.GetRootGameObjects())
+            result.AddRange(root.GetComponentsInChildren<T>(true));
+        return result;
+    }
+
+    static T FindSingle<T>(Scene scene) where T : Component
+    {
+        List<T> components = FindComponents<T>(scene);
+        if (components.Count != 1)
+            throw new InvalidOperationException($"Expected one {typeof(T).Name}, found {components.Count}.");
+        return components[0];
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[WORLD-004] PASS {message}");
     }
 }
 #endif

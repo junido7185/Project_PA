@@ -546,3 +546,15 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/WORLD003_Validation.log` passed D3D11 Edit/Play checks on the first run. WORLD-002 and WORLD-001 D3D11 regressions also passed; Runtime/Editor compilation has zero errors and no new crash exists.
 - No scene, Save schema, Package, ProjectSettings, water/path, building, NPC or NavMesh path changed. Optional capture remains `CAPTURE_EVIDENCE_DEBT`.
 - Final state: `WORLD_003_COMPLETE`. After the local ticket commit, continue automatically to existing backlog ticket WORLD-004 only.
+
+## 2026-08-06 — WORLD-004 Ground/Path Paint and Water Cell Prototype
+
+- Continued on `milestone/world-alpha-70` from committed WORLD-003 baseline `de1ada54edb4db2f5719c11ffc0826f9007c73ff`; the ticket result remains uncommitted for human review.
+- Extended the cell contract with four ground types, two path types and bounded water surface/depth. Farmability and walkability remain derived rather than duplicated authority.
+- Added atomic ground/path/water transactions, typed protected/invalid/path-water failures, owner-plus-seam dirty chunks and one-step rollback. Failed edits publish no revision or dirty chunk.
+- Routed visual tops through eight runtime material slots and generated water tops plus exposed shoreline faces. Water triangles are absent from the terrain collider streams, so runtime raycasts remain on the terrain bed.
+- Added WorldSandbox debug controls `G` ground, `T` path, `V` water and `X` surface undo while preserving WORLD-003 left-click/R/F/Z controls.
+- The initial continuation compile issue was fixed by separating water edit success and cell lookup. The first D3D11 validator then exposed a validator-only vertex-order assumption; direct set-disjointness replaced it and the single rerun passed. Both recoveries are resolved in `BUG_LOG.md`.
+- `Logs/WORLD004_Validation.log` passed Edit/Play surface, material, shoreline, collider, rollback and Console contracts. WORLD-003/002/001 regression logs all finished PASS. Runtime/Editor compile errors and new crashes are zero.
+- Prototype_FirstDay, WorldSandbox and MainGame blobs match HEAD. No Prefab, Save schema/authority, Package or ProjectSettings content changed. Optional capture remains `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `WORLD_004_COMPLETE`. Stop here without commit or WORLD-005 work; await explicit user instruction.

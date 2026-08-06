@@ -2616,3 +2616,25 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 
 - Scene, Save authority/schema, Packages, ProjectSettings, water/path, building, NPC, NavMesh는 변경하지 않았다. 선택 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 상태 `WORLD_003_COMPLETE`; 로컬 커밋 후 WORLD-004로 자동 전환한다.
+
+## 2026-08-06 — WORLD-004 Ground/Path Paint and Water Cell Prototype
+
+### 구현
+
+- `WorldCellData`에 4종 ground, 2종 path, bounded water surface/depth를 추가하고 farmable/walkability를 파생 속성으로 유지했다.
+- `WorldSurfaceEditService`는 편집 전 모든 조건을 확인한 뒤 셀 하나를 원자 교체한다. protected, invalid water, dry drain, path-under-water는 revision/dirty Chunk/undo 기록을 바꾸지 않는다.
+- 시각 mesh 상면을 grass/soil/sand/rock/dirt/stone으로 나누고 cliff/water를 더한 8개 material slot을 사용한다. 물 상면과 노출 shoreline face는 시각 mesh에만 들어간다.
+- WorldSandbox debug에 `G/T/V/X`를 연결했다. surface 편집은 높이를 바꾸지 않으므로 visual mesh만 다시 만들고 terrain collider는 보존한다.
+
+### 검증
+
+- `Logs/WORLD004_Validation.log`: D3D11 Edit/Play에서 지면·길 분기, 물 level/depth, shoreline, protected/invalid/path-water 원자 실패, farmable/walkability, undo, visual-only revision, non-colliding water bed raycast, blocking Console 0 PASS.
+- `Logs/WORLD004_WORLD003_Regression.log`, `Logs/WORLD004_WORLD002_Regression.log`, `Logs/WORLD004_WORLD001_Regression.log`: 기존 terraform, stepped terrain checksum/seam/collider, 256-cell grid/read-only 계약 모두 PASS.
+- Runtime/Editor compile 오류 0이다. 기존 CS8785와 Editor CS0414 경고만 남고 신규 crash report는 없다.
+- 중단점의 CS0165는 water 성공·셀 조회 검사를 분리해 해결했다. 첫 Unity 실행의 유일한 실패는 vertex 순서를 collider 포함 여부로 오인한 validator 조건이었고, water vertex와 collider index의 실제 교집합 검사로 고친 단일 재실행은 전 항목 PASS했다.
+
+### 판정
+
+- Prototype_FirstDay, WorldSandbox, MainGame의 working blob은 `de1ada5`와 동일하다. Prefab, SaveData/SaveManager, Packages, ProjectSettings도 diff 0이다.
+- 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`로 남긴다. 최종 물 미감·색상은 M70 통합 사람 검토 대상이며 기능 차단이 아니다.
+- 최종 상태 `WORLD_004_COMPLETE`. Git add/commit/push는 하지 않았고 WORLD-005를 시작하지 않는다.

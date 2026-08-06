@@ -6,7 +6,18 @@ using UnityEngine.Rendering;
 
 public enum WorldGroundType
 {
-    Default = 0
+    Default = 0,
+    Grass = 0,
+    Soil = 1,
+    Sand = 2,
+    Rock = 3
+}
+
+public enum WorldPathType
+{
+    None = 0,
+    Dirt = 1,
+    Stone = 2
 }
 
 public enum WorldCellOccupancy
@@ -100,6 +111,63 @@ public static class WorldTerraformDirtyChunkResolver
     }
 }
 
+public enum WorldSurfaceEditKind
+{
+    None = 0,
+    PaintGround = 1,
+    PaintPath = 2,
+    ClearPath = 3,
+    FillWater = 4,
+    DrainWater = 5,
+    Undo = 6
+}
+
+public enum WorldSurfaceEditFailure
+{
+    None = 0,
+    OutOfBounds = 1,
+    ProtectedCell = 2,
+    Unchanged = 3,
+    PathUnderWater = 4,
+    InvalidWaterLevel = 5,
+    WaterAlreadyPresent = 6,
+    WaterNotPresent = 7,
+    NoUndoAvailable = 8,
+    StaleUndoRecord = 9
+}
+
+public readonly struct WorldSurfaceEditResult
+{
+    public bool Succeeded { get; }
+    public WorldSurfaceEditKind Kind { get; }
+    public WorldSurfaceEditFailure Failure { get; }
+    public Vector2Int Coordinate { get; }
+    public WorldCellData PreviousCell { get; }
+    public WorldCellData CurrentCell { get; }
+    public int Revision { get; }
+    public IReadOnlyList<Vector2Int> DirtyChunks { get; }
+
+    internal WorldSurfaceEditResult(
+        bool succeeded,
+        WorldSurfaceEditKind kind,
+        WorldSurfaceEditFailure failure,
+        Vector2Int coordinate,
+        WorldCellData previousCell,
+        WorldCellData currentCell,
+        int revision,
+        IReadOnlyList<Vector2Int> dirtyChunks)
+    {
+        Succeeded = succeeded;
+        Kind = kind;
+        Failure = failure;
+        Coordinate = coordinate;
+        PreviousCell = previousCell;
+        CurrentCell = currentCell;
+        Revision = revision;
+        DirtyChunks = dirtyChunks ?? Array.Empty<Vector2Int>();
+    }
+}
+
 [Serializable]
 public sealed class WorldGridDefinition
 {
@@ -151,9 +219,16 @@ public readonly struct WorldCellData
     public Vector2Int Coordinate { get; }
     public int ElevationLevel { get; }
     public WorldGroundType GroundType { get; }
-    public bool HasWater { get; }
-    public bool HasPath { get; }
+    public WorldPathType PathType { get; }
+    public int WaterSurfaceLevel { get; }
+    public int WaterDepthLevels { get; }
     public WorldCellOccupancy Occupancy { get; }
+    public bool HasWater => WaterDepthLevels > 0;
+    public bool HasPath => PathType != WorldPathType.None;
+    public bool IsFarmable => !HasWater && !HasPath &&
+                              (GroundType == WorldGroundType.Default ||
+                               GroundType == WorldGroundType.Soil);
+    public bool IsWalkable => !HasWater;
 
     public WorldCellData(
         Vector2Int coordinate,
@@ -166,8 +241,27 @@ public readonly struct WorldCellData
         Coordinate = coordinate;
         ElevationLevel = elevationLevel;
         GroundType = groundType;
-        HasWater = hasWater;
-        HasPath = hasPath;
+        PathType = hasPath ? WorldPathType.Dirt : WorldPathType.None;
+        WaterSurfaceLevel = hasWater ? elevationLevel + 1 : elevationLevel;
+        WaterDepthLevels = hasWater ? 1 : 0;
+        Occupancy = occupancy;
+    }
+
+    public WorldCellData(
+        Vector2Int coordinate,
+        int elevationLevel,
+        WorldGroundType groundType,
+        WorldPathType pathType,
+        int waterSurfaceLevel,
+        int waterDepthLevels,
+        WorldCellOccupancy occupancy)
+    {
+        Coordinate = coordinate;
+        ElevationLevel = elevationLevel;
+        GroundType = groundType;
+        PathType = pathType;
+        WaterSurfaceLevel = waterSurfaceLevel;
+        WaterDepthLevels = waterDepthLevels;
         Occupancy = occupancy;
     }
 
@@ -177,9 +271,42 @@ public readonly struct WorldCellData
             Coordinate,
             elevationLevel,
             GroundType,
-            HasWater,
-            HasPath,
+            PathType,
+            WaterSurfaceLevel,
+            WaterDepthLevels,
             Occupancy);
+    }
+
+    internal WorldCellData WithGroundType(WorldGroundType groundType)
+    {
+        return new WorldCellData(
+            Coordinate, ElevationLevel, groundType, PathType,
+            WaterSurfaceLevel, WaterDepthLevels, Occupancy);
+    }
+
+    internal WorldCellData WithPathType(WorldPathType pathType)
+    {
+        return new WorldCellData(
+            Coordinate, ElevationLevel, GroundType, pathType,
+            WaterSurfaceLevel, WaterDepthLevels, Occupancy);
+    }
+
+    internal WorldCellData WithWater(int surfaceLevel, int depthLevels)
+    {
+        return new WorldCellData(
+            Coordinate, ElevationLevel, GroundType, PathType,
+            surfaceLevel, depthLevels, Occupancy);
+    }
+
+    internal bool ContentEquals(WorldCellData other)
+    {
+        return Coordinate == other.Coordinate &&
+               ElevationLevel == other.ElevationLevel &&
+               GroundType == other.GroundType &&
+               PathType == other.PathType &&
+               WaterSurfaceLevel == other.WaterSurfaceLevel &&
+               WaterDepthLevels == other.WaterDepthLevels &&
+               Occupancy == other.Occupancy;
     }
 }
 
@@ -213,6 +340,7 @@ public sealed class WorldGridService : MonoBehaviour
     WorldCellData[] _cells;
     ReadOnlyCollection<WorldCellData> _readOnlyCells;
     WorldTerraformService _terraform;
+    WorldSurfaceEditService _surfaceEditor;
     bool _initialized;
 
     public WorldGridDefinition Definition
@@ -252,6 +380,14 @@ public sealed class WorldGridService : MonoBehaviour
         {
             EnsureInitialized();
             return _terraform ??= new WorldTerraformService(this);
+        }
+    }
+    public WorldSurfaceEditService SurfaceEditor
+    {
+        get
+        {
+            EnsureInitialized();
+            return _surfaceEditor ??= new WorldSurfaceEditService(this);
         }
     }
 
@@ -410,6 +546,32 @@ public sealed class WorldGridService : MonoBehaviour
         return true;
     }
 
+    internal bool TryCommitSurfaceCell(WorldCellData expected, WorldCellData replacement)
+    {
+        EnsureInitialized();
+        if (expected.Coordinate != replacement.Coordinate ||
+            !TryCellToIndex(expected.Coordinate, out int index) ||
+            !_cells[index].ContentEquals(expected))
+        {
+            return false;
+        }
+
+        if (replacement.ElevationLevel != expected.ElevationLevel ||
+            replacement.Occupancy != expected.Occupancy ||
+            replacement.WaterDepthLevels < 0 ||
+            (replacement.HasWater &&
+             (replacement.WaterSurfaceLevel <= replacement.ElevationLevel ||
+              replacement.WaterSurfaceLevel > _definition.MaxElevationLevel)) ||
+            (!replacement.HasWater &&
+             replacement.WaterSurfaceLevel != replacement.ElevationLevel))
+        {
+            return false;
+        }
+
+        _cells[index] = replacement;
+        return true;
+    }
+
     void EnsureInitialized()
     {
         if (_initialized) return;
@@ -448,6 +610,7 @@ public sealed class WorldGridService : MonoBehaviour
 
         _readOnlyCells = Array.AsReadOnly(_cells);
         _terraform = null;
+        _surfaceEditor = null;
         _initialized = true;
     }
 
@@ -593,6 +756,209 @@ public sealed class WorldTerraformService
     }
 }
 
+public sealed class WorldSurfaceEditService
+{
+    readonly WorldGridService _grid;
+    WorldSurfaceEditResult _lastCommittedEdit;
+    bool _hasUndo;
+    int _revision;
+
+    public event Action<WorldSurfaceEditResult> Changed;
+
+    public int Revision => _revision;
+    public bool CanUndo => _hasUndo;
+
+    internal WorldSurfaceEditService(WorldGridService grid)
+    {
+        _grid = grid ?? throw new ArgumentNullException(nameof(grid));
+    }
+
+    public WorldSurfaceEditResult PaintGround(
+        Vector2Int coordinate,
+        WorldGroundType groundType)
+    {
+        if (!TryPreflight(coordinate, out WorldCellData current, out WorldSurfaceEditResult failed))
+            return failed;
+        if (current.GroundType == groundType)
+            return Failed(WorldSurfaceEditKind.PaintGround, WorldSurfaceEditFailure.Unchanged, current);
+        return Commit(WorldSurfaceEditKind.PaintGround, current, current.WithGroundType(groundType));
+    }
+
+    public WorldSurfaceEditResult PaintPath(
+        Vector2Int coordinate,
+        WorldPathType pathType)
+    {
+        if (pathType == WorldPathType.None) return ClearPath(coordinate);
+        if (!TryPreflight(coordinate, out WorldCellData current, out WorldSurfaceEditResult failed))
+            return failed;
+        if (current.HasWater)
+            return Failed(WorldSurfaceEditKind.PaintPath, WorldSurfaceEditFailure.PathUnderWater, current);
+        if (current.PathType == pathType)
+            return Failed(WorldSurfaceEditKind.PaintPath, WorldSurfaceEditFailure.Unchanged, current);
+        return Commit(WorldSurfaceEditKind.PaintPath, current, current.WithPathType(pathType));
+    }
+
+    public WorldSurfaceEditResult ClearPath(Vector2Int coordinate)
+    {
+        if (!TryPreflight(coordinate, out WorldCellData current, out WorldSurfaceEditResult failed))
+            return failed;
+        if (!current.HasPath)
+            return Failed(WorldSurfaceEditKind.ClearPath, WorldSurfaceEditFailure.Unchanged, current);
+        return Commit(WorldSurfaceEditKind.ClearPath, current, current.WithPathType(WorldPathType.None));
+    }
+
+    public WorldSurfaceEditResult FillWater(Vector2Int coordinate, int waterSurfaceLevel)
+    {
+        if (!TryPreflight(coordinate, out WorldCellData current, out WorldSurfaceEditResult failed))
+            return failed;
+        if (current.HasPath)
+            return Failed(WorldSurfaceEditKind.FillWater, WorldSurfaceEditFailure.PathUnderWater, current);
+        if (current.HasWater)
+            return Failed(WorldSurfaceEditKind.FillWater, WorldSurfaceEditFailure.WaterAlreadyPresent, current);
+        if (waterSurfaceLevel <= current.ElevationLevel ||
+            waterSurfaceLevel > _grid.Definition.MaxElevationLevel)
+        {
+            return Failed(WorldSurfaceEditKind.FillWater, WorldSurfaceEditFailure.InvalidWaterLevel, current);
+        }
+
+        return Commit(
+            WorldSurfaceEditKind.FillWater,
+            current,
+            current.WithWater(waterSurfaceLevel, waterSurfaceLevel - current.ElevationLevel));
+    }
+
+    public WorldSurfaceEditResult FillWaterOneLevel(Vector2Int coordinate)
+    {
+        if (!_grid.TryGetCell(coordinate, out WorldCellData current))
+            return Failed(
+                WorldSurfaceEditKind.FillWater,
+                WorldSurfaceEditFailure.OutOfBounds,
+                default,
+                coordinate);
+        return FillWater(coordinate, current.ElevationLevel + 1);
+    }
+
+    public WorldSurfaceEditResult DrainWater(Vector2Int coordinate)
+    {
+        if (!TryPreflight(coordinate, out WorldCellData current, out WorldSurfaceEditResult failed))
+            return failed;
+        if (!current.HasWater)
+            return Failed(WorldSurfaceEditKind.DrainWater, WorldSurfaceEditFailure.WaterNotPresent, current);
+        return Commit(
+            WorldSurfaceEditKind.DrainWater,
+            current,
+            current.WithWater(current.ElevationLevel, 0));
+    }
+
+    public WorldSurfaceEditResult UndoLast()
+    {
+        if (!_hasUndo)
+            return Failed(
+                WorldSurfaceEditKind.Undo,
+                WorldSurfaceEditFailure.NoUndoAvailable,
+                default,
+                default);
+
+        Vector2Int coordinate = _lastCommittedEdit.Coordinate;
+        if (!_grid.TryGetCell(coordinate, out WorldCellData current) ||
+            !current.ContentEquals(_lastCommittedEdit.CurrentCell) ||
+            !_grid.TryCommitSurfaceCell(current, _lastCommittedEdit.PreviousCell))
+        {
+            return Failed(
+                WorldSurfaceEditKind.Undo,
+                WorldSurfaceEditFailure.StaleUndoRecord,
+                current,
+                coordinate);
+        }
+
+        _revision++;
+        _hasUndo = false;
+        var result = Succeeded(
+            WorldSurfaceEditKind.Undo,
+            current,
+            _lastCommittedEdit.PreviousCell);
+        Changed?.Invoke(result);
+        return result;
+    }
+
+    bool TryPreflight(
+        Vector2Int coordinate,
+        out WorldCellData current,
+        out WorldSurfaceEditResult failed)
+    {
+        if (!_grid.TryGetCell(coordinate, out current))
+        {
+            failed = Failed(
+                WorldSurfaceEditKind.None,
+                WorldSurfaceEditFailure.OutOfBounds,
+                default,
+                coordinate);
+            return false;
+        }
+        if (_grid.IsTerraformProtected(coordinate))
+        {
+            failed = Failed(
+                WorldSurfaceEditKind.None,
+                WorldSurfaceEditFailure.ProtectedCell,
+                current);
+            return false;
+        }
+
+        failed = default;
+        return true;
+    }
+
+    WorldSurfaceEditResult Commit(
+        WorldSurfaceEditKind kind,
+        WorldCellData previous,
+        WorldCellData replacement)
+    {
+        if (!_grid.TryCommitSurfaceCell(previous, replacement))
+            return Failed(kind, WorldSurfaceEditFailure.StaleUndoRecord, previous);
+
+        _revision++;
+        var result = Succeeded(kind, previous, replacement);
+        _lastCommittedEdit = result;
+        _hasUndo = true;
+        Changed?.Invoke(result);
+        return result;
+    }
+
+    WorldSurfaceEditResult Succeeded(
+        WorldSurfaceEditKind kind,
+        WorldCellData previous,
+        WorldCellData current)
+    {
+        return new WorldSurfaceEditResult(
+            true,
+            kind,
+            WorldSurfaceEditFailure.None,
+            current.Coordinate,
+            previous,
+            current,
+            _revision,
+            WorldTerraformDirtyChunkResolver.Resolve(_grid.Definition, current.Coordinate));
+    }
+
+    WorldSurfaceEditResult Failed(
+        WorldSurfaceEditKind kind,
+        WorldSurfaceEditFailure failure,
+        WorldCellData current,
+        Vector2Int? coordinateOverride = null)
+    {
+        Vector2Int coordinate = coordinateOverride ?? current.Coordinate;
+        return new WorldSurfaceEditResult(
+            false,
+            kind,
+            failure,
+            coordinate,
+            current,
+            current,
+            _revision,
+            Array.Empty<Vector2Int>());
+    }
+}
+
 [DisallowMultipleComponent]
 [RequireComponent(typeof(WorldGridService))]
 public class WorldGridDebugViewBase : MonoBehaviour
@@ -620,6 +986,8 @@ public class WorldGridDebugViewBase : MonoBehaviour
     bool _hasHoveredCell;
     bool _hasSelectedCell;
     WorldTerraformEditResult _lastTerraformResult;
+    WorldSurfaceEditResult _lastSurfaceResult;
+    bool _lastEditWasSurface;
 
     public bool IsRuntimeGeometryReady =>
         _runtimeRoot != null && _lineMesh != null && _lineMesh.vertexCount > 0;
@@ -628,6 +996,7 @@ public class WorldGridDebugViewBase : MonoBehaviour
     public bool HasSelectedCell => _hasSelectedCell;
     public Vector2Int SelectedCell => _selectedCell;
     public WorldTerraformEditResult LastTerraformResult => _lastTerraformResult;
+    public WorldSurfaceEditResult LastSurfaceEditResult => _lastSurfaceResult;
 
     protected void Awake()
     {
@@ -674,18 +1043,28 @@ public class WorldGridDebugViewBase : MonoBehaviour
         if (_grid == null) return;
         _grid.Terraform.Changed -= OnTerraformChanged;
         _grid.Terraform.Changed += OnTerraformChanged;
+        _grid.SurfaceEditor.Changed -= OnSurfaceChanged;
+        _grid.SurfaceEditor.Changed += OnSurfaceChanged;
     }
 
     void UnsubscribeTerraform()
     {
         if (_grid == null) return;
         _grid.Terraform.Changed -= OnTerraformChanged;
+        _grid.SurfaceEditor.Changed -= OnSurfaceChanged;
     }
 
     void OnTerraformChanged(WorldTerraformEditResult result)
     {
         _lastTerraformResult = result;
+        _lastEditWasSurface = false;
         ReleaseRuntimeGrid();
+    }
+
+    void OnSurfaceChanged(WorldSurfaceEditResult result)
+    {
+        _lastSurfaceResult = result;
+        _lastEditWasSurface = true;
     }
 
     void UpdateHoveredCell()
@@ -718,6 +1097,10 @@ public class WorldGridDebugViewBase : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R)) RaiseSelected();
         if (Input.GetKeyDown(KeyCode.F)) LowerSelected();
         if (Input.GetKeyDown(KeyCode.Z)) UndoLastTerraform();
+        if (Input.GetKeyDown(KeyCode.G)) CycleSelectedGround();
+        if (Input.GetKeyDown(KeyCode.T)) CycleSelectedPath();
+        if (Input.GetKeyDown(KeyCode.V)) ToggleSelectedWater();
+        if (Input.GetKeyDown(KeyCode.X)) UndoLastSurfaceEdit();
     }
 
     public bool TrySelectCell(Vector2Int coordinate)
@@ -732,6 +1115,7 @@ public class WorldGridDebugViewBase : MonoBehaviour
     {
         if (!_hasSelectedCell)
             return StoreNoSelectionResult();
+        _lastEditWasSurface = false;
         _lastTerraformResult = _grid.Terraform.Raise(_selectedCell);
         return _lastTerraformResult;
     }
@@ -740,14 +1124,61 @@ public class WorldGridDebugViewBase : MonoBehaviour
     {
         if (!_hasSelectedCell)
             return StoreNoSelectionResult();
+        _lastEditWasSurface = false;
         _lastTerraformResult = _grid.Terraform.Lower(_selectedCell);
         return _lastTerraformResult;
     }
 
     public WorldTerraformEditResult UndoLastTerraform()
     {
+        _lastEditWasSurface = false;
         _lastTerraformResult = _grid.Terraform.UndoLast();
         return _lastTerraformResult;
+    }
+
+    public WorldSurfaceEditResult CycleSelectedGround()
+    {
+        if (!_hasSelectedCell || !_grid.TryGetCell(_selectedCell, out WorldCellData current))
+            return StoreNoSurfaceSelectionResult();
+        var next = (WorldGroundType)(((int)current.GroundType + 1) % 4);
+        _lastEditWasSurface = true;
+        _lastSurfaceResult = _grid.SurfaceEditor.PaintGround(_selectedCell, next);
+        return _lastSurfaceResult;
+    }
+
+    public WorldSurfaceEditResult CycleSelectedPath()
+    {
+        if (!_hasSelectedCell || !_grid.TryGetCell(_selectedCell, out WorldCellData current))
+            return StoreNoSurfaceSelectionResult();
+        WorldPathType next = current.PathType switch
+        {
+            WorldPathType.None => WorldPathType.Dirt,
+            WorldPathType.Dirt => WorldPathType.Stone,
+            _ => WorldPathType.None
+        };
+        _lastEditWasSurface = true;
+        _lastSurfaceResult = next == WorldPathType.None
+            ? _grid.SurfaceEditor.ClearPath(_selectedCell)
+            : _grid.SurfaceEditor.PaintPath(_selectedCell, next);
+        return _lastSurfaceResult;
+    }
+
+    public WorldSurfaceEditResult ToggleSelectedWater()
+    {
+        if (!_hasSelectedCell || !_grid.TryGetCell(_selectedCell, out WorldCellData current))
+            return StoreNoSurfaceSelectionResult();
+        _lastEditWasSurface = true;
+        _lastSurfaceResult = current.HasWater
+            ? _grid.SurfaceEditor.DrainWater(_selectedCell)
+            : _grid.SurfaceEditor.FillWaterOneLevel(_selectedCell);
+        return _lastSurfaceResult;
+    }
+
+    public WorldSurfaceEditResult UndoLastSurfaceEdit()
+    {
+        _lastEditWasSurface = true;
+        _lastSurfaceResult = _grid.SurfaceEditor.UndoLast();
+        return _lastSurfaceResult;
     }
 
     WorldTerraformEditResult StoreNoSelectionResult()
@@ -761,6 +1192,21 @@ public class WorldGridDebugViewBase : MonoBehaviour
             _grid != null ? _grid.Terraform.Revision : 0,
             Array.Empty<Vector2Int>());
         return _lastTerraformResult;
+    }
+
+    WorldSurfaceEditResult StoreNoSurfaceSelectionResult()
+    {
+        _lastEditWasSurface = true;
+        _lastSurfaceResult = new WorldSurfaceEditResult(
+            false,
+            WorldSurfaceEditKind.None,
+            WorldSurfaceEditFailure.OutOfBounds,
+            default,
+            default,
+            default,
+            _grid != null ? _grid.SurfaceEditor.Revision : 0,
+            Array.Empty<Vector2Int>());
+        return _lastSurfaceResult;
     }
 
     void BuildRuntimeGrid()
@@ -857,23 +1303,39 @@ public class WorldGridDebugViewBase : MonoBehaviour
         string selectionText = "Selected: none — left click a cell";
         if (_hasSelectedCell && _grid.TryGetCell(_selectedCell, out WorldCellData selected))
         {
-            selectionText = $"Selected ({_selectedCell.x},{_selectedCell.y})  level {selected.ElevationLevel}" +
+            string water = selected.HasWater
+                ? $"water L{selected.WaterSurfaceLevel}/D{selected.WaterDepthLevels}"
+                : "dry";
+            selectionText = $"Selected ({_selectedCell.x},{_selectedCell.y})  level {selected.ElevationLevel}  {selected.GroundType}/{selected.PathType}/{water}  farm {selected.IsFarmable} walk {selected.IsWalkable}" +
                             (_grid.IsTerraformProtected(_selectedCell) ? "  PROTECTED" : string.Empty);
         }
 
-        string resultText = _lastTerraformResult.Succeeded
-            ? $"Applied {_lastTerraformResult.PreviousElevationLevel}→{_lastTerraformResult.CurrentElevationLevel}  revision {_lastTerraformResult.Revision}"
-            : _lastTerraformResult.Failure != WorldTerraformFailure.None
-                ? $"Edit blocked: {_lastTerraformResult.Failure}"
-                : "R raise  |  F lower  |  Z undo";
+        string resultText;
+        if (_lastEditWasSurface)
+        {
+            resultText = _lastSurfaceResult.Succeeded
+                ? $"Surface {_lastSurfaceResult.Kind} applied  revision {_lastSurfaceResult.Revision}"
+                : _lastSurfaceResult.Failure != WorldSurfaceEditFailure.None
+                    ? $"Surface blocked: {_lastSurfaceResult.Failure}"
+                    : "G ground  |  T path  |  V water  |  X surface undo";
+        }
+        else
+        {
+            resultText = _lastTerraformResult.Succeeded
+                ? $"Height {_lastTerraformResult.PreviousElevationLevel}→{_lastTerraformResult.CurrentElevationLevel}  revision {_lastTerraformResult.Revision}"
+                : _lastTerraformResult.Failure != WorldTerraformFailure.None
+                    ? $"Height blocked: {_lastTerraformResult.Failure}"
+                    : "R raise  |  F lower  |  Z height undo";
+        }
 
-        GUILayout.BeginArea(new Rect(18f, 18f, 470f, 164f), _panelStyle);
-        GUILayout.Label("WORLD-003  SINGLE-CELL TERRAFORMING");
+        GUILayout.BeginArea(new Rect(18f, 18f, 690f, 184f), _panelStyle);
+        GUILayout.Label("WORLD-004  GROUND / PATH / WATER CELL PROTOTYPE");
         GUILayout.Label($"{definition.Width}×{definition.Height} cells = {_grid.TotalCellCount}  |  cell {definition.CellSize:0.##}m  |  chunk {definition.ChunkSize}×{definition.ChunkSize}");
         GUILayout.Label($"Origin = cell (0,0) center {definition.WorldOrigin}  |  elevation {definition.MinElevationLevel}..{definition.MaxElevationLevel}");
         GUILayout.Label(pointerText);
         GUILayout.Label(selectionText);
         GUILayout.Label(resultText);
+        GUILayout.Label("R/F height  Z undo  |  G ground  T path  V water  X surface undo");
         GUILayout.EndArea();
 
         DrawCoordinateLabels(definition);

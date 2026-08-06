@@ -482,3 +482,21 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 영향: Unity 스크립트 컴파일은 오류 0으로 끝났고 코드·씬·에셋은 변경되지 않았다. 기능 실패나 회귀 결과가 아니다.
 - 해결: 잘못된 명령을 재사용하지 않고 실제 공개 진입점으로 한 번만 다시 실행해 D3D11 회귀 결과를 확정한다. 같은 진입 오류가 반복되면 세 번째 실행 없이 중단한다.
 - 최종 결과: `PA_WorldSandboxTools.RunValidation` 재실행에서 Edit/Play 검증, 256셀 결정성, 10,000회 좌표 왕복, debug mesh, blocking Console 0이 모두 통과했다. 증거는 `Logs/WORLD002_WORLD001_Regression_Final.log`에 남겼다.
+
+## [RESOLVED] 2026-08-06 — WORLD-004 validator 지역 변수 definite-assignment 컴파일 오류
+
+- 증상: WORLD-004 구현 뒤 첫 Runtime compile에서 `WorldChunkTerrain.cs`의 validator가 `CS0165: 할당되지 않은 'pond' 지역 변수를 사용했습니다` 한 건으로 중단됐다.
+- 원인: `Require(water.Succeeded && TryGetCell(..., out pond) && ...)` 조건식에서 할당한 지역 변수를 다음 `Require`에서도 사용했으나, C# 컴파일러는 사용자 정의 `Require`의 성공이 해당 `out` 할당을 보장한다고 추론하지 않는다.
+- 영향: validator 표현 한 곳의 컴파일 문제이며 surface transaction, mesh, scene, Save, Package, ProjectSettings에는 실행 또는 변경 영향이 없다. Unity는 아직 실행하지 않았다.
+- 해결: `WorldCellData pond`를 조건식 전에 명시 선언해 definite-assignment를 보장하고 같은 순차 Runtime/Editor compile을 한 번만 다시 실행한다. 동일 오류가 반복되면 세 번째 시도 없이 중단한다.
+- 복구 실패 및 중단: 선언을 조건식 앞으로 옮겼지만 초기값을 주지 않아 컴파일러의 definite-assignment 판정은 달라지지 않았고, 두 번째 Runtime compile도 같은 `CS0165`로 중단됐다. 규칙에 따라 세 번째 compile과 추가 구현을 수행하지 않는다.
+- 다음 재개 지점: 새 continuation에서 먼저 `WorldCellData pond = default;`로 초기화하거나 `TryGetCell` 성공 검사를 별도 문장으로 분리한 뒤, Runtime compile을 1회만 실행한다. 통과하기 전에는 Editor compile, Unity D3D11 validator, WORLD-004 완료 문서, 로컬 commit, WORLD-005를 시작하지 않는다.
+- 최종 결과: 새 continuation에서 `pond`를 `default`로 초기화하고 물 편집 성공·셀 조회·water invariant 검사를 별도 문장으로 분리했다. 이어서 Runtime/Editor 순차 compile이 모두 오류 0으로 통과했으며 기존 `CS8785`와 Editor `CS0414` 경고만 유지됐다.
+
+## [RESOLVED] 2026-08-06 — WORLD-004 water collider validator의 vertex 순서 가정 오류
+
+- 증상: 첫 D3D11 WORLD-004 검증에서 물 셀 생성, shoreline 및 전용 water material slot은 통과했으나 `water geometry is excluded from terrain collider triangle streams` 계약이 실패했다.
+- 원인: validator가 모든 terrain collider index가 `WaterIndices.Min()`보다 작아야 한다고 가정했다. 그러나 물 셀이 Chunk 순회 초반에 있으면 그 뒤 생성되는 정상 지면·절벽 vertex index는 첫 water vertex보다 커지므로, 실제 collider 포함 여부와 관계없이 실패한다.
+- 영향: 실패 지점은 Edit Mode validator의 검증식이다. 생성기는 물 triangle을 `WaterIndices`에만 추가하고 collider mesh는 `TopIndices`와 `CliffIndices`만 사용하지만, Play Mode raycast 증거까지는 아직 도달하지 못했다.
+- 복구 계획: 물 전용 vertex index 집합과 `TopIndices`/`CliffIndices`의 교집합이 비어 있는지 직접 검사한다. 같은 D3D11 validator를 한 번만 재실행하고, 동일 계약이 다시 실패하면 추가 시도 없이 중단한다.
+- 최종 결과: `WaterIndices`의 vertex 집합과 `TopIndices`/`CliffIndices`의 교집합이 비어 있는지 직접 검사하도록 수정했다. 두 compile이 오류 0으로 통과했고, 두 번째 D3D11 실행은 `EDIT_MODE_PASS`, `PLAY_MODE_PASS`, `FINISHED_PASS ground=4 path=2 water=true shoreline=true walkability=true rollback=true`로 완료됐다. collider raycast는 수면이 아니라 terrain bed를 맞았으며 blocking 예외와 새 crash는 0이었다.

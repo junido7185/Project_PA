@@ -1523,3 +1523,18 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] scene/Save schema/Packages/ProjectSettings 무변경, 선택 캡처 `CAPTURE_EVIDENCE_DEBT`.
 - [x] 최종 상태 `WORLD_003_COMPLETE`.
 - [ ] 다음 단일 티켓: WORLD-004 Ground/Path Paint and Water Cell Prototype. save/building/NPC/NavMesh는 시작하지 않는다.
+
+## WORLD-004 Ground/Path Paint and Water Cell Prototype — 2026-08-06
+
+- [x] Grass/Soil/Sand/Rock 지면과 Dirt/Stone 길 데이터 및 8개 visual material slot 구현.
+- [x] water surface level/depth invariant와 물 상면·노출 shoreline face 구현.
+- [x] farmable/walkability를 ground/path/water 상태에서 파생하고 물 셀을 non-walkable/non-farmable로 처리.
+- [x] protected/invalid water/dry drain/path-under-water typed failure와 무변경 원자성.
+- [x] ground/path/water 성공 transaction, owner/seam dirty Chunk, 마지막 성공 편집 1단계 undo.
+- [x] 물 geometry를 terrain collider triangle stream에서 제외하고 bed raycast 유지.
+- [x] WorldSandbox `G` ground, `T` path, `V` water, `X` surface undo Play Mode 조작.
+- [x] Runtime/Editor compile 오류 0, D3D11 WORLD-004 및 WORLD-003·002·001 회귀 PASS, blocking Console 0, 신규 crash 0.
+- [x] 세 Scene/Prefab/Save schema/Packages/ProjectSettings 무변경, 선택 캡처 `CAPTURE_EVIDENCE_DEBT`.
+- [x] 최종 상태 `WORLD_004_COMPLETE`.
+- [ ] 사람이 현재 11개 dirty 경로를 검토·commit한다.
+- [ ] WORLD-005는 자동 시작하지 않는다. 다음 명시적 bounded-ticket 지시를 기다린다.
