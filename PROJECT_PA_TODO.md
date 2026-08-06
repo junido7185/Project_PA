@@ -1452,3 +1452,34 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [ ] **WORLD-008 전:** per-Chunk NavMeshSurface와 D3D11 안전 runtime 검증 승인.
 - [ ] **Gate 1~5 후:** MainGame 사용 vs 새 integration scene, Prototype_FirstDay 장기 tutorial 유지 여부 승인.
 - [ ] WORLD-001은 새 지시 전 자동 실행하지 않는다.
+
+## BASELINE-STABILIZE-001 — 2026-08-04
+
+- [x] `master@0b07d71`, `origin/master`, clean 시작 상태와 bounded-ticket preflight 확인.
+- [x] scene/ProjectSettings 내용, meta/GUID, 신규 asset 참조, SubmissionPackages, history 대용량 blob, 새 crash artifact 무결성 확인.
+- [x] Runtime/Editor 오류 0 빌드와 Unity 6000.3.2f1 D3D11 로드 확인.
+- [x] Core 5종과 SaveRoundTrip, CustomerArrival/Presentation/InteriorCustomer PASS.
+- [x] CustomerPreference/Village 4px 겹침을 단일 좌표 수정하고 유일한 재검증 PASS.
+- [x] ShopCustomization 기능 단언과 ShopProgression Tier 0 단언을 캡처 직전까지 확인.
+- [x] 동일 GameView capture timeout 2회에서 티켓 규칙대로 Unity 검증 중단.
+- [x] Save v10/v9→v10, AudioManager/SalesLogManager, B06 Kitchen 계약 정적 대조.
+- [ ] 사람 검토: 실제 판매 `sale.confirm` 1회 청취와 BGM/SFX 회귀.
+- [ ] 사람 검토: 1920×1080에서 상점 커스터마이징·Tier 진행 캡처, 선호/Village 패널 간격과 전체 HUD 가독성.
+- [ ] 사람 검토: B06 Kitchen 플레이어/Chef 전면 접근, collider/carving 체감, 크기·시야, Bread 성공 pulse.
+- [ ] 사람 검토 뒤 별도 bounded ticket으로 미실행 Village/economy/mining/outdoor validator 범위를 결정.
+- [ ] WORLD-001은 이번 결과 보고 뒤 자동 시작하지 않는다.
+
+## BASELINE-CRAFTING-UI-FIX-001 — 2026-08-05
+
+- [x] `master@0b07d71e7dc6d259713a97d2011d181efa73b200`, 기존 의도된 dirty 7경로, Unity 6000.3.2f1 D3D11, 신규 crash 0 확인.
+- [x] Basic recipe 데이터·CraftingUI 필터/집계/카드 생성과 Runtime hierarchy 조사.
+- [x] 투명 Viewport Mask가 생성된 두 카드를 모두 가리는 D/E 유형 원인 확정.
+- [x] Mask alpha 최소 수정과 생성 직후 Content layout 확정.
+- [x] 전용 D3D11 Play validator 추가: recipe 2 = card 2, active, 672×96, bounds, alpha, 결과/재료/보유량 표기 PASS.
+- [x] Wood 0/2에서도 카드 유지, 선택 가능, 제작 차감·지급 차단 PASS.
+- [x] Wood 2/2에서 Wood 2 차감, Plank 1 지급, B05 pulse PASS.
+- [x] Runtime/Editor compile 오류 0, ProcessingChain 회귀 PASS, blocking Console pattern 0, 신규 crash 0.
+- [x] 캡처 재시도 없이 `CAPTURE_EVIDENCE_DEBT`로 이관하고 사람 캡처 요청 생략.
+- [x] `INVENTORY-DRAG-GHOST-UI-DEBT`, `DEVELOPMENT_OVERLAY_LAYOUT_POLISH`, `PHONE-HIRING-FEED-INCOMPLETE`, `SHOP-READABILITY-AND-MAP-COMPOSITION-DEBT`, `SHOP-FURNITURE-PLACEMENT-001`, 판매음/B06 미감, 커스터마이징/Tier 캡처를 비차단 backlog로 유지.
+- [x] 최종 판정 `BASELINE_READY_FOR_WORLD_001`.
+- [ ] WORLD-001은 이번 보고에서 시작하지 않고 다음 명시적 bounded ticket으로만 시작한다.

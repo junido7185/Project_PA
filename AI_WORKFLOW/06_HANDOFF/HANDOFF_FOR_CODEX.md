@@ -293,3 +293,14 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **사람 Gate:** WorldSandbox 신규 scene, 2m/16/1m prototype baseline, WORLD-001 scope. WORLD-007 전 save schema, WORLD-008 전 D3D11 runtime nav, Gate 5 후 MainGame 통합 결정은 각각 별도 승인이다.
 - **WORLD-001 조건:** 새 명시적 bounded-ticket 지시가 있어야 하며 최대 12경로, WorldSandbox/data/debug 전용이다. 실제 terrain mesh, terraforming, save, nav, shop/NPC를 동시에 넣지 않는다.
 - **검증 경계:** AI Navigation 2.0.12 async update API 존재는 확인했지만 chunk seam/runtime 성능은 확인 못 했다. 직접 `Camera.Render()` 경로는 계속 금지한다.
+
+## 11. BASELINE-CRAFTING-UI-FIX-001 인계 — 2026-08-05
+
+- **현재 활성 ticket 없음:** Basic 제작 레시피 카드 차단 결함은 완료됐고 최종 상태는 `BASELINE_READY_FOR_WORLD_001`이다. WORLD-001은 다음 명시적 bounded ticket 전 자동 시작하지 않는다.
+- **기준선:** `master@0b07d71e7dc6d259713a97d2011d181efa73b200`, Unity 6000.3.2f1, D3D11. 사람 입력 Smoke PASS와 Console `PASS_WITH_EXACT_ALLOWLIST`는 승인 상태다.
+- **원인/수정:** runtime `Viewport(Image+Mask)`가 `Color.clear`라 생성된 두 카드를 전부 가렸다. `CraftingUI.cs`에서 Mask graphic을 opaque로 유지하고 `showMaskGraphic=false`로 배경을 숨겼으며 Content layout을 즉시 확정했다.
+- **자동 증거:** `PA_CraftingRecipeCardValidator`가 Basic recipe/card 2/2, active 2, 각 672×96, viewport bounds, alpha, 결과/재료 보유량, 부족 상태 표시·차단, 충분 상태 Wood 2→Plank 1, B05 pulse를 D3D11 Play Mode에서 확인했다. ProcessingChain 회귀도 PASS다.
+- **빌드/안전:** Runtime/Editor compile 오류 0, blocking exception/crash pattern 0, 신규 crash 0. 씬·프리팹·Save schema·Packages·ProjectSettings 변경 0.
+- **캡처:** 알려진 Game View timeout을 재시도하지 않았다. 기능 계측이 통과했으므로 `CAPTURE_EVIDENCE_DEBT`; 사람에게 개별 캡처를 다시 요구하지 않는다.
+- **비차단 backlog:** inventory drag ghost, developer overlay layout, Phone Hiring/Feed, shop/map readability, movable sales display, sale fallback tone, B06 pulse feel, customization/Tier capture evidence.
+- **다음 우선순위:** 사용자가 `WORLD-001` bounded ticket을 명시하면 승인된 2m cell/16×16 chunk/1m level 0~6 custom mesh prototype을 `WorldSandbox` 전용으로 시작한다. `Prototype_FirstDay`는 Golden Regression Scene으로 보존하고 MainGame 통합·Save schema·Packages·ProjectSettings는 별도 승인을 유지한다.

@@ -228,6 +228,13 @@ public class CraftingUI : MonoBehaviour
             }
         }
 
+        // Runtime-generated cards are created while the panel is being opened. Force the
+        // layout now so the first visible frame has non-zero content/card geometry.
+        Canvas.ForceUpdateCanvases();
+        if (slotParent is RectTransform contentRect)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+        Canvas.ForceUpdateCanvases();
+
         if (_titleText != null)
             _titleText.text = _activeWorkbench == null
                 ? "제작 도감"
@@ -473,7 +480,9 @@ public class CraftingUI : MonoBehaviour
         var viewportRT = (RectTransform)viewportGO.transform;
         viewportRT.SetParent(scrollGO.transform, false);
         Stretch(viewportRT);
-        viewportGO.GetComponent<Image>().color = Color.clear;
+        // Mask uses the graphic alpha when writing its stencil. showMaskGraphic hides the
+        // viewport background, so the mask graphic itself must stay opaque for its children.
+        viewportGO.GetComponent<Image>().color = Color.white;
         viewportGO.GetComponent<Mask>().showMaskGraphic = false;
 
         var contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));

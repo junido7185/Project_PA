@@ -484,3 +484,29 @@ Append-only log for guarded automation and dry-run loop work.
 - Human decisions: approve scene separation/WorldSandbox creation; accept 2m/16/1m as prototype baseline; approve WORLD-001 scope; later approve vNext save schema, WORLD-008 runtime navigation, and MainGame integration choice.
 - Final status: `needs_human_review`. This reflects follow-up implementation gates, not incomplete WORLD-000 documentation.
 - WORLD-001 start condition: a new explicit bounded-ticket instruction after the scene/baseline/scope gates; do not auto-continue.
+
+## 2026-08-04 — BASELINE-STABILIZE-001 Current Playable Baseline Integration Validation
+
+- Started from clean `master` at `0b07d71`, synchronized with `origin/master`; preflight returned `READY_FOR_BOUNDED_TICKET_LOOP` with D3D11 approved and no Unity process.
+- Asset/meta/GUID/history integrity passed: no missing or orphan meta, duplicate GUID, tracked SubmissionPackages ZIP, >100 MB history blob, dirty scene, logical ProjectSettings content change, or new crash artifact.
+- Runtime and Editor builds passed with zero errors. Existing warnings remain CS8785 (Runtime/Editor) and CS0414 in `PA_ErrorTracker` (Editor).
+- D3D11 Unity 6000.3.2f1 load and package resolution passed. The CoplayDev Unity MCP package compiled; the licensing token-refresh message did not prevent entitlement resolution.
+- Core route validators passed: FinalDemoRoute, DayNightShopLoop, LongPlayProgression, CoreSlicePlayability, GatheringShopGate, and SaveRoundTrip.
+- CustomerArrival, CustomerPresentation, and InteriorCustomer passed. CustomerPanelLayout found a real 4 px preference/village overlap; one minimal runtime-UI coordinate fix moved the preference panel down 20 px and the sole rerun passed.
+- ShopCustomization functional checks passed through placement, movement, save restore, functionality, and protected route, then failed because batchmode GameView capture was not written. ShopProgressionUnlock passed Tier 0 functional assertions and hit the same capture timeout.
+- The repeated identical GameView capture failure triggered the ticket stop rule. No more Unity validators were launched; Village/economy, mining, outdoor placement, and remaining visual validators are unrun, while farming validators are not available.
+- Save authority remains v10 with v9→v10 placement migration. AudioManager/SalesLogManager static event, exception-isolation, lifecycle, pool, fallback, and generated-clip contracts are consistent; hearing remains human review.
+- Task 131 B06 static physics/carving/anchor/pulse contracts remain present, but approach feel, collider feel, scale, view, and pulse subtlety remain human review.
+- Final state: `NEEDS_HUMAN_RUNTIME_REVIEW`. WORLD-001 and WorldSandbox were not started.
+
+## 2026-08-05 — BASELINE-CRAFTING-UI-FIX-001 Restore Visible Basic Crafting Recipe Cards
+
+- Started on `master` at `0b07d71e7dc6d259713a97d2011d181efa73b200`; the seven already accepted baseline-review changes were preserved. No scene, prefab, Save schema, Package, or ProjectSettings path changed.
+- The runtime-only hierarchy is `CraftingOverlay > CraftingPanel > RecipeScroll > Viewport(Image+Mask) > Content > Recipe_*`. Basic data contained exactly two recipes and `GenerateSlotsForContext` instantiated both, but the Viewport Mask graphic used `Color.clear`. Its zero alpha prevented the stencil from exposing either card while the independent count text still reported two.
+- Changed the mask graphic to opaque white while retaining `showMaskGraphic=false`, and forced the generated Content layout before the first visible frame. No recipe filtering, crafting authority, inventory, unlock, or workbench rule changed.
+- Added the bounded `PA_CraftingRecipeCardValidator`. D3D11 Play Mode proved 2 recipes = 2 cards, both active, 672×96, inside Viewport bounds, visible alpha, and containing output plus owned/required ingredient text.
+- With zero Wood, both cards remained visible and the Plank selection path consumed/granted nothing. With two Wood, the same UI path consumed 2 Wood, granted 1 Plank, and drove the production B05 success pulse. The existing ProcessingChain validator also passed with BreadLoaf and a positive margin.
+- The first dedicated run used a scene placeholder workbench that had no B05 functional-art feedback and produced a validator-fixture false negative only after crafting, consumption, and output had passed. The validator was corrected to instantiate the production B05 prefab; the single rerun passed every assertion. Production code was not broadened for that recovery.
+- Runtime and Editor compilation passed with zero errors. Final ticket logs contain zero blocking exception/crash patterns and no new crash report. The exact Input Manager notice remains covered by the previously approved human smoke result and did not appear in these batch runs.
+- Game View capture was not attempted because the known timeout had already reached its retry boundary. Hierarchy, alpha, geometry, bounds, and functional evidence passed, so this remains `CAPTURE_EVIDENCE_DEBT` rather than a ticket failure.
+- Final state: `BASELINE_READY_FOR_WORLD_001`. WORLD-001 and WorldSandbox were not started; wait for the next explicit bounded ticket.

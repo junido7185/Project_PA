@@ -2006,3 +2006,26 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - AI Navigation 2.0.12의 `NavMeshSurface.UpdateNavMesh`/Volume API를 로컬 source에서 확인했으나 per-Chunk seam/성능/runtime 안정성은 WORLD-008 증거가 없어 사람 review를 유지한다.
 - 신규/갱신 문서만 변경했으며 게임 코드·씬·에셋·저장 스키마·package·ProjectSettings·Git 상태 변경 작업은 하지 않았다. WORLD-001은 시작하지 않았다.
 - 상태: `needs_human_review` (scene 생성, prototype 수치, save schema, runtime nav, MainGame integration gate).
+
+## 2026-08-04 BASELINE-STABILIZE-001 — NEEDS HUMAN RUNTIME REVIEW
+
+- 기준선은 `master@0b07d71`, `origin/master` 동기화, 시작 시 clean이었다. Preflight는 `READY_FOR_BOUNDED_TICKET_LOOP`, D3D11 승인, Unity 프로세스 0을 반환했다.
+- meta/GUID/대용량 history/SubmissionPackages/씬/ProjectSettings/크래시 무결성 검사는 통과했다. Unity가 건드린 폰트와 EditorBuildSettings는 HEAD blob과 동일하게 정리됐고 저장할 내용 변경은 없다.
+- Runtime/Editor 컴파일은 오류 0으로 통과했다. 기존 CS8785 1개와 Editor의 기존 CS8785/CS0414 2개만 유지된다.
+- Unity 6000.3.2f1 D3D11 로드와 package resolve는 통과했다. Core 5종과 SaveRoundTrip, CustomerArrival/Presentation/InteriorCustomer는 PASS다.
+- `CustomerPanelLayout`은 Village 높이를 92px로 가정해 4px 겹치는 실제 결함을 찾았다. `CustomerPreferencePresentationController` 좌표를 20px 내리는 단일 최소 수정 후 재검증 PASS다.
+- `ShopCustomization`과 `ShopProgressionUnlock`은 각 캡처 직전 기능 단언까지 통과했으나 batchmode GameView PNG가 기록되지 않았다. 동일 환경 실패 2회로 티켓 중단 조건이 발동했다.
+- Save v10·v9→v10 migration과 Audio/Sales 정적 계약은 정합하다. 실제 판매음 청취, B06 Kitchen 통로·콜라이더 체감·스케일·시야·pulse, 1920×1080 Game View는 사람 검토가 필요하다.
+- WORLD-001/WorldSandbox는 시작하지 않았다. 기능 기준선의 자동 증거는 강하지만 필수 상점 시각 검증 2건이 환경 종료됐으므로 최종 판정은 `NEEDS_HUMAN_RUNTIME_REVIEW`다.
+
+## 2026-08-05 BASELINE-CRAFTING-UI-FIX-001 — BASELINE READY FOR WORLD-001
+
+- 사람 런타임 검토는 입력 Smoke `PASS`, Console `PASS_WITH_EXACT_ALLOWLIST`, 기본 상점 기능 가능, Customer UI 치명 차단 없음으로 종료 승인됐다. 추가 수동 캡처는 요구하지 않는다.
+- 실제 기준선 차단자는 Basic 제작 UI가 레시피 2개를 집계·생성하면서도 런타임 `Viewport`의 `Mask`용 Image를 완전 투명하게 만들어 두 카드를 모두 가린 것이었다. 재료 부족 필터나 데이터 전달 실패는 아니었다.
+- `CraftingUI.cs`에서 Mask 그래픽만 불투명하게 바꾸고 `showMaskGraphic=false`는 유지했다. 카드 생성 직후 Content layout도 확정해 첫 프레임의 0 크기 가능성을 제거했다. 씬·프리팹·제작 데이터·해금·인벤토리·Save authority는 변경하지 않았다.
+- D3D11 전용 검증 결과: Basic recipe 2 / card 2, active 2, 각 672×96, Viewport 내부, CanvasGroup/Image alpha 정상, 결과 아이템과 보유/필요 재료 표기 PASS다.
+- Wood 0/2에서도 두 카드가 유지되고 실행은 차감·지급 없이 차단됐다. Wood 2/2에서는 Plank 버튼이 활성화되어 Wood 2 차감, Plank 1 지급, B05 성공 pulse가 모두 통과했다.
+- Runtime/Editor 컴파일 오류 0, 전용 validator PASS, 기존 ProcessingChain(BreadLoaf) 회귀 PASS, blocking Console pattern 0, 신규 crash 0이다.
+- 자동 Game View 캡처는 알려진 timeout 재시도 한계를 존중해 실행하지 않았다. `CAPTURE_EVIDENCE_DEBT`이며 기능 차단이 아니다.
+- 남은 항목은 드래그 ghost, 개발 overlay, Phone Hiring/Feed, 상점/맵 가독성, 이동식 판매대, 음색/B06 미감, 커스터마이징/Tier 캡처 증거의 비차단 backlog다.
+- 최종 판정은 `BASELINE_READY_FOR_WORLD_001`. WORLD-001은 시작하지 않았으며 다음 명시적 bounded ticket에서만 진행한다.

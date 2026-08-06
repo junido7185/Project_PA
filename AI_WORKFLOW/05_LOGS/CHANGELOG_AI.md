@@ -917,3 +917,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - `Prototype_FirstDay`는 Golden Regression Scene, 미래 `WorldSandbox`는 기술 testbed, `MainGame`은 Gate 1~5 뒤 별도 통합 후보로 기록했다.
 - 지정된 기존 방향·상태·규칙·loop 문서만 최소 갱신했다. 게임 코드/씬/에셋/저장 스키마/Packages/ProjectSettings/Unity/Git history는 WORLD-000에서 변경하지 않았다.
 - 후속 scene/baseline/save/nav/MainGame 사람 Gate 때문에 최종 상태는 `needs_human_review`; WORLD-001은 시작하지 않았다.
+
+## 2026-08-05 — Codex — BASELINE-CRAFTING-UI-FIX-001 레시피 카드 표시 복구(DONE)
+
+- Basic 제작 UI는 레시피 2개와 카드 2개를 생성했지만 런타임 Viewport Mask 그래픽이 `Color.clear`여서 stencil 표시 영역이 사라지는 원인을 확인했다.
+- `CraftingUI.cs`에서 Mask 그래픽을 불투명하게 바꾸고 `showMaskGraphic=false`는 유지했으며, 생성 직후 Content layout을 확정했다. 제작 데이터·필터·해금·인벤토리·작업대 권위는 변경하지 않았다.
+- 전용 D3D11 Play validator를 추가해 recipe/card 2/2, active, 672×96, Viewport bounds, alpha, 결과/재료/보유량 표시를 검증했다.
+- Wood 0/2에서는 카드 유지와 무차감·무지급 차단, Wood 2/2에서는 Wood 2 차감·Plank 1 지급·production B05 pulse가 PASS했다.
+- Runtime/Editor compile 오류 0, 기존 ProcessingChain 회귀 PASS, blocking exception/crash pattern 0, 신규 crash 0이다.
+- Game View capture는 알려진 timeout 재시도 한계 때문에 실행하지 않고 `CAPTURE_EVIDENCE_DEBT`로 유지했다. 씬·프리팹·Save schema·Packages·ProjectSettings는 변경하지 않았다.
+- 최종 판정 `BASELINE_READY_FOR_WORLD_001`. WORLD-001/WorldSandbox는 시작하지 않았고 Git add/commit/push는 수행하지 않았다.

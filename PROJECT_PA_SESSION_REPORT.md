@@ -2518,3 +2518,60 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - World North Star, architecture plan, system impact map, WORLD-001~012 backlog, ADR을 작성하고 기존 방향 문서에 최소 반영했다.
 - WORLD-001은 scene 분리·WorldSandbox 생성·prototype 수치 승인 전 시작하지 않는다.
 - 최종 loop-state는 `needs_human_review`다. 이는 WORLD-000 문서 미완성이 아니라 후속 구현의 scene/save/nav/MainGame 사람 Gate를 뜻한다.
+
+## 2026-08-04 — BASELINE-STABILIZE-001
+
+### 기준선과 무결성
+
+- `master@0b07d71` / `origin/master` 동기화와 clean working tree를 확인한 뒤 preflight `READY_FOR_BOUNDED_TICKET_LOOP`를 통과했다.
+- missing/orphan meta 0, duplicate GUID 0, 신규 unresolved GUID 0, tracked SubmissionPackages ZIP 0, history >100 MB blob 0, dirty scene 0, 새 crash artifact 0이다.
+- D3D11 Unity 로드는 성공했고 package resolve 및 전체 assembly import가 끝났다. CoplayDev Unity MCP package compile 오류는 없었다.
+- Runtime 빌드 오류 0/기존 CS8785 경고 1, Editor 빌드 오류 0/기존 CS8785·CS0414 경고 2다.
+
+### 자동 검증
+
+- PASS: FinalDemoRoute, DayNightShopLoop, LongPlayProgression, CoreSlicePlayability, GatheringShopGate, SaveRoundTrip, CustomerArrival, CustomerPresentation, InteriorCustomer.
+- `CustomerPanelLayout`의 첫 실행은 선호 패널과 Village 패널 4px 겹침을 검출했다. Village 실제 높이 112px에 맞춰 선호 패널 Y를 -394→-414로 내리는 1파일/1좌표 최소 수정 후 유일한 재실행은 PASS했다.
+- `ShopCustomization`은 workbench/shelf 배치·이동·저장 복원·기능·보호 동선을 통과한 뒤 GameView PNG timeout으로 종료됐다.
+- `ShopProgressionUnlock`은 Tier 0 5×4 zone, 기능 진열 6개, B05 잠금을 통과한 뒤 동일 GameView PNG timeout으로 종료됐다.
+- 동일 캡처 실패 2회 규칙에 따라 즉시 Unity 검증을 멈췄다. Village/economy, mining, outdoor placement 및 후속 visual validator는 실행하지 않았고 farming/farm-plot 전용 validator는 현재 없다.
+
+### 정적 대조와 최종 판정
+
+- Save는 `CurrentSaveVersion = 10`, v9→v10 placeable migration, 돈/시간/인벤토리/핫바/가격·품질/진열/마을 변화 왕복 복원을 유지한다.
+- `SalesLogManager.RecordSale`은 기록 완료 뒤 이벤트를 한 번 발행하고 subscriber별 예외를 격리한다. `AudioManager`는 대칭 구독/해제, 최소 1개 pool, fallback clip, 생성 clip 수명 정리를 유지한다. 실제 청취는 사람 검토다.
+- B06 Kitchen은 renderer-bounds 축소 전용 Box/Carving, 로컬 -Z anchor, 성공 후 0.72초/3.5% pulse 코드와 선행 30/30 계약이 존재한다. 실제 접근·체감·동일 카메라 증거는 확보하지 못했다.
+- 최종 상태는 `NEEDS_HUMAN_RUNTIME_REVIEW`. WORLD-001과 WorldSandbox는 시작하지 않았고 Git add/commit/push/reset/clean은 수행하지 않았다.
+
+## 2026-08-05 — BASELINE-CRAFTING-UI-FIX-001
+
+### 시작 상태와 원인
+
+- `master@0b07d71e7dc6d259713a97d2011d181efa73b200`, Unity 6000.3.2f1, D3D11을 확인했다. 기존 사람 검토의 의도된 dirty 7경로와 과거 crash report 3개를 보존했다.
+- `CraftingUI`는 씬 직렬화가 아니라 `PA_RuntimeSceneBinder`가 추가하며 모든 참조가 비어 있어 런타임 UI builder를 사용한다.
+- 실제 생성 계층은 `CraftingOverlay/CraftingPanel/RecipeScroll/Viewport/Content/Recipe_*`다. Basic 데이터·필터·집계·Instantiate는 두 레시피에 모두 도달했다.
+- 결함은 `Viewport`의 `Image.color = Color.clear`와 `Mask` 조합이었다. 투명 Mask 알파가 stencil 표시 영역을 제거해 활성 카드가 보이지 않았고, 별도 mode text만 2개를 표시했다.
+
+### 최소 수정
+
+- `Assets/Scripts/CraftingUI.cs`: Mask Image를 opaque white로 변경하되 `showMaskGraphic=false`를 유지했다. 카드 생성 직후 `Canvas.ForceUpdateCanvases`와 Content `LayoutRebuilder`를 실행했다.
+- `Assets/Editor/PA_CraftingRecipeCardValidator.cs`: 이 결함에 한정된 D3D11 Play Mode 회귀 검증기를 추가했다. production B05 prefab을 runtime fixture로 사용하고 인벤토리는 snapshot/restore한다.
+- 씬·프리팹·SaveData schema·Packages·ProjectSettings는 변경하지 않았다. Git add/commit/push/reset/clean도 수행하지 않았다.
+
+### 자동 검증
+
+- Compile log: Runtime/Editor assembly 오류 0, batchmode 정상 종료.
+- 전용 Play Mode: Basic recipe 2 / generated card 2 / visible card 2, activeInHierarchy 2, 각 RectTransform 672×96, Viewport bounds 내부, Mask/Image/CanvasGroup alpha PASS.
+- 각 카드의 결과 이름, 재료 이름, 보유량/필요량 표기 PASS. Furniture 잠금 카드도 제거되지 않았다.
+- 부족 상태 Wood 0/2: 카드 2개 유지, Plank 선택 경로 존재, 차감 0, 결과 지급 0.
+- 충분 상태 Wood 2/2: 버튼 활성, Wood 2 차감, Plank 1 지급, 기존 B05 `CraftFeedbackCount`와 `LastCraftedItem` 갱신 PASS.
+- 첫 실행의 유일한 실패는 임시 scene workbench에 기능 아트가 없어 pulse만 계측하지 못한 validator fixture 오류였다. production B05 fixture로 한정 수정한 유일한 재실행은 전 항목 PASS했다.
+- 기존 `PA_ProcessingChainValidator`: BreadLoaf 제작, 원재료 seed, 결과 생성, 양의 margin, advisor HUD PASS.
+- 최종 3개 로그의 blocking compile/exception/crash pattern 0, 신규 crash report 0. 기존 승인된 Input Manager deprecation notice 외 Console gate는 유지된다.
+- 캡처는 재시도하지 않았다. 알려진 timeout은 `CAPTURE_EVIDENCE_DEBT`로 유지하며 사람 캡처를 요청하지 않는다.
+
+### 판정
+
+- 최종 상태: `BASELINE_READY_FOR_WORLD_001`.
+- 별도 비차단 backlog: `INVENTORY-DRAG-GHOST-UI-DEBT`, `DEVELOPMENT_OVERLAY_LAYOUT_POLISH`, `PHONE-HIRING-FEED-INCOMPLETE`, `SHOP-READABILITY-AND-MAP-COMPOSITION-DEBT`, `SHOP-FURNITURE-PLACEMENT-001`, 판매 fallback 음색, B06 pulse 미감, 커스터마이징/Tier 캡처 증거.
+- WORLD-001과 WorldSandbox는 시작하지 않았다. 다음 명시적 bounded ticket을 기다린다.
