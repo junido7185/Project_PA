@@ -2596,3 +2596,23 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - `Prototype_FirstDay`, `MainGame`, Save authority/schema, Packages, ProjectSettings는 변경하지 않았다.
 - 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`로 남겼다.
 - 최종 상태는 `WORLD_002_COMPLETE`. 로컬 커밋 후 WORLD-003만 다음 bounded ticket으로 자동 시작한다.
+
+## 2026-08-06 — WORLD-003 Single-Cell Raise/Lower Terraforming
+
+### 구현
+
+- `WorldTerraformService`가 preflight 뒤 elevation 한 필드만 원자적으로 교체하고, 성공 결과에 revision과 dirty Chunk 집합을 남긴다. 공개 cell collection은 계속 read-only다.
+- `(0,0)`은 명시적 보호 셀이다. 범위 밖·보호·최소·최대·undo 없음은 typed failure이며 마지막 성공 편집만 한 단계 되돌린다.
+- Chunk 경계 resolver는 소유 Chunk와 cardinal seam을 공유하는 이웃만 반환한다. Terrain subscriber는 결과에 자신의 좌표가 있을 때 visual/collider를 함께 rebuild한다.
+- WorldSandbox debug overlay에 좌클릭 선택, `R` raise, `F` lower, `Z` undo 및 현재 level/차단 이유/revision 표시를 연결했다.
+
+### 검증
+
+- `Logs/WORLD003_Validation.log`: D3D11 Edit/Play에서 min/max/protected/범위 밖 원자성, 1m step, 비 elevation 데이터 보존, cliff mask, x=15/16 dirty 양쪽, mesh/collider revision, raycast 높이, undo, debug mesh를 PASS했다.
+- `Logs/WORLD003_WORLD002_Regression.log`와 `Logs/WORLD003_WORLD001_Regression.log`가 기존 terrain checksum/seam/collider와 256셀/10,000회 좌표 계약을 통과했다.
+- Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이다. 기존 CS8785/CS0414 경고만 남는다.
+
+### 판정
+
+- Scene, Save authority/schema, Packages, ProjectSettings, water/path, building, NPC, NavMesh는 변경하지 않았다. 선택 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 상태 `WORLD_003_COMPLETE`; 로컬 커밋 후 WORLD-004로 자동 전환한다.

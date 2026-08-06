@@ -19,6 +19,16 @@ public enum WorldChunkDirtyFlags
     All = Visual | Collider
 }
 
+[Flags]
+public enum WorldCliffMask
+{
+    None = 0,
+    West = 1 << 0,
+    East = 1 << 1,
+    South = 1 << 2,
+    North = 1 << 3
+}
+
 public sealed class WorldChunkMeshData
 {
     public Vector3[] Vertices { get; }
@@ -50,6 +60,51 @@ public sealed class WorldChunkMeshData
 
 public static class WorldChunkMeshBuilder
 {
+    public static WorldCliffMask ComputeCliffMask(
+        WorldGridDefinition definition,
+        IReadOnlyList<WorldCellData> cells,
+        Vector2Int coordinate)
+    {
+        if (definition == null) throw new ArgumentNullException(nameof(definition));
+        if (cells == null) throw new ArgumentNullException(nameof(cells));
+        if (cells.Count != definition.TotalCellCount)
+            throw new ArgumentException("Cell count does not match the world definition.", nameof(cells));
+        if (coordinate.x < 0 || coordinate.x >= definition.Width ||
+            coordinate.y < 0 || coordinate.y >= definition.Height)
+        {
+            throw new ArgumentOutOfRangeException(nameof(coordinate));
+        }
+
+        int elevation = cells[coordinate.y * definition.Width + coordinate.x].ElevationLevel;
+        WorldCliffMask mask = WorldCliffMask.None;
+        if (IsExposedToLowerNeighbor(definition, cells, coordinate, Vector2Int.left, elevation))
+            mask |= WorldCliffMask.West;
+        if (IsExposedToLowerNeighbor(definition, cells, coordinate, Vector2Int.right, elevation))
+            mask |= WorldCliffMask.East;
+        if (IsExposedToLowerNeighbor(definition, cells, coordinate, Vector2Int.down, elevation))
+            mask |= WorldCliffMask.South;
+        if (IsExposedToLowerNeighbor(definition, cells, coordinate, Vector2Int.up, elevation))
+            mask |= WorldCliffMask.North;
+        return mask;
+    }
+
+    static bool IsExposedToLowerNeighbor(
+        WorldGridDefinition definition,
+        IReadOnlyList<WorldCellData> cells,
+        Vector2Int coordinate,
+        Vector2Int offset,
+        int elevation)
+    {
+        Vector2Int neighbor = coordinate + offset;
+        if (neighbor.x < 0 || neighbor.x >= definition.Width ||
+            neighbor.y < 0 || neighbor.y >= definition.Height)
+        {
+            return true;
+        }
+
+        return cells[neighbor.y * definition.Width + neighbor.x].ElevationLevel < elevation;
+    }
+
     public static WorldChunkMeshData Build(
         WorldGridDefinition definition,
         IReadOnlyList<WorldCellData> cells,
@@ -249,17 +304,25 @@ public sealed class WorldChunkTerrain : MonoBehaviour
     void Awake()
     {
         ResolveComponents();
+        SubscribeTerraform();
         EnsureBuilt();
     }
 
     void OnEnable()
     {
         ResolveComponents();
+        SubscribeTerraform();
         EnsureBuilt();
+    }
+
+    void OnDisable()
+    {
+        UnsubscribeTerraform();
     }
 
     void OnDestroy()
     {
+        UnsubscribeTerraform();
         ReleaseRuntimeObjects();
     }
 
@@ -304,6 +367,29 @@ public sealed class WorldChunkTerrain : MonoBehaviour
         if (_collider == null) _collider = GetComponent<MeshCollider>();
         if (_grid == null || _filter == null || _renderer == null || _collider == null)
             throw new InvalidOperationException("WorldChunkTerrain required components are missing.");
+    }
+
+    void SubscribeTerraform()
+    {
+        if (_grid == null) return;
+        _grid.Terraform.Changed -= OnTerraformChanged;
+        _grid.Terraform.Changed += OnTerraformChanged;
+    }
+
+    void UnsubscribeTerraform()
+    {
+        if (_grid == null) return;
+        _grid.Terraform.Changed -= OnTerraformChanged;
+    }
+
+    void OnTerraformChanged(WorldTerraformEditResult result)
+    {
+        for (int i = 0; i < result.DirtyChunks.Count; i++)
+        {
+            if (result.DirtyChunks[i] != chunkCoordinate) continue;
+            Rebuild(WorldChunkDirtyFlags.All);
+            return;
+        }
     }
 
     static Mesh CreateMesh(string meshName)
@@ -772,6 +858,431 @@ public static class PA_WorldChunkTerrainTools
     {
         if (!condition) throw new InvalidOperationException(message);
         if (writePassLog) Debug.Log($"[WORLD-002] PASS {message}");
+    }
+}
+
+public static class PA_WorldTerraformTools
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.WORLD003.Active";
+    const string FailedKey = "PA.WORLD003.Failed";
+    const string ConsoleErrorKey = "PA.WORLD003.ConsoleErrors";
+    const string WaitFramesKey = "PA.WORLD003.WaitFrames";
+    const string StageKey = "PA.WORLD003.Stage";
+
+    [InitializeOnLoadMethod]
+    static void ResumeValidationAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        SubscribeCallbacks();
+        if (EditorApplication.isPlaying) EditorApplication.update += ValidateRuntime;
+    }
+
+    [MenuItem("Project PA/World/WORLD-003/Validate Single-Cell Terraforming")]
+    public static void RunTerraformValidation()
+    {
+        RunTerraformValidationInternal();
+    }
+
+    public static void RunTerraformValidationBatch()
+    {
+        RunTerraformValidationInternal();
+    }
+
+    static void RunTerraformValidationInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(WaitFramesKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            SubscribeCallbacks();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && scene.path == ScenePath,
+                "validator targets only WorldSandbox");
+            Require(!scene.isDirty, "WorldSandbox starts clean");
+            Require(FindComponents<Terrain>(scene).Count == 0 &&
+                    FindComponents<TerrainCollider>(scene).Count == 0,
+                "terraforming continues to use no Unity Terrain component");
+
+            WorldGridService grid = FindSingle<WorldGridService>(scene);
+            ValidateEditTransactions(grid);
+            ValidateBoundaryDirtyChunks();
+            Require(!scene.isDirty, "Edit Mode transactions do not dirty the scene");
+            Debug.Log("[WORLD-003] EDIT_MODE_PASS");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void ValidateEditTransactions(WorldGridService grid)
+    {
+        Require(grid.BootstrapProfile == WorldGridBootstrapProfile.World002Terraces,
+            "WORLD-002 terrace data is the terraform baseline");
+        Require(grid.ProtectedTerraformCell == Vector2Int.zero,
+            "cell (0,0) is the explicit protected terraform cell");
+
+        WorldTerraformService terraform = grid.Terraform;
+        int changeEvents = 0;
+        terraform.Changed += _ => changeEvents++;
+        ulong baselineHash = ComputeCellHash(grid.Cells);
+        int baselineRevision = terraform.Revision;
+
+        AssertFailedWithoutMutation(
+            terraform.Raise(new Vector2Int(-1, 0)),
+            WorldTerraformFailure.OutOfBounds,
+            baselineHash,
+            baselineRevision,
+            grid,
+            terraform,
+            "out-of-bounds edit");
+        AssertFailedWithoutMutation(
+            terraform.Raise(Vector2Int.zero),
+            WorldTerraformFailure.ProtectedCell,
+            baselineHash,
+            baselineRevision,
+            grid,
+            terraform,
+            "protected-cell edit");
+        AssertFailedWithoutMutation(
+            terraform.Lower(new Vector2Int(1, 0)),
+            WorldTerraformFailure.MinimumElevation,
+            baselineHash,
+            baselineRevision,
+            grid,
+            terraform,
+            "minimum-level edit");
+
+        var target = new Vector2Int(7, 7);
+        AssertFailedWithoutMutation(
+            terraform.Raise(target),
+            WorldTerraformFailure.MaximumElevation,
+            baselineHash,
+            baselineRevision,
+            grid,
+            terraform,
+            "maximum-level edit");
+
+        var westNeighbor = new Vector2Int(6, 7);
+        WorldCliffMask beforeMask = WorldChunkMeshBuilder.ComputeCliffMask(
+            grid.Definition, grid.Cells, westNeighbor);
+        Require((beforeMask & WorldCliffMask.East) == 0,
+            "equal-height plateau starts without an internal east cliff");
+
+        WorldTerraformEditResult lowered = terraform.Lower(target);
+        Require(lowered.Succeeded && lowered.Failure == WorldTerraformFailure.None,
+            "one-cell lower transaction succeeds");
+        Require(lowered.PreviousElevationLevel == 6 && lowered.CurrentElevationLevel == 5,
+            "one-cell lower applies exactly one 1m elevation step");
+        Require(lowered.DirtyChunks.Count == 1 && lowered.DirtyChunks[0] == Vector2Int.zero,
+            "interior edit dirties only its owning chunk");
+        Require(grid.TryGetCell(target, out WorldCellData loweredCell) &&
+                loweredCell.ElevationLevel == 5 &&
+                loweredCell.GroundType == WorldGroundType.Default &&
+                !loweredCell.HasWater && !loweredCell.HasPath &&
+                loweredCell.Occupancy == WorldCellOccupancy.Empty,
+            "elevation edit preserves all non-elevation cell data");
+        WorldCliffMask afterMask = WorldChunkMeshBuilder.ComputeCliffMask(
+            grid.Definition, grid.Cells, westNeighbor);
+        Require((afterMask & WorldCliffMask.East) != 0,
+            "lowered cell immediately exposes the adjacent east cliff mask");
+        Require(ComputeCellHash(grid.Cells) != baselineHash,
+            "successful transaction changes the authoritative in-memory cell hash");
+
+        WorldTerraformEditResult undone = terraform.UndoLast();
+        Require(undone.Succeeded && undone.Coordinate == target &&
+                undone.PreviousElevationLevel == 5 && undone.CurrentElevationLevel == 6,
+            "single in-session undo restores the exact previous elevation");
+        Require(ComputeCellHash(grid.Cells) == baselineHash,
+            "undo restores the complete baseline cell hash");
+        Require((WorldChunkMeshBuilder.ComputeCliffMask(
+                    grid.Definition, grid.Cells, westNeighbor) & WorldCliffMask.East) == 0,
+            "undo restores the adjacent cliff mask");
+        Require(changeEvents == 2 && terraform.Revision == baselineRevision + 2,
+            "only the successful edit and undo publish change revisions");
+
+        ulong beforeSecondUndo = ComputeCellHash(grid.Cells);
+        int revisionBeforeSecondUndo = terraform.Revision;
+        AssertFailedWithoutMutation(
+            terraform.UndoLast(),
+            WorldTerraformFailure.NoUndoAvailable,
+            beforeSecondUndo,
+            revisionBeforeSecondUndo,
+            grid,
+            terraform,
+            "second undo");
+    }
+
+    static void ValidateBoundaryDirtyChunks()
+    {
+        var definition = new WorldGridDefinition(2f, 32, 16, 16, 1f, 0, 6, Vector3.zero);
+        IReadOnlyList<Vector2Int> westBoundary =
+            WorldTerraformDirtyChunkResolver.Resolve(definition, new Vector2Int(15, 5));
+        Require(westBoundary.Count == 2 &&
+                westBoundary.Contains(new Vector2Int(0, 0)) &&
+                westBoundary.Contains(new Vector2Int(1, 0)),
+            "cell on an east chunk edge dirties both seam-sharing chunks");
+
+        IReadOnlyList<Vector2Int> eastBoundary =
+            WorldTerraformDirtyChunkResolver.Resolve(definition, new Vector2Int(16, 5));
+        Require(eastBoundary.Count == 2 &&
+                eastBoundary.Contains(new Vector2Int(0, 0)) &&
+                eastBoundary.Contains(new Vector2Int(1, 0)),
+            "cell on a west chunk edge dirties both seam-sharing chunks");
+
+        IReadOnlyList<Vector2Int> interior =
+            WorldTerraformDirtyChunkResolver.Resolve(definition, new Vector2Int(7, 5));
+        Require(interior.Count == 1 && interior[0] == Vector2Int.zero,
+            "interior cell does not dirty unrelated chunks");
+    }
+
+    static void AssertFailedWithoutMutation(
+        WorldTerraformEditResult result,
+        WorldTerraformFailure expectedFailure,
+        ulong expectedHash,
+        int expectedRevision,
+        WorldGridService grid,
+        WorldTerraformService terraform,
+        string label)
+    {
+        Require(!result.Succeeded && result.Failure == expectedFailure,
+            $"{label} fails with {expectedFailure}");
+        Require(result.DirtyChunks.Count == 0 &&
+                terraform.Revision == expectedRevision &&
+                ComputeCellHash(grid.Cells) == expectedHash,
+            $"{label} is atomic and publishes no dirty chunk");
+    }
+
+    static void SubscribeCallbacks()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SessionState.SetInt(WaitFramesKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            FinishValidation();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(WaitFramesKey, 0) + 1;
+        SessionState.SetInt(WaitFramesKey, frames);
+        if (frames < 4) return;
+
+        try
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            WorldGridService grid = FindSingle<WorldGridService>(scene);
+            WorldChunkTerrain terrain = FindSingle<WorldChunkTerrain>(scene);
+            WorldGridDebugView debug = FindSingle<WorldGridDebugView>(scene);
+            int stage = SessionState.GetInt(StageKey, 0);
+            if (stage == 0)
+            {
+                ValidateRuntimeEdit(grid, terrain, debug);
+                SessionState.SetInt(StageKey, 1);
+                SessionState.SetInt(WaitFramesKey, 0);
+                return;
+            }
+
+            if (frames < 3) return;
+            EditorApplication.update -= ValidateRuntime;
+            Require(debug.IsRuntimeGeometryReady,
+                "debug grid rebuilds after the terrain edit without a per-cell object");
+            Require(terrain.GetComponentsInChildren<Transform>(true).Length <= 2,
+                "terraforming keeps one chunk object and one debug mesh root");
+            Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                "blocking runtime Console Error/Exception/Assert count is 0");
+            Debug.Log("[WORLD-003] PLAY_MODE_PASS");
+            EditorApplication.ExitPlaymode();
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static void ValidateRuntimeEdit(
+        WorldGridService grid,
+        WorldChunkTerrain terrain,
+        WorldGridDebugView debug)
+    {
+        Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+            $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+        Require(terrain.IsReady, "runtime terrain visual and collider meshes are ready");
+
+        int visualStart = terrain.VisualRevision;
+        int colliderStart = terrain.ColliderRevision;
+        WorldTerraformEditResult noSelection = debug.RaiseSelected();
+        Require(!noSelection.Succeeded && noSelection.Failure == WorldTerraformFailure.NoSelection,
+            "debug raise requires an explicit selected cell");
+        Require(terrain.VisualRevision == visualStart && terrain.ColliderRevision == colliderStart,
+            "missing selection does not rebuild terrain");
+
+        var target = new Vector2Int(7, 7);
+        Require(debug.TrySelectCell(target) && debug.SelectedCell == target,
+            "debug selection accepts a valid terrain cell");
+        WorldTerraformEditResult lowered = debug.LowerSelected();
+        Require(lowered.Succeeded && lowered.CurrentElevationLevel == 5,
+            "debug lower applies one level to the selected cell");
+        Require(terrain.VisualRevision == visualStart + 1 &&
+                terrain.ColliderRevision == colliderStart + 1,
+            "successful edit rebuilds visual and collider exactly once");
+        Require(grid.CellToWorld(target, out Vector3 loweredWorld) &&
+                Mathf.Approximately(loweredWorld.y, 5f),
+            "selected cell world height immediately reflects the edit");
+        Require(Approximately(terrain.VisualMesh.bounds, terrain.ColliderMesh.bounds),
+            "edited visual and collider bounds remain identical");
+
+        Physics.SyncTransforms();
+        Ray ray = new Ray(loweredWorld + Vector3.up * 10f, Vector3.down);
+        Require(terrain.TerrainCollider.Raycast(ray, out RaycastHit hit, 20f) &&
+                Mathf.Abs(hit.point.y - loweredWorld.y) < 0.01f,
+            "MeshCollider raycast follows the edited cell top");
+        Require((WorldChunkMeshBuilder.ComputeCliffMask(
+                    grid.Definition, grid.Cells, new Vector2Int(6, 7)) & WorldCliffMask.East) != 0,
+            "runtime adjacent cliff mask follows the lowered cell");
+
+        int visualAfterLower = terrain.VisualRevision;
+        int colliderAfterLower = terrain.ColliderRevision;
+        Require(debug.TrySelectCell(Vector2Int.zero), "debug can select the protected cell");
+        WorldTerraformEditResult protectedResult = debug.RaiseSelected();
+        Require(!protectedResult.Succeeded &&
+                protectedResult.Failure == WorldTerraformFailure.ProtectedCell,
+            "protected cell rejects runtime raise");
+        Require(terrain.VisualRevision == visualAfterLower &&
+                terrain.ColliderRevision == colliderAfterLower,
+            "failed protected edit triggers no mesh or collider rebuild");
+
+        WorldTerraformEditResult undone = debug.UndoLastTerraform();
+        Require(undone.Succeeded && undone.Coordinate == target &&
+                undone.CurrentElevationLevel == 6,
+            "runtime one-step undo restores the edited cell");
+        Require(terrain.VisualRevision == visualAfterLower + 1 &&
+                terrain.ColliderRevision == colliderAfterLower + 1,
+            "undo rebuilds visual and collider exactly once");
+
+        int visualAfterUndo = terrain.VisualRevision;
+        int colliderAfterUndo = terrain.ColliderRevision;
+        WorldTerraformEditResult secondUndo = debug.UndoLastTerraform();
+        Require(!secondUndo.Succeeded &&
+                secondUndo.Failure == WorldTerraformFailure.NoUndoAvailable &&
+                terrain.VisualRevision == visualAfterUndo &&
+                terrain.ColliderRevision == colliderAfterUndo,
+            "unavailable second undo is atomic and causes no rebuild");
+
+        Require(debug.TrySelectCell(target), "debug can reselect the restored maximum cell");
+        WorldTerraformEditResult maximumResult = debug.RaiseSelected();
+        Require(!maximumResult.Succeeded &&
+                maximumResult.Failure == WorldTerraformFailure.MaximumElevation &&
+                terrain.VisualRevision == visualAfterUndo &&
+                terrain.ColliderRevision == colliderAfterUndo,
+            "maximum-level runtime raise is clamped without mutation");
+    }
+
+    static ulong ComputeCellHash(IReadOnlyList<WorldCellData> cells)
+    {
+        const ulong offset = 14695981039346656037UL;
+        const ulong prime = 1099511628211UL;
+        ulong hash = offset;
+        unchecked
+        {
+            for (int i = 0; i < cells.Count; i++)
+            {
+                WorldCellData cell = cells[i];
+                hash = (hash ^ (uint)cell.Coordinate.x) * prime;
+                hash = (hash ^ (uint)cell.Coordinate.y) * prime;
+                hash = (hash ^ (uint)cell.ElevationLevel) * prime;
+                hash = (hash ^ (uint)cell.GroundType) * prime;
+                hash = (hash ^ (cell.HasWater ? 1u : 0u)) * prime;
+                hash = (hash ^ (cell.HasPath ? 1u : 0u)) * prime;
+                hash = (hash ^ (uint)cell.Occupancy) * prime;
+            }
+        }
+        return hash;
+    }
+
+    static bool Approximately(Bounds first, Bounds second)
+    {
+        return Vector3.Distance(first.center, second.center) < 0.001f &&
+               Vector3.Distance(first.size, second.size) < 0.001f;
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+        SessionState.SetInt(ConsoleErrorKey, SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[WORLD-003] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else FinishValidation();
+    }
+
+    static void FinishValidation()
+    {
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int consoleErrors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(WaitFramesKey);
+        SessionState.EraseInt(StageKey);
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Debug.Log(failed
+            ? $"[WORLD-003] FINISHED_WITH_ERRORS consoleErrors={consoleErrors}"
+            : "[WORLD-003] FINISHED_PASS protected=true minMax=true atomic=true dirtyChunks=true meshCollider=true undo=true");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static List<T> FindComponents<T>(Scene scene) where T : Component
+    {
+        var result = new List<T>();
+        foreach (GameObject root in scene.GetRootGameObjects())
+            result.AddRange(root.GetComponentsInChildren<T>(true));
+        return result;
+    }
+
+    static T FindSingle<T>(Scene scene) where T : Component
+    {
+        List<T> components = FindComponents<T>(scene);
+        if (components.Count != 1)
+            throw new InvalidOperationException($"Expected one {typeof(T).Name}, found {components.Count}.");
+        return components[0];
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[WORLD-003] PASS {message}");
     }
 }
 #endif

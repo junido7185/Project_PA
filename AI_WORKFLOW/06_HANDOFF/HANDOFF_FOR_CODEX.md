@@ -316,3 +316,13 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **다음 구현 기준:** level 0..6 clamp, 한 셀 raise/lower, 셀과 경계를 공유하는 Chunk만 dirty, mesh/collider 동기화, 실패 원자성, 취소/안전 경로, D3D11 검증을 최소 범위로 만든다.
 - **캡처:** WORLD-002 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`다. 사람 캡처는 요구하지 않는다.
 - **Git:** 로컬 ticket commit만 허용되고 push/rebase/reset-hard/clean은 금지다. 현재 ticket commit 뒤 자동 진행하되 M70 완료, WORLD-010 완료, ticket commit 12개, hard blocker 또는 안전 실행 한계에서 멈춘다.
+
+## 13. M70 / WORLD-003 인계 — 2026-08-06
+
+- **완료 상태:** WORLD-003는 `WORLD_003_COMPLETE`. 읽기 전용 셀 collection 뒤에 원자적 one-cell elevation transaction, `(0,0)` 보호, 0..6 clamp, typed failure, 한 단계 undo가 있다.
+- **입력:** WorldSandbox 좌클릭 선택, `R` raise, `F` lower, `Z` undo. overlay가 선택 level, 보호 상태, 성공/차단 이유와 revision을 표시한다.
+- **dirty/rebuild:** 내부 셀은 소유 Chunk 하나, seam 셀은 cardinal 이웃까지만 dirty다. 성공/undo마다 `WorldChunkTerrain` visual/collider revision이 각각 한 번 증가한다.
+- **증거:** `Logs/WORLD003_Validation.log`, `Logs/WORLD003_WORLD002_Regression.log`, `Logs/WORLD003_WORLD001_Regression.log`. D3D11, blocking Console 0, compile 오류 0, 신규 crash 0이다.
+- **보호 상태:** WORLD-003에서 scene, Save schema/authority, Packages, ProjectSettings는 변경하지 않았다. water/path/building/NPC/NavMesh도 시작하지 않았다.
+- **다음 활성 ticket:** 기존 backlog의 WORLD-004 Ground/Path Paint and Water Cell Prototype만 시작한다. ground/path/water transaction과 최소 prototype rendering/walkability까지만 다루며 save/building/nav는 섞지 않는다.
+- **캡처/Git:** 캡처는 `CAPTURE_EVIDENCE_DEBT`. 로컬 ticket commit만 허용하며 push/rebase/reset-hard/clean은 금지다.

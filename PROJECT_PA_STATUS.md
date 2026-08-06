@@ -2051,3 +2051,13 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - WORLD-001 전체 회귀, Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0을 확인했다. 기존 CS8785/CS0414 경고만 남는다.
 - `Prototype_FirstDay`, `MainGame`, Save schema/authority, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 판정은 `WORLD_002_COMPLETE`. M70 자동 진행 규칙에 따라 로컬 커밋 뒤 WORLD-003만 다음 활성 티켓으로 전환한다.
+
+## 2026-08-06 WORLD-003 Single-Cell Raise/Lower Terraforming — COMPLETE
+
+- WorldSandbox에서 좌클릭으로 셀을 선택하고 `R`/`F`로 한 level 올리거나 내리며 `Z`로 마지막 성공 편집을 한 번 되돌릴 수 있다.
+- `(0,0)` 보호 셀, 범위 밖, level 0 하강, level 6 상승, 두 번째 undo는 typed failure로 끝나며 cell hash·revision·dirty Chunk·mesh에 변화가 없다.
+- 성공 편집은 elevation만 1m 바꾸고 ground/water/path/occupancy를 보존한다. 내부 셀은 소유 Chunk 하나, Chunk 경계 셀은 맞닿은 양쪽 Chunk만 dirty 처리한다.
+- `WorldChunkTerrain`은 성공/undo마다 visual mesh와 `MeshCollider`를 정확히 한 번 재생성한다. 인접 절벽 mask, collider raycast 높이, visual/collider bounds가 즉시 일치한다.
+- WORLD-003 D3D11 Edit/Play와 WORLD-002·001 회귀, Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0을 확인했다.
+- 씬, Save schema/authority, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 판정은 `WORLD_003_COMPLETE`; 로컬 커밋 뒤 WORLD-004만 다음 활성 티켓이다.

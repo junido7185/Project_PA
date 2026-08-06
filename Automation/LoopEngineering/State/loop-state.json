@@ -5,7 +5,7 @@
     "status": "in_progress",
     "branch": "milestone/world-alpha-70",
     "checkpointCommit": "23ceda6",
-    "completedTicketCommits": 2,
+    "completedTicketCommits": 3,
     "commitLimit": 12
   },
   "worldArchitectureApproval": {
@@ -24,19 +24,20 @@
     },
     "implementationStarted": true
   },
-  "ticketId": "WORLD-002",
+  "ticketId": "WORLD-003",
   "status": "completed",
-  "finalState": "WORLD_002_COMPLETE",
-  "goal": "Generate a deterministic stepped custom mesh and collider for the 16x16 WorldSandbox chunk without adding terrain mutation, save, navigation, or gameplay integration.",
+  "finalState": "WORLD_003_COMPLETE",
+  "goal": "Provide atomic one-cell raise/lower editing with protected-cell, 0..6 clamp, seam-aware dirty chunks, synchronized mesh/collider rebuild, debug selection and one-step undo.",
   "baseline": {
     "branch": "milestone/world-alpha-70",
-    "commit": "776fd3a",
+    "commit": "f6ac77d",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 14,
+    "dirtyPathCountAtStop": 10,
     "newCrashArtifacts": 0,
+    "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
     "mainGameChanged": false,
     "saveAuthorityChanged": false,
@@ -48,78 +49,76 @@
     "editor": "PASS: 0 compile errors; pre-existing CS8785 and CS0414 only"
   },
   "validators": {
-    "world002Log": "Logs/WORLD002_Validation_Final.log",
-    "world001RegressionLog": "Logs/WORLD002_WORLD001_Regression_Final.log",
+    "world003Log": "Logs/WORLD003_Validation.log",
+    "world002RegressionLog": "Logs/WORLD003_WORLD002_Regression.log",
+    "world001RegressionLog": "Logs/WORLD003_WORLD001_Regression.log",
     "passed": [
       "Unity D3D11 Edit Mode and Play Mode",
-      "256 deterministic top faces and 280 exposed cliff faces",
-      "vertex, index, UV, normal, winding and finite-value mesh contracts",
-      "deterministic terrain checksum ADF9201BC8265BC5",
-      "synthetic two-chunk top seam exact match",
-      "runtime visual mesh and MeshCollider bounds match",
-      "two project-owned runtime material slots",
-      "visual-only and collider-only dirty rebuild isolation",
-      "one chunk object and zero per-cell GameObjects",
-      "WORLD-001 deterministic grid regression",
+      "out-of-bounds, protected, minimum and maximum edits fail atomically",
+      "one selected cell changes by exactly one 1m level",
+      "non-elevation cell data remains unchanged",
+      "adjacent cliff mask updates immediately",
+      "interior cell dirties only its owner chunk",
+      "chunk-edge cells dirty both seam-sharing chunks",
+      "visual and collider revisions advance exactly once per success",
+      "MeshCollider raycast follows the edited cell top",
+      "one-step undo restores the complete baseline cell hash",
+      "debug grid rebuilds without per-cell GameObjects",
+      "WORLD-002 terrain regression",
+      "WORLD-001 grid regression",
       "blocking Console Error/Exception/Assert 0"
     ]
   },
   "worldGrid": {
     "widthCells": 16,
     "heightCells": 16,
-    "cellCount": 256,
     "cellSizeMeters": 2,
     "chunkSizeCells": 16,
-    "chunkCount": 1,
     "elevationStepMeters": 1,
     "minimumElevationLevel": 0,
     "maximumElevationLevel": 6,
     "bootstrapProfile": "World002Terraces",
-    "storage": "read-only row-major z*width+x",
-    "mutationApi": false
+    "protectedTerraformCell": "0,0",
+    "storage": "read-only collection over transaction-owned cell array"
+  },
+  "terraform": {
+    "raiseLowerStepLevels": 1,
+    "failedEditAtomic": true,
+    "oneStepUndo": true,
+    "dirtyChunkResolver": "owner plus cardinal seam-sharing chunks only",
+    "visualColliderSynchronized": true,
+    "debugSelection": "left click",
+    "debugRaise": "R",
+    "debugLower": "F",
+    "debugUndo": "Z",
+    "savePersistence": false
   },
   "terrain": {
     "implementation": "limited-height stepped custom chunk mesh",
     "unityTerrainUsed": false,
-    "topFaceCount": 256,
-    "cliffFaceCount": 280,
-    "vertexCount": 2144,
-    "checksum": "ADF9201BC8265BC5",
+    "baselineChecksum": "ADF9201BC8265BC5",
     "meshCollider": true,
-    "chunkSeams": "PASS",
-    "dirtyRebuild": "PASS"
+    "world002Regression": "PASS"
   },
   "scene": {
     "path": "Assets/Scenes/WorldSandbox.unity",
-    "createdByEditorBuilder": true,
-    "authoredRoots": ["Main Camera", "Directional Light", "WorldGrid"],
-    "authoredGameplayManagerCopies": 0,
-    "terrainMeshCreatedAtRuntime": true,
+    "changedThisTicket": false,
     "addedToBuildSettings": false
-  },
-  "recoveries": {
-    "syntheticSeamScope": "Resolved by comparing only the 17 top-edge boundary positions; cliff-cap vertices are intentionally outside that contract.",
-    "world001BatchEntryPoint": "Resolved by using PA_WorldSandboxTools.RunValidation once; no code or scene recovery was required.",
-    "failureLog": "AI_WORKFLOW/05_LOGS/BUG_LOG.md"
   },
   "save": {
     "schema": 10,
     "schemaChanged": false,
-    "saveRuntimeUsedByWorldTerrain": false
+    "terraformPersistence": false
   },
   "capture": {
     "attemptedThisTicket": false,
     "result": "CAPTURE_EVIDENCE_DEBT",
-    "reason": "The optional one-shot capture was skipped; D3D11 geometry, bounds, seams, materials, collider and Play Mode contracts passed."
+    "reason": "The optional capture was skipped; selection, one-step edit, cliff, mesh/collider and undo behavior passed in D3D11 Play Mode."
   },
   "changedPaths": [
-    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
-    "Assets/Scenes/WorldSandbox.unity",
     "Assets/Scripts/World/WorldChunkTerrain.cs",
-    "Assets/Scripts/World/WorldChunkTerrain.cs.meta",
-    "Assets/Scripts/World/WorldGridDebugView.cs",
     "Assets/Scripts/World/WorldGridService.cs",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
@@ -129,13 +128,12 @@
     "Docs/07_개발일지.md"
   ],
   "forbiddenWorkPerformed": false,
-  "world001Started": true,
   "world001Completed": true,
-  "world002Started": true,
   "world002Completed": true,
-  "world003Started": false,
+  "world003Completed": true,
+  "world004Started": false,
   "startedAt": "2026-08-06",
   "stoppedAt": "2026-08-06",
-  "stopReason": "WORLD-002 completed with automated D3D11 evidence; close the bounded ticket before automatic WORLD-003 transition.",
-  "nextAction": "Commit WORLD-002 locally, then start WORLD-003 Single-Cell Raise/Lower Terraforming as the only active bounded ticket."
+  "stopReason": "WORLD-003 completed with automated D3D11 evidence; close the bounded ticket before automatic WORLD-004 transition.",
+  "nextAction": "Commit WORLD-003 locally, then start WORLD-004 Ground/Path Paint and Water Cell Prototype as the only active bounded ticket."
 }

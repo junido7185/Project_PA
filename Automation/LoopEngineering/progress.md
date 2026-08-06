@@ -535,3 +535,14 @@ Append-only log for guarded automation and dry-run loop work.
 - WORLD-001 D3D11 regression passed all 256-cell, 10,000-round-trip, debug-view and read-only contracts. Runtime/Editor builds passed with zero errors; only existing CS8785/CS0414 warnings remain; new crash count is zero.
 - Optional capture was skipped and recorded as `CAPTURE_EVIDENCE_DEBT` because geometry, seams, collider, bounds, materials and Play Mode contracts passed.
 - Final state: `WORLD_002_COMPLETE`. After the local ticket commit, continue automatically to existing backlog ticket WORLD-003 only.
+
+## 2026-08-06 — WORLD-003 Single-Cell Raise/Lower Terraforming
+
+- Added transaction-owned one-cell elevation editing while keeping `WorldGridService.Cells` read-only to consumers. Raise/lower changes exactly one level within 0..6 and preserves ground, water, path and occupancy data.
+- Cell (0,0) is explicitly protected. Out-of-bounds, protected, minimum, maximum and unavailable-undo requests return typed failures with no cell hash, revision, dirty chunk or mesh change.
+- Dirty-chunk resolution returns only the owner plus cardinal seam-sharing chunks. Synthetic 32×16 checks prove both sides of the x=15/16 boundary dirty chunks (0,0) and (1,0), while an interior edit dirties one chunk.
+- `WorldChunkTerrain` subscribes to successful edits and rebuilds visual mesh and `MeshCollider` exactly once. Adjacent cliff masks, collider raycast height and visual/collider bounds update immediately.
+- WorldSandbox debug controls are left-click selection, `R` raise, `F` lower and `Z` one-step undo; the overlay reports selection, protected state, result and revision. No production UI was added.
+- `Logs/WORLD003_Validation.log` passed D3D11 Edit/Play checks on the first run. WORLD-002 and WORLD-001 D3D11 regressions also passed; Runtime/Editor compilation has zero errors and no new crash exists.
+- No scene, Save schema, Package, ProjectSettings, water/path, building, NPC or NavMesh path changed. Optional capture remains `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `WORLD_003_COMPLETE`. After the local ticket commit, continue automatically to existing backlog ticket WORLD-004 only.

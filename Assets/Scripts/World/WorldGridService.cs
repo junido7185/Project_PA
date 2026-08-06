@@ -21,6 +21,85 @@ public enum WorldGridBootstrapProfile
     World002Terraces = 1
 }
 
+public enum WorldTerraformFailure
+{
+    None = 0,
+    NoSelection = 1,
+    OutOfBounds = 2,
+    ProtectedCell = 3,
+    MinimumElevation = 4,
+    MaximumElevation = 5,
+    NoUndoAvailable = 6,
+    StaleUndoRecord = 7
+}
+
+public readonly struct WorldTerraformEditResult
+{
+    public bool Succeeded { get; }
+    public WorldTerraformFailure Failure { get; }
+    public Vector2Int Coordinate { get; }
+    public int PreviousElevationLevel { get; }
+    public int CurrentElevationLevel { get; }
+    public int Revision { get; }
+    public IReadOnlyList<Vector2Int> DirtyChunks { get; }
+
+    internal WorldTerraformEditResult(
+        bool succeeded,
+        WorldTerraformFailure failure,
+        Vector2Int coordinate,
+        int previousElevationLevel,
+        int currentElevationLevel,
+        int revision,
+        IReadOnlyList<Vector2Int> dirtyChunks)
+    {
+        Succeeded = succeeded;
+        Failure = failure;
+        Coordinate = coordinate;
+        PreviousElevationLevel = previousElevationLevel;
+        CurrentElevationLevel = currentElevationLevel;
+        Revision = revision;
+        DirtyChunks = dirtyChunks ?? Array.Empty<Vector2Int>();
+    }
+}
+
+public static class WorldTerraformDirtyChunkResolver
+{
+    public static IReadOnlyList<Vector2Int> Resolve(
+        WorldGridDefinition definition,
+        Vector2Int coordinate)
+    {
+        if (definition == null) throw new ArgumentNullException(nameof(definition));
+        if (coordinate.x < 0 || coordinate.x >= definition.Width ||
+            coordinate.y < 0 || coordinate.y >= definition.Height)
+        {
+            throw new ArgumentOutOfRangeException(nameof(coordinate));
+        }
+
+        var dirty = new List<Vector2Int>(3);
+        var primary = new Vector2Int(
+            coordinate.x / definition.ChunkSize,
+            coordinate.y / definition.ChunkSize);
+        AddUnique(dirty, primary);
+
+        int localX = coordinate.x % definition.ChunkSize;
+        int localZ = coordinate.y % definition.ChunkSize;
+        if (localX == 0 && primary.x > 0)
+            AddUnique(dirty, primary + Vector2Int.left);
+        if (localX == definition.ChunkSize - 1 && primary.x + 1 < definition.ChunkCountX)
+            AddUnique(dirty, primary + Vector2Int.right);
+        if (localZ == 0 && primary.y > 0)
+            AddUnique(dirty, primary + Vector2Int.down);
+        if (localZ == definition.ChunkSize - 1 && primary.y + 1 < definition.ChunkCountZ)
+            AddUnique(dirty, primary + Vector2Int.up);
+        return dirty.AsReadOnly();
+    }
+
+    static void AddUnique(List<Vector2Int> chunks, Vector2Int coordinate)
+    {
+        if (!chunks.Contains(coordinate)) chunks.Add(coordinate);
+    }
+}
+
 [Serializable]
 public sealed class WorldGridDefinition
 {
@@ -91,6 +170,17 @@ public readonly struct WorldCellData
         HasPath = hasPath;
         Occupancy = occupancy;
     }
+
+    internal WorldCellData WithElevationLevel(int elevationLevel)
+    {
+        return new WorldCellData(
+            Coordinate,
+            elevationLevel,
+            GroundType,
+            HasWater,
+            HasPath,
+            Occupancy);
+    }
 }
 
 [DisallowMultipleComponent]
@@ -117,10 +207,12 @@ public sealed class WorldGridService : MonoBehaviour
     [SerializeField] int initialElevationLevel = World001InitialElevation;
     [SerializeField] WorldGroundType initialGroundType = WorldGroundType.Default;
     [SerializeField] WorldGridBootstrapProfile bootstrapProfile = WorldGridBootstrapProfile.Flat;
+    [SerializeField] Vector2Int protectedTerraformCell = Vector2Int.zero;
 
     WorldGridDefinition _definition;
     WorldCellData[] _cells;
     ReadOnlyCollection<WorldCellData> _readOnlyCells;
+    WorldTerraformService _terraform;
     bool _initialized;
 
     public WorldGridDefinition Definition
@@ -153,6 +245,15 @@ public sealed class WorldGridService : MonoBehaviour
     public int InitialElevationLevel => initialElevationLevel;
     public WorldGroundType InitialGroundType => initialGroundType;
     public WorldGridBootstrapProfile BootstrapProfile => bootstrapProfile;
+    public Vector2Int ProtectedTerraformCell => protectedTerraformCell;
+    public WorldTerraformService Terraform
+    {
+        get
+        {
+            EnsureInitialized();
+            return _terraform ??= new WorldTerraformService(this);
+        }
+    }
 
     void Awake()
     {
@@ -182,6 +283,11 @@ public sealed class WorldGridService : MonoBehaviour
         EnsureInitialized();
         return coordinate.x >= 0 && coordinate.x < _definition.Width &&
                coordinate.y >= 0 && coordinate.y < _definition.Height;
+    }
+
+    public bool IsTerraformProtected(Vector2Int coordinate)
+    {
+        return coordinate == protectedTerraformCell;
     }
 
     public bool TryGetCell(Vector2Int coordinate, out WorldCellData cell)
@@ -285,6 +391,25 @@ public sealed class WorldGridService : MonoBehaviour
         return _readOnlyCells;
     }
 
+    internal bool TryCommitTerraformElevation(
+        Vector2Int coordinate,
+        int expectedElevationLevel,
+        int newElevationLevel)
+    {
+        EnsureInitialized();
+        if (!TryCellToIndex(coordinate, out int index)) return false;
+        if (newElevationLevel < _definition.MinElevationLevel ||
+            newElevationLevel > _definition.MaxElevationLevel)
+        {
+            return false;
+        }
+
+        WorldCellData current = _cells[index];
+        if (current.ElevationLevel != expectedElevationLevel) return false;
+        _cells[index] = current.WithElevationLevel(newElevationLevel);
+        return true;
+    }
+
     void EnsureInitialized()
     {
         if (_initialized) return;
@@ -322,6 +447,7 @@ public sealed class WorldGridService : MonoBehaviour
         }
 
         _readOnlyCells = Array.AsReadOnly(_cells);
+        _terraform = null;
         _initialized = true;
     }
 
@@ -332,6 +458,138 @@ public sealed class WorldGridService : MonoBehaviour
 
         int distanceFromEdge = Mathf.Min(x, z, width - 1 - x, height - 1 - z);
         return Mathf.Clamp(distanceFromEdge, minElevationLevel, maxElevationLevel);
+    }
+}
+
+public sealed class WorldTerraformService
+{
+    readonly WorldGridService _grid;
+    WorldTerraformEditResult _lastCommittedEdit;
+    bool _hasUndo;
+    int _revision;
+
+    public event Action<WorldTerraformEditResult> Changed;
+
+    public int Revision => _revision;
+    public bool CanUndo => _hasUndo;
+
+    internal WorldTerraformService(WorldGridService grid)
+    {
+        _grid = grid ?? throw new ArgumentNullException(nameof(grid));
+    }
+
+    public WorldTerraformEditResult Raise(Vector2Int coordinate)
+    {
+        return ApplyDelta(coordinate, 1);
+    }
+
+    public WorldTerraformEditResult Lower(Vector2Int coordinate)
+    {
+        return ApplyDelta(coordinate, -1);
+    }
+
+    public WorldTerraformEditResult UndoLast()
+    {
+        if (!_hasUndo)
+            return Failed(WorldTerraformFailure.NoUndoAvailable, default, 0);
+
+        Vector2Int coordinate = _lastCommittedEdit.Coordinate;
+        if (!_grid.TryGetCell(coordinate, out WorldCellData current) ||
+            current.ElevationLevel != _lastCommittedEdit.CurrentElevationLevel)
+        {
+            return Failed(
+                WorldTerraformFailure.StaleUndoRecord,
+                coordinate,
+                current.ElevationLevel);
+        }
+
+        int restoredLevel = _lastCommittedEdit.PreviousElevationLevel;
+        if (!_grid.TryCommitTerraformElevation(
+                coordinate,
+                current.ElevationLevel,
+                restoredLevel))
+        {
+            return Failed(
+                WorldTerraformFailure.StaleUndoRecord,
+                coordinate,
+                current.ElevationLevel);
+        }
+
+        _revision++;
+        _hasUndo = false;
+        var result = Succeeded(
+            coordinate,
+            current.ElevationLevel,
+            restoredLevel,
+            WorldTerraformDirtyChunkResolver.Resolve(_grid.Definition, coordinate));
+        Changed?.Invoke(result);
+        return result;
+    }
+
+    WorldTerraformEditResult ApplyDelta(Vector2Int coordinate, int delta)
+    {
+        if (!_grid.TryGetCell(coordinate, out WorldCellData current))
+            return Failed(WorldTerraformFailure.OutOfBounds, coordinate, 0);
+        if (_grid.IsTerraformProtected(coordinate))
+            return Failed(WorldTerraformFailure.ProtectedCell, coordinate, current.ElevationLevel);
+
+        int targetLevel = current.ElevationLevel + delta;
+        if (targetLevel < _grid.Definition.MinElevationLevel)
+            return Failed(WorldTerraformFailure.MinimumElevation, coordinate, current.ElevationLevel);
+        if (targetLevel > _grid.Definition.MaxElevationLevel)
+            return Failed(WorldTerraformFailure.MaximumElevation, coordinate, current.ElevationLevel);
+
+        IReadOnlyList<Vector2Int> dirtyChunks =
+            WorldTerraformDirtyChunkResolver.Resolve(_grid.Definition, coordinate);
+        if (!_grid.TryCommitTerraformElevation(
+                coordinate,
+                current.ElevationLevel,
+                targetLevel))
+        {
+            return Failed(WorldTerraformFailure.StaleUndoRecord, coordinate, current.ElevationLevel);
+        }
+
+        _revision++;
+        var result = Succeeded(
+            coordinate,
+            current.ElevationLevel,
+            targetLevel,
+            dirtyChunks);
+        _lastCommittedEdit = result;
+        _hasUndo = true;
+        Changed?.Invoke(result);
+        return result;
+    }
+
+    WorldTerraformEditResult Succeeded(
+        Vector2Int coordinate,
+        int previousLevel,
+        int currentLevel,
+        IReadOnlyList<Vector2Int> dirtyChunks)
+    {
+        return new WorldTerraformEditResult(
+            true,
+            WorldTerraformFailure.None,
+            coordinate,
+            previousLevel,
+            currentLevel,
+            _revision,
+            dirtyChunks);
+    }
+
+    WorldTerraformEditResult Failed(
+        WorldTerraformFailure failure,
+        Vector2Int coordinate,
+        int currentLevel)
+    {
+        return new WorldTerraformEditResult(
+            false,
+            failure,
+            coordinate,
+            currentLevel,
+            currentLevel,
+            _revision,
+            Array.Empty<Vector2Int>());
     }
 }
 
@@ -350,44 +608,159 @@ public class WorldGridDebugViewBase : MonoBehaviour
     [SerializeField] Color originLineColor = new Color(1f, 0.32f, 0.30f, 1f);
 
     WorldGridService _grid;
+    WorldChunkTerrain _terrain;
     Camera _debugCamera;
     GameObject _runtimeRoot;
     Mesh _lineMesh;
     Material[] _lineMaterials;
     GUIStyle _panelStyle;
     GUIStyle _coordinateStyle;
+    Vector2Int _hoveredCell;
+    Vector2Int _selectedCell;
+    bool _hasHoveredCell;
+    bool _hasSelectedCell;
+    WorldTerraformEditResult _lastTerraformResult;
 
     public bool IsRuntimeGeometryReady =>
         _runtimeRoot != null && _lineMesh != null && _lineMesh.vertexCount > 0;
     public int DebugLineVertexCount => _lineMesh != null ? _lineMesh.vertexCount : 0;
     public bool CoordinateOverlayEnabled => showCoordinateOverlay;
+    public bool HasSelectedCell => _hasSelectedCell;
+    public Vector2Int SelectedCell => _selectedCell;
+    public WorldTerraformEditResult LastTerraformResult => _lastTerraformResult;
 
     protected void Awake()
     {
         ResolveReferences();
+        SubscribeTerraform();
         BuildRuntimeGrid();
     }
 
     protected void OnEnable()
     {
         ResolveReferences();
+        SubscribeTerraform();
         if (Application.isPlaying) BuildRuntimeGrid();
+    }
+
+    protected void OnDisable()
+    {
+        UnsubscribeTerraform();
     }
 
     protected void LateUpdate()
     {
         if (!IsRuntimeGeometryReady) BuildRuntimeGrid();
+        if (!Application.isPlaying) return;
+        UpdateHoveredCell();
+        ProcessTerraformInput();
     }
 
     protected void OnDestroy()
     {
+        UnsubscribeTerraform();
         ReleaseRuntimeGrid();
     }
 
     void ResolveReferences()
     {
         if (_grid == null) _grid = GetComponent<WorldGridService>();
+        if (_terrain == null) _terrain = GetComponent<WorldChunkTerrain>();
         if (_debugCamera == null) _debugCamera = Camera.main;
+    }
+
+    void SubscribeTerraform()
+    {
+        if (_grid == null) return;
+        _grid.Terraform.Changed -= OnTerraformChanged;
+        _grid.Terraform.Changed += OnTerraformChanged;
+    }
+
+    void UnsubscribeTerraform()
+    {
+        if (_grid == null) return;
+        _grid.Terraform.Changed -= OnTerraformChanged;
+    }
+
+    void OnTerraformChanged(WorldTerraformEditResult result)
+    {
+        _lastTerraformResult = result;
+        ReleaseRuntimeGrid();
+    }
+
+    void UpdateHoveredCell()
+    {
+        ResolveReferences();
+        _hasHoveredCell = false;
+        if (_debugCamera == null) return;
+
+        Ray ray = _debugCamera.ScreenPointToRay(Input.mousePosition);
+        Vector3 pointerWorld;
+        if (_terrain != null && _terrain.TerrainCollider != null &&
+            _terrain.TerrainCollider.Raycast(ray, out RaycastHit terrainHit, 500f))
+        {
+            pointerWorld = terrainHit.point;
+        }
+        else
+        {
+            var plane = new Plane(Vector3.up, _grid.Definition.WorldOrigin);
+            if (!plane.Raycast(ray, out float distance)) return;
+            pointerWorld = ray.GetPoint(distance);
+        }
+
+        _hasHoveredCell = _grid.WorldToCell(pointerWorld, out _hoveredCell);
+    }
+
+    void ProcessTerraformInput()
+    {
+        if (Input.GetMouseButtonDown(0) && _hasHoveredCell)
+            TrySelectCell(_hoveredCell);
+        if (Input.GetKeyDown(KeyCode.R)) RaiseSelected();
+        if (Input.GetKeyDown(KeyCode.F)) LowerSelected();
+        if (Input.GetKeyDown(KeyCode.Z)) UndoLastTerraform();
+    }
+
+    public bool TrySelectCell(Vector2Int coordinate)
+    {
+        if (_grid == null || !_grid.IsValidCell(coordinate)) return false;
+        _selectedCell = coordinate;
+        _hasSelectedCell = true;
+        return true;
+    }
+
+    public WorldTerraformEditResult RaiseSelected()
+    {
+        if (!_hasSelectedCell)
+            return StoreNoSelectionResult();
+        _lastTerraformResult = _grid.Terraform.Raise(_selectedCell);
+        return _lastTerraformResult;
+    }
+
+    public WorldTerraformEditResult LowerSelected()
+    {
+        if (!_hasSelectedCell)
+            return StoreNoSelectionResult();
+        _lastTerraformResult = _grid.Terraform.Lower(_selectedCell);
+        return _lastTerraformResult;
+    }
+
+    public WorldTerraformEditResult UndoLastTerraform()
+    {
+        _lastTerraformResult = _grid.Terraform.UndoLast();
+        return _lastTerraformResult;
+    }
+
+    WorldTerraformEditResult StoreNoSelectionResult()
+    {
+        _lastTerraformResult = new WorldTerraformEditResult(
+            false,
+            WorldTerraformFailure.NoSelection,
+            default,
+            0,
+            0,
+            _grid != null ? _grid.Terraform.Revision : 0,
+            Array.Empty<Vector2Int>());
+        return _lastTerraformResult;
     }
 
     void BuildRuntimeGrid()
@@ -474,46 +847,33 @@ public class WorldGridDebugViewBase : MonoBehaviour
 
         WorldGridDefinition definition = _grid.Definition;
         string pointerText = "Pointer: outside grid";
-        if (_debugCamera != null)
+        if (_hasHoveredCell &&
+            _grid.TryGetCell(_hoveredCell, out WorldCellData hovered) &&
+            _grid.CellToChunk(_hoveredCell, out Vector2Int hoveredChunk))
         {
-            Vector2 guiMouse = Event.current.mousePosition;
-            var screenMouse = new Vector3(guiMouse.x, Screen.height - guiMouse.y, 0f);
-            Ray ray = _debugCamera.ScreenPointToRay(screenMouse);
-            Vector3 pointerWorld = default;
-            bool hasPointerWorld = false;
-            WorldChunkTerrain terrain = GetComponent<WorldChunkTerrain>();
-            if (terrain != null && terrain.TerrainCollider != null &&
-                terrain.TerrainCollider.Raycast(ray, out RaycastHit terrainHit, 500f))
-            {
-                pointerWorld = terrainHit.point;
-                hasPointerWorld = true;
-            }
-            else
-            {
-                var plane = new Plane(Vector3.up, definition.WorldOrigin);
-                if (plane.Raycast(ray, out float distance))
-                {
-                    pointerWorld = ray.GetPoint(distance);
-                    hasPointerWorld = true;
-                }
-            }
-
-            if (hasPointerWorld &&
-                _grid.WorldToCell(pointerWorld, out Vector2Int coordinate) &&
-                _grid.TryGetCell(coordinate, out WorldCellData cell) &&
-                _grid.CellToChunk(coordinate, out Vector2Int chunk))
-            {
-                pointerText = $"Pointer cell ({coordinate.x},{coordinate.y})  elevation {cell.ElevationLevel}  chunk ({chunk.x},{chunk.y})";
-            }
+            pointerText = $"Pointer ({_hoveredCell.x},{_hoveredCell.y})  level {hovered.ElevationLevel}  chunk ({hoveredChunk.x},{hoveredChunk.y})";
         }
 
-        GUILayout.BeginArea(new Rect(18f, 18f, 430f, 116f), _panelStyle);
-        GUILayout.Label(_grid.BootstrapProfile == WorldGridBootstrapProfile.World002Terraces
-            ? "WORLD-002  STEPPED CHUNK TERRAIN"
-            : "WORLD-001  READ-ONLY WORLD CELL GRID");
+        string selectionText = "Selected: none — left click a cell";
+        if (_hasSelectedCell && _grid.TryGetCell(_selectedCell, out WorldCellData selected))
+        {
+            selectionText = $"Selected ({_selectedCell.x},{_selectedCell.y})  level {selected.ElevationLevel}" +
+                            (_grid.IsTerraformProtected(_selectedCell) ? "  PROTECTED" : string.Empty);
+        }
+
+        string resultText = _lastTerraformResult.Succeeded
+            ? $"Applied {_lastTerraformResult.PreviousElevationLevel}→{_lastTerraformResult.CurrentElevationLevel}  revision {_lastTerraformResult.Revision}"
+            : _lastTerraformResult.Failure != WorldTerraformFailure.None
+                ? $"Edit blocked: {_lastTerraformResult.Failure}"
+                : "R raise  |  F lower  |  Z undo";
+
+        GUILayout.BeginArea(new Rect(18f, 18f, 470f, 164f), _panelStyle);
+        GUILayout.Label("WORLD-003  SINGLE-CELL TERRAFORMING");
         GUILayout.Label($"{definition.Width}×{definition.Height} cells = {_grid.TotalCellCount}  |  cell {definition.CellSize:0.##}m  |  chunk {definition.ChunkSize}×{definition.ChunkSize}");
         GUILayout.Label($"Origin = cell (0,0) center {definition.WorldOrigin}  |  elevation {definition.MinElevationLevel}..{definition.MaxElevationLevel}");
         GUILayout.Label(pointerText);
+        GUILayout.Label(selectionText);
+        GUILayout.Label(resultText);
         GUILayout.EndArea();
 
         DrawCoordinateLabels(definition);

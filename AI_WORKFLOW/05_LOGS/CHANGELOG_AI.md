@@ -937,3 +937,12 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - WORLD-001 D3D11 회귀와 Runtime/Editor compile이 오류 0으로 통과했고 blocking Console 0, 신규 crash 0이다.
 - `WorldSandbox`만 Editor API로 갱신했으며 Prototype_FirstDay/MainGame, Save schema, Packages, ProjectSettings는 변경하지 않았다.
 - 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_002_COMPLETE`다.
+
+## 2026-08-06 — Codex — WORLD-003 Single-Cell Raise/Lower Terraforming (DONE)
+
+- 원자적 `WorldTerraformService`, typed failure, `(0,0)` 보호 셀, level 0~6 clamp와 1단계 undo를 추가했다.
+- dirty Chunk resolver는 소유 Chunk 및 cardinal seam 공유 이웃만 반환한다. x=15/16 합성 경계와 내부 셀 범위를 검증했다.
+- `WorldChunkTerrain`이 성공/undo 이벤트를 받아 visual mesh와 `MeshCollider`를 각각 정확히 한 번 갱신한다. 인접 cliff mask와 collider raycast가 편집 높이를 따른다.
+- WorldSandbox debug에 좌클릭 선택, `R/F` 높이 변경, `Z` undo와 상태 overlay를 연결했다.
+- WORLD-003 D3D11 Edit/Play 및 WORLD-002·001 회귀, Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0이다.
+- scene/Save schema/Packages/ProjectSettings는 변경하지 않았고 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_003_COMPLETE`다.

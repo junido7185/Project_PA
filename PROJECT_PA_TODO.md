@@ -1510,3 +1510,16 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 선택 캡처는 실행하지 않고 `CAPTURE_EVIDENCE_DEBT`로 기록.
 - [x] 최종 상태 `WORLD_002_COMPLETE`.
 - [ ] 다음 단일 티켓: WORLD-003 Single-Cell Raise/Lower Terraforming. 생성기·저장·NavMesh·건물/상점 통합은 아직 시작하지 않는다.
+
+## WORLD-003 Single-Cell Raise/Lower Terraforming — 2026-08-06
+
+- [x] 좌클릭 셀 선택, `R` 한 level 상승, `F` 한 level 하강, `Z` 마지막 성공 편집 1단계 undo.
+- [x] `(0,0)` 보호, out-of-bounds, level 0/6 clamp, no-undo typed failure와 무변경 원자성.
+- [x] 성공 편집에서 elevation만 변경하고 ground/water/path/occupancy 보존.
+- [x] 내부 셀은 소유 Chunk만, x=15/16 seam 셀은 양쪽 Chunk만 dirty 처리.
+- [x] 인접 cliff mask와 visual/collider mesh를 성공/undo마다 정확히 1회 갱신.
+- [x] 편집 셀 top에 대한 `MeshCollider` raycast와 visual/collider bounds 일치.
+- [x] D3D11 WORLD-003, WORLD-002·001 회귀, Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0.
+- [x] scene/Save schema/Packages/ProjectSettings 무변경, 선택 캡처 `CAPTURE_EVIDENCE_DEBT`.
+- [x] 최종 상태 `WORLD_003_COMPLETE`.
+- [ ] 다음 단일 티켓: WORLD-004 Ground/Path Paint and Water Cell Prototype. save/building/NPC/NavMesh는 시작하지 않는다.
