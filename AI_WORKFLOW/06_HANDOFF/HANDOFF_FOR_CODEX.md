@@ -370,3 +370,13 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **증거:** `Logs/WORLD006_Validation.log`에서 128 seed x 2, unique checksum 128, land 44.9~58.2%, 1,599ms, anchors/connectivity/resources 및 D3D11 64-chunk 렌더 PASS. `WORLD006_WORLD005_Regression.log`~`WORLD006_WORLD001_Regression.log` 모두 `FINISHED_PASS`다.
 - **안전:** Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0. Prototype_FirstDay/MainGame, prefab, Save schema, Packages, ProjectSettings diff 0. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - **다음 활성 ticket:** WORLD-006 로컬 commit 뒤 preapproved `WORLD-006B Movable Shop Furniture`만 시작한다. World persistence와 NavMesh는 아직 시작하지 않는다.
+
+## 2026-08-10 WORLD-007 World Persistence — COMPLETE
+
+- **기준:** `milestone/world-alpha-70@a8e760ed2d17d41b9ff8f43781aaf2370b4b9acc`. 사용자의 M70 연속 승인과 로컬 ticket commit 허용은 유지되며 push/rebase/reset-hard/clean은 금지다.
+- **스키마:** 현재 v11. v10 이하는 `LegacyFixed`로만 이행하며 기존 absolute building/placeable을 procedural payload로 자동 변환하지 않는다.
+- **절차 월드:** seed/generationVersion에서 base를 재생성하고 height/ground/path/water sparse delta를 적용한다. B09 stable instance와 occupancy, `shop.interior` 가구, generated-resource state, safe-player 위치를 복원한다.
+- **원자성:** definition/version/범위/중복/불변식/지원 building/resource key를 전부 preflight한 뒤 live world에 적용한다. 같은 payload를 두 번 복원해도 건물과 가구가 중복되지 않는다.
+- **증거:** `WORLD007_Validation_Pass.log`, `WORLD007_SaveRoundTrip_Regression.log`, `WORLD007_WORLD004_Regression.log`, `WORLD007_WORLD005_Regression.log`, `WORLD007_WORLD006_Regression.log` 모두 PASS. compile 오류·blocking Console·신규 crash는 0이다.
+- **보호 상태:** Scene/Prefab/Packages/ProjectSettings diff 0. LocalJson repository의 crash-safe temp/backup write, 구 validator 세 곳의 v10 고정 assertion, 캡처는 후속 부채다.
+- **다음 활성 ticket:** 승인된 WORLD-007 로컬 ticket commit과 BUG recovery 기록 분리 commit 뒤 `WORLD-008 Reachability and Navigation Prototype`만 시작한다.

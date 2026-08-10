@@ -985,3 +985,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - InteriorCustomer, SaveRoundTrip, FinalDemoRoute 회귀와 Runtime/Editor compile이 PASS했고 blocking Console 및 신규 crash는 0이다.
 - Prototype_FirstDay는 read-only, 나머지 Scene/Prefab/Save schema/Packages/ProjectSettings는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 승인된 로컬 ticket commit 뒤 WORLD-007로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.
+
+## 2026-08-10 — Codex — WORLD-007 World Persistence (DONE)
+
+- 저장 스키마를 additive v11로 확장하고 v10 이하를 `LegacyFixed`로 안전하게 이행했다. 기존 절대 건물/placeable 데이터는 절차 월드 record로 자동 변환하지 않는다.
+- seed/generationVersion, sparse terrain delta, stable B09, 상점 가구 투영, 생성 자원 상태와 safe-player 위치를 저장·복원하는 `WorldPersistenceService`를 추가했다.
+- 복원 전 전체 검증, 실제 building placement 권위를 통한 occupancy 재구축, 반복 load 중복 방지와 손상 payload no-mutation 계약을 구현했다.
+- dry-cell 높이 편집의 water-surface sentinel 불변식을 수정했다. validator fixture 디렉터리와 이 불변식 복구 기록은 `BUG_LOG.md`에서 RESOLVED로 닫았다.
+- WORLD-007 D3D11과 SaveRoundTrip/WORLD-004/005/006 회귀, Runtime/Editor compile이 PASS했고 blocking Console 및 신규 crash는 0이다.
+- Scene/Prefab/Packages/ProjectSettings는 무변경이다. 캡처와 crash-safe temp/backup JSON write는 비차단 부채로 유지한다.
+- 승인된 로컬 ticket commit과 recovery 문서 commit 뒤 WORLD-008로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.

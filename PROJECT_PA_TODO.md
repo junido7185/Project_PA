@@ -1583,3 +1583,18 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 최종 상태 `WORLD_006B_COMPLETE`.
 - [ ] 승인된 WORLD-006B 로컬 ticket commit 생성.
 - [ ] 다음 단일 티켓: `WORLD-007 World Persistence` — seed/generationVersion/sparse terrain/building/furniture/occupancy/safe player round-trip.
+
+## WORLD-007 World Persistence
+
+- [x] additive save schema v11과 v10 `LegacyFixed` 무손실 이행.
+- [x] seed/generationVersion 및 높이·지면·길·물 sparse delta round-trip.
+- [x] B09 stable record, 실제 배치 권위를 통한 점유 재구축, 중복 복원 방지.
+- [x] `shop.interior` 가구 투영, stable generated-resource 상태, 안전한 플레이어 위치 복원.
+- [x] out-of-range delta와 누락 generationVersion을 live mutation 전에 거부.
+- [x] Runtime/Editor compile, WORLD-007 D3D11, SaveRoundTrip, WORLD-004/005/006 회귀 PASS; blocking Console/crash 0.
+- [x] Scene/Prefab/Packages/ProjectSettings 무변경, 캡처 `CAPTURE_EVIDENCE_DEBT`.
+- [x] 최종 상태 `WORLD_007_COMPLETE`.
+- [ ] 후속 저장 부채: temp/backup 기반 crash-safe JSON write와 관련 recovery 검증.
+- [ ] 후속 회귀 부채: v10을 하드코딩한 Mining/Outdoor/ShopCustomization validator를 각 담당 티켓에서 v11 계약으로 갱신.
+- [ ] 승인된 WORLD-007 로컬 ticket commit과 별도 recovery 기록 commit 생성.
+- [ ] 다음 단일 티켓: `WORLD-008 Reachability and Navigation Prototype`.

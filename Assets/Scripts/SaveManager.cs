@@ -22,7 +22,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 10;
+    private const int CurrentSaveVersion = WorldPersistenceMigration.AdditiveWorldSaveVersion;
 
     void Awake()
     {
@@ -122,6 +122,14 @@ public class SaveManager : MonoBehaviour
         if (outdoorPlacement != null && outdoorPlacement.IsReady)
             outdoorPlacement.WriteSaveFields(data);
 
+        // WORLD-007 — procedural world state is additive. Legacy scenes emit an
+        // explicit LegacyFixed marker and retain their existing absolute records.
+        var worldPersistence = WorldPersistenceService.Instance
+            ?? FindFirstObjectByType<WorldPersistenceService>();
+        data.worldState = worldPersistence != null && worldPersistence.IsProceduralActive
+            ? worldPersistence.CaptureState(data.playerPosition, data.placeables)
+            : WorldPersistenceMigration.CreateLegacyFixed();
+
         // 5. 감사 시스템
         data.lastAuditDay = AuditService.Instance != null ? AuditService.Instance.LastAuditDay : 0;
 
@@ -145,8 +153,6 @@ public class SaveManager : MonoBehaviour
         // 버전 스탬프
         data.version = CurrentSaveVersion;
 
-        data.version = CurrentSaveVersion;
-
         string json = JsonUtility.ToJson(data, true);
         await _repository.SaveAsync(SaveKey, json);
         Debug.Log($"💾 저장 완료 (건물 {data.buildings.Count}개, 인벤토리 {data.inventorySlots.Count}칸, 핫바 {data.hotbarSlots.Count}칸, 진열대 {data.shopSlots.Count}칸)");
@@ -161,13 +167,45 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        SaveData data = JsonUtility.FromJson<SaveData>(json);
+        SaveData data;
+        try
+        {
+            data = JsonUtility.FromJson<SaveData>(json);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[SaveManager] 손상된 JSON을 적용하지 않았습니다: {ex.Message}");
+            return;
+        }
+        if (data == null || data.version > CurrentSaveVersion)
+        {
+            Debug.LogWarning("[SaveManager] 지원하지 않거나 비어 있는 저장 데이터를 적용하지 않았습니다.");
+            return;
+        }
 
         // 버전 마이그레이션
         if (data.version < CurrentSaveVersion)
         {
             data = MigrateSaveData(data);
             Debug.Log($"💾 세이브 마이그레이션 완료: v{data.version}");
+        }
+
+        Vector3 restoredPlayerPosition = data.playerPosition;
+        if (data.worldState != null &&
+            data.worldState.worldMode == WorldPersistenceMigration.ProceduralMode)
+        {
+            var worldPersistence = WorldPersistenceService.Instance
+                ?? FindFirstObjectByType<WorldPersistenceService>();
+            string worldReason = "WorldPersistenceService unavailable.";
+            List<PlaceableSaveData> restoredFurniture = null;
+            if (worldPersistence == null ||
+                !worldPersistence.TryRestore(data.worldState, out restoredPlayerPosition,
+                    out restoredFurniture, out worldReason))
+            {
+                Debug.LogWarning($"[SaveManager] 절차 월드 저장을 적용하지 않았습니다: {worldReason}");
+                return;
+            }
+            data.placeables = restoredFurniture;
         }
 
         // 1. 플레이어 복구 — 돈은 EconomyService 의 단일 경로로만 세팅한다.
@@ -222,7 +260,7 @@ public class SaveManager : MonoBehaviour
         {
             CharacterController cc = player.GetComponent<CharacterController>();
             if (cc != null) cc.enabled = false;
-            player.transform.position = data.playerPosition;
+            player.transform.position = restoredPlayerPosition;
             if (cc != null) cc.enabled = true;
         }
 
@@ -436,6 +474,14 @@ public class SaveManager : MonoBehaviour
             if (data.placeables == null) data.placeables = new List<PlaceableSaveData>();
             data.version = 10;
             Debug.Log("[SaveManager] Migration v9->v10: shop customization placement fields added.");
+        }
+
+        // v10 -> v11: additive procedural world payload. Existing absolute
+        // buildings/placeables remain untouched and are explicitly LegacyFixed.
+        if (data.version < WorldPersistenceMigration.AdditiveWorldSaveVersion)
+        {
+            WorldPersistenceMigration.UpgradeV10ToV11(data);
+            Debug.Log("[SaveManager] Migration v10->v11: additive world state added as LegacyFixed.");
         }
 
         return data;

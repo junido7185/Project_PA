@@ -2707,3 +2707,24 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - Prototype_FirstDay는 read-only로 열고 저장하지 않았다. WorldSandbox/MainGame/Prefab/SaveData/Packages/ProjectSettings diff는 0이다.
 - 캡처는 수행하지 않아 `CAPTURE_EVIDENCE_DEBT`지만 기능 Gate를 차단하지 않는다.
 - 최종 상태 `WORLD_006B_COMPLETE`. 승인된 로컬 commit 뒤 WORLD-007로 자동 전환한다.
+
+## 2026-08-10 — WORLD-007 World Persistence
+
+### 구현
+
+- `SaveData` v11에 `LegacyFixed`/`Procedural` world mode와 seed/generationVersion, sparse terrain delta, building, shop furniture, resource, safe-player DTO를 additive로 추가했다.
+- `WorldPersistenceService`가 절차 base 재생성, 전체 preflight, terrain delta, 실제 B09 placement/occupancy, 가구·자원·플레이어 상태 복원을 담당한다. 같은 payload의 반복 복원은 중복 인스턴스를 만들지 않는다.
+- v10 payload는 기존 절대 데이터 그대로 `LegacyFixed`로 로드된다. 손상된 절차 payload는 legacy 경제·시간·플레이어 상태까지 일부 적용하기 전에 중단한다.
+- dry terraform 높이 변경 시 비수면 sentinel도 동기화하도록 기존 cell 불변식을 바로잡았다.
+
+### 검증
+
+- `Logs/WORLD007_Validation_Pass.log`: v10 migration, v11 JSON/repository, 128×128 seed, sparse delta 4개, B09/occupancy, 가구, 자원, safe player, duplicate 방지, corrupt-data no-mutation PASS.
+- `Logs/WORLD007_SaveRoundTrip_Regression.log`, `WORLD007_WORLD004_Regression.log`, `WORLD007_WORLD005_Regression.log`, `WORLD007_WORLD006_Regression.log` 모두 PASS했다.
+- Runtime/Editor compile 오류 0, blocking Console Error/Exception/Assert 0, 신규 crash 0이다. 기존 CS8785/CS0414 경고만 유지한다.
+
+### 판정
+
+- Scene/Prefab/Packages/ProjectSettings는 변경하지 않았다. 기존 LocalJson repository의 crash-safe temp/backup write는 별도 부채다.
+- 캡처는 자동 상태 검증으로 대체해 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 상태 `WORLD_007_COMPLETE`. 승인된 로컬 ticket commit과 별도 BUG recovery 문서 commit 뒤 WORLD-008로 자동 전환한다.

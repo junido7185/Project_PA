@@ -2101,3 +2101,12 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 이동된 판매대에서 기존 전체 스택 판매 계약으로 146G가 EconomyService에 입금됐다. v10 `PlaceableSaveData`는 stable ID/zone/cell/rotation을 WORLD-007 입력으로 투영한다.
 - 전용 D3D11, InteriorCustomer, SaveRoundTrip, FinalDemoRoute 회귀가 PASS했다. compile 오류·blocking Console·신규 crash는 0이다.
 - Scene/Prefab/Save schema/Packages/ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 판정 `WORLD_006B_COMPLETE`다.
+
+## 2026-08-10 WORLD-007 World Persistence — COMPLETE
+
+- 저장 스키마를 additive v11로 올렸다. v10 이하는 `LegacyFixed`로만 이행하며 기존 절대 좌표 건물·placeable을 절차 월드 데이터로 임의 변환하지 않는다.
+- Procedural 월드는 seed/generationVersion, sparse terrain delta, B09 건물, 상점 가구 투영, 생성 자원 상태, 안전한 플레이어 위치를 저장·복원한다.
+- 전체 payload를 먼저 검증한 뒤 base world를 재생성하고 delta와 점유를 적용한다. 중복 복원은 인스턴스를 늘리지 않으며 손상 데이터는 live world 변경 전에 거부된다.
+- `WORLD007_Validation_Pass`, SaveRoundTrip, WORLD-004/005/006 회귀가 D3D11에서 PASS했다. compile 오류·blocking Console·신규 crash는 0이다.
+- Scene/Prefab/Packages/ProjectSettings는 변경하지 않았다. 로컬 JSON의 temp/backup 원자 저장과 구 validator의 v10 고정 assertion은 후속 부채다.
+- 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 판정 `WORLD_007_COMPLETE`, 다음 활성 티켓은 승인된 WORLD-008이다.

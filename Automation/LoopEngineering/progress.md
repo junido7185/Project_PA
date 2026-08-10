@@ -593,3 +593,14 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/WORLD006B_Validation_Pass.log`, InteriorCustomer, SaveRoundTrip and FinalDemoRoute all passed. Runtime/Editor compile errors, blocking Console errors and new crashes are zero; existing CS8785/CS0414 remain.
 - Prototype_FirstDay was opened read-only and remained clean. WorldSandbox, MainGame, prefabs, SaveData, Packages and ProjectSettings are unchanged; capture remains nonblocking `CAPTURE_EVIDENCE_DEBT`.
 - Final state: `WORLD_006B_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-007 World Persistence`.
+
+## 2026-08-10 — WORLD-007 World Persistence
+
+- Advanced the additive save schema to v11. Existing v10 payloads migrate only to `LegacyFixed`; absolute legacy buildings and placeables are not silently converted into procedural records.
+- Added `worldSeed` plus `generationVersion`, sparse modified terrain cells, stable B09 building records, `shop.interior` furniture projection, stable generated-resource state and a safe player position/cell.
+- Restore performs complete preflight before live mutation, regenerates the deterministic base, applies four terrain delta kinds, derives building occupancy through the placement authority and prevents duplicate building/furniture restoration.
+- Corrupt out-of-range deltas and missing generation versions fail without partial world mutation. The existing local JSON repository remains authoritative; crash-safe temp/backup writing is separate debt.
+- Fixed the dry-cell terraform invariant so a height edit keeps its non-water surface sentinel aligned. Both bounded validator recoveries are closed in `BUG_LOG.md`.
+- `Logs/WORLD007_Validation_Pass.log` and SaveRoundTrip/WORLD-004/WORLD-005/WORLD-006 regressions passed under D3D11. Runtime/Editor compile errors, blocking Console errors and new crashes are zero.
+- No Scene, Prefab, Package or ProjectSettings content changed. Capture remains nonblocking `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `WORLD_007_COMPLETE`. After the approved local ticket and recovery-record commits, activate preapproved `WORLD-008 Reachability and Navigation Prototype`.

@@ -276,7 +276,7 @@ public readonly struct WorldCellData
             elevationLevel,
             GroundType,
             PathType,
-            WaterSurfaceLevel,
+            HasWater ? WaterSurfaceLevel : elevationLevel,
             WaterDepthLevels,
             Occupancy);
     }
@@ -622,6 +622,54 @@ public sealed class WorldGridService : MonoBehaviour
 
         for (int i = 0; i < indices.Length; i++)
             _cells[indices[i]] = replacementCells[i];
+        return true;
+    }
+
+    // WORLD-007 restore seam. It remains internal so ordinary consumers still see
+    // a read-only grid and all player edits continue through bounded transactions.
+    // The complete candidate is validated before any live array reference changes.
+    internal bool TryRestoreSnapshot(
+        WorldGridDefinition definition,
+        IReadOnlyList<WorldCellData> cells)
+    {
+        if (definition == null || cells == null ||
+            cells.Count != definition.TotalCellCount)
+        {
+            return false;
+        }
+
+        var restored = new WorldCellData[cells.Count];
+        for (int index = 0; index < cells.Count; index++)
+        {
+            WorldCellData cell = cells[index];
+            var expectedCoordinate = new Vector2Int(
+                index % definition.Width,
+                index / definition.Width);
+            if (cell.Coordinate != expectedCoordinate ||
+                cell.ElevationLevel < definition.MinElevationLevel ||
+                cell.ElevationLevel > definition.MaxElevationLevel ||
+                !Enum.IsDefined(typeof(WorldGroundType), cell.GroundType) ||
+                !Enum.IsDefined(typeof(WorldPathType), cell.PathType) ||
+                (cell.Occupancy != WorldCellOccupancy.Empty &&
+                 cell.Occupancy != WorldCellOccupancy.Occupied) ||
+                cell.WaterDepthLevels < 0 ||
+                (!cell.HasWater && cell.WaterSurfaceLevel != cell.ElevationLevel) ||
+                (cell.HasWater &&
+                 (cell.WaterSurfaceLevel <= cell.ElevationLevel ||
+                  cell.WaterSurfaceLevel > definition.MaxElevationLevel ||
+                  cell.HasPath)))
+            {
+                return false;
+            }
+            restored[index] = cell;
+        }
+
+        _definition = definition;
+        _cells = restored;
+        _readOnlyCells = Array.AsReadOnly(_cells);
+        _terraform = null;
+        _surfaceEditor = null;
+        _initialized = true;
         return true;
     }
 

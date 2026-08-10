@@ -1,12 +1,13 @@
-# SAVE_SCHEMA — Project P.A. 저장 v10 현황과 v11 판매 통계 설계
+# SAVE_SCHEMA — Project P.A. 저장 v11 월드 상태와 후속 판매 통계 설계
 
-갱신: 2026-07-17 (Codex)
+갱신: 2026-08-10 (Codex, WORLD-007)
 근거: `Assets/Scripts/SaveData.cs`, `SaveManager.cs`, `Services/ISaveRepository.cs`, `Services/LocalJsonSaveRepository.cs`, `ShopCustomizationController.cs`
 
 ## 현재 규약
 
-- 현재 버전: `SaveManager.CurrentSaveVersion = 10`
-- 다음 제안 버전: `v11` 판매 통계 추가 확장 — **Task 054 설계만 완료, 미구현**
+- 현재 버전: `SaveManager.CurrentSaveVersion = 11`
+- v11 소유 기능: additive `WorldStateSaveData`; 기존 v10은 `LegacyFixed`로만 승격
+- 다음 제안 버전: `v12` 판매 통계 추가 확장 — **Task 054 설계만 완료, 미구현**
 - 키: `savegame`
 - 로컬 경로: `Application.persistentDataPath/savegame.json`
 - 형식: Unity `JsonUtility` JSON
@@ -18,7 +19,7 @@
 
 | 영역 | 필드 | 저장·복원 경로 |
 |---|---|---|
-| 버전 | `version` | 현재 저장 직전 v10 스탬프, 로드 시 `MigrateSaveData` |
+| 버전 | `version` | 현재 저장 직전 v11 스탬프, 로드 시 `MigrateSaveData` |
 | 경제 | `money`, `cumulativeRevenue` | `EconomyService.ForceSet*` |
 | 플레이어 | `playerPosition` | CharacterController를 잠시 끄고 복원 |
 | Day 1 프로필 | `playerName`, `selectedMapId`, `firstDayPrototypeStage` | `PlayableDayScenarioController` |
@@ -35,6 +36,7 @@
 | 마을 변화 | v9 `villageCulture*` 6필드 | pending/active 시각 변화 |
 | 배치 스타터 | v10 `placementStarterGranted` | 기본 작업대 설계도 중복 지급 방지 |
 | 구역 배치 | v10 `placeables` | 구역/정의/인스턴스/셀/회전/회수/기능 상태 |
+| 절차 월드 | v11 `worldState` | mode/seed/generationVersion/sparse cell/building/furniture/resource/safe player |
 
 ## v10 배치 DTO
 
@@ -94,15 +96,33 @@ P5 상점 테마는 새 최상위 필드 없이 특수 레코드 하나를 사�
 | v7→v8 | 낮 채집 완료 상태 |
 | v8→v9 | 마을 변화 pending/active 상태 |
 | v9→v10 | 구역 배치 리스트와 스타터 지급 플래그 |
-| v10→v11 | 판매 통계 리스트 4종 — **Task 054 제안, Task 055 승인 전 미구현** |
+| v10→v11 | additive 절차 월드 payload; 기존 저장은 `LegacyFixed`, 절대 건물/가구 자동 변환 없음 |
+| v11→v12 | 판매 통계 리스트 4종 — **Task 054 제안, Task 055 승인 전 미구현** |
 
 v9 이하 세이브의 빈 `placeables`는 오류가 아니라 “현재 제작된 기본 상점 배치를 채택”한다는 뜻이다.
 
-## Task 054 — v11 판매 통계 추가 확장 설계
+## WORLD-007 — v11 additive 월드 상태
+
+`worldState.worldMode`는 `LegacyFixed` 또는 `Procedural`이다. v10 이하 fixture는 돈·시간·인벤토리·건물·`placeables`를 그대로 둔 채 빈 `LegacyFixed` payload만 받고 v11이 된다. 기존 절대 좌표 데이터를 seed 월드로 추정 변환하지 않는다.
+
+`Procedural` payload는 다음만 저장한다.
+
+- base identity: `worldSeed`, `generationVersion`, width/height/cell/chunk 정의
+- `modifiedCells`: base와 다른 elevation/ground/path/water만 저장하며 occupancy는 제외
+- `placedBuildings`: WORLD-007 MVP B09 stable instance/definition/anchor/quarter-turn 1개
+- `shopFurniture`: 기존 `placeables`의 `shop.interior` projection과 stored item 상태
+- `resourceStates`: generator stable spawn key의 consumed/respawn day
+- 안전 플레이어 셀과 셀 중심 위치
+
+로드는 payload 전체를 먼저 검증한다. generationVersion 누락/불일치, 정의 불일치, 중복·범위 밖 cell, 전체 절반을 넘는 비-sparse delta, 알 수 없는 건물/자원/가구 ID는 live world를 바꾸기 전에 거부한다. base를 seed로 재생성하고 delta를 적용한 뒤 building occupancy를 파생 재구축한다. 같은 payload를 두 번 적용해도 runtime building은 하나다.
+
+현재 `LocalJsonSaveRepository` 파일 쓰기 자체는 기존 동기 단일 파일 구현을 유지한다. WORLD-007은 손상 JSON과 손상 world payload를 적용하지 않는 fail-safe를 추가했으며, crash-safe temp/replace와 backup rotation은 별도 repository hardening 티켓이다.
+
+## Task 054 — v12 판매 통계 추가 확장 설계
 
 ### 버전 기준과 범위
 
-Task Queue의 원래 문구인 “v8→v9”와 “v9 판매 통계”는 작성 당시의 역사적 목표다. 현재 v9는 마을 변화 상태, v10은 상점 배치가 이미 사용 중이므로 같은 버전을 재사용하지 않는다. 판매 통계는 **현재 최신 v10에서 v11로 한 단계만 올리는 추가 확장**으로 구현해야 한다.
+Task Queue의 원래 문구인 “v8→v9”, “v9 판매 통계”, 이후 문서의 “v11 판매 통계”는 작성 당시의 역사적 목표다. 현재 v11은 WORLD-007 additive 월드 상태가 사용하므로 판매 통계 구현은 **v12 추가 확장**으로 재기준화해야 한다.
 
 이 설계가 보존하려는 플레이 경험은 다음 네 가지다.
 
@@ -211,7 +231,7 @@ public List<DailyTrendSnapshotSaveData> dailyTrendSnapshots = new();
 
 현재 Task 055의 오래된 허용 파일 목록은 `SaveData.cs`, `SaveManager.cs`만 적혀 있다. 그러나 `SalesLogManager`의 목록과 Dictionary는 private이며 안전한 복원 API가 없고, 명명 트렌드 런타임도 아직 없다. 따라서 Task 055 승인 요청 때 최소 추가 범위인 `SalesLogManager.cs`, 공용 명명 트렌드 소유자, 저장 왕복 검증기를 먼저 보고해야 한다. 이 범위를 승인받지 못하면 JSON 필드만 추가할 수 있을 뿐 실제 영속화 완료로 판정할 수 없다. reflection이나 `PlayerPrefs` 우회는 사용하지 않는다.
 
-### v10→v11 마이그레이션
+### v11→v12 마이그레이션
 
 기존 단계별 체인 뒤에 다음 한 단계만 추가한다.
 
@@ -228,7 +248,7 @@ if version < 11:
 
 v10 이하의 돈, `cumulativeRevenue`, ShopSlot 재고, v9 마을 변화 상태에서 과거 판매를 역산하지 않는다. 마이그레이션된 세이브는 “이전 통계 기록 없음”에서 시작하며 기존 경제·인벤토리·배치·문화 상태는 그대로 유지한다. 빈 신규 리스트는 오류가 아니며 UI는 0점 확정 대신 기록 부족 상태를 표시한다.
 
-### v11 저장·복원 순서
+### v12 저장·복원 순서
 
 저장 시에는 시간/일차를 먼저 캡처한 뒤 판매 상태 소유자들이 같은 일차 기준으로 네 리스트를 쓴다. 버전 스탬프는 모든 필드 작성 뒤 정확히 한 번 v11로 설정한다.
 
@@ -259,7 +279,7 @@ Task 055는 아래를 모두 통과해야 구현 완료다.
 9. 별도 v10 fixture를 로드해 v11 빈 통계로 마이그레이션되고 돈·누적 매출·시간·인벤토리·ShopSlot·v9 문화·v10 배치가 변하지 않음을 확인한다.
 10. 저장→로드→저장을 반복해 통계가 중복 증가하지 않으며 기존 FinalDemoRoute, DayNight, SaveRoundTrip, ShopCustomization/P5 회귀가 PASS한다.
 
-현재 여러 검증기가 `version == 10`을 명시하므로 승인된 구현에서는 관련 기대값과 fixture를 함께 v11로 갱신해야 한다. 단순 문자열 일괄 치환은 금지하고 각 검증기가 v10 마이그레이션 fixture인지 v11 최신 저장 검증인지 구분한다.
+WORLD-007은 핵심 `PA_SaveRoundTripValidator`를 v11 `LegacyFixed` 계약으로 갱신한다. Mining/OutdoorPlacement/ShopCustomization의 과거 `version == 10` assertion은 각 기능 회귀를 다시 실행하는 티켓에서 v11 `LegacyFixed` 또는 Procedural fixture인지 구분해 갱신해야 하며 단순 문자열 일괄 치환은 금지한다.
 
 ### Task 054 완료 경계
 
@@ -277,7 +297,7 @@ Task 055는 아래를 모두 통과해야 구현 완료다.
 
 ## 주의
 
-- `SaveGameAsync`의 연속된 `data.version = CurrentSaveVersion` 두 줄은 선행 상태이며 이번 작업에서 정리하지 않았다.
+- `SaveGameAsync`의 중복 version stamp는 WORLD-007에서 하나로 정리했다.
 - `ShopSlotSaveData.slotKey`는 기존 hierarchy 키다. 진열대 이동은 hierarchy를 바꾸지 않으므로 키가 안정적으로 유지된다.
 - 저장된 배치가 새 구역 규칙을 위반하면 무리하게 복원하지 않고 비활성 회수 상태로 격리하며 경고한다.
-- 현재 구현된 v10에서는 `SalesLogManager`의 전체 이력과 관광객 장기 상태가 여전히 저장 대상이 아니다. 위 v11 판매 통계는 승인 전 설계 상태다.
+- 현재 구현된 v11에서도 `SalesLogManager`의 전체 이력과 관광객 장기 상태는 저장 대상이 아니다. 위 v12 판매 통계는 승인 전 설계 상태다.

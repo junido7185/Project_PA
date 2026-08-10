@@ -65,6 +65,75 @@ public class SaveData
     // Zone-aware shop furniture customization. Added in v10.
     public bool placementStarterGranted = false;
     public List<PlaceableSaveData> placeables = new List<PlaceableSaveData>();
+
+    // Procedural world state. Added additively in v11; v10 and older saves migrate
+    // to LegacyFixed and keep their absolute buildings/placeables unchanged.
+    public WorldStateSaveData worldState = new WorldStateSaveData();
+}
+
+[System.Serializable]
+public class WorldStateSaveData
+{
+    public string worldMode = "LegacyFixed";
+    public long worldSeed = 0L;
+    public int generationVersion = 0;
+    public int widthCells = 0;
+    public int heightCells = 0;
+    public float cellSizeMeters = 0f;
+    public int chunkSizeCells = 0;
+    public List<WorldModifiedCellSaveData> modifiedCells = new List<WorldModifiedCellSaveData>();
+    public List<WorldPlacedBuildingSaveData> placedBuildings = new List<WorldPlacedBuildingSaveData>();
+    public List<WorldShopFurnitureSaveData> shopFurniture = new List<WorldShopFurnitureSaveData>();
+    public List<WorldResourceStateSaveData> resourceStates = new List<WorldResourceStateSaveData>();
+    public bool hasSafePlayerPosition = false;
+    public Vector3 safePlayerPosition;
+    public int safePlayerCellX = 0;
+    public int safePlayerCellZ = 0;
+}
+
+[System.Serializable]
+public class WorldModifiedCellSaveData
+{
+    public int x;
+    public int z;
+    public int elevationLevel;
+    public int groundType;
+    public int pathType;
+    public int waterSurfaceLevel;
+    public int waterDepthLevels;
+}
+
+[System.Serializable]
+public class WorldPlacedBuildingSaveData
+{
+    public string instanceId;
+    public string buildingId;
+    public int anchorX;
+    public int anchorZ;
+    public int rotationQuarterTurns;
+}
+
+[System.Serializable]
+public class WorldShopFurnitureSaveData
+{
+    public string zoneId;
+    public string definitionId;
+    public string instanceId;
+    public int gridX;
+    public int gridY;
+    public int rotationQuarterTurns;
+    public bool isFixed;
+    public bool recovered;
+    public string functionalState;
+    public List<PlaceableStoredItemSaveData> storedItems = new List<PlaceableStoredItemSaveData>();
+}
+
+[System.Serializable]
+public class WorldResourceStateSaveData
+{
+    public string spawnKey;
+    public bool consumed;
+    public int respawnDay;
 }
 
 // §4 FriendshipService 저장 DTO — FriendshipService.ForceSetPoints 로 복원한다.

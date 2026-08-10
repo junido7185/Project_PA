@@ -5,7 +5,7 @@
     "status": "in_progress",
     "branch": "milestone/world-alpha-70",
     "checkpointCommit": "23ceda6",
-    "completedTicketCommits": 7,
+    "completedTicketCommits": 8,
     "commitLimit": 12
   },
   "worldArchitectureApproval": {
@@ -40,23 +40,23 @@
     "localTicketCommitsAllowed": true,
     "pushAllowed": false
   },
-  "ticketId": "WORLD-006B",
+  "ticketId": "WORLD-007",
   "status": "completed",
-  "finalState": "WORLD_006B_COMPLETE",
-  "goal": "Adopt the existing shop.interior placement authority for movable sales furniture and prove move, rotate, cancellation rollback, ShopSlot function, customer access, protected route and persistence projection without creating a parallel system.",
+  "finalState": "WORLD_007_COMPLETE",
+  "goal": "Persist a generated world as generation identity plus sparse player deltas while preserving v10 saves as LegacyFixed and restoring terrain, building, furniture, resource and safe-player state without duplication or partial corrupted-data mutation.",
   "baseline": {
     "branch": "milestone/world-alpha-70",
-    "commit": "02a8ab36a4f7375a362df0c888fd64bbda8d3952",
+    "commit": "a8e760ed2d17d41b9ff8f43781aaf2370b4b9acc",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 12,
+    "dirtyPathCountAtStop": 16,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
     "mainGameChanged": false,
-    "saveAuthorityChanged": false,
+    "saveAuthorityChanged": true,
     "packagesChanged": false,
     "projectSettingsContentChanged": false
   },
@@ -65,24 +65,27 @@
     "editor": "PASS: Assembly-CSharp-Editor compiled with 0 errors; pre-existing CS8785 and CS0414 only"
   },
   "validators": {
-    "world006BLog": "Logs/WORLD006B_Validation_Pass.log",
-    "interiorCustomerRegressionLog": "Logs/WORLD006B_InteriorCustomer_Regression.log",
-    "saveRoundTripRegressionLog": "Logs/WORLD006B_SaveRoundTrip_Regression.log",
-    "finalDemoRouteRegressionLog": "Logs/WORLD006B_FinalDemoRoute_Regression.log",
+    "world007Log": "Logs/WORLD007_Validation_Pass.log",
+    "saveRoundTripRegressionLog": "Logs/WORLD007_SaveRoundTrip_Regression.log",
+    "world004RegressionLog": "Logs/WORLD007_WORLD004_Regression.log",
+    "world005RegressionLog": "Logs/WORLD007_WORLD005_Regression.log",
+    "world006RegressionLog": "Logs/WORLD007_WORLD006_Regression.log",
     "passed": [
       "Unity D3D11 Edit Mode and Play Mode",
-      "existing 2m shop.interior GridService authority reused",
-      "one authored ShopSlot sales display moves to cell 4,0 and rotates 270 degrees",
-      "protected entrance rejects movement atomically",
-      "closing an active move restores the exact authored starting transform",
-      "ShopSlot hierarchy, component, stock and display price survive movement",
-      "rotated customer approach cell is in bounds and has a complete NavMesh path",
-      "moved two-item display sells for 146G through EconomyService",
-      "entry-to-service protected route survives movement",
-      "stable v10 placeable projection records zone, instance, cell and rotation for WORLD-007",
-      "InteriorCustomer regression",
-      "SaveRoundTrip v10 regression",
-      "FinalDemoRoute 30G regression",
+      "v10 fixture migrates to v11 LegacyFixed without converting absolute records",
+      "JsonUtility preserves additive v11 and legacy placeables",
+      "seed regenerates the provisional 128x128 base world",
+      "four sparse deltas restore height, ground, path and water exactly",
+      "one B09 stable building restores transform, rotation and derived occupancy",
+      "shop furniture stable identity, cell and rotation restore",
+      "stable generated resource state restores",
+      "player resolves to a safe walkable start cell",
+      "same payload restored twice leaves one building and one furniture projection",
+      "out-of-range delta and missing generationVersion fail before live mutation",
+      "SaveRoundTrip v11 LegacyFixed regression",
+      "WORLD-004 surface regression",
+      "WORLD-005 building placement regression",
+      "WORLD-006 generation regression",
       "blocking Console Error/Exception/Assert 0"
     ]
   },
@@ -190,7 +193,7 @@
     "customerPathComplete": true,
     "protectedRoutePreserved": true,
     "cancelRestoresExactTransform": true,
-    "saveProjection": "existing v10 PlaceableSaveData; WORLD-007 integration-ready",
+    "saveProjection": "existing v10 PlaceableSaveData projected additively into v11 WorldStateSaveData",
     "parallelWorldFurnitureSystemCreated": false
   },
   "scene": {
@@ -204,22 +207,35 @@
     "addedToBuildSettings": false
   },
   "save": {
-    "schema": 10,
-    "schemaChanged": false,
-    "terraformPersistence": false
+    "schema": 11,
+    "schemaChanged": true,
+    "legacyMode": "v10 and older migrate to LegacyFixed without automatic conversion",
+    "proceduralBase": "worldSeed plus generationVersion",
+    "terrainPersistence": "sparse modified height, ground, path and water cells",
+    "buildingPersistence": "one stable B09 instance plus derived occupancy",
+    "shopFurniturePersistence": "shop.interior placeable projection",
+    "resourcePersistence": "stable spawn key state",
+    "safePlayerPosition": true,
+    "corruptPayloadSafeFail": true,
+    "duplicateRestorePrevention": true,
+    "repository": "existing LocalJsonSaveRepository; crash-safe temp/backup hardening remains separate"
   },
   "capture": {
     "attemptedThisTicket": false,
     "result": "CAPTURE_EVIDENCE_DEBT",
-    "reason": "Capture was intentionally skipped. Functional D3D11 evidence covered real UI move/cancel, ShopSlot sale, customer NavMesh access, protected path and persistence projection."
+    "reason": "Capture was intentionally skipped. Persistence correctness is proven by deterministic JSON/repository round-trip, cell/building/furniture/resource restoration, occupancy and safe-player assertions."
   },
   "changedPaths": [
+    "AI_WORKFLOW/03_TASKS/SAVE_SCHEMA.md",
     "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
-    "Assets/Editor/PA_WORLD006BShopFurnitureValidator.cs",
-    "Assets/Editor/PA_WORLD006BShopFurnitureValidator.cs.meta",
-    "Assets/Scripts/ShopCustomizationController.cs",
+    "Assets/Editor/PA_SaveRoundTripValidator.cs",
+    "Assets/Scripts/SaveData.cs",
+    "Assets/Scripts/SaveManager.cs",
+    "Assets/Scripts/World/WorldGridService.cs",
+    "Assets/Scripts/World/WorldPersistenceService.cs",
+    "Assets/Scripts/World/WorldPersistenceService.cs.meta",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
     "Docs/07_개발일지.md",
@@ -236,9 +252,11 @@
   "world006Completed": true,
   "world006BStarted": true,
   "world006BCompleted": true,
+  "world007Started": true,
+  "world007Completed": true,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-10",
   "stoppedAt": "2026-08-10",
-  "stopReason": "WORLD-006B passed its bounded gates; explicit M70 continuation approval allows WORLD-007 after the local ticket commit.",
-  "nextAction": "Create the verified WORLD-006B local commit, then activate preapproved WORLD-007 World Persistence without another approval request."
+  "stopReason": "WORLD-007 passed its bounded gates; explicit M70 continuation approval allows WORLD-008 after the local ticket and recovery-document commits.",
+  "nextAction": "Create the verified WORLD-007 local commit, commit the required BUG_LOG recovery record separately, then activate preapproved WORLD-008 Reachability and Navigation Prototype."
 }
