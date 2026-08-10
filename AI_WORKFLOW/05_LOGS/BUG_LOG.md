@@ -529,3 +529,19 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 원인: 실제 `ShopSlot.TryPurchaseByNpc`는 진열된 스택 전체를 한 번에 판매한다. 검증기는 2개 × 73G 중 한 개만 팔려 73G와 잔여 1개가 남는다고 잘못 가정했다.
 - 영향: 판매·경제·통계 기능은 정상 작동했고 EconomyService 잔액은 500G→646G로 증가했다. 실패는 validator assertion 하나뿐이며 씬·저장·패키지에는 영향이 없다.
 - 해결: 기존 스택 전체 판매 계약에 맞춰 146G 입금과 빈 슬롯을 검사한다. 이는 구현 수정이 아닌 명백한 validator 가정 정정이며, 해당 원인으로는 한 번만 재실행한다.
+
+## [RESOLVED] 2026-08-10 — WORLD-007 격리 repository fixture 디렉터리 누락
+
+- 증상: 첫 D3D11 WORLD-007 validator가 v10→v11, 128×128 seed, 4개 sparse edit, B09와 resource capture까지 통과한 뒤 `Logs/WorldPersistence/<timestamp>/world007.json` 쓰기에서 `DirectoryNotFoundException`으로 중단됐다.
+- 원인: custom-root `LocalJsonSaveRepository`는 전달된 root가 이미 존재한다는 기존 계약인데 validator가 timestamp 디렉터리를 만들지 않았다.
+- 영향: 격리 증거 파일이 생성되기 전의 fixture 실패다. 프로덕션 persistentDataPath, 저장 파일, live Scene/Prefab/Packages/ProjectSettings와 기존 사용자 저장에는 영향이 없고 crash도 없다.
+- 복구: validator가 custom repository를 만들기 직전에 해당 격리 디렉터리를 생성한다. 구현 저장 경로는 바꾸지 않으며 같은 validator를 한 번만 재실행한다.
+- 확인: `Logs/WORLD007_Validation_Pass.log`에서 격리 JSON 저장·로드와 전체 WORLD-007 검증이 PASS했다. 프로덕션 repository 계약 변경은 없다.
+
+## [RESOLVED] 2026-08-10 — WORLD-007 dry terraform waterSurface 불변식 불일치
+
+- 증상: repository JSON 왕복까지 통과한 두 번째 WORLD-007 실행에서 높이를 0→1로 올린 dry cell `(59,13)`이 `waterDepthLevels=0`, `waterSurfaceLevel=0`으로 저장되어 restore preflight에 거부됐다.
+- 원인: `WorldCellData.WithElevationLevel`이 dry cell에서도 이전 `WaterSurfaceLevel`을 복사했다. 기존 생성자와 snapshot 계약은 물 없는 셀의 `waterSurfaceLevel == elevationLevel`을 요구한다.
+- 영향: 잘못된 delta는 live world 적용 전에 거부되어 복원 상태나 사용자 저장 손상은 없다. 물 셀 terraform은 기존 preflight가 계속 차단한다.
+- 복구: dry cell의 높이를 바꿀 때만 water surface sentinel을 새 elevation과 동기화한다. 실제 물이 있는 셀은 기존 값을 유지하며, 이 원인으로 validator를 한 번만 재실행한다.
+- 확인: `Logs/WORLD007_Validation_Pass.log`에서 높이·지면·길·물 4개 sparse delta의 repository round-trip과 오염 payload 사전 거부가 PASS했다.
