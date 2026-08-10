@@ -337,3 +337,16 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - 검증 로그: `Logs/WORLD004_Validation.log`, `Logs/WORLD004_WORLD003_Regression.log`, `Logs/WORLD004_WORLD002_Regression.log`, `Logs/WORLD004_WORLD001_Regression.log`. 모두 Unity 6000.3.2f1 D3D11에서 PASS했고 blocking Console 0, 신규 crash 0이다.
 - Runtime/Editor compile 오류 0이며 기존 CS8785/CS0414 경고만 남는다. 세 Scene의 working blob은 HEAD와 동일하고 Prefab/Save/Packages/ProjectSettings diff는 없다.
 - 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`다. 최종 상태 `WORLD_004_COMPLETE`; Git add/commit/push 없이 정지했다. WORLD-005는 명시적 다음 지시 전 시작하지 않는다.
+
+## 2026-08-10 WORLD-005 Relocatable Building MVP — COMPLETE
+
+- **기준/승인:** `milestone/world-alpha-70@c23f4be`; 사용자가 M70의 WORLD-005~010 연속 bounded-ticket 실행과 로컬 ticket commit을 선승인했다. push/rebase/reset-hard/clean은 금지다.
+- **배치 권위:** `WorldBuildingPlacementService`만 WorldGrid occupancy를 쓴다. 기존 `GridService`, `OutdoorPlacementController`, `BuildManager`, `BuildingRegistry`는 수정하지 않았고 WorldSandbox에 복제하지 않았다.
+- **기존 에셋:** `B09_StorageShed` prefab/BuildingData를 수정 없이 사용한다. sidecar는 2m 셀 4x3 footprint와 회전하는 외부 entrance `(1,-1)`를 정의하며 실제 인스턴스는 `StorageBox`를 유지한다.
+- **플레이 경험:** 좌클릭으로 anchor를 선택하고 `B` 배치, `M` 이동, `Q/E` 회전, `Enter` 확정, `Escape` 취소한다. 실제 B09 renderer ghost가 valid/invalid 색과 typed 실패 이유를 표시한다.
+- **트랜잭션:** 물/길/보호/점유/범위 밖/부적합 지면/uneven footprint/blocked entrance는 무변경 실패다. 성공 move는 old/new footprint 합집합을 한 번에 commit하고 실패 move는 위치와 occupancy를 보존한다.
+- **셀 계약:** occupied cell은 non-walkable/non-farmable이며 terraforming과 surface edit가 `OccupiedCell`로 차단된다. save persistence는 WORLD-007 전까지 session-only다.
+- **씬:** WorldSandbox만 변경했다. authored root 3, placement service/controller 각 1, direct asset GUID 2, embedded MonoScript 0이다. Prototype_FirstDay/MainGame, prefab, Save schema, Packages, ProjectSettings는 diff 0이다.
+- **증거:** `Logs/WORLD005_Validation.log` 및 `WORLD005_WORLD004_Regression.log`, `WORLD005_WORLD003_Regression.log`, `WORLD005_WORLD002_Regression_Rerun.log`, `WORLD005_WORLD001_Regression.log`. 모두 Unity 6000.3.2f1 D3D11 `FINISHED_PASS`, blocking Console 0, 신규 crash 0이다.
+- **컴파일/캡처:** Runtime/Editor 오류 0, 기존 CS8785/CS0414만 남는다. 캡처는 `CAPTURE_EVIDENCE_DEBT`이며 기능 차단이 아니다.
+- **다음 활성 ticket:** 로컬 WORLD-005 commit 뒤 기존 backlog `WORLD-006 World Seed + Minimal Island Generator`만 활성화한다. 128x128은 provisional target이고 Save/NavMesh/gameplay integration은 아직 섞지 않는다.

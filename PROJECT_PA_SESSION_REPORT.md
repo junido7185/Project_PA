@@ -2638,3 +2638,27 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - Prototype_FirstDay, WorldSandbox, MainGame의 working blob은 `de1ada5`와 동일하다. Prefab, SaveData/SaveManager, Packages, ProjectSettings도 diff 0이다.
 - 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`로 남긴다. 최종 물 미감·색상은 M70 통합 사람 검토 대상이며 기능 차단이 아니다.
 - 최종 상태 `WORLD_004_COMPLETE`. Git add/commit/push는 하지 않았고 WORLD-005를 시작하지 않는다.
+
+## 2026-08-10 — WORLD-005 Relocatable Building MVP
+
+### 구현
+
+- 기존 `Assets/Prefabs/Buildings/B09_StorageShed.prefab`과 `Building_B09_StorageShed` 데이터를 읽기만 하고, 7m x 5.5m collider를 덮는 2m 셀 4x3 footprint 및 회전 entrance sidecar를 새 World placement 코드에 정의했다.
+- WorldGrid 내부에는 occupancy만 바꾸는 compare-and-swap batch를 추가했다. 서비스가 old/new footprint 합집합을 한 번 preflight하고 모두 함께 commit하므로 겹치는 이동도 중간 빈칸이나 이중 점유를 만들지 않는다.
+- placement preflight는 범위, protected cell, 외부 점유, water, path, ground, 평탄도와 entrance 접근을 순서대로 검사한다. 실패는 registry, transform, revision, cell hash를 바꾸지 않는다.
+- 배치 후 기존 B09 인스턴스의 `StorageBox`와 collider를 유지한다. 점유된 `WorldCellData`는 non-walkable/non-farmable이며 terraform 및 surface transaction이 `OccupiedCell`로 차단한다.
+- WorldSandbox debug는 실제 B09 renderers를 ghost로 사용하고 초록/빨강 상태와 실패 이유를 표시한다. 입력은 `B` 배치, `M` 이동, `Q/E` 회전, `Enter` 확정, `Escape` 취소다.
+
+### 검증
+
+- `Logs/WORLD005_CompileSplit.log`: Runtime `Assembly-CSharp`와 Editor `Assembly-CSharp-Editor` 모두 오류 0. 기존 CS8785/CS0414만 남는다.
+- `Logs/WORLD005_Validation.log`: D3D11 Edit/Play에서 4x3 footprint, 회전 entrance, water/cliff/protected/out-of-bounds/overlap 거부, visible ghost, 취소 무변경, 기존 StorageBox, occupied edit guard, 실패 move rollback, 성공 move atomicity, registry 1, 최종 baseline checksum 복원을 모두 PASS했다.
+- `Logs/WORLD005_WORLD004_Regression.log`, `WORLD005_WORLD003_Regression.log`, `WORLD005_WORLD002_Regression_Rerun.log`, `WORLD005_WORLD001_Regression.log`: surface, terraform, stepped mesh, 256-cell/read-only 계약이 모두 `FINISHED_PASS`다.
+- 잘못된 WORLD-002 executeMethod 문자열은 validator 진입 전에 종료됐고 올바른 공개 진입점으로 한 번 재실행해 PASS했다. 코드·씬 변경이나 crash는 없었다.
+
+### 판정
+
+- WorldSandbox는 3개 root를 유지하고 service/controller 각 1개만 추가했다. filename-matched script GUID를 사용하며 embedded MonoScript 및 Missing Script는 없다.
+- Prototype_FirstDay/MainGame blob, prefab/BuildingData 원본, SaveData/SaveManager, Packages, ProjectSettings diff는 0이고 신규 crash report도 없다.
+- 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`다. 최종 ghost 색감과 창고 위치 미감은 M70 통합 플레이테스트 대상이며 기능 차단이 아니다.
+- 최종 상태 `WORLD_005_COMPLETE`. 승인된 로컬 commit 뒤 기존 backlog WORLD-006 generator로 자동 전환한다.

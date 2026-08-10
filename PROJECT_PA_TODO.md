@@ -1538,3 +1538,18 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 최종 상태 `WORLD_004_COMPLETE`.
 - [ ] 사람이 현재 11개 dirty 경로를 검토·commit한다.
 - [ ] WORLD-005는 자동 시작하지 않는다. 다음 명시적 bounded-ticket 지시를 기다린다.
+
+## WORLD-005 Relocatable Building MVP — 2026-08-10
+
+- [x] 기존 B09 창고 prefab/StorageBox를 보존하는 4x3 footprint·회전 entrance sidecar.
+- [x] 물/길/보호/점유/범위 밖/지면/단차/입구 typed placement preflight.
+- [x] 실제 모델 기반 valid/invalid ghost, `B/M/Q/E/Enter/Escape` WorldSandbox 조작.
+- [x] 배치·이동·회수 occupancy 원자 commit, 실패 이동 rollback, 단일 session registry.
+- [x] 점유 셀 non-walkable 및 height/surface 편집 차단.
+- [x] service/debug controller 파일명-GUID 정합, scene embedded MonoScript 0, root 3 유지.
+- [x] Runtime/Editor compile 오류 0, D3D11 WORLD-005 및 WORLD-004~001 회귀 PASS, blocking Console 0, 신규 crash 0.
+- [x] Prototype_FirstDay/MainGame, prefab 원본, Save schema, Packages, ProjectSettings 무변경.
+- [x] 선택 캡처 `CAPTURE_EVIDENCE_DEBT`; 자동 renderer/prefab/transform/footprint 증거 통과.
+- [x] 최종 상태 `WORLD_005_COMPLETE`.
+- [ ] 승인된 WORLD-005 로컬 ticket commit 생성.
+- [ ] 다음 단일 티켓: 기존 backlog `WORLD-006 World Seed + Minimal Island Generator`. Save/NavMesh/gameplay 통합은 아직 시작하지 않는다.

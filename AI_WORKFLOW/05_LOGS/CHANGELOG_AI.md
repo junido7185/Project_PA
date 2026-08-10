@@ -956,3 +956,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - Runtime/Editor compile 오류 0, WORLD-004 D3D11 Edit/Play PASS, WORLD-003·002·001 회귀 PASS, blocking Console 0, 신규 crash 0이다. 컴파일 지역 변수와 collider validator의 잘못된 vertex 순서 가정은 `BUG_LOG.md`에 해결 기록했다.
 - Prototype_FirstDay/WorldSandbox/MainGame Scene, Prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_004_COMPLETE`다.
 - Git add/commit/push는 수행하지 않았다. WORLD-005는 시작하지 않고 다음 명시적 지시를 기다린다.
+
+## 2026-08-10 — Codex — WORLD-005 Relocatable Building MVP (DONE)
+
+- 기존 B09 storage shed를 위한 4x3 WorldGrid footprint와 회전 entrance sidecar를 추가하고 prefab/BuildingData 원본은 보존했다.
+- `WorldBuildingPlacementService`가 ghost preview, typed preflight, atomic place/move/remove, failed-move rollback과 단일 session registry를 제공한다.
+- `WorldCellData`의 occupancy가 보행/농사 가능 상태에 반영되고 점유 셀의 terraforming/surface 편집이 원자적으로 차단된다.
+- WorldSandbox에는 placement service/debug controller 각 1개만 Editor API로 추가했다. 파일명과 GUID를 정합화해 embedded MonoScript 0, 기존 authored root 3을 유지했다.
+- Runtime/Editor compile 오류 0, WORLD-005 D3D11 Edit/Play PASS, WORLD-004·003·002·001 회귀 PASS, blocking Console 0, 신규 crash 0이다.
+- Prototype_FirstDay/MainGame, prefab source, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_005_COMPLETE`다.
+- 명시적 M70 연속 승인에 따라 로컬 ticket commit 뒤 기존 backlog WORLD-006 generator로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.

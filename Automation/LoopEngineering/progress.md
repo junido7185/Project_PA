@@ -558,3 +558,15 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/WORLD004_Validation.log` passed Edit/Play surface, material, shoreline, collider, rollback and Console contracts. WORLD-003/002/001 regression logs all finished PASS. Runtime/Editor compile errors and new crashes are zero.
 - Prototype_FirstDay, WorldSandbox and MainGame blobs match HEAD. No Prefab, Save schema/authority, Package or ProjectSettings content changed. Optional capture remains `CAPTURE_EVIDENCE_DEBT`.
 - Final state: `WORLD_004_COMPLETE`. Stop here without commit or WORLD-005 work; await explicit user instruction.
+
+## 2026-08-10 — WORLD-005 Relocatable Building MVP
+
+- Continued the preapproved M70 sequence on `milestone/world-alpha-70` from committed WORLD-004 baseline `c23f4be`.
+- Added a sidecar definition for the existing `B09_StorageShed`: a conservative 4x3 footprint on 2m cells, an exterior entrance offset that rotates with the footprint, and no source prefab or `BuildingData` schema change.
+- Added a single WorldGrid occupancy writer with atomic place/move/remove batches. Water, paths, protected cells, occupied cells, out-of-bounds cells, invalid ground, blocked entrances and uneven/cliff-spanning footprints return typed failures without partial mutation.
+- Added an existing-model green/red ghost and WorldSandbox controls: `B` place, `M` move, `Q/E` rotate, `Enter` confirm and `Escape` cancel. The committed instance preserves `StorageBox`; occupancy makes footprint cells non-walkable and blocks height/surface editing.
+- The first Editor save revealed scene-local MonoScript references because two attachable classes shared a non-matching filename. Service and debug controller were split into filename-matched scripts, GUID/meta references were rebuilt through the Editor API, and the scene now has zero embedded MonoScripts and the same three roots.
+- `Logs/WORLD005_Validation.log` passed Edit/Play ghost, rotation, entrance, water/cliff/overlap rejection, cancel, occupied edit guards, rollback, atomic old/new occupancy, one registry record and exact baseline checksum restoration. WORLD-004~001 regressions all finished PASS.
+- Runtime/Editor compile errors, blocking Console errors and new crashes are zero. Only existing CS8785/CS0414 warnings remain. Prototype_FirstDay, MainGame, prefab sources, Save schema, Packages and ProjectSettings are unchanged.
+- The optional capture was skipped as `CAPTURE_EVIDENCE_DEBT`; renderer presence, prefab identity, transform, footprint and runtime behavior are automatically proven.
+- Final state: `WORLD_005_COMPLETE`. Create the approved local ticket commit, then continue to existing backlog `WORLD-006 World Seed + Minimal Island Generator`.

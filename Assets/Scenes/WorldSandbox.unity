@@ -314,6 +314,8 @@ GameObject:
   - component: {fileID: 1283982541}
   - component: {fileID: 1283982540}
   - component: {fileID: 1283982539}
+  - component: {fileID: 1283982547}
+  - component: {fileID: 1283982546}
   m_Layer: 0
   m_Name: WorldGrid
   m_TagString: Untagged
@@ -456,6 +458,7 @@ MonoBehaviour:
   initialElevationLevel: 0
   initialGroundType: 0
   bootstrapProfile: 1
+  protectedTerraformCell: {x: 0, y: 0}
 --- !u!4 &1283982545
 Transform:
   m_ObjectHideFlags: 0
@@ -471,6 +474,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1283982546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283982538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b827ae861f175284ebc38104ce0b2a51, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WorldBuildingPlacementDebugController
+--- !u!114 &1283982547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283982538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 392552f32cda8114794eafa09e0e5c85, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WorldBuildingPlacementService
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

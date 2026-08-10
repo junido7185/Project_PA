@@ -2071,3 +2071,13 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Runtime/Editor compile 오류 0, WORLD-004와 WORLD-003~001 D3D11 회귀 PASS, blocking Console 0, 신규 crash 0이다. 기존 CS8785/CS0414만 남는다.
 - Prototype_FirstDay/WorldSandbox/MainGame, Prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 판정 `WORLD_004_COMPLETE`. 아직 commit하지 않았으며 WORLD-005는 시작하지 않는다.
+
+## 2026-08-10 WORLD-005 Relocatable Building MVP — COMPLETE
+
+- 기존 `B09_StorageShed` 외형과 `StorageBox` 기능을 보존한 채 2m 셀 기준 4x3 footprint와 회전 가능한 외부 entrance sidecar를 연결했다. prefab 및 `BuildingData` 원본은 수정하지 않았다.
+- `WorldBuildingPlacementService`가 WorldGrid occupancy의 단일 writer로서 배치·이동·회수를 원자 처리한다. 물/길/보호/점유/범위 밖/부적합 지면/절벽·단차/막힌 입구는 typed failure로 거부한다.
+- WorldSandbox에서 실제 창고 모델 ghost를 유효 초록/무효 빨강으로 표시하고 `B/M/Q/E/Enter/Escape`로 배치·이동·회전·확정·취소할 수 있다. 점유 셀은 non-walkable이며 높이·surface 편집을 거부한다.
+- `WorldSandbox`는 기존 3개 root를 유지하고 배치 service/debug controller 각 1개만 추가했다. 두 컴포넌트는 파일명과 일치하는 고정 GUID를 사용하며 embedded MonoScript는 0개다.
+- Runtime/Editor compile 오류 0, WORLD-005와 WORLD-004~001 D3D11 회귀 PASS, blocking Console 0, 신규 crash 0이다. 기존 CS8785/CS0414만 남는다.
+- Prototype_FirstDay와 MainGame blob, prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 판정 `WORLD_005_COMPLETE`. 승인된 로컬 commit 뒤 기존 backlog `WORLD-006 World Seed + Minimal Island Generator`로 자동 진행한다.

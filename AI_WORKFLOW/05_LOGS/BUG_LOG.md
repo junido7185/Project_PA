@@ -500,3 +500,17 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 영향: 실패 지점은 Edit Mode validator의 검증식이다. 생성기는 물 triangle을 `WaterIndices`에만 추가하고 collider mesh는 `TopIndices`와 `CliffIndices`만 사용하지만, Play Mode raycast 증거까지는 아직 도달하지 못했다.
 - 복구 계획: 물 전용 vertex index 집합과 `TopIndices`/`CliffIndices`의 교집합이 비어 있는지 직접 검사한다. 같은 D3D11 validator를 한 번만 재실행하고, 동일 계약이 다시 실패하면 추가 시도 없이 중단한다.
 - 최종 결과: `WaterIndices`의 vertex 집합과 `TopIndices`/`CliffIndices`의 교집합이 비어 있는지 직접 검사하도록 수정했다. 두 compile이 오류 0으로 통과했고, 두 번째 D3D11 실행은 `EDIT_MODE_PASS`, `PLAY_MODE_PASS`, `FINISHED_PASS ground=4 path=2 water=true shoreline=true walkability=true rollback=true`로 완료됐다. collider raycast는 수면이 아니라 terrain bed를 맞았으며 blocking 예외와 새 crash는 0이었다.
+
+## [RESOLVED] 2026-08-10 — WORLD-005 scene-local MonoScript 직렬화
+
+- 증상: 첫 Editor builder 저장에서 placement service와 debug controller가 asset GUID 대신 scene-local `MonoScript` 객체를 참조했다.
+- 원인: attachable MonoBehaviour 두 개가 클래스명과 일치하지 않는 하나의 `WorldBuildingPlacement.cs`에 함께 있었다.
+- 영향: 첫 builder는 기능 코드를 정상 compile했지만 GUID/meta 장기 안정성 기준을 만족하지 못했다. Prototype_FirstDay, MainGame, prefab, Save, Packages, ProjectSettings에는 영향이 없었다.
+- 해결: service와 controller를 각각 클래스명과 일치하는 파일로 분리하고 meta GUID를 고정한 뒤 Editor builder가 두 컴포넌트를 재부착했다. 최종 WorldSandbox는 direct GUID reference 2개, embedded MonoScript 0, authored root 3이며 전체 validator와 회귀가 통과했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-002 회귀 executeMethod 클래스명 오기
+
+- 증상: WORLD-005 회귀 묶음 중 WORLD-002 명령이 `PA_WorldTerrainTools` 클래스를 찾지 못해 validator 본문 진입 전에 종료됐다.
+- 원인: 실제 공개 진입점 `PA_WorldChunkTerrainTools.RunTerrainValidationBatch` 대신 존재하지 않는 클래스명을 전달했다.
+- 영향: compile/validator 구현 실패가 아니며 코드·씬·에셋 변경 및 crash는 0이었다. 뒤의 WORLD-001 명령은 같은 shell이 중단되어 별도로 실행했다.
+- 해결: 잘못된 명령을 반복하지 않고 실제 선언을 확인한 뒤 올바른 진입점으로 한 번 실행했다. `Logs/WORLD005_WORLD002_Regression_Rerun.log`는 Edit/Play 및 blocking Console 0으로 `FINISHED_PASS`했고 WORLD-001도 이어서 PASS했다.

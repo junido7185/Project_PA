@@ -41,7 +41,9 @@ public enum WorldTerraformFailure
     MinimumElevation = 4,
     MaximumElevation = 5,
     NoUndoAvailable = 6,
-    StaleUndoRecord = 7
+    StaleUndoRecord = 7,
+    WaterCell = 8,
+    OccupiedCell = 9
 }
 
 public readonly struct WorldTerraformEditResult
@@ -133,7 +135,8 @@ public enum WorldSurfaceEditFailure
     WaterAlreadyPresent = 6,
     WaterNotPresent = 7,
     NoUndoAvailable = 8,
-    StaleUndoRecord = 9
+    StaleUndoRecord = 9,
+    OccupiedCell = 10
 }
 
 public readonly struct WorldSurfaceEditResult
@@ -225,10 +228,11 @@ public readonly struct WorldCellData
     public WorldCellOccupancy Occupancy { get; }
     public bool HasWater => WaterDepthLevels > 0;
     public bool HasPath => PathType != WorldPathType.None;
-    public bool IsFarmable => !HasWater && !HasPath &&
+    public bool IsFarmable => Occupancy == WorldCellOccupancy.Empty &&
+                              !HasWater && !HasPath &&
                               (GroundType == WorldGroundType.Default ||
                                GroundType == WorldGroundType.Soil);
-    public bool IsWalkable => !HasWater;
+    public bool IsWalkable => Occupancy == WorldCellOccupancy.Empty && !HasWater;
 
     public WorldCellData(
         Vector2Int coordinate,
@@ -296,6 +300,13 @@ public readonly struct WorldCellData
         return new WorldCellData(
             Coordinate, ElevationLevel, GroundType, PathType,
             surfaceLevel, depthLevels, Occupancy);
+    }
+
+    internal WorldCellData WithOccupancy(WorldCellOccupancy occupancy)
+    {
+        return new WorldCellData(
+            Coordinate, ElevationLevel, GroundType, PathType,
+            WaterSurfaceLevel, WaterDepthLevels, occupancy);
     }
 
     internal bool ContentEquals(WorldCellData other)
@@ -541,7 +552,12 @@ public sealed class WorldGridService : MonoBehaviour
         }
 
         WorldCellData current = _cells[index];
-        if (current.ElevationLevel != expectedElevationLevel) return false;
+        if (current.ElevationLevel != expectedElevationLevel ||
+            current.HasWater ||
+            current.Occupancy != WorldCellOccupancy.Empty)
+        {
+            return false;
+        }
         _cells[index] = current.WithElevationLevel(newElevationLevel);
         return true;
     }
@@ -556,7 +572,8 @@ public sealed class WorldGridService : MonoBehaviour
             return false;
         }
 
-        if (replacement.ElevationLevel != expected.ElevationLevel ||
+        if (expected.Occupancy != WorldCellOccupancy.Empty ||
+            replacement.ElevationLevel != expected.ElevationLevel ||
             replacement.Occupancy != expected.Occupancy ||
             replacement.WaterDepthLevels < 0 ||
             (replacement.HasWater &&
@@ -569,6 +586,42 @@ public sealed class WorldGridService : MonoBehaviour
         }
 
         _cells[index] = replacement;
+        return true;
+    }
+
+    internal bool TryCommitOccupancyBatch(
+        IReadOnlyList<WorldCellData> expectedCells,
+        IReadOnlyList<WorldCellData> replacementCells)
+    {
+        EnsureInitialized();
+        if (expectedCells == null || replacementCells == null ||
+            expectedCells.Count == 0 || expectedCells.Count != replacementCells.Count)
+        {
+            return false;
+        }
+
+        var indices = new int[expectedCells.Count];
+        var coordinates = new HashSet<Vector2Int>();
+        for (int i = 0; i < expectedCells.Count; i++)
+        {
+            WorldCellData expected = expectedCells[i];
+            WorldCellData replacement = replacementCells[i];
+            if (expected.Coordinate != replacement.Coordinate ||
+                !coordinates.Add(expected.Coordinate) ||
+                !TryCellToIndex(expected.Coordinate, out int index) ||
+                !_cells[index].ContentEquals(expected) ||
+                !replacement.WithOccupancy(expected.Occupancy).ContentEquals(expected) ||
+                (replacement.Occupancy != WorldCellOccupancy.Empty &&
+                 replacement.Occupancy != WorldCellOccupancy.Occupied))
+            {
+                return false;
+            }
+
+            indices[i] = index;
+        }
+
+        for (int i = 0; i < indices.Length; i++)
+            _cells[indices[i]] = replacementCells[i];
         return true;
     }
 
@@ -695,6 +748,10 @@ public sealed class WorldTerraformService
             return Failed(WorldTerraformFailure.OutOfBounds, coordinate, 0);
         if (_grid.IsTerraformProtected(coordinate))
             return Failed(WorldTerraformFailure.ProtectedCell, coordinate, current.ElevationLevel);
+        if (current.Occupancy != WorldCellOccupancy.Empty)
+            return Failed(WorldTerraformFailure.OccupiedCell, coordinate, current.ElevationLevel);
+        if (current.HasWater)
+            return Failed(WorldTerraformFailure.WaterCell, coordinate, current.ElevationLevel);
 
         int targetLevel = current.ElevationLevel + delta;
         if (targetLevel < _grid.Definition.MinElevationLevel)
@@ -900,6 +957,14 @@ public sealed class WorldSurfaceEditService
             failed = Failed(
                 WorldSurfaceEditKind.None,
                 WorldSurfaceEditFailure.ProtectedCell,
+                current);
+            return false;
+        }
+        if (current.Occupancy != WorldCellOccupancy.Empty)
+        {
+            failed = Failed(
+                WorldSurfaceEditKind.None,
+                WorldSurfaceEditFailure.OccupiedCell,
                 current);
             return false;
         }

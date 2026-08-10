@@ -5,7 +5,7 @@
     "status": "in_progress",
     "branch": "milestone/world-alpha-70",
     "checkpointCommit": "23ceda6",
-    "completedTicketCommits": 4,
+    "completedTicketCommits": 5,
     "commitLimit": 12
   },
   "worldArchitectureApproval": {
@@ -40,20 +40,20 @@
     "localTicketCommitsAllowed": true,
     "pushAllowed": false
   },
-  "ticketId": "WORLD-004",
+  "ticketId": "WORLD-005",
   "status": "completed",
-  "finalState": "WORLD_004_COMPLETE",
-  "goal": "Provide atomic grass/soil/sand/rock ground paint, dirt/stone paths and bounded water cells with shoreline geometry, derived farmability/walkability, safe rejection and one-step rollback.",
+  "finalState": "WORLD_005_COMPLETE",
+  "goal": "Place, preview, rotate, cancel and atomically relocate one existing storage building on authoritative WorldGrid cells with typed invalid-placement reasons and rollback.",
   "baseline": {
     "branch": "milestone/world-alpha-70",
-    "commit": "de1ada54edb4db2f5719c11ffc0826f9007c73ff",
+    "commit": "c23f4be",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 11,
+    "dirtyPathCountAtStop": 15,
     "newCrashArtifacts": 0,
-    "worldSandboxSceneChanged": false,
+    "worldSandboxSceneChanged": true,
     "prototypeFirstDayChanged": false,
     "mainGameChanged": false,
     "saveAuthorityChanged": false,
@@ -61,24 +61,30 @@
     "projectSettingsContentChanged": false
   },
   "builds": {
-    "runtime": "PASS: 0 compile errors; pre-existing CS8785 only",
-    "editor": "PASS: 0 compile errors; pre-existing CS8785 and CS0414 only"
+    "runtime": "PASS: Assembly-CSharp compiled with 0 errors; pre-existing CS8785 only",
+    "editor": "PASS: Assembly-CSharp-Editor compiled with 0 errors; pre-existing CS8785 and CS0414 only"
   },
   "validators": {
-    "world004Log": "Logs/WORLD004_Validation.log",
-    "world003RegressionLog": "Logs/WORLD004_WORLD003_Regression.log",
-    "world002RegressionLog": "Logs/WORLD004_WORLD002_Regression.log",
-    "world001RegressionLog": "Logs/WORLD004_WORLD001_Regression.log",
+    "world005Log": "Logs/WORLD005_Validation.log",
+    "world004RegressionLog": "Logs/WORLD005_WORLD004_Regression.log",
+    "world003RegressionLog": "Logs/WORLD005_WORLD003_Regression.log",
+    "world002RegressionLog": "Logs/WORLD005_WORLD002_Regression_Rerun.log",
+    "world001RegressionLog": "Logs/WORLD005_WORLD001_Regression.log",
     "passed": [
       "Unity D3D11 Edit Mode and Play Mode",
-      "grass/soil/sand/rock and dirt/stone data/material slots",
-      "protected, invalid water, dry drain and path-under-water failures are atomic",
-      "water surface/depth invariant and visible shoreline faces",
-      "water vertices are excluded from terrain collider triangle streams",
-      "farmable and walkability derivation",
-      "surface changes rebuild visual mesh only and keep collider on the terrain bed",
-      "one-step undo restores complete baseline cell hashes",
-      "debug G/T/V/X surface controls",
+      "existing B09 storage shed sidecar uses a 4x3 footprint on 2m cells",
+      "rotated footprint and entrance remain coupled",
+      "water, cliff, protected, out-of-bounds and overlapping placements reject atomically",
+      "existing B09 prefab appears as a valid/invalid tinted ghost",
+      "preview cancellation leaves the cell checksum and registry unchanged",
+      "committed building keeps its StorageBox function",
+      "occupied cells reject height and surface edits",
+      "failed movement retains old transform and occupancy",
+      "successful movement atomically switches old/new occupancy including overlap",
+      "one world placement service owns one session registry record",
+      "session cleanup restores the exact baseline cell checksum",
+      "legacy outdoor move/recover and BuildingRegistry APIs remain intact",
+      "WORLD-004 surface regression",
       "WORLD-003 terraform regression",
       "WORLD-002 terrain regression",
       "WORLD-001 grid regression",
@@ -107,7 +113,9 @@
     "debugRaise": "R",
     "debugLower": "F",
     "debugUndo": "Z",
-    "savePersistence": false
+    "savePersistence": false,
+    "occupiedCellsBlocked": true,
+    "waterCellsBlocked": true
   },
   "surface": {
     "groundTypes": ["Grass", "Soil", "Sand", "Rock"],
@@ -123,7 +131,8 @@
     "debugPath": "T",
     "debugWater": "V",
     "debugUndo": "X",
-    "savePersistence": false
+    "savePersistence": false,
+    "occupiedCellsBlocked": true
   },
   "terrain": {
     "implementation": "limited-height stepped custom chunk mesh",
@@ -133,11 +142,35 @@
     "world002Regression": "PASS",
     "materialSlots": 8,
     "waterSurfaceAndShoreline": true,
-    "waterExcludedFromCollider": true
+    "waterExcludedFromCollider": true,
+    "world004Regression": "PASS"
+  },
+  "buildingPlacement": {
+    "authority": "WorldBuildingPlacementService over WorldGrid occupancy",
+    "prototypeBuilding": "Assets/Prefabs/Buildings/B09_StorageShed.prefab",
+    "definition": "sidecar B09_STORAGE_SHED",
+    "footprintCells": "4x3",
+    "entranceOffset": "1,-1 rotated with footprint",
+    "previewGhost": true,
+    "rotationQuarterTurns": true,
+    "invalidReasonVisible": true,
+    "atomicMove": true,
+    "failedMoveRollback": true,
+    "sessionRegistry": true,
+    "savePersistence": false,
+    "debugPlace": "B",
+    "debugMove": "M",
+    "debugRotate": "Q/E",
+    "debugConfirm": "Enter",
+    "debugCancel": "Escape"
   },
   "scene": {
     "path": "Assets/Scenes/WorldSandbox.unity",
-    "changedThisTicket": false,
+    "changedThisTicket": true,
+    "authoredRoots": 3,
+    "placementServiceCount": 1,
+    "placementDebugControllerCount": 1,
+    "embeddedMonoScripts": 0,
     "addedToBuildSettings": false
   },
   "save": {
@@ -148,13 +181,17 @@
   "capture": {
     "attemptedThisTicket": false,
     "result": "CAPTURE_EVIDENCE_DEBT",
-    "reason": "The optional capture was skipped; ground/path material routing, water shoreline, bed collider, derived state and rollback passed in D3D11 Play Mode."
+    "reason": "The optional capture was skipped; existing-model ghost renderers, prefab identity, footprint, entrance, occupancy, transform, rollback and D3D11 Play Mode behavior passed automatically."
   },
   "changedPaths": [
     "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
-    "Assets/Scripts/World/WorldChunkTerrain.cs",
+    "Assets/Scenes/WorldSandbox.unity",
+    "Assets/Scripts/World/WorldBuildingPlacementDebugController.cs",
+    "Assets/Scripts/World/WorldBuildingPlacementDebugController.cs.meta",
+    "Assets/Scripts/World/WorldBuildingPlacementService.cs",
+    "Assets/Scripts/World/WorldBuildingPlacementService.cs.meta",
     "Assets/Scripts/World/WorldGridService.cs",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
@@ -168,10 +205,11 @@
   "world002Completed": true,
   "world003Completed": true,
   "world004Completed": true,
-  "world005Started": false,
+  "world005Completed": true,
+  "world006Started": false,
   "ticketCommitPendingHuman": false,
-  "startedAt": "2026-08-06",
-  "stoppedAt": "2026-08-06",
-  "stopReason": "The former human-approval wait was superseded by explicit M70 continuation preapproval on 2026-08-06.",
-  "nextAction": "Create the verified WORLD-004 local commit, then activate the mapped WORLD-005 bounded ticket without another approval request."
+  "startedAt": "2026-08-10",
+  "stoppedAt": "2026-08-10",
+  "stopReason": "WORLD-005 passed its bounded gates; explicit M70 continuation approval allows the next ticket after the local commit.",
+  "nextAction": "Create the verified WORLD-005 local commit, then activate existing backlog WORLD-006 World Seed + Minimal Island Generator without another approval request."
 }
