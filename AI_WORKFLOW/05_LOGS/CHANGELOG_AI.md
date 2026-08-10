@@ -995,3 +995,14 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - WORLD-007 D3D11과 SaveRoundTrip/WORLD-004/005/006 회귀, Runtime/Editor compile이 PASS했고 blocking Console 및 신규 crash는 0이다.
 - Scene/Prefab/Packages/ProjectSettings는 무변경이다. 캡처와 crash-safe temp/backup JSON write는 비차단 부채로 유지한다.
 - 승인된 로컬 ticket commit과 recovery 문서 commit 뒤 WORLD-008로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.
+
+## 2026-08-10 — Codex — WORLD-008 Reachability and Navigation Prototype (DONE)
+
+- 공식 AI Navigation 2.0.12를 재사용해 `WorldNavigationService`와 logical cell reachability 권위를 추가했다. Packages/ProjectSettings는 건드리지 않았다.
+- 2×2 Chunk local `NavMeshSurface`, 1-cell overlap, 동일 높이 seam link와 async dirty queue를 구현했다. 내부 셀은 한 sector, 경계 셀은 두 sector만 갱신한다.
+- B09 place/move와 procedural restore preflight가 핵심 anchor/entrance 고립을 commit 전에 거부한다.
+- 영향받은 테스트 NPC가 pause, 2m 이내 reproject, complete repath, seam traversal, arrival와 settle을 완료했다.
+- 실제 128×128 seed는 16 sector를 57ms에 만들고 start→shop entrance complete path를 제공했다.
+- WORLD-008 D3D11 및 WORLD-007/005/006, InteriorCustomer, FinalDemoRoute 회귀가 PASS했다. compile 오류·전용 blocking Console·신규 crash는 0이다.
+- InteriorCustomer post-pass teardown 진단과 캡처는 비차단 debt다. Scene/Prefab/Save schema는 무변경이다.
+- 승인된 로컬 ticket commit 뒤 WORLD-009로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.

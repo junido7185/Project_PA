@@ -2728,3 +2728,25 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - Scene/Prefab/Packages/ProjectSettings는 변경하지 않았다. 기존 LocalJson repository의 crash-safe temp/backup write는 별도 부채다.
 - 캡처는 자동 상태 검증으로 대체해 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 상태 `WORLD_007_COMPLETE`. 승인된 로컬 ticket commit과 별도 BUG recovery 문서 commit 뒤 WORLD-008로 자동 전환한다.
+
+## 2026-08-10 — WORLD-008 Reachability and Navigation Prototype
+
+### 구현
+
+- `WorldCellReachability`가 현재 cell/occupancy/water/elevation을 읽어 핵심 anchor와 건물 entrance의 논리 접근성을 한 권위로 판정한다.
+- `WorldNavigationService`는 WorldSandbox에서 런타임 bootstrap되고 2×2 Chunk sector별 `NavMeshSurface`, 1-cell overlap, 동일 높이 연속 구간 seam link를 만든다.
+- Terraform/surface/building event를 dirty sector queue로 변환한다. 해당 sector proxy만 갱신해 `UpdateNavMesh`를 비동기 실행하며 전역 surface rebuild는 하지 않는다.
+- 움직이는 테스트 agent는 update 전에 정지하고, 완료 뒤 최대 2m 안에서 재투영한 다음 complete path일 때만 목적지를 다시 설정한다. 도착 뒤 path를 지워 무한 정지·떨림을 막는다.
+- Building Evaluate와 WORLD-007 restore preflight에 critical route 검사를 연결해 고립 이동과 고립 save를 live mutation 전에 거부한다.
+
+### 검증
+
+- `Logs/WORLD008_Validation_Final.log`: logical anchors 7/8,755 cells, isolated barrier, building rollback, 2 local sectors/12ms, interior 1-sector, seam 2-sector, NPC pause/repath/arrival, 128×128 16 sectors/57ms, start→shop path, Console 0 PASS.
+- `WORLD008_WORLD007_Regression.log`, `WORLD008_WORLD005_Regression.log`, `WORLD008_WORLD006_Regression.log`, `WORLD008_InteriorCustomer_Regression.log`, `WORLD008_FinalDemoRoute_Regression.log`가 성공 종료했다.
+- Runtime/Editor compile 오류 0, 기존 CS8785/CS0414만 유지, 신규 crash 0이다.
+- InteriorCustomer 전체 방문 성공 뒤 Play Mode teardown에서 late visitor가 NavMesh 제거 후 복귀하며 진단 문구 1개를 남겼다. 기능·프로세스 결과를 차단하지 않는 harness debt로 유지한다.
+
+### 판정
+
+- Scene/Prefab/Packages/ProjectSettings/Save schema는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 상태 `WORLD_008_COMPLETE`. 승인된 local commit 뒤 WORLD-009 Existing Gameplay World Adapter로 자동 전환한다.

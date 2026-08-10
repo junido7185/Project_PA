@@ -380,3 +380,15 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **증거:** `WORLD007_Validation_Pass.log`, `WORLD007_SaveRoundTrip_Regression.log`, `WORLD007_WORLD004_Regression.log`, `WORLD007_WORLD005_Regression.log`, `WORLD007_WORLD006_Regression.log` 모두 PASS. compile 오류·blocking Console·신규 crash는 0이다.
 - **보호 상태:** Scene/Prefab/Packages/ProjectSettings diff 0. LocalJson repository의 crash-safe temp/backup write, 구 validator 세 곳의 v10 고정 assertion, 캡처는 후속 부채다.
 - **다음 활성 ticket:** 승인된 WORLD-007 로컬 ticket commit과 BUG recovery 기록 분리 commit 뒤 `WORLD-008 Reachability and Navigation Prototype`만 시작한다.
+
+## 2026-08-10 WORLD-008 Reachability and Navigation Prototype — COMPLETE
+
+- **기준:** `milestone/world-alpha-70@42d235bcf4443ce1cb5309b87f6a317e2dd16b37`. 사용자 연속 승인과 로컬 ticket commit 허용은 유지되며 push/rebase/reset-hard/clean은 금지다.
+- **권위:** `WorldCellReachability`가 logical connectivity를, `WorldNavigationService`가 runtime sector NavMesh를 담당한다. 기존 AI Navigation 2.0.12만 사용하며 새 패키지나 production NPC rewrite는 없다.
+- **sector:** 2×2 Chunk=32×32 cell, 1-cell overlap, equal-elevation grouped seam links. 128×128 표본은 4×4=16 surface다.
+- **갱신:** Terraform/surface/building event의 dirty chunk를 owner sector와 실제 seam-sharing neighbor로만 변환하고 `NavMeshSurface.UpdateNavMesh`를 비동기 실행한다.
+- **agent:** 갱신 전 pause, 최대 2m 재투영, complete-path 확인 후 repath/resume, 도착 뒤 path clear. 전용 agent가 seam 이동과 안정 정지를 통과했다.
+- **배치/저장:** B09 move와 procedural restore preflight는 critical anchors 또는 entrance를 고립시키면 live mutation 전에 `CriticalRouteBlocked`/restore reject한다. schema는 v11 그대로다.
+- **증거:** `WORLD008_Validation_Final.log`(logical 8,755 cells, local 12ms, generated 57ms, 16 sectors, Console 0), WORLD-007/005/006, InteriorCustomer, FinalDemoRoute 회귀 PASS.
+- **부채:** InteriorCustomer pass 뒤 late-visitor teardown NavMesh 진단, 캡처 evidence. Scene/Prefab/Packages/ProjectSettings는 무변경이고 신규 crash는 0이다.
+- **다음 활성 ticket:** WORLD-008 local commit 뒤 승인된 `WORLD-009 Existing Gameplay World Adapter`만 시작한다. 기존 Inventory/Crafting/Shop/Gathering/DayNight/NPC 권위를 복제하지 말고 adapter로 연결한다.

@@ -545,3 +545,11 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 영향: 잘못된 delta는 live world 적용 전에 거부되어 복원 상태나 사용자 저장 손상은 없다. 물 셀 terraform은 기존 preflight가 계속 차단한다.
 - 복구: dry cell의 높이를 바꿀 때만 water surface sentinel을 새 elevation과 동기화한다. 실제 물이 있는 셀은 기존 값을 유지하며, 이 원인으로 validator를 한 번만 재실행한다.
 - 확인: `Logs/WORLD007_Validation_Pass.log`에서 높이·지면·길·물 4개 sparse delta의 repository round-trip과 오염 payload 사전 거부가 PASS했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-008 신규 validator C# definite-assignment/import 충돌
+
+- 증상: 첫 D3D11 compile에서 신규 `WorldNavigationService.cs`만 `Debug` 이름 충돌과 short-circuit `out` 변수 definite-assignment 오류로 중단됐다.
+- 원인: `System.Diagnostics` 전체 import가 `UnityEngine.Debug`와 충돌했고, 조건식 뒤에서 사용하는 `level`/`destinationHit`을 조건 내부에서 선언해 C# 컴파일러가 항상 할당된 것으로 증명할 수 없었다.
+- 영향: 새 WORLD-008 assembly가 생성되기 전의 정적 오류다. Scene·Prefab·Packages·ProjectSettings·SaveData와 기존 런타임 상태에는 변화가 없고 Unity native crash도 없다.
+- 복구: `Stopwatch`만 alias하고 `out` 변수를 조건식 전에 초기화한다. 기능 설계나 API는 바꾸지 않으며 이 원인에 대한 컴파일 재시도는 한 번만 수행한다.
+- 확인: `Logs/WORLD008_Compile_Retry.log`와 강화된 `Logs/WORLD008_Strengthened_Compile.log`가 Runtime/Editor compile 오류 0으로 종료됐고, `Logs/WORLD008_Validation_Final.log`도 전체 PASS했다.

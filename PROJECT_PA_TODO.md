@@ -1598,3 +1598,19 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [ ] 후속 회귀 부채: v10을 하드코딩한 Mining/Outdoor/ShopCustomization validator를 각 담당 티켓에서 v11 계약으로 갱신.
 - [ ] 승인된 WORLD-007 로컬 ticket commit과 별도 recovery 기록 commit 생성.
 - [ ] 다음 단일 티켓: `WORLD-008 Reachability and Navigation Prototype`.
+
+## WORLD-008 Reachability and Navigation Prototype
+
+- [x] 주요 생성 anchor 7개 logical cell graph 연결과 고립 장벽 판정.
+- [x] B09 entrance 및 핵심 경로를 끊는 place/move의 `CriticalRouteBlocked` 원자 거부.
+- [x] 기존 AI Navigation 2.0.12로 2×2 Chunk / 32×32 cell local sector surface 구성.
+- [x] 1-cell overlap과 동일 높이 seam portal link 생성.
+- [x] interior edit 1-sector, boundary edit owner+neighbor 2-sector async rebuild.
+- [x] 영향받은 테스트 NPC pause→2m 이내 reproject→complete repath→resume→arrival/settle.
+- [x] 128×128 실제 seed 16 sector/57ms 및 start→shop entrance 완전 NavMesh path.
+- [x] 저장 restore preflight에 critical building reachability를 추가하되 schema v11은 유지.
+- [x] Runtime/Editor compile, WORLD-008 D3D11, WORLD-007/005/006, InteriorCustomer, FinalDemoRoute PASS.
+- [x] Scene/Prefab/Packages/ProjectSettings 무변경, 신규 crash 0, 캡처 `CAPTURE_EVIDENCE_DEBT`.
+- [ ] 비차단: InteriorCustomer 성공 종료 뒤 late-visitor NavMesh teardown 진단 문구 정리.
+- [ ] 승인된 WORLD-008 로컬 ticket commit 생성.
+- [ ] 다음 단일 티켓: `WORLD-009 Existing Gameplay World Adapter` — 기존 Inventory/Crafting/Shop/Gathering/DayNight/NPC 목적지를 월드 권위에 연결.

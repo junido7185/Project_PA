@@ -604,3 +604,16 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/WORLD007_Validation_Pass.log` and SaveRoundTrip/WORLD-004/WORLD-005/WORLD-006 regressions passed under D3D11. Runtime/Editor compile errors, blocking Console errors and new crashes are zero.
 - No Scene, Prefab, Package or ProjectSettings content changed. Capture remains nonblocking `CAPTURE_EVIDENCE_DEBT`.
 - Final state: `WORLD_007_COMPLETE`. After the approved local ticket and recovery-record commits, activate preapproved `WORLD-008 Reachability and Navigation Prototype`.
+
+## 2026-08-10 — WORLD-008 Reachability and Navigation Prototype
+
+- Reused the already installed official AI Navigation 2.0.12 package; Packages and ProjectSettings remained unchanged.
+- Added one logical cardinal cell graph with a maximum one-level step. Seed 8008 reached all seven critical anchors through 8,755 cells, while a complete water barrier was correctly isolated.
+- Building placement now asks the navigation authority before commit. A B09 move that severed the only critical corridor and its entrance was rejected with `CriticalRouteBlocked`, preserving the original transform and occupancy.
+- Added 2x2-chunk (32x32-cell) local `NavMeshSurface` sectors, one-cell overlap, grouped equal-elevation seam links and an async dirty queue. An interior edit rebuilt one sector; a boundary edit rebuilt exactly two.
+- The affected runtime NPC test agent paused, reprojected within 2m, repathed, crossed a sector seam, arrived and settled without jitter. A provisional 128x128 seed built 4x4=16 sectors in 57ms and produced a complete start-to-shop-entrance path.
+- Persistence preflight now rejects a saved B09 that would isolate critical anchors before live world mutation. Save schema and repository authority did not change.
+- `Logs/WORLD008_Validation_Final.log`, WORLD-007/005/006, InteriorCustomer and FinalDemoRoute regressions passed. Runtime/Editor compile errors, dedicated blocking Console errors and new crashes are zero.
+- InteriorCustomer emitted one post-pass Play Mode teardown diagnostic (`Failed to create agent because there is no valid NavMesh`) after its successful full visit; retain as nonblocking teardown harness debt.
+- No Scene, Prefab, Package or ProjectSettings content changed. Capture remains `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `WORLD_008_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-009 Existing Gameplay World Adapter`.

@@ -29,7 +29,8 @@ public enum WorldBuildingPlacementFailure
     MissingPrefab = 13,
     CommitConflict = 14,
     SpawnFailed = 15,
-    NoPreview = 16
+    NoPreview = 16,
+    CriticalRouteBlocked = 17
 }
 
 public sealed class WorldBuildingPlacementDefinition
@@ -182,6 +183,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         new Dictionary<string, WorldPlacedBuildingRuntime>(StringComparer.Ordinal);
 
     WorldGridService _grid;
+    WorldNavigationService _navigation;
     GameObject _runtimeRoot;
     GameObject _stagingRoot;
     GameObject _previewGhost;
@@ -206,6 +208,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
     void Awake()
     {
         _grid = GetComponent<WorldGridService>();
+        _navigation = GetComponent<WorldNavigationService>();
     }
 
     public bool TryGetPlacement(string instanceId, out WorldPlacedBuildingRuntime placement)
@@ -295,6 +298,14 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
             Mathf.Abs(entranceCell.ElevationLevel - flatLevel.Value) > 1)
         {
             return Failed(WorldBuildingPlacementFailure.EntranceBlocked, instanceId, anchor,
+                quarterTurns, footprint, entrance);
+        }
+
+        if (_navigation == null) _navigation = GetComponent<WorldNavigationService>();
+        if (_navigation != null && !_navigation.TryValidateBuildingPlacement(
+                footprint, entrance, ignoredOwnCells, out _))
+        {
+            return Failed(WorldBuildingPlacementFailure.CriticalRouteBlocked, instanceId, anchor,
                 quarterTurns, footprint, entrance);
         }
 

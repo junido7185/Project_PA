@@ -2110,3 +2110,15 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - `WORLD007_Validation_Pass`, SaveRoundTrip, WORLD-004/005/006 회귀가 D3D11에서 PASS했다. compile 오류·blocking Console·신규 crash는 0이다.
 - Scene/Prefab/Packages/ProjectSettings는 변경하지 않았다. 로컬 JSON의 temp/backup 원자 저장과 구 validator의 v10 고정 assertion은 후속 부채다.
 - 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 판정 `WORLD_007_COMPLETE`, 다음 활성 티켓은 승인된 WORLD-008이다.
+
+## 2026-08-10 WORLD-008 Reachability and Navigation Prototype — COMPLETE
+
+- 기존 공식 AI Navigation 2.0.12를 그대로 사용해 2×2 Chunk, 즉 32×32 cell 단위의 local NavMesh sector 권위를 추가했다. 패키지는 바꾸지 않았다.
+- 논리 셀 그래프는 상하좌우 보행과 1 level 높이 차를 처리한다. seed 8008의 핵심 anchor 7개가 8,755개 reachable cell로 연결됐고 완전한 물 장벽은 고립으로 판정됐다.
+- B09 배치·이동 전에 핵심 anchor와 건물 entrance 접근성을 검사한다. 유일한 통로를 막는 이동은 `CriticalRouteBlocked`로 원자 거부됐다.
+- 내부 셀 변경은 sector 1개, sector 경계 변경은 정확히 이웃 포함 2개만 `UpdateNavMesh`로 비동기 갱신했다.
+- 테스트 NPC는 갱신 중 pause, 최대 2m 재투영, complete-path repath 뒤 seam을 건너 도착하고 떨림 없이 정지했다.
+- 실제 128×128 seed는 16개 sector를 57ms에 구성했고 시작점→상점 입구 NavMesh 경로가 완전했다.
+- WORLD-007/005/006, InteriorCustomer, FinalDemoRoute 회귀가 PASS했다. compile 오류·전용 blocking Console·신규 crash는 0이다.
+- Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다. 캡처와 고객 validator 종료 뒤 late-visitor NavMesh teardown 진단은 비차단 부채다.
+- 최종 판정 `WORLD_008_COMPLETE`; 다음 활성 티켓은 승인된 WORLD-009다.

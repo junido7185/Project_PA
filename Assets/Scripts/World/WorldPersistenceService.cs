@@ -356,7 +356,7 @@ public sealed class WorldPersistenceService : MonoBehaviour
                 WorldCellOccupancy.Empty);
         }
 
-        if (!ValidateBuildings(state.placedBuildings, generated.Definition, cells, out reason) ||
+        if (!ValidateBuildings(state.placedBuildings, generated, cells, out reason) ||
             !ValidateFurniture(state.shopFurniture, out reason) ||
             !ValidateResources(state.resourceStates, generated, out reason))
         {
@@ -367,11 +367,12 @@ public sealed class WorldPersistenceService : MonoBehaviour
 
     static bool ValidateBuildings(
         List<WorldPlacedBuildingSaveData> records,
-        WorldGridDefinition definition,
+        WorldGenerationResult generated,
         IReadOnlyList<WorldCellData> cells,
         out string reason)
     {
         reason = string.Empty;
+        WorldGridDefinition definition = generated.Definition;
         records ??= new List<WorldPlacedBuildingSaveData>();
         if (records.Count > 1)
         {
@@ -424,6 +425,24 @@ public sealed class WorldPersistenceService : MonoBehaviour
             !flat.HasValue || Mathf.Abs(entranceCell.ElevationLevel - flat.Value) > 1)
         {
             reason = "Persisted building entrance is blocked.";
+            return false;
+        }
+
+        if (!generated.TryGetAnchor(WorldGenerationAnchorKind.Start,
+                out WorldGenerationAnchor start))
+        {
+            reason = "Generated world has no navigation start anchor.";
+            return false;
+        }
+        var targets = generated.Anchors.Select(anchor =>
+            anchor.Kind == WorldGenerationAnchorKind.Shop
+                ? anchor.EntranceCoordinate
+                : anchor.Coordinate).ToList();
+        targets.Add(entrance);
+        if (!WorldCellReachability.CanReachAll(definition, cells, start.Coordinate,
+                targets, new HashSet<Vector2Int>(footprint), null, out _))
+        {
+            reason = "Persisted building would isolate a critical world anchor or entrance.";
             return false;
         }
         return true;
