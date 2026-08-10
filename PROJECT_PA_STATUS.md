@@ -2081,3 +2081,13 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Runtime/Editor compile 오류 0, WORLD-005와 WORLD-004~001 D3D11 회귀 PASS, blocking Console 0, 신규 crash 0이다. 기존 CS8785/CS0414만 남는다.
 - Prototype_FirstDay와 MainGame blob, prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 판정 `WORLD_005_COMPLETE`. 승인된 로컬 commit 뒤 기존 backlog `WORLD-006 World Seed + Minimal Island Generator`로 자동 진행한다.
+
+## 2026-08-10 WORLD-006 World Seed + Minimal Island Generator — COMPLETE
+
+- generationVersion 1과 configurable한 provisional 128x128 정의를 추가했다. 2m 셀·16x16 Chunk를 유지하며 Unity/System random 전역 상태나 seed별 예외 없이 integer hash/value noise로 결정 생성한다.
+- 생성 섬은 ocean border, sand coast, meadow, forest, highland, river, pond를 갖는다. start, flat 4x3 shop, beach, meadow/forest/highland/pond activity anchor는 높이차 1 이하의 dry cell graph로 연결된다.
+- Forage/Timber/Stone/Fish 후보는 generationVersion·seed·kind·coordinate 기반 stable spawn key를 사용한다. 실제 resource prefab이나 저장 schema는 추가하지 않았다.
+- WorldSandbox에서 `J` 생성, `[`/`]` seed 변경, `K` clear가 가능하다. 128x128은 64개 chunk와 16,384 top face, 8개 surface material로 보이며 per-cell GameObject는 없다.
+- 128 seed를 각각 두 번 생성한 256회 corpus는 1,599ms, checksum 128개 모두 고유, land ratio 44.9~58.2%, 모든 anchor 연결 PASS다. D3D11 WORLD-006 및 WORLD-005~001 회귀도 blocking Console 0으로 PASS했다.
+- Prototype_FirstDay/MainGame, prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 판정 `WORLD_006_COMPLETE`. 승인된 로컬 commit 뒤 `WORLD-006B Movable Shop Furniture`로 자동 진행한다.

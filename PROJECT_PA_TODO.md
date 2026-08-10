@@ -1553,3 +1553,18 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 최종 상태 `WORLD_005_COMPLETE`.
 - [ ] 승인된 WORLD-005 로컬 ticket commit 생성.
 - [ ] 다음 단일 티켓: 기존 backlog `WORLD-006 World Seed + Minimal Island Generator`. Save/NavMesh/gameplay 통합은 아직 시작하지 않는다.
+
+## WORLD-006 World Seed + Minimal Island Generator — 2026-08-10
+
+- [x] generationVersion 1, configurable provisional 128x128/2m/16x16 Chunk definition.
+- [x] deterministic ocean border, irregular coast, meadow, forest, highland, river and pond.
+- [x] safe start plateau와 independent flat 4x3 shop footprint/entrance 후보.
+- [x] start/shop/beach/meadow/forest/highland/pond anchor dry cell-graph 연결.
+- [x] Forage/Timber/Stone/Fish stable spawn key; final prefab와 save payload는 제외.
+- [x] WorldSandbox `J`, `[`/`]`, `K`와 64-chunk/8-material debug mesh, per-cell GameObject 0.
+- [x] 128 seed x 2 deterministic corpus, checksum 128개 고유, land ratio 44.9~58.2%, 1,599ms.
+- [x] Runtime/Editor compile 오류 0, D3D11 WORLD-006 및 WORLD-005~001 회귀 PASS, blocking Console 0, 신규 crash 0.
+- [x] Prototype_FirstDay/MainGame, prefab, Save schema, Packages, ProjectSettings 무변경.
+- [x] 선택 캡처 `CAPTURE_EVIDENCE_DEBT`; 최종 상태 `WORLD_006_COMPLETE`.
+- [ ] 승인된 WORLD-006 로컬 ticket commit 생성.
+- [ ] 다음 단일 티켓: `WORLD-006B Movable Shop Furniture`. World save/NavMesh/gameplay integration은 아직 시작하지 않는다.

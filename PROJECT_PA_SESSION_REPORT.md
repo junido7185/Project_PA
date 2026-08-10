@@ -2662,3 +2662,27 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - Prototype_FirstDay/MainGame blob, prefab/BuildingData 원본, SaveData/SaveManager, Packages, ProjectSettings diff는 0이고 신규 crash report도 없다.
 - 선택 캡처는 생략해 `CAPTURE_EVIDENCE_DEBT`다. 최종 ghost 색감과 창고 위치 미감은 M70 통합 플레이테스트 대상이며 기능 차단이 아니다.
 - 최종 상태 `WORLD_005_COMPLETE`. 승인된 로컬 commit 뒤 기존 backlog WORLD-006 generator로 자동 전환한다.
+
+## 2026-08-10 — WORLD-006 World Seed + Minimal Island Generator
+
+### 구현
+
+- `WorldIslandGenerationSettings`에 generationVersion 1, provisional 128x128, 2m cell, 16x16 Chunk, 1m elevation 0..6을 담았다. 수치는 configurable하며 128x128을 영구 저장 계약으로 확정하지 않았다.
+- generator는 seed를 integer hash와 fixed-point value noise에만 사용한다. irregular island mask 뒤 ocean/coast/meadow/forest/highland를 만들고 river/pond를 최소로 carve한다.
+- 중심 안전 평지와 별도 4x3 shop 후보, beach 및 meadow/forest/highland/pond activity anchor를 만들었다. generator가 dry dirt routes를 carve하고 BFS validator가 모든 cardinal route와 최대 elevation delta 1을 증명한다.
+- 생성 자원은 Forage/Timber/Stone/Fish kind와 stable spawn key만 가진다. key는 `(generationVersion, seed, kind, coordinate)`에서 재현되며 prefab·inventory·save 상태를 만들지 않는다.
+- `WorldGeneratedIslandDebugView`는 명시적으로 `J`를 누르거나 validator가 호출할 때만 8x8=64 chunk mesh를 만든다. `[`/`]`로 seed, `K`로 clear하며 시작 시 idle이어서 기존 WorldGrid 회귀를 바꾸지 않는다.
+
+### 검증
+
+- `Logs/WORLD006_CompileImport.log`: Runtime/Editor compile 오류 0, 기존 CS8785/CS0414만 유지.
+- `Logs/WORLD006_Validation.log`: 128 fixed seeds를 각각 두 번 생성해 128 checksum 모두 deterministic·unique, land ratio 44.9~58.2%, ocean border, 7 anchors, 4 biomes, river/pond, 4 resource kinds와 key uniqueness, 전 anchor connectivity를 PASS했다. 256 생성은 1,599ms였다.
+- D3D11 Play Mode에서 샘플 seed와 다음 seed가 서로 다른 checksum을 만들었고 각각 64 chunks, 16,384 top faces, eight materials, water/shoreline, root+64 transform만 사용했다. 생성+mesh는 52ms/31ms, cleanup 뒤 runtime state 0, blocking Console 0이다.
+- `Logs/WORLD006_WORLD005_Regression.log`부터 `WORLD006_WORLD001_Regression.log`까지 building/surface/terraform/terrain/grid가 모두 `FINISHED_PASS`다.
+
+### 판정
+
+- WorldSandbox에 filename-matched GUID의 debug view 1개만 추가했다. scene root는 3개, embedded MonoScript는 0이다.
+- Prototype_FirstDay/MainGame blob, prefab/BuildingData, SaveData/SaveManager, Packages, ProjectSettings diff는 0이고 신규 crash report도 없다.
+- 자동 캡처는 재시도하지 않아 `CAPTURE_EVIDENCE_DEBT`다. 64 mesh와 재질/water/shoreline 증거는 기능 Gate를 충족하며 seed 미감은 M70 통합 플레이테스트 대상이다.
+- 최종 상태 `WORLD_006_COMPLETE`. 승인된 로컬 commit 뒤 WORLD-006B로 자동 전환한다.

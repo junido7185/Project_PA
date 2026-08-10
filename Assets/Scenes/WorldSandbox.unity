@@ -316,6 +316,7 @@ GameObject:
   - component: {fileID: 1283982539}
   - component: {fileID: 1283982547}
   - component: {fileID: 1283982546}
+  - component: {fileID: 1283982548}
   m_Layer: 0
   m_Name: WorldGrid
   m_TagString: Untagged
@@ -498,6 +499,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 392552f32cda8114794eafa09e0e5c85, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::WorldBuildingPlacementService
+--- !u!114 &1283982548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283982538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d047b706894684aa94318cef2b649b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::WorldGeneratedIslandDebugView
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

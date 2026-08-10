@@ -570,3 +570,15 @@ Append-only log for guarded automation and dry-run loop work.
 - Runtime/Editor compile errors, blocking Console errors and new crashes are zero. Only existing CS8785/CS0414 warnings remain. Prototype_FirstDay, MainGame, prefab sources, Save schema, Packages and ProjectSettings are unchanged.
 - The optional capture was skipped as `CAPTURE_EVIDENCE_DEBT`; renderer presence, prefab identity, transform, footprint and runtime behavior are automatically proven.
 - Final state: `WORLD_005_COMPLETE`. Create the approved local ticket commit, then continue to existing backlog `WORLD-006 World Seed + Minimal Island Generator`.
+
+## 2026-08-10 — WORLD-006 World Seed + Minimal Island Generator
+
+- Continued the preapproved M70 sequence from clean WORLD-005 commit `971d23d9c5c186299e33a59f263df0ab39773414`.
+- Added generationVersion 1 with a configurable but provisional 128x128 definition, 2m cells and 16x16 chunks. The integer hash/value-noise pipeline uses no Unity/System random state or special-case seed.
+- Generated a bounded irregular island with ocean border, sand coast, meadow, forest, highland, minimal river and pond. A safe start plateau, independent flat 4x3 shop candidate, beach and four activity anchors are connected by dry cell routes with elevation steps no greater than one.
+- Added stable forage/timber/stone/fish spawn keys derived from generationVersion, seed, kind and coordinate; no final resource prefab or save payload was created.
+- WorldSandbox `J` builds the selected seed as 64 existing custom-mesh chunks, `[`/`]` changes seed and `K` clears. The view uses eight existing surface slots and no per-cell GameObjects; it remains idle on Play start to preserve regressions.
+- `Logs/WORLD006_Validation.log` passed 128 seeds generated twice: all deterministic, 128 unique checksums, land ratio 44.9%..58.2%, all anchors reachable, and 256 generations in 1599ms. D3D11 sample mesh generation was 52ms/31ms with water and shoreline geometry.
+- WORLD-005~001 regressions all finished PASS. Runtime/Editor compile errors, blocking Console errors and new crashes are zero; only existing CS8785/CS0414 remain.
+- Prototype_FirstDay, MainGame, prefab sources, Save schema, Packages and ProjectSettings are unchanged. Capture remains `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `WORLD_006_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-006B Movable Shop Furniture`.

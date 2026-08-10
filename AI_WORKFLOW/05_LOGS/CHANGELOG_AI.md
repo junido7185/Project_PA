@@ -966,3 +966,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - Runtime/Editor compile 오류 0, WORLD-005 D3D11 Edit/Play PASS, WORLD-004·003·002·001 회귀 PASS, blocking Console 0, 신규 crash 0이다.
 - Prototype_FirstDay/MainGame, prefab source, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_005_COMPLETE`다.
 - 명시적 M70 연속 승인에 따라 로컬 ticket commit 뒤 기존 backlog WORLD-006 generator로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.
+
+## 2026-08-10 — Codex — WORLD-006 World Seed + Minimal Island Generator (DONE)
+
+- generationVersion 1의 configurable provisional 128x128 World definition과 seed-only deterministic island generator를 추가했다.
+- ocean/coast/meadow/forest/highland, river/pond, safe start, flat 4x3 shop candidate, beach와 activity anchors를 만들고 cell graph connectivity를 보장했다.
+- Forage/Timber/Stone/Fish stable spawn keys를 추가했지만 final resource prefab, save payload, NavMesh, gameplay adapter는 만들지 않았다.
+- WorldSandbox debug view가 명시적 입력에서만 64 custom-mesh chunks와 eight surface materials를 생성하고 교체·clear한다. per-cell GameObject는 없다.
+- 128 seeds x 2 corpus가 checksum 128개 고유, land ratio 44.9~58.2%, 1,599ms로 PASS했다. D3D11 renderer와 WORLD-005~001 회귀도 blocking Console 0, 신규 crash 0으로 PASS했다.
+- Prototype_FirstDay/MainGame, prefab source, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_006_COMPLETE`다.
+- 승인된 로컬 ticket commit 뒤 WORLD-006B로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.

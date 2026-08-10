@@ -350,3 +350,15 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **증거:** `Logs/WORLD005_Validation.log` 및 `WORLD005_WORLD004_Regression.log`, `WORLD005_WORLD003_Regression.log`, `WORLD005_WORLD002_Regression_Rerun.log`, `WORLD005_WORLD001_Regression.log`. 모두 Unity 6000.3.2f1 D3D11 `FINISHED_PASS`, blocking Console 0, 신규 crash 0이다.
 - **컴파일/캡처:** Runtime/Editor 오류 0, 기존 CS8785/CS0414만 남는다. 캡처는 `CAPTURE_EVIDENCE_DEBT`이며 기능 차단이 아니다.
 - **다음 활성 ticket:** 로컬 WORLD-005 commit 뒤 기존 backlog `WORLD-006 World Seed + Minimal Island Generator`만 활성화한다. 128x128은 provisional target이고 Save/NavMesh/gameplay integration은 아직 섞지 않는다.
+
+## 2026-08-10 WORLD-006 World Seed + Minimal Island Generator — COMPLETE
+
+- **기준:** `milestone/world-alpha-70@971d23d9c5c186299e33a59f263df0ab39773414`. 사용자의 연속 승인과 로컬 commit 허용은 유지되며 push/rebase/reset-hard/clean은 금지다.
+- **정의:** generationVersion 1, provisional 128x128, 2m cell, 16x16 Chunk, level 0..6. 128x128은 구성 가능한 M70 표본이지 영구 save 계약이 아니다.
+- **생성:** seed 기반 integer hash/fixed-point noise로 ocean border, irregular coast, meadow, forest, highland, river와 pond를 만든다. Unity/System RNG 전역 상태와 seed별 예외는 없다.
+- **Gate:** start, independent flat 4x3 shop candidate/entrance, beach, meadow/forest/highland/pond activity anchors가 존재한다. dry cardinal cell graph는 최대 1 level step으로 모두 연결된다.
+- **자원:** Forage/Timber/Stone/Fish candidate는 `(generationVersion, seed, kind, coordinate)` stable key를 사용한다. 실제 prefab·respawn·save는 후속 티켓 범위다.
+- **WorldSandbox:** `J` 생성, `[`/`]` seed, `K` clear. 128x128 result는 64 custom mesh chunks, 16,384 top faces, eight materials, water/shoreline을 사용하고 per-cell GameObject가 없다. 컴포넌트는 시작 시 idle이다.
+- **증거:** `Logs/WORLD006_Validation.log`에서 128 seed x 2, unique checksum 128, land 44.9~58.2%, 1,599ms, anchors/connectivity/resources 및 D3D11 64-chunk 렌더 PASS. `WORLD006_WORLD005_Regression.log`~`WORLD006_WORLD001_Regression.log` 모두 `FINISHED_PASS`다.
+- **안전:** Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0. Prototype_FirstDay/MainGame, prefab, Save schema, Packages, ProjectSettings diff 0. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- **다음 활성 ticket:** WORLD-006 로컬 commit 뒤 preapproved `WORLD-006B Movable Shop Furniture`만 시작한다. World persistence와 NavMesh는 아직 시작하지 않는다.
