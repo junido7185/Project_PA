@@ -2091,3 +2091,13 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 128 seed를 각각 두 번 생성한 256회 corpus는 1,599ms, checksum 128개 모두 고유, land ratio 44.9~58.2%, 모든 anchor 연결 PASS다. D3D11 WORLD-006 및 WORLD-005~001 회귀도 blocking Console 0으로 PASS했다.
 - Prototype_FirstDay/MainGame, prefab, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 판정 `WORLD_006_COMPLETE`. 승인된 로컬 commit 뒤 `WORLD-006B Movable Shop Furniture`로 자동 진행한다.
+
+## 2026-08-10 WORLD-006B Movable Shop Furniture — COMPLETE
+
+- 새 병렬 시스템을 만들지 않고 기존 `ShopCustomizationController`와 2m `shop.interior` 격자를 M70 실내 가구 권위로 채택했다.
+- 실제 고정 판매대 1개를 `(4,0)`으로 이동하고 270° 회전했다. hierarchy, `ShopSlot`, Bread 2개, 73G 표시가는 이동 뒤에도 유지됐다.
+- 보호 입구 이동은 원자적으로 거부되고, 상점 입구→서비스 통로와 회전된 고객 접근점의 완전 NavMesh 경로가 유지됐다.
+- 이동 취소가 authored 미세 오프셋을 셀 중심으로 스냅하던 결함을 수정해 시작 world Transform을 정확히 복원한다.
+- 이동된 판매대에서 기존 전체 스택 판매 계약으로 146G가 EconomyService에 입금됐다. v10 `PlaceableSaveData`는 stable ID/zone/cell/rotation을 WORLD-007 입력으로 투영한다.
+- 전용 D3D11, InteriorCustomer, SaveRoundTrip, FinalDemoRoute 회귀가 PASS했다. compile 오류·blocking Console·신규 crash는 0이다.
+- Scene/Prefab/Save schema/Packages/ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 판정 `WORLD_006B_COMPLETE`다.

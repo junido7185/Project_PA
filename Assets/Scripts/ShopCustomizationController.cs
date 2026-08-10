@@ -121,6 +121,9 @@ public class ShopCustomizationController : MonoBehaviour
     int _previewRotation;
     bool _previewValid;
     string _previewReason;
+    Vector3 _moveStartPosition;
+    Quaternion _moveStartRotation;
+    bool _moveStartCaptured;
     int _catalogIndex;
     int _savedHotbarIndex = -1;
     bool _starterGranted;
@@ -583,6 +586,7 @@ public class ShopCustomizationController : MonoBehaviour
         _mode = _activePlacement != null ? PlacementMode.Move : PlacementMode.New;
         if (_activePlacement != null)
         {
+            CaptureMoveStartTransform();
             _activePlacement.gameObject.SetActive(true);
             SetPlacementCollision(_activePlacement.gameObject, false);
         }
@@ -599,8 +603,17 @@ public class ShopCustomizationController : MonoBehaviour
         _activeDefinition = nearest.definition;
         _previewRotation = nearest.rotation;
         _mode = PlacementMode.Move;
+        CaptureMoveStartTransform();
         SetPlacementCollision(nearest.gameObject, false);
         SetStatus($"{nearest.definition.displayName} 이동 중 · R 회전 · 바닥 클릭 확정");
+    }
+
+    void CaptureMoveStartTransform()
+    {
+        _moveStartCaptured = _activePlacement != null && _activePlacement.gameObject != null;
+        if (!_moveStartCaptured) return;
+        _moveStartPosition = _activePlacement.gameObject.transform.position;
+        _moveStartRotation = _activePlacement.gameObject.transform.rotation;
     }
 
     void RecoverNearest()
@@ -690,6 +703,7 @@ public class ShopCustomizationController : MonoBehaviour
 
         _activePlacement = null;
         _activeDefinition = null;
+        _moveStartCaptured = false;
         _mode = PlacementMode.Browse;
         ClearHighlights();
         RebuildCatalog();
@@ -707,9 +721,12 @@ public class ShopCustomizationController : MonoBehaviour
             }
             else
             {
-                _activePlacement.gameObject.transform.position = GetPlacementWorld(_activePlacement.definition,
-                    _activePlacement.anchor, _activePlacement.rotation);
-                _activePlacement.gameObject.transform.rotation = GetPlacementRotation(_activePlacement.rotation);
+                _activePlacement.gameObject.transform.position = _moveStartCaptured
+                    ? _moveStartPosition
+                    : GetPlacementWorld(_activePlacement.definition, _activePlacement.anchor, _activePlacement.rotation);
+                _activePlacement.gameObject.transform.rotation = _moveStartCaptured
+                    ? _moveStartRotation
+                    : GetPlacementRotation(_activePlacement.rotation);
                 SetPlacementCollision(_activePlacement.gameObject, true);
                 ClearPreviewTint(_activePlacement.gameObject);
             }
@@ -717,6 +734,7 @@ public class ShopCustomizationController : MonoBehaviour
         DestroyPreviewObject();
         _activePlacement = null;
         _activeDefinition = null;
+        _moveStartCaptured = false;
         ClearHighlights();
         if (_mode != PlacementMode.Closed) _mode = PlacementMode.Browse;
     }

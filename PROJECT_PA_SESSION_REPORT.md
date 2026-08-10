@@ -2686,3 +2686,24 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - Prototype_FirstDay/MainGame blob, prefab/BuildingData, SaveData/SaveManager, Packages, ProjectSettings diff는 0이고 신규 crash report도 없다.
 - 자동 캡처는 재시도하지 않아 `CAPTURE_EVIDENCE_DEBT`다. 64 mesh와 재질/water/shoreline 증거는 기능 Gate를 충족하며 seed 미감은 M70 통합 플레이테스트 대상이다.
 - 최종 상태 `WORLD_006_COMPLETE`. 승인된 로컬 commit 뒤 WORLD-006B로 자동 전환한다.
+
+## 2026-08-10 — WORLD-006B Movable Shop Furniture
+
+### 구현
+
+- 기존 `ShopCustomizationController`가 이미 `shop.interior`, 판매대 footprint/clearance, 보호 통로, 회전 interaction, `ShopSlot`, NPC 접근, v10 placeable projection을 소유하므로 새 실내 배치 시스템을 만들지 않았다.
+- 기존 이동 취소는 authored 고정 판매대의 미세 오프셋을 잃고 셀 중심으로 스냅했다. 이동 시작 world position/rotation을 캡처해 취소 시 정확히 복원하도록 국소 수정했다.
+- 캡처 없는 전용 `PA_WORLD006BShopFurnitureValidator`를 추가해 실제 플레이어 배치 장부 버튼, 판매대, 고객, NavMesh, EconomyService와 v10 projection을 같은 Play Mode에서 확인한다.
+
+### 검증
+
+- `Logs/WORLD006B_Validation_Pass.log`: `(4,0)/r3`, 정확한 취소 rollback, 보호 입구 거부, 통로 유지, ShopSlot 재고/가격 보존, 고객 `PathComplete`, Bread 2개 전체 스택 146G 판매, v10 record PASS.
+- 첫 validator는 authored Transform 스냅을 발견해 실제 구현을 한 번 수정했다. 다음 실행의 판매 실패 표시는 실제 146G 성공 로그와 모순되는 단일 수량 가정이어서 기존 전체 스택 계약으로 assertion만 정정했다. 두 항목은 `BUG_LOG.md`에서 닫았다.
+- `Logs/WORLD006B_InteriorCustomer_Regression.log`, `WORLD006B_SaveRoundTrip_Regression.log`, `WORLD006B_FinalDemoRoute_Regression.log`가 모두 성공 종료했다.
+- Runtime/Editor compile 오류 0, 기존 CS8785/CS0414만 유지, 기능 validator blocking Console 0, 신규 crash 0이다.
+
+### 판정
+
+- Prototype_FirstDay는 read-only로 열고 저장하지 않았다. WorldSandbox/MainGame/Prefab/SaveData/Packages/ProjectSettings diff는 0이다.
+- 캡처는 수행하지 않아 `CAPTURE_EVIDENCE_DEBT`지만 기능 Gate를 차단하지 않는다.
+- 최종 상태 `WORLD_006B_COMPLETE`. 승인된 로컬 commit 뒤 WORLD-007로 자동 전환한다.

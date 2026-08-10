@@ -1568,3 +1568,18 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 선택 캡처 `CAPTURE_EVIDENCE_DEBT`; 최종 상태 `WORLD_006_COMPLETE`.
 - [ ] 승인된 WORLD-006 로컬 ticket commit 생성.
 - [ ] 다음 단일 티켓: `WORLD-006B Movable Shop Furniture`. World save/NavMesh/gameplay integration은 아직 시작하지 않는다.
+
+## WORLD-006B Movable Shop Furniture — 2026-08-10
+
+- [x] 기존 `ShopCustomizationController`/`shop.interior`를 단일 실내 배치 권위로 재사용하고 병렬 시스템 추가 금지.
+- [x] 실제 `ShopSlot` 판매대 1개를 상점 안에서 이동하고 270° 회전.
+- [x] 보호 입구 거부, 점유 원자성, 입구→서비스 통로 유지.
+- [x] 이동 취소 시 셀 중심이 아니라 정확한 authored 시작 Transform 복원.
+- [x] ShopSlot hierarchy/component/재고/가격 유지, 고객 완전 NavMesh 접근.
+- [x] 이동 뒤 Bread 2개 전체 스택 146G 판매와 EconomyService 반영.
+- [x] 기존 v10 placeable stable ID/zone/cell/rotation 투영으로 WORLD-007 저장 대상 준비.
+- [x] Runtime/Editor compile, 전용 D3D11, InteriorCustomer, SaveRoundTrip, FinalDemoRoute PASS; blocking Console/crash 0.
+- [x] Scene/Prefab/Save schema/Packages/ProjectSettings 무변경, 캡처 `CAPTURE_EVIDENCE_DEBT`.
+- [x] 최종 상태 `WORLD_006B_COMPLETE`.
+- [ ] 승인된 WORLD-006B 로컬 ticket commit 생성.
+- [ ] 다음 단일 티켓: `WORLD-007 World Persistence` — seed/generationVersion/sparse terrain/building/furniture/occupancy/safe player round-trip.

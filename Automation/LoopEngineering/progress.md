@@ -582,3 +582,14 @@ Append-only log for guarded automation and dry-run loop work.
 - WORLD-005~001 regressions all finished PASS. Runtime/Editor compile errors, blocking Console errors and new crashes are zero; only existing CS8785/CS0414 remain.
 - Prototype_FirstDay, MainGame, prefab sources, Save schema, Packages and ProjectSettings are unchanged. Capture remains `CAPTURE_EVIDENCE_DEBT`.
 - Final state: `WORLD_006_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-006B Movable Shop Furniture`.
+
+## 2026-08-10 — WORLD-006B Movable Shop Furniture
+
+- Reused the existing `ShopCustomizationController` and `shop.interior` 2m grid as the sole interior furniture authority; no parallel world-furniture service, scene, prefab or save schema was added.
+- The dedicated no-capture D3D11 validator moved one real authored `ShopSlot` to `(4,0)`, rotated it 270 degrees, preserved its hierarchy/component/stock/price, and proved an in-bounds authored approach with a complete customer NavMesh path.
+- Protected entrance movement was rejected atomically and the entry-to-service route remained connected. The first run found a real authored-offset snap on move cancellation; the controller now captures the exact move-start Transform and restores it on cancel.
+- A validator-only assumption expected one-unit sales, while the real ShopSlot sold its two-item stack for 146G. The assertion was corrected to the established full-stack contract; production sale code was unchanged.
+- Existing v10 `PlaceableSaveData` projected the same stable instance ID, `shop.interior`, cell `(4,0)` and rotation 3, preparing WORLD-007 without changing schema 10.
+- `Logs/WORLD006B_Validation_Pass.log`, InteriorCustomer, SaveRoundTrip and FinalDemoRoute all passed. Runtime/Editor compile errors, blocking Console errors and new crashes are zero; existing CS8785/CS0414 remain.
+- Prototype_FirstDay was opened read-only and remained clean. WorldSandbox, MainGame, prefabs, SaveData, Packages and ProjectSettings are unchanged; capture remains nonblocking `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `WORLD_006B_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-007 World Persistence`.

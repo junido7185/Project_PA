@@ -514,3 +514,18 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 원인: 실제 공개 진입점 `PA_WorldChunkTerrainTools.RunTerrainValidationBatch` 대신 존재하지 않는 클래스명을 전달했다.
 - 영향: compile/validator 구현 실패가 아니며 코드·씬·에셋 변경 및 crash는 0이었다. 뒤의 WORLD-001 명령은 같은 shell이 중단되어 별도로 실행했다.
 - 해결: 잘못된 명령을 반복하지 않고 실제 선언을 확인한 뒤 올바른 진입점으로 한 번 실행했다. `Logs/WORLD005_WORLD002_Regression_Rerun.log`는 Edit/Play 및 blocking Console 0으로 `FINISHED_PASS`했고 WORLD-001도 이어서 PASS했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-006B 고정 판매대 이동 취소 Transform 스냅
+
+- 증상: 첫 D3D11 WORLD-006B validator에서 보호 셀 거부와 원자성까지 통과했지만, 실제 배치 장부의 `가까운 가구 이동`을 연 뒤 닫았을 때 판매대가 제작된 시작 Transform과 정확히 일치하지 않았다. 셀·회전 record는 그대로였다.
+- 원인: `CancelActivePlacement`가 이동 시작 Transform을 보존하지 않고 `anchor`와 `rotation`에서 셀 중심 Transform을 다시 계산했다. 최초 배치가 grandfather된 고정 판매대처럼 제작 오프셋을 가진 경우 취소가 같은 셀 안에서 시각적 스냅을 만들었다.
+- 영향: Play Mode 런타임 검증에서만 발생했고 씬은 저장되지 않았다. 재고, `ShopSlot`, 점유 record, SaveData, Packages, ProjectSettings에는 손상이 없으며 신규 crash도 없다.
+- 복구: 이동 시작 시 실제 world position/rotation을 캡처하고, 취소 시 해당 Transform을 정확히 복원하는 최소 수정만 적용한다. 컴파일 뒤 같은 validator를 한 번만 재실행하며 동일 실패가 반복되면 세 번째 시도 없이 중단한다.
+- 최종 결과: 수정 뒤 D3D11 검증에서 실제 배치 장부의 이동 취소가 authored 시작 위치·회전을 정확히 복원했다. 이어서 이동·270° 회전, 고객 완전 경로, 146G 판매, v10 배치 투영과 세 회귀가 모두 PASS했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-006B validator의 ShopSlot 단일 수량 판매 가정
+
+- 증상: 취소 복원 수정 뒤 validator는 고객의 완전 NavMesh 경로까지 통과했고 실제 판매 로그도 `BreadLoaf +146G`를 남겼지만, 검증기는 판매 실패로 판정했다.
+- 원인: 실제 `ShopSlot.TryPurchaseByNpc`는 진열된 스택 전체를 한 번에 판매한다. 검증기는 2개 × 73G 중 한 개만 팔려 73G와 잔여 1개가 남는다고 잘못 가정했다.
+- 영향: 판매·경제·통계 기능은 정상 작동했고 EconomyService 잔액은 500G→646G로 증가했다. 실패는 validator assertion 하나뿐이며 씬·저장·패키지에는 영향이 없다.
+- 해결: 기존 스택 전체 판매 계약에 맞춰 146G 입금과 빈 슬롯을 검사한다. 이는 구현 수정이 아닌 명백한 validator 가정 정정이며, 해당 원인으로는 한 번만 재실행한다.

@@ -1,5 +1,13 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
+## M70 현재 상태 — 2026-08-10
+
+- Branch `milestone/world-alpha-70`; latest completed code baseline before this ticket is `02a8ab3` (WORLD-006). WORLD-006B is verified and awaiting its authorized local ticket commit.
+- WORLD-001~006B are complete. Existing `ShopCustomizationController` remains the sole `shop.interior` furniture authority; no parallel placement or save system was created.
+- WORLD-006B D3D11 proved real sales-display move/270° rotation, exact cancellation rollback, protected path, complete customer NavMesh access, 146G sale and v10 placeable projection. InteriorCustomer, SaveRoundTrip and FinalDemoRoute regressions pass.
+- Active next ticket after commit: preapproved `WORLD-007 World Persistence`. Read `Docs/WorldArchitecture/WORLD_BOUNDED_BACKLOG.md`, current loop state, WorldGrid/terrain/building/island sources, and the existing v10 save authority before editing.
+- Preserve Prototype_FirstDay as Golden Regression, keep MainGame gated, do not change Packages/ProjectSettings, and do not duplicate existing SaveManager or shop customization authority.
+
 최종 갱신: 2026-08-04 (Task 131 Tripo 장기 정책 재확인·B06 Kitchen 보정 / PARTIAL)
 규칙: **3~5개 작업마다** 이 문서의 "현재 상태"와 "우선순위"를 갱신한다. (`CODEX_HANDOFF_PROMPT` 사용)
 

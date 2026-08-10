@@ -976,3 +976,12 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 128 seeds x 2 corpus가 checksum 128개 고유, land ratio 44.9~58.2%, 1,599ms로 PASS했다. D3D11 renderer와 WORLD-005~001 회귀도 blocking Console 0, 신규 crash 0으로 PASS했다.
 - Prototype_FirstDay/MainGame, prefab source, Save schema, Packages, ProjectSettings는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태는 `WORLD_006_COMPLETE`다.
 - 승인된 로컬 ticket commit 뒤 WORLD-006B로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.
+
+## 2026-08-10 — Codex — WORLD-006B Movable Shop Furniture (DONE)
+
+- 기존 `ShopCustomizationController`/`GridService shop.interior`를 M70 실내 가구 단일 권위로 재사용하고 새 배치 시스템은 추가하지 않았다.
+- authored 판매대 이동 취소가 셀 중심으로 스냅하던 결함을 이동 시작 Transform 캡처/복원으로 수정했다.
+- 전용 no-capture D3D11 validator가 실제 판매대 `(4,0)/270°`, 보호 입구 거부, 통로, ShopSlot 재고·가격, 고객 완전 경로, 146G 전체 스택 판매와 v10 save projection을 PASS했다.
+- InteriorCustomer, SaveRoundTrip, FinalDemoRoute 회귀와 Runtime/Editor compile이 PASS했고 blocking Console 및 신규 crash는 0이다.
+- Prototype_FirstDay는 read-only, 나머지 Scene/Prefab/Save schema/Packages/ProjectSettings는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 승인된 로컬 ticket commit 뒤 WORLD-007로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.
