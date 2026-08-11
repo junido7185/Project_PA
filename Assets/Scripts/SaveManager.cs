@@ -130,6 +130,10 @@ public class SaveManager : MonoBehaviour
             ?? FindFirstObjectByType<OutdoorPlacementController>();
         if (outdoorPlacement != null && outdoorPlacement.IsReady)
             outdoorPlacement.WriteSaveFields(data);
+        var worldAdapter = WorldGameplayAdapterService.Instance
+            ?? FindFirstObjectByType<WorldGameplayAdapterService>();
+        if (worldAdapter != null && worldAdapter.IsReady)
+            worldAdapter.WriteSaveFields(data);
 
         // WORLD-007 — procedural world state is additive. Legacy scenes emit an
         // explicit LegacyFixed marker and retain their existing absolute records.
@@ -345,6 +349,11 @@ public class SaveManager : MonoBehaviour
             ?? FindFirstObjectByType<OutdoorPlacementController>();
         if (outdoorPlacement != null && outdoorPlacement.IsReady)
             outdoorPlacement.RestoreSavedState(data.placeables);
+
+        var worldAdapter = WorldGameplayAdapterService.Instance
+            ?? FindFirstObjectByType<WorldGameplayAdapterService>();
+        if (worldAdapter != null && worldAdapter.IsReady)
+            worldAdapter.RestoreRuntimeWorldState(restoredPlayerPosition, data.placeables);
 
         DeserializeShopSlots(data.shopSlots);
 

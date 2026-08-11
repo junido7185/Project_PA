@@ -1,5 +1,16 @@
 # Project PA Status
 
+## 2026-08-11 — M70 PLAYABLE WORLD ALPHA COMPLETE
+
+- `WORLD-001` through `WORLD-010` are complete on `milestone/world-alpha-70`. The final ticket baseline was `46f6515`.
+- WorldSandbox now provides a connected playable alpha: existing movement/camera, provisional 128×128 generated island/64 chunks, gather, craft, terraform, B09 placement, movable functional B01 sales display, stocking, opening, NPC purchase, revenue, save and real restart/load.
+- Existing Inventory/Crafting/Shop/NPC/Economy/DayNight/Save authorities remain canonical. No parallel gameplay, input, or save architecture was introduced.
+- Primary validation: `Logs/WORLD010_M70_Validation_02.log` → `FINISHED_PASS M70_PLAYABLE_WORLD_ALPHA_COMPLETE`, D3D11, blocking Console 0.
+- All requested Golden and WORLD-006B~009 regressions pass; Runtime/Editor compile errors and new crash artifacts are 0.
+- Protected assets remain unchanged: Prototype_FirstDay Golden scene, WorldSandbox YAML, MainGame, prefabs, Packages, ProjectSettings, and SaveData schema/DTO.
+- 128×128 is a provisional M70 target, not the permanent island-size decision. MainGame integration remains a separately approved future ticket.
+- Remaining work is nonblocking human review/polish backlog: final terrain/coast/art feel, alpha UI/debug overlap, shop/map readability, drag ghost, phone hiring/feed empty-state, B06/audio polish, and capture evidence.
+
 Inspection date: 2026-06-19
 Project root: `C:\Users\sdjsd\Desktop\Unity\Project_PA`
 Unity version: 6000.3.2f1

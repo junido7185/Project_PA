@@ -40,6 +40,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     const string PlankRecipeResource = "Recipes/Recipe_Plank";
     const string ResourceActivityPrefix = "world-resource:";
     const float CustomerTimeoutSeconds = 24f;
+    public const string SalesDisplayDefinitionId = "world.b01.sales-display";
+    public const string SalesDisplayInstanceId = "world-b01-sales-display-001";
 
     WorldGridService _grid;
     WorldPersistenceService _persistence;
@@ -60,6 +62,12 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     SaveManager _saveManager;
     NpcController _customer;
     ShopSlot _customerTargetSlot;
+    Transform _salesDisplayRoot;
+    Vector3 _salesDisplayBaseLocalPosition;
+    Quaternion _salesDisplayBaseLocalRotation;
+    int _salesDisplayGridX;
+    int _salesDisplayGridY;
+    int _salesDisplayQuarterTurns;
     int _moneyBeforeCustomer;
     float _customerStartedAt;
     long _boundSeed = long.MinValue;
@@ -83,6 +91,9 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public Workbench RuntimeWorkbench => _workbench;
     public NpcController RuntimeCustomer => _customer;
     public SaveManager RuntimeSaveManager => _saveManager;
+    public Vector2Int SalesDisplayGrid => new Vector2Int(
+        _salesDisplayGridX, _salesDisplayGridY);
+    public int SalesDisplayQuarterTurns => _salesDisplayQuarterTurns;
     public bool CustomerPurchaseCompleted => State == WorldGameplayAdapterState.CustomerPurchased;
     public int ConsumedResourceCount => CaptureWorldState()?.resourceStates?
         .Count(state => state != null && state.consumed) ?? 0;
@@ -251,6 +262,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             ? _shopRoot.GetComponentsInChildren<ShopSlot>(true)
                 .OrderBy(slot => slot.name, StringComparer.Ordinal).ToArray()
             : Array.Empty<ShopSlot>();
+        ResolveSalesDisplayRoot();
 
         if (_inventory == null || _economy == null || _clock == null || _dayLoop == null ||
             _saveManager == null || ItemRegistry.Instance == null || _shop == null ||
@@ -266,6 +278,25 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         AddRuntimeLabel(_shopRoot.transform, "B01 · 밤 상점", new Color(1f, 0.88f, 0.48f));
         AddRuntimeLabel(_workbenchRoot.transform, "B05 · 제작", new Color(0.72f, 1f, 0.72f));
         return true;
+    }
+
+    void ResolveSalesDisplayRoot()
+    {
+        _salesDisplayRoot = null;
+        if (_shopSlots.Length == 0) return;
+        Transform candidate = _shopSlots[0] != null ? _shopSlots[0].transform.parent : null;
+        if (candidate == null || _shopSlots.Any(slot =>
+                slot == null || slot.transform.parent != candidate))
+        {
+            return;
+        }
+
+        _salesDisplayRoot = candidate;
+        _salesDisplayBaseLocalPosition = candidate.localPosition;
+        _salesDisplayBaseLocalRotation = candidate.localRotation;
+        _salesDisplayGridX = 0;
+        _salesDisplayGridY = 0;
+        _salesDisplayQuarterTurns = 0;
     }
 
     bool TryInstantiateBuilding(
@@ -480,6 +511,48 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         return true;
     }
 
+    public bool TryMoveSalesDisplay(
+        int gridX,
+        int gridY,
+        int quarterTurns,
+        out string reason)
+    {
+        reason = string.Empty;
+        if (!IsReady || _salesDisplayRoot == null || _shopSlots.Length == 0)
+        {
+            reason = "B01 sales display root is unavailable.";
+            return false;
+        }
+        if (State == WorldGameplayAdapterState.CustomerMoving)
+        {
+            reason = "The sales display cannot move while a customer owns a visit target.";
+            return false;
+        }
+        if (gridX < -1 || gridX > 1 || gridY < 0 || gridY > 1)
+        {
+            reason = "The display must remain inside the bounded B01 placement zone.";
+            return false;
+        }
+
+        int normalized = WorldBuildingPlacementDefinition.NormalizeQuarterTurns(quarterTurns);
+        ApplySalesDisplayPose(gridX, gridY, normalized);
+        _lastAction = $"Moved the functional B01 sales display to ({gridX},{gridY}) rot {normalized}.";
+        return true;
+    }
+
+    void ApplySalesDisplayPose(int gridX, int gridY, int quarterTurns)
+    {
+        if (_salesDisplayRoot == null) return;
+        _salesDisplayGridX = gridX;
+        _salesDisplayGridY = gridY;
+        _salesDisplayQuarterTurns =
+            WorldBuildingPlacementDefinition.NormalizeQuarterTurns(quarterTurns);
+        _salesDisplayRoot.localPosition = _salesDisplayBaseLocalPosition +
+                                          new Vector3(gridX * 0.75f, 0f, gridY * 0.55f);
+        _salesDisplayRoot.localRotation = _salesDisplayBaseLocalRotation *
+                                          Quaternion.Euler(0f, _salesDisplayQuarterTurns * 90f, 0f);
+    }
+
     public bool TryBeginCustomerVisit(ShopSlot targetSlot, out string reason)
     {
         reason = string.Empty;
@@ -584,7 +657,65 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     {
         if (_persistence == null || !_persistence.IsProceduralActive) return null;
         Vector3 playerPosition = _playerRoot != null ? _playerRoot.transform.position : Vector3.zero;
-        return _persistence.CaptureState(playerPosition, Array.Empty<PlaceableSaveData>());
+        return _persistence.CaptureState(playerPosition, CaptureWorldShopFurniture());
+    }
+
+    public void WriteSaveFields(SaveData data)
+    {
+        if (data == null) return;
+        data.placeables ??= new List<PlaceableSaveData>();
+        data.placeables.RemoveAll(record => record != null &&
+            record.instanceId == SalesDisplayInstanceId);
+        data.placeables.AddRange(CaptureWorldShopFurniture());
+    }
+
+    public void RestoreRuntimeWorldState(
+        Vector3 safePlayerPosition,
+        IReadOnlyList<PlaceableSaveData> restoredFurniture)
+    {
+        if (_persistence != null && _persistence.IsProceduralActive &&
+            _persistence.ActiveSeed != _boundSeed)
+        {
+            BindRuntimeObjectsToSeed(_persistence.ActiveSeed);
+        }
+
+        if (_playerRoot != null)
+        {
+            CharacterController controller = _playerRoot.GetComponent<CharacterController>();
+            if (controller != null) controller.enabled = false;
+            _playerRoot.transform.position = safePlayerPosition;
+            if (controller != null) controller.enabled = true;
+        }
+
+        PlaceableSaveData display = restoredFurniture?.FirstOrDefault(record =>
+            record != null && record.instanceId == SalesDisplayInstanceId);
+        if (display != null)
+            ApplySalesDisplayPose(display.gridX, display.gridY, display.rotationQuarterTurns);
+        else
+            ApplySalesDisplayPose(0, 0, 0);
+
+        WorldAlphaPlayableController.Instance?.RequestProjectionRefresh();
+        _lastAction = "Restored player, generated anchors and movable B01 display from SaveManager.";
+    }
+
+    List<PlaceableSaveData> CaptureWorldShopFurniture()
+    {
+        return new List<PlaceableSaveData>
+        {
+            new PlaceableSaveData
+            {
+                zoneId = ShopCustomizationController.ShopInteriorZoneId,
+                definitionId = SalesDisplayDefinitionId,
+                instanceId = SalesDisplayInstanceId,
+                gridX = _salesDisplayGridX,
+                gridY = _salesDisplayGridY,
+                rotationQuarterTurns = _salesDisplayQuarterTurns,
+                isFixed = true,
+                recovered = false,
+                functionalState = "shop-slot-authority",
+                storedItems = new List<PlaceableStoredItemSaveData>()
+            }
+        };
     }
 
     public static string ItemResourcePathFor(WorldResourceKind kind)
@@ -610,6 +741,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     void OnGUI()
     {
         if (!Application.isPlaying || SceneManager.GetActiveScene().name != "WorldSandbox") return;
+        if (WorldAlphaPlayableController.Instance != null) return;
         GUILayout.BeginArea(new Rect(18f, Mathf.Max(360f, Screen.height - 238f), 520f, 222f), GUI.skin.box);
         GUILayout.Label("WORLD-009 EXISTING GAMEPLAY ADAPTER");
         GUILayout.Label($"State {State} · seed {_boundSeed} · resources consumed {ConsumedResourceCount}");
@@ -842,7 +974,8 @@ public static class PA_WorldGameplayAdapterTools
                         _adapter.PlayerInventory.CountItems(fish) == 1,
                     $"a second resource category remains in Inventory for save proof ({fishReason})");
                 _expectedConsumedResources = _adapter.ConsumedResourceCount;
-                _expectedWorldChecksum = _persistence.ComputeCurrentChecksum();
+                _expectedWorldChecksum = WorldPersistenceService.ComputePayloadChecksum(
+                    _adapter.CaptureWorldState());
                 _ioTask = _adapter.RuntimeSaveManager.SaveGameAsync();
                 _stageStarted = Time.realtimeSinceStartup;
                 SetStage(2);

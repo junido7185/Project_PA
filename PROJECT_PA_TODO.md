@@ -1,5 +1,25 @@
 # Project PA TODO
 
+## Milestone M70 — PLAYABLE WORLD ALPHA (2026-08-11)
+
+Status: `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`; automatic continuation stopped.
+
+- [x] WORLD-001~004 cell/chunk terrain, mesh, Terraform, surface/path/water foundation.
+- [x] WORLD-005 B09 relocatable building and occupancy/reachability contract.
+- [x] WORLD-006 deterministic provisional island generation and 64-chunk projection.
+- [x] WORLD-006B functional movable shop furniture proof.
+- [x] WORLD-007 v11 procedural world persistence with safe restore.
+- [x] WORLD-008 logical reachability and local-sector NavMesh prototype.
+- [x] WORLD-009 existing gameplay authority adapter.
+- [x] WORLD-010 existing movement/camera plus gather→craft→stock→open→NPC sale→revenue→restart/load integration.
+- [x] D3D11 primary M70 validation, nine Golden regressions, WORLD-006B/007/008/009 regressions, blocking Console 0, new crash 0.
+- [x] Prototype_FirstDay/MainGame/scene YAML/prefab/Packages/ProjectSettings/SaveData DTO unchanged.
+- [ ] Human integrated playtest: pacing, camera framing, coast/terrain feel, building/display placement feel, and shop readability.
+- [ ] `CAPTURE_EVIDENCE_DEBT`: optional evidence capture only; no additional manual capture request is required.
+- [ ] Nonblocking UI/polish backlog: inventory drag ghost, development overlay overlap, phone hiring/feed empty-state, B06 pulse/fallback audio, map composition.
+- [ ] `WORLD-MAIN-001` MainGame integration requires separate explicit human approval.
+- [ ] Permanent final island size remains undecided; 128×128 is provisional only.
+
 Inspection date: 2026-06-19
 
 ## Sprint: B02~B04 Shop Evolution Visual Finalization — 2026-07-16

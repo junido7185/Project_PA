@@ -48,11 +48,30 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         ClearGeneratedIsland();
         _seed = seed;
         CurrentResult = WorldIslandGenerator.Generate(seed);
-        BuildChunkViews(CurrentResult);
+        BuildChunkViews(CurrentResult.Definition, CurrentResult.TerrainCells);
         FrameGeneratedIsland(CurrentResult.Definition);
         stopwatch.Stop();
         LastGenerationMilliseconds = stopwatch.ElapsedMilliseconds;
         return CurrentResult;
+    }
+
+    public bool DisplayGridSnapshot(long seed, bool frameCamera = false)
+    {
+        WorldGridService grid = GetComponent<WorldGridService>();
+        if (grid == null || grid.Definition == null || grid.Cells == null ||
+            grid.Cells.Count != grid.Definition.TotalCellCount)
+        {
+            return false;
+        }
+
+        var stopwatch = Stopwatch.StartNew();
+        ClearGeneratedIsland();
+        _seed = seed;
+        BuildChunkViews(grid.Definition, grid.Cells);
+        if (frameCamera) FrameGeneratedIsland(grid.Definition);
+        stopwatch.Stop();
+        LastGenerationMilliseconds = stopwatch.ElapsedMilliseconds;
+        return true;
     }
 
     public void ClearGeneratedIsland()
@@ -76,7 +95,9 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         RestoreCamera();
     }
 
-    void BuildChunkViews(WorldGenerationResult result)
+    void BuildChunkViews(
+        WorldGridDefinition definition,
+        IReadOnlyList<WorldCellData> cells)
     {
         Material[] materials = CreateMaterials();
         _runtimeRoot = new GameObject(RuntimeRootName)
@@ -85,14 +106,14 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         };
         _runtimeRoot.transform.SetParent(transform, false);
 
-        for (int chunkZ = 0; chunkZ < result.Definition.ChunkCountZ; chunkZ++)
+        for (int chunkZ = 0; chunkZ < definition.ChunkCountZ; chunkZ++)
         {
-            for (int chunkX = 0; chunkX < result.Definition.ChunkCountX; chunkX++)
+            for (int chunkX = 0; chunkX < definition.ChunkCountX; chunkX++)
             {
                 var chunkCoordinate = new Vector2Int(chunkX, chunkZ);
                 WorldChunkMeshData data = WorldChunkMeshBuilder.Build(
-                    result.Definition,
-                    result.TerrainCells,
+                    definition,
+                    cells,
                     chunkCoordinate);
                 var chunkObject = new GameObject($"GeneratedChunk_{chunkX}_{chunkZ}");
                 chunkObject.transform.SetParent(_runtimeRoot.transform, false);
@@ -215,7 +236,10 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
 
     void OnGUI()
     {
-        string summary = CurrentResult == null
+        string summary = CurrentResult == null && _runtimeRoot != null
+            ? $"Seed {_seed} live grid snapshot  chunks {GeneratedChunkCount}  " +
+              $"top {TotalRenderedTopFaces}  {LastGenerationMilliseconds}ms"
+            : CurrentResult == null
             ? $"Seed {_seed} ready — J generate, [ / ] change seed"
             : $"Seed {CurrentResult.Seed}  checksum {CurrentResult.Checksum:X16}  " +
               $"land {CurrentResult.LandRatio:P0}  chunks {GeneratedChunkCount}  " +

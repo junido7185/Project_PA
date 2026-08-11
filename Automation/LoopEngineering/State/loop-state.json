@@ -2,10 +2,10 @@
   "milestone": {
     "id": "M70",
     "name": "PLAYABLE WORLD ALPHA",
-    "status": "in_progress",
+    "status": "completed",
     "branch": "milestone/world-alpha-70",
     "checkpointCommit": "23ceda6",
-    "completedTicketCommits": 10,
+    "completedTicketCommits": 11,
     "commitLimit": 12
   },
   "worldArchitectureApproval": {
@@ -40,56 +40,56 @@
     "localTicketCommitsAllowed": true,
     "pushAllowed": false
   },
-  "ticketId": "WORLD-009",
+  "ticketId": "WORLD-010",
   "status": "completed",
-  "finalState": "WORLD_009_COMPLETE",
-  "goal": "Connect the generated WorldSandbox to the existing Inventory, crafting, shop, customer, economy, day/night and save authorities without creating parallel gameplay systems.",
+  "finalState": "M70_PLAYABLE_WORLD_ALPHA_COMPLETE",
+  "goal": "Integrate WORLD-005 through WORLD-009 into a playable WorldSandbox alpha and pass the complete M70 regression matrix.",
   "baseline": {
     "branch": "milestone/world-alpha-70",
-    "commit": "e16f802de0a13c367b20b86603f725da0d39f608",
+    "commit": "46f65155ba5c7d2cf0f550e6665f301e5fc7c642",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 13,
+    "dirtyPathCountAtStop": 15,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
     "mainGameChanged": false,
-    "saveAuthorityChanged": false,
+    "saveAuthorityChanged": true,
     "saveValidationRepositorySeamChanged": true,
     "packagesChanged": false,
     "projectSettingsContentChanged": false
   },
   "builds": {
-    "runtime": "PASS: Assembly-CSharp compiled with 0 errors; pre-existing CS8785 only",
-    "editor": "PASS: Assembly-CSharp-Editor compiled with 0 errors; pre-existing CS8785 and CS0414 only"
+    "runtime": "PASS: Logs/WORLD010_FinalCompile.log; Assembly-CSharp compiled with 0 errors; pre-existing CS8785 only",
+    "editor": "PASS: Logs/WORLD010_FinalCompile.log; Assembly-CSharp-Editor compiled with 0 errors; pre-existing CS8785 and CS0414 only"
   },
   "validators": {
-    "world009Log": "Logs/WORLD009_Validation_DontSaveFix.log",
-    "world007RegressionLog": "Logs/WORLD009_WORLD007_Regression.log",
-    "world008RegressionLog": "Logs/WORLD009_WORLD008_Regression.log",
-    "world001RegressionLog": "Logs/WORLD009_WORLD001_Regression_GeneratedRuntime.log",
-    "craftingRecipeCardRegressionLog": "Logs/WORLD009_CraftingRecipeCard_Regression.log",
-    "customerArrivalRegressionLog": "Logs/WORLD009_CustomerArrival_Regression.log",
-    "finalDemoRouteRegressionLog": "Logs/WORLD009_FinalDemoRoute_Regression.log",
+    "world010Log": "Logs/WORLD010_M70_Validation_02.log",
+    "prototypeFirstDayGoldenLog": "Logs/WORLD010_Golden_PrototypeFirstDay.log",
+    "dayNightShopLoopGoldenLog": "Logs/WORLD010_Golden_DayNightShopLoop_02.log",
+    "coreSliceGoldenLog": "Logs/WORLD010_Golden_CoreSlicePlayability.log",
+    "finalDemoGoldenLog": "Logs/WORLD010_Golden_FinalDemoRoute.log",
+    "longPlayGoldenLog": "Logs/WORLD010_Golden_LongPlayProgression.log",
+    "saveRoundTripGoldenLog": "Logs/WORLD010_Golden_SaveRoundTrip.log",
+    "craftingRecipeCardGoldenLog": "Logs/WORLD010_Golden_CraftingRecipeCard.log",
+    "customerArrivalGoldenLog": "Logs/WORLD010_Golden_CustomerArrival.log",
+    "customerPresentationGoldenLog": "Logs/WORLD010_Golden_CustomerPresentation.log",
+    "world006BRegressionLog": "Logs/WORLD010_Regression_WORLD006B.log",
+    "world007RegressionLog": "Logs/WORLD010_Regression_WORLD007.log",
+    "world008RegressionLog": "Logs/WORLD010_Regression_WORLD008.log",
+    "world009RegressionLog": "Logs/WORLD010_Regression_WORLD009_02.log",
     "passed": [
-      "Unity D3D11 Edit Mode and Play Mode",
-      "WorldSandbox adopts exactly one existing Inventory, EconomyService, GameClock, DayNightShopLoopController and SaveManager authority",
-      "stable Timber spawn keys grant two Wood through the existing Inventory",
-      "Recipe_Plank and B05 Workbench consume two Wood and grant one Plank",
-      "ShopSlot.Interact stocks the crafted Plank into the actual B01 market stall",
-      "DayNightShopLoopController explicitly opens the Day 2 night customer gate",
-      "existing NpcController walks from generated Start to B01 and purchases through ShopSlot",
-      "EconomyService receives the sale and cumulative revenue",
-      "isolated LocalJsonSaveRepository proves SaveManager save, restart-state mutation and restore",
-      "seed 9009, resource consumption, Inventory, GameClock, ShopSlot and Economy state restore with schema v11",
-      "WORLD-007 persistence and v10 migration regression",
-      "WORLD-008 reachability/navigation regression",
-      "WORLD-001 authored 16x16 and generated runtime 128x128 grid regression",
-      "CraftingRecipeCard regression",
-      "CustomerArrival regression",
-      "FinalDemoRoute Golden regression",
+      "Unity D3D11 Runtime and Editor compile",
+      "64 generated chunks visible for the provisional 128x128 island",
+      "existing PlayerInputHandler, PlayerController and CameraController movement route",
+      "last-safe-cell recovery from water, bounds escape and falling",
+      "gather, craft, terraform, B09 placement and move, functional B01 display move and rotate",
+      "stock, open, NpcController purchase and Economy revenue",
+      "actual Play Mode exit, re-entry and v11 restore of seed, terrain, building, furniture, resources, player, Inventory, ShopSlot and Economy",
+      "Prototype_FirstDay and all requested Golden regressions",
+      "WORLD-006B, WORLD-007, WORLD-008 and WORLD-009 regressions",
       "blocking Console Error/Exception/Assert 0"
     ]
   },
@@ -224,7 +224,20 @@
     "economy": "existing EconomyService Deposit",
     "dayNight": "existing DayNightShopLoopController gate",
     "save": "existing SaveManager and LocalJsonSaveRepository; editor validation uses isolated repository root",
-    "verifiedLoop": "Timber x2 -> Inventory -> Plank craft -> B01 stock -> open -> NPC purchase -> revenue -> save -> restart mutation -> restore"
+    "verifiedLoop": "move -> Timber x2 -> Inventory -> Plank craft -> B01 stock -> open -> NPC purchase -> revenue -> save -> Play Mode exit/re-enter -> restore"
+  },
+  "playableWorldAlpha": {
+    "state": "M70_PLAYABLE_WORLD_ALPHA_COMPLETE",
+    "sceneScope": "WorldSandbox runtime only",
+    "runtimeGrid": "128x128 provisional",
+    "visibleChunkCount": 64,
+    "movement": "existing PlayerInputHandler plus PlayerController",
+    "camera": "existing CameraController follow; orthographic size 22",
+    "traversalGuard": "last safe generated walkable cell",
+    "integratedActions": ["gather", "craft", "terraform", "B09 place/move", "B01 display move/rotate", "stock", "open", "customer sale", "save/load"],
+    "restartValidation": "actual Play Mode exit and re-entry",
+    "mainGameIntegrated": false,
+    "mainGameGate": "WORLD-MAIN-001 separate human approval"
   },
   "shopFurniture": {
     "authority": "existing ShopCustomizationController over GridService shop.interior",
@@ -266,16 +279,18 @@
   "capture": {
     "attemptedThisTicket": false,
     "result": "CAPTURE_EVIDENCE_DEBT",
-    "reason": "Capture was intentionally skipped. Navigation correctness is proven by logical connectivity, runtime NavMesh path, local surface revisions and an autonomous agent pause/repath/arrival test."
+    "reason": "Automatic Game View capture was not retried. Runtime object, bounds, interaction, restart and Console gates provide the bounded functional evidence; no manual capture is requested."
   },
   "changedPaths": [
     "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
+    "Assets/Editor/PA_DayNightShopLoopValidator.cs",
     "Assets/Scripts/SaveManager.cs",
     "Assets/Scripts/World/WorldGameplayAdapterService.cs",
-    "Assets/Scripts/World/WorldGameplayAdapterService.cs.meta",
-    "Assets/Scripts/World/WorldGridDebugView.cs",
+    "Assets/Scripts/World/WorldGeneratedIslandDebugView.cs",
+    "Assets/Scripts/World/WorldAlphaPlayableController.cs",
+    "Assets/Scripts/World/WorldAlphaPlayableController.cs.meta",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
     "Docs/07_개발일지.md",
@@ -298,9 +313,11 @@
   "world008Completed": true,
   "world009Started": true,
   "world009Completed": true,
+  "world010Started": true,
+  "world010Completed": true,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-11",
   "stoppedAt": "2026-08-11",
-  "stopReason": "WORLD-009 passed its bounded gates; explicit M70 continuation approval allows WORLD-010 after the local ticket commit.",
-  "nextAction": "Create the verified WORLD-009 local ticket commit, then activate preapproved WORLD-010 M70 Integration and Regression."
+  "stopReason": "WORLD-010 and the M70 Golden regression matrix passed. Automatic continuation ends at the approved M70 milestone.",
+  "nextAction": "Human M70 integrated playtest and backlog selection. Do not start MainGame integration or another implementation ticket without new explicit approval."
 }

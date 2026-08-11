@@ -586,9 +586,38 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 복구: Edit Mode는 정확히 Light 1개를 계속 요구한다. Play Mode는 authored `Directional Light` root의 Directional Light 1개를 유지하면서 추가 Light가 오직 `WorldGameplay_Runtime` 아래에만 있는지 검사한다. 무관한 runtime light는 계속 거부한다.
 - 확인: 수정 후 같은 회귀에서 authored Directional Light 1개와 adapter-local helper Light 1개만 존재하는 계약이 PASS했다. 다음 중단은 Light가 아니라 WORLD-009 이후에도 runtime grid가 16×16일 것이라는 별도의 구가정이었다.
 
-## [OPEN] 2026-08-11 — WORLD-001 회귀의 runtime 16×16 fixture 구가정
+## [RESOLVED] 2026-08-11 — WORLD-001 회귀의 runtime 16×16 fixture 구가정
 
 - 증상: Light 계약 수정 후 WORLD-001 회귀가 Play Mode grid `128×128`을 발견하고 `16×16` 기대에서 중단됐다. Edit Mode의 authored 16×16 fixture 검증은 전체 PASS했다.
 - 원인: WORLD-001은 authored fixture와 Play Mode authority가 동일한 시절의 validator다. WORLD-009 adapter는 승인된 deterministic seed 9009의 provisional 128×128 결과를 실제 `WorldGridService`에 설치하므로 runtime 크기·지면/물/길 구성·chunk 수·checksum이 의도적으로 달라진다.
 - 영향: generated gameplay adapter의 정상 부트 이후 stale assertion만 실패했다. 전용 WORLD-009와 WORLD-007/008 및 Golden gameplay 회귀는 PASS이며 Scene/Prefab/Packages/ProjectSettings/SaveData/사용자 저장과 crash 영향은 없다.
 - 복구: Edit Mode는 기존 16×16, 256셀, 단일 chunk checksum 계약을 그대로 유지한다. 승인 adapter가 Ready인 Play Mode는 128×128, 16,384셀, 8×8 chunk 좌표, 유효 surface enum, deterministic seed 9009 checksum을 검증하고 이후 프레임 안정성은 runtime checksum끼리 비교한다.
+- 확인: WORLD-009 회귀에서 authored fixture와 generated runtime 권위를 분리한 뒤 PASS했고, WORLD-010은 같은 128×128 grid를 64개 visible chunk로 투영해 restart 후에도 유지했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-010 컴파일 definite-assignment 오류 2건
+
+- 증상: 첫 컴파일에서 `WorldAlphaPlayableController`의 `out reason`, 세 번째 컴파일에서 validator의 `gatherB`/`fishReason`이 `CS0165`로 중단됐다.
+- 원인: null 검사와 `out` 호출을 `&&` short-circuit 식으로 결합한 뒤 해당 지역 변수를 실패 메시지에서 사용했다.
+- 영향: 새 WORLD-010 assembly가 생성되기 전의 정적 오류였다. Scene/Prefab/Packages/ProjectSettings/SaveData와 런타임 상태에는 영향이 없고 native crash도 없었다.
+- 해결: 모든 `out` 값을 조건문 전에 초기화하고 호출 결과를 별도 bool 문장으로 평가했다. `Logs/WORLD010_Compile_04.log`, `Logs/WORLD010_Compile_05.log`에서 Runtime/Editor compile 오류 0을 확인했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-010 validator의 가짜 scene restart
+
+- 증상: 첫 M70 검증은 save 전 단계까지 통과했지만 `SceneManager.LoadScene` 직후 새 `WorldAlphaPlayableController`를 찾지 못해 중단됐다.
+- 원인: 같은 Play Mode 안의 scene reload는 프로젝트 전역 `RuntimeInitializeOnLoadMethod` 조립을 다시 수행하지 않는다. validator가 이를 실제 Play Mode restart와 같은 계약으로 잘못 취급했다.
+- 영향: production save/load나 runtime 조립 결함이 아니라 검증 절차의 restart 모델 오류였다. 저장 파일은 격리된 `Logs/WorldAlpha/<timestamp>` 아래에만 생성됐고 신규 crash는 없었다.
+- 해결: validator가 실제로 Play Mode를 종료하고 저장된 깨끗한 WorldSandbox를 다시 연 뒤 Play Mode에 재진입하도록 변경했다. `Logs/WORLD010_M70_Validation_02.log`에서 save→exit→re-enter→load와 v11 checksum까지 PASS했다.
+
+## [RESOLVED] 2026-08-11 — DayNightShopLoop Golden validator의 비판매 Seed 선택
+
+- 증상: 첫 Golden DayNightShopLoop 실행은 실제 판매 가능한 준비 지점이 존재하는데도 sellable inventory 기대값에서 실패했다.
+- 원인: validator가 sellable Fish/Wheat/Ore와 non-sellable Seed가 섞인 목록에서 임의의 첫 두 지점을 골랐다. Seed를 수집한 뒤에도 두 항목 모두 판매 가능하다고 가정했다.
+- 영향: 실제 낮 준비·판매 기능의 회귀가 아니라 비결정적인 validator fixture 선택 문제였다.
+- 해결: 기존 ShopSlot 계약에 맞춰 sellable 준비 지점을 우선 정렬하고 두 개가 존재하는지 명시적으로 검증했다. `Logs/WORLD010_Golden_DayNightShopLoop_02.log`에서 `sellableInventory=20`으로 PASS했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 회귀 checksum의 B01 가구 누락
+
+- 증상: M70에서 B01 판매대를 이동·저장하도록 연결한 뒤 첫 WORLD-009 회귀가 restore checksum 기대값에서만 실패했다.
+- 원인: 구 validator의 기대 checksum은 terrain/building/resource만 캡처하고, 이제 기존 `PlaceableSaveData`로 투영되는 B01 판매대 가구 record를 포함하지 않았다.
+- 영향: 실제 restore 결과는 정상이며 검증 기대값만 오래된 상태였다. SaveData schema는 v11 그대로다.
+- 해결: 기대 checksum도 실제 adapter capture를 사용하도록 정합했다. `Logs/WORLD010_Regression_WORLD009_02.log`에서 seed/resource/inventory/clock/shop/economy/furniture restore와 Console 0이 PASS했다.

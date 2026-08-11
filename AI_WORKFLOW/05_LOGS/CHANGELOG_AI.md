@@ -1014,3 +1014,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - Editor validator는 격리 repository로 실제 SaveManager save/restart/restore를 수행해 seed, resource consumption, Fish inventory, Day 3 clock, post-sale slot과 revenue를 복원했다. schema v11은 유지했다.
 - WORLD-009와 WORLD-001/007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute가 D3D11에서 PASS했다. blocking Console/crash 0, Scene/Prefab/Packages/ProjectSettings 무변경이다.
 - WORLD-009 local commit 뒤 선승인된 WORLD-010으로 계속한다. push/rebase/reset-hard/clean은 하지 않는다.
+
+## 2026-08-11 — Codex — WORLD-010 M70 Integration and Regression (DONE)
+
+- WorldSandbox의 WORLD-005~009 조각을 실제 10~20분 alpha 흐름으로 연결했다. runtime-only `WorldAlphaPlayableController`가 기존 `PlayerInputHandler`/`PlayerController`, 카메라, 64개 generated chunk, 수집·제작·terraform·B09 배치·B01 판매대 이동·판매·저장/로드를 한 화면에서 안내한다.
+- 플레이어 proxy에 기존 이동 권위를 그대로 붙이고, 마지막 안전 cell을 추적하는 `WorldPlayerTraversalGuard`로 물·경계 밖·추락을 복구한다. 새 입력 시스템이나 별도 gameplay manager는 만들지 않았다.
+- B01의 실제 ShopSlot 공통 부모를 `shop.interior`의 기능 가구로 취급해 bounded 이동·90도 회전·고객 lease 보호·기존 `PlaceableSaveData` 투영 저장/복원을 연결했다. 판매 슬롯 권위는 보존된다.
+- SaveManager는 schema 변경 없이 world adapter의 가구 projection을 capture/restore 순서에 포함한다. terrain delta, B09, B01 pose, resource, 안전 player cell, Inventory, ShopSlot, Economy가 실제 Play Mode 종료/재진입 뒤 한 번씩 복원된다.
+- M70 D3D11 통합 검증과 Prototype_FirstDay, DayNightShopLoop, CoreSlice, FinalDemoRoute, LongPlay, SaveRoundTrip, CraftingRecipeCard, CustomerArrival/Presentation Golden 회귀가 모두 PASS했다. WORLD-006B/007/008/009 bounded 회귀도 PASS, blocking Console 0, 신규 crash 0이다.
+- Runtime/Editor compile 오류 0이며 기존 Unity source-generator CS8785와 PA_ErrorTracker CS0414 경고만 남는다. Scene/Prefab/Packages/ProjectSettings/SaveData DTO는 변경하지 않았다.
+- 최종 상태는 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`. MainGame 통합은 `WORLD-MAIN-001` 별도 사람 승인 전까지 시작하지 않고, 128×128은 영구 확정이 아닌 provisional target으로 유지한다.

@@ -1,5 +1,17 @@
 # PROJECT_PA_SESSION_REPORT.md
 
+## 2026-08-11 — WORLD-010 / M70 Playable World Alpha Complete
+
+- Started from `milestone/world-alpha-70@46f6515` and completed the final preapproved M70 integration ticket without changing any scene, prefab, package, ProjectSettings file, or SaveData DTO.
+- Added a WorldSandbox-only runtime alpha controller that uses the existing input/player/camera stack, renders the complete provisional 128×128 island as 64 chunks, and protects the player from water, bounds escape, and falls by restoring the last safe cell.
+- Connected the existing authorities into one playable path: gather two Timber, craft one Plank at B05, stock B01, open the shop, let an existing NpcController buy, receive Economy revenue, then save and restore after a real Play Mode exit/re-entry.
+- Integrated existing Terraform controls, B09 placement/move/rotation, and a functional movable B01 sales display. The display retains ShopSlot contents/function and is additively projected through the existing placeable/world-save seam.
+- The primary D3D11 validation passed with 64 visible chunks, safe movement, terrain/building/furniture state, resources, Inventory, revenue, empty post-sale ShopSlots, exact v11 checksum, and blocking Console 0 after restart.
+- Golden regressions passed for Prototype_FirstDay, DayNightShopLoop, CoreSlice, FinalDemoRoute, LongPlay, SaveRoundTrip, CraftingRecipeCard, CustomerArrival, and CustomerPresentation. WORLD-006B/007/008/009 regressions also passed.
+- Fixed validation-only assumptions found during the work: definite-assignment errors, same-Play-Mode scene reload mistaken for restart, arbitrary non-sellable Seed selection, and an expected checksum that omitted the newly persisted B01 furniture record.
+- No new crash was created. Existing CS8785/CS0414 warnings remain nonblocking. Automatic Game View capture was not retried and remains `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`. Automatic continuation stops here; MainGame integration still requires separate human approval.
+
 ## 2026-07-16 Continuation — Tripo Character Unity Finalization Complete
 
 - Audited C-01~C-09 source FBX files, Humanoid import settings, Avatars, meshes, materials/textures, polycounts, Idle/Walk clips, scene/runtime assignments, colliders, agents, and existing grounding code through Unity Editor API.

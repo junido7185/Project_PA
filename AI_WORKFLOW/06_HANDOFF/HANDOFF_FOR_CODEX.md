@@ -2,12 +2,12 @@
 
 ## M70 현재 상태 — 2026-08-11
 
-- Branch `milestone/world-alpha-70`; latest completed baseline before this ticket is `e16f802` (WORLD-008). WORLD-009 is verified and awaiting its authorized local ticket commit.
-- WORLD-001~009 are complete. WorldSandbox Play Mode installs deterministic seed 9009, the provisional 128×128 generated grid, B01/B05 functional prefabs and a Player-tag Inventory through a runtime-only adapter.
-- Existing `PA_RuntimeSceneBinder`, EconomyService, GameClock, DayNightShopLoopController, ItemRegistry, SalesLogManager, SaveManager, CraftingService, Shop/ShopSlot and NpcController remain the sole authorities. No parallel gameplay or save system exists.
-- `Logs/WORLD009_Validation_DontSaveFix.log` proves Timber→Inventory→Plank craft→B01 stock→night open→NPC purchase→Economy revenue→save→restart mutation→full restore. WORLD-001/007/008, CraftingRecipeCard, CustomerArrival and FinalDemoRoute regressions pass; blocking Console/crash 0.
-- Active next ticket after commit: preapproved `WORLD-010 M70 Integration and Regression`. Build the 10–20 minute WorldSandbox alpha flow from WORLD-005~009 controls and run the complete Golden regression matrix. Prototype_FirstDay remains immutable and MainGame remains gated.
-- Do not change Packages/ProjectSettings or SaveData schema. Local ticket commit is approved; push/rebase/reset/clean remain forbidden.
+- Branch `milestone/world-alpha-70`; WORLD-010 기준 commit은 `46f6515` (WORLD-009)이며 WORLD-001~010 구현과 자동 회귀가 완료됐다. 최종 상태는 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`다.
+- WorldSandbox Play Mode에서 기존 WASD 입력과 카메라로 provisional 128×128/64-chunk 섬을 이동하고, 수집→B05 제작→B01 진열→개점→NPC 구매→수익→save→실제 Play Mode 재시작→load를 수행할 수 있다. Terraform, B09 배치/이동과 기능 B01 판매대 이동/회전도 같은 흐름에 포함된다.
+- Existing `PA_RuntimeSceneBinder`, Inventory, CraftingService, Shop/ShopSlot, NpcController, EconomyService, GameClock, DayNightShopLoopController와 SaveManager가 계속 유일한 권위다. 별도 gameplay/save/input 시스템은 없다.
+- `Logs/WORLD010_M70_Validation_02.log`가 64 chunks, movement guard, resource/craft/placement/shop/customer/economy와 v11 restart restore를 `console=0`으로 증명한다. 전체 Golden matrix와 WORLD-006B/007/008/009 회귀도 PASS했다.
+- Prototype_FirstDay는 변경 없는 Golden Regression Scene이다. WorldSandbox는 WORLD 기술/alpha 전용이며 MainGame 통합은 `WORLD-MAIN-001` 별도 사람 승인 전까지 금지다. 128×128은 여전히 provisional target이다.
+- 자동 연속 개발은 여기서 종료한다. 다음은 사람의 M70 통합 플레이테스트/백로그 선별이며, 새 bounded ticket 없이 구현을 재개하지 않는다. push/rebase/reset/clean은 계속 금지다.
 
 최종 갱신: 2026-08-04 (Task 131 Tripo 장기 정책 재확인·B06 Kitchen 보정 / PARTIAL)
 규칙: **3~5개 작업마다** 이 문서의 "현재 상태"와 "우선순위"를 갱신한다. (`CODEX_HANDOFF_PROMPT` 사용)

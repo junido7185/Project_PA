@@ -627,3 +627,14 @@ Append-only log for guarded automation and dry-run loop work.
 - WORLD-001/007/008, CraftingRecipeCard, CustomerArrival and FinalDemoRoute regressions passed. WORLD-001 now distinguishes the authored 16x16 fixture from the approved generated 128x128 runtime authority.
 - Scene/Prefab/Packages/ProjectSettings/SaveData schema remain unchanged; new crash count is zero and capture remains `CAPTURE_EVIDENCE_DEBT`.
 - Final state: `WORLD_009_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-010 M70 Integration and Regression`.
+
+## 2026-08-11 — WORLD-010 M70 Integration and Regression
+
+- Baseline: `milestone/world-alpha-70@46f6515`; target: `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`.
+- Runtime-only alpha controller connected existing movement/camera to the provisional 128×128 generated island and projected all 64 chunks without per-cell GameObjects.
+- Integrated player-safe traversal, gather/craft/terraform, B09 place/move, functional B01 display move/rotate, stock/open/customer/revenue and isolated save/restart/load.
+- Primary proof: `Logs/WORLD010_M70_Validation_02.log` — Play Mode exit/re-enter restore, v11 checksum, 64 chunks, blocking Console 0.
+- Golden PASS: PrototypeFirstDay, DayNightShopLoop, CoreSlicePlayability, FinalDemoRoute, LongPlayProgression, SaveRoundTrip, CraftingRecipeCard, CustomerArrival and CustomerPresentation.
+- Bounded regressions PASS: WORLD-006B, WORLD-007, WORLD-008 and WORLD-009.
+- Runtime/Editor compile PASS; no new crash. Scene/Prefab/Packages/ProjectSettings/SaveData schema unchanged.
+- Automatic continuation stops at M70. Next action requires a new bounded human-approved ticket; MainGame integration remains separately gated.
