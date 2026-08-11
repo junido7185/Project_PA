@@ -1,5 +1,15 @@
 # Project PA TODO
 
+## LOOP-POLICY-002 — Preapproved Milestone Continuation (2026-08-11)
+
+- [x] 기본 bounded-ticket 사람 승인 게이트 유지.
+- [x] 명시적으로 선승인되고 loop-state에 기록된 sequence 전용 `PREAPPROVED_MILESTONE_CONTINUATION` 추가.
+- [x] M70 범위를 WORLD-005/006/006B/007/008/009/010으로 제한하고 WORLD-011 이후 자동 확장 금지.
+- [x] 단일 active ticket, ticket별 검증, 승인된 local commit, hard blocker와 Git/D3D11/crash 안전 규칙 유지.
+- [x] 동일 blocker 반복 보고 억제 및 context limit을 `PAUSED_BY_CONTEXT_LIMIT`로 분리.
+- [x] baseline `e0b5678`의 M70 완료를 인식하고 완료된 WORLD ticket 재실행 방지 (`nextTicket=null`).
+- [ ] WORLD-011/MainGame 또는 새 milestone은 사람의 별도 명시 승인 필요.
+
 ## Milestone M70 — PLAYABLE WORLD ALPHA (2026-08-11)
 
 Status: `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`; automatic continuation stopped.

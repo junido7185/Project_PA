@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "mode": "bounded-ticket-loop",
   "requireCleanGitBaseline": true,
   "approvedGraphicsBackend": "D3D11",
@@ -20,5 +21,73 @@
   "requireHumanGateForSaveSchemaChanges": true,
   "requireHumanGateForBalanceChanges": true,
   "requireHumanGateForNewGameplaySystems": true,
-  "requireHumanGateForVisualQualityApproval": true
+  "requireHumanGateForVisualQualityApproval": true,
+  "preapprovedMilestoneContinuation": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "enabled": true,
+    "defaultRequiresHumanNextTicket": true,
+    "requiresExplicitHumanPreapproval": true,
+    "requiresRecordedApprovalInLoopState": true,
+    "singleActiveTicketOnly": true,
+    "requirePerTicketValidation": true,
+    "allowLocalCommitPerTicketWhenPreapproved": true,
+    "localCommitOverridesNoAutoCommitOnlyWithinApprovedSequence": true,
+    "continueWithoutIntermediateHumanMessage": true,
+    "missingHumanMessageIsNotBlockerWithinApprovedSequence": true,
+    "stopOutsideApprovedSequence": true,
+    "stopAtConfiguredMilestone": true,
+    "suppressRepeatedIdenticalBlockerReports": true,
+    "contextLimitDisposition": "PAUSED_BY_CONTEXT_LIMIT"
+  },
+  "approvedMilestoneContinuations": [
+    {
+      "goalId": "M70_WORLD_ALPHA",
+      "humanPreapproved": true,
+      "autonomousContinuation": true,
+      "ticketSequence": [
+        "WORLD-005",
+        "WORLD-006",
+        "WORLD-006B",
+        "WORLD-007",
+        "WORLD-008",
+        "WORLD-009",
+        "WORLD-010"
+      ],
+      "preapprovedThrough": "WORLD-010",
+      "stopAtMilestone": "M70_PLAYABLE_WORLD_ALPHA_COMPLETE",
+      "localTicketCommitsAllowed": true,
+      "pushAllowed": false,
+      "status": "completed"
+    }
+  ],
+  "hardBlockers": [
+    "same compile failure after two bounded attempts",
+    "Unity native crash",
+    "save data corruption",
+    "existing save migration failure",
+    "Prototype_FirstDay core regression",
+    "GUID or meta damage",
+    "unrecoverable Missing Script or Missing Reference",
+    "Package change required",
+    "ProjectSettings change required",
+    "approved architecture reversal required",
+    "unexpected user-owned working tree change",
+    "irreversible human design decision required",
+    "two consecutive bounded ticket failures"
+  ],
+  "nonBlockers": [
+    "missing intermediate human message inside an approved sequence",
+    "automatic screenshot failure",
+    "CAPTURE_EVIDENCE_DEBT",
+    "visual polish debt",
+    "placeholder content",
+    "fallback sale audio aesthetics",
+    "B06 pulse aesthetics",
+    "F10 development overlay overlap",
+    "inventory drag ghost",
+    "Phone Hiring or Feed incomplete",
+    "map composition debt",
+    "minor warning",
+    "allowlisted Input Manager deprecation notice"
+  ]
 }

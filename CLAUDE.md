@@ -45,6 +45,18 @@ Preserve this identity. Do not turn the project into a simple shop-sale prototyp
 - Do not create scripts that repeatedly call AI tools or run forever.
 - Do not rewrite core shop/economy/NPC/save systems unless the user explicitly approves a scoped refactor.
 
+## Bounded Ticket Continuation
+
+The default is to wait for a new human instruction after one bounded ticket. The limited exception is `PREAPPROVED_MILESTONE_CONTINUATION`:
+
+- The human must explicitly approve a milestone and exact ticket sequence.
+- The approval must be recorded in `Automation/LoopEngineering/State/loop-state.json`.
+- Only one ticket may be active, and every ticket keeps its own validation and diff review.
+- A missing intermediate human message is not a blocker while the recorded next ticket remains inside the approved sequence.
+- A local ticket commit is allowed only when the approval record explicitly permits it; push remains forbidden.
+- Stop at `preapprovedThrough`, `stopAtMilestone`, a HARD BLOCKER, or a context-limit pause. Never continue into the next unapproved ticket.
+- Report an identical blocker once, then remain terminal until human input changes the state.
+
 ## Unity Rules
 
 Before running validators:

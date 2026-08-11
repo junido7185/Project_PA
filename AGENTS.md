@@ -29,6 +29,14 @@
 - 외부 패키지 추가 금지. `git push` 금지. 승인 없는 커밋 금지. 파괴적 Git/파일 명령 금지. 파일 삭제 금지.
 - `Docs/01~08` 번호 문서는 동결 (코드 주석이 § 인용). 루트 최신 `PROJECT_PA_CRASH_REPORT_*.md`는 이동 금지 (preflight glob).
 
+## Bounded Ticket 연속 진행 정책
+
+- 기본값은 bounded ticket 하나를 완료한 뒤 사람의 다음 명시적 지시를 기다리는 것이다.
+- 예외 `PREAPPROVED_MILESTONE_CONTINUATION`: 사용자가 milestone과 ticket sequence를 명시적으로 선승인하고 그 범위가 `Automation/LoopEngineering/State/loop-state.json`에 기록돼 있으면, 승인된 다음 ticket은 추가 메시지 없이 자동 활성화한다.
+- 예외 중에도 동시에 하나의 ticket만 활성화하고, ticket별 compile/validator/diff 검증과 승인된 local commit을 유지한다. HARD BLOCKER와 컨텍스트 pause 규칙도 유지한다.
+- 승인된 sequence 밖, `preapprovedThrough` 다음 ticket, `stopAtMilestone` 도달 뒤에는 자동 진행하지 않는다. 같은 blocker 설명은 한 번만 기록하고 반복 출력하지 않는다.
+- `noAutoCommit`은 기본 안전값이다. 선승인 record에 `localTicketCommitsAllowed=true`가 명시된 sequence 안에서만 ticket별 local commit이 허용되며 push는 항상 별도 사람 작업이다.
+
 ## 작업 종료 시
 
 `AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md` + `PROJECT_PA_STATUS.md` + `PROJECT_PA_TODO.md` + `PROJECT_PA_SESSION_REPORT.md` + `Docs/07_개발일지.md`를 갱신하고, `AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md`의 우선순위를 다음 세션용으로 갱신한다.

@@ -621,3 +621,11 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 원인: 구 validator의 기대 checksum은 terrain/building/resource만 캡처하고, 이제 기존 `PlaceableSaveData`로 투영되는 B01 판매대 가구 record를 포함하지 않았다.
 - 영향: 실제 restore 결과는 정상이며 검증 기대값만 오래된 상태였다. SaveData schema는 v11 그대로다.
 - 해결: 기대 checksum도 실제 adapter capture를 사용하도록 정합했다. `Logs/WORLD010_Regression_WORLD009_02.log`에서 seed/resource/inventory/clock/shop/economy/furniture restore와 Console 0이 PASS했다.
+
+## [RESOLVED] 2026-08-11 — 승인된 M70 범위에서 blocked → active → blocked 반복
+
+- 증상: WORLD bounded ticket 완료 뒤 다음 사람 메시지를 요구하는 기본 규칙이 이미 선승인된 M70 연속 범위에도 적용되어 동일한 `next ticket required` blocker가 반복됐다.
+- 원인: bounded-ticket 기본 게이트는 있었지만, 사람이 milestone과 ticket sequence를 명시적으로 선승인한 경우를 표현하고 소비하는 제한적 정책 예외가 없었다.
+- 해결: `PREAPPROVED_MILESTONE_CONTINUATION`을 추가했다. loop-state에 승인 범위가 기록되고 다음 ticket이 그 범위 안에 있을 때만 한 번에 하나씩 검증·로컬 커밋 후 자동 전환하며, 동일 blocker는 한 번만 기록한다.
+- 안전 경계: M70은 `WORLD-005`, `WORLD-006`, `WORLD-006B`, `WORLD-007`, `WORLD-008`, `WORLD-009`, `WORLD-010`만 승인한다. hard blocker, D3D11/crash, Git 안전 규칙은 유지하고 WORLD-010 또는 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`에서 중단한다.
+- 현재 상태: 기준 commit `e0b5678`에서 위 sequence가 이미 완료됐으므로 재실행하지 않았다. `nextTicket=null`, completion reached로 기록했고 WORLD-011/MainGame은 새 사람 승인 대상이다.

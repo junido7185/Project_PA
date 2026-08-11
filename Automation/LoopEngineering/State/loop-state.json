@@ -1,8 +1,10 @@
 {
   "milestone": {
     "id": "M70",
+    "policyGoalId": "M70_WORLD_ALPHA",
     "name": "PLAYABLE WORLD ALPHA",
     "status": "completed",
+    "completionTarget": "M70_PLAYABLE_WORLD_ALPHA_COMPLETE",
     "branch": "milestone/world-alpha-70",
     "checkpointCommit": "23ceda6",
     "completedTicketCommits": 11,
@@ -25,8 +27,12 @@
     "implementationStarted": true
   },
   "m70ContinuationApproval": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "goal": "M70_WORLD_ALPHA",
     "status": "preapproved",
     "approvedOn": "2026-08-06",
+    "autonomousContinuation": true,
+    "humanPreapproved": true,
     "approvedTickets": [
       "WORLD-005",
       "WORLD-006",
@@ -36,9 +42,46 @@
       "WORLD-009",
       "WORLD-010"
     ],
+    "sequenceStartTicket": "WORLD-005",
+    "initialNextTicket": "WORLD-005",
+    "nextTicket": null,
+    "preapprovedThrough": "WORLD-010",
+    "stopAtMilestone": "M70_PLAYABLE_WORLD_ALPHA_COMPLETE",
+    "completionReached": true,
     "requiresIntermediateHumanApproval": false,
     "localTicketCommitsAllowed": true,
     "pushAllowed": false
+  },
+  "loopPolicyMaintenance": {
+    "ticketId": "LOOP-POLICY-002",
+    "ticketName": "Enable Preapproved Autonomous Milestone Continuation",
+    "status": "completed",
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "baselineCommit": "e0b5678d163e06cd5605e19cd4474aa8cf3654f4",
+    "validatedOn": "2026-08-11",
+    "validation": "PASS",
+    "m70SequenceAlreadyCompleted": true,
+    "worldTicketsReexecuted": false,
+    "repeatedBlockerReporting": "emit once, then remain terminal until external state changes",
+    "localCommitAuthorized": true,
+    "pushAllowed": false,
+    "changedPaths": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+      "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+      "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
+      "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
+      "Automation/LoopEngineering/loop-policy.json",
+      "Automation/LoopEngineering/State/loop-state.json",
+      "Automation/LoopEngineering/progress.md",
+      "Docs/AgentWorkflow/CONTEXT_INDEX.md",
+      "Docs/WorldArchitecture/WORLD_BOUNDED_BACKLOG.md",
+      "Docs/07_개발일지.md",
+      "PROJECT_PA_SESSION_REPORT.md",
+      "PROJECT_PA_STATUS.md",
+      "PROJECT_PA_TODO.md"
+    ]
   },
   "ticketId": "WORLD-010",
   "status": "completed",

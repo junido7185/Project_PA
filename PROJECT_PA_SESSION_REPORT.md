@@ -1,5 +1,14 @@
 # PROJECT_PA_SESSION_REPORT.md
 
+## 2026-08-11 — LOOP-POLICY-002 Preapproved Milestone Continuation
+
+- 반복된 `blocked → active → blocked` 원인은 다음 사람 ticket을 요구하는 기본 bounded gate에 이미 승인된 milestone 범위를 표현하는 제한적 예외가 없었던 것이다.
+- `AGENTS.md`, `CLAUDE.md`, Loop Engineering policy/state, context routing과 WORLD backlog에 `PREAPPROVED_MILESTONE_CONTINUATION`을 반영했다.
+- M70은 WORLD-005→006→006B→007→008→009→010만 승인한다. 동시에 하나의 ticket만 active이며 ticket별 validation과 승인된 local commit을 유지하고, hard blocker 또는 WORLD-010/M70 목표에서 중단한다.
+- 중간 사용자 메시지 부재는 M70 내부 blocker가 아니며, 동일 blocker는 한 번만 기록한다. push/rebase/history rewrite/reset-hard/clean 금지는 유지된다.
+- baseline `e0b5678`에 해당 sequence와 M70 회귀가 이미 완료되어 있어 게임 기능을 다시 실행하거나 수정하지 않았다. state는 start WORLD-005, completion reached, current next ticket 없음으로 정합화했다.
+- 정책/JSON 검증만 수행하며 Unity, Scene, Prefab, Packages, ProjectSettings, SaveData schema는 건드리지 않는다.
+
 ## 2026-08-11 — WORLD-010 / M70 Playable World Alpha Complete
 
 - Started from `milestone/world-alpha-70@46f6515` and completed the final preapproved M70 integration ticket without changing any scene, prefab, package, ProjectSettings file, or SaveData DTO.

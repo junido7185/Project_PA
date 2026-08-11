@@ -6,6 +6,14 @@
 
 WORLD-001~008은 기본적으로 승인 후 생성할 `Assets/Scenes/WorldSandbox.unity`만 대상으로 한다. WORLD-009부터 기존 Shop/NPC를 adapter로 연결한다. Gate 1~4 전 Core Slice/MainGame 통합은 금지한다.
 
+## 2026-08-11 M70 실행 매핑과 선승인 경계
+
+- `PREAPPROVED_MILESTONE_CONTINUATION` 승인 sequence는 `WORLD-005 → WORLD-006 → WORLD-006B → WORLD-007 → WORLD-008 → WORLD-009 → WORLD-010`이다.
+- 실제 완료 목적 매핑은 WORLD-005 Relocatable Building, WORLD-006 Deterministic Island, WORLD-006B Movable Shop Furniture, WORLD-007 World Persistence, WORLD-008 Reachability/Navigation, WORLD-009 Existing Gameplay Adapter, WORLD-010 M70 Integration/Regression이다. 아래 초기 backlog의 WORLD-009/010 명칭보다 실제 완료 기록과 loop-state가 우선한다.
+- 이 sequence 안에서는 ticket PASS와 local commit 뒤 다음 승인 ticket으로 자동 전환하며 중간 사람 메시지 부재는 blocker가 아니다. 동시에 하나의 ticket만 활성화한다.
+- `WORLD-010` 또는 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`에서 반드시 멈춘다. WORLD-011, WORLD-012, `WORLD-MAIN-001`은 자동 후속이 아니며 새 사람 승인이 필요하다.
+- 현재 sequence는 이미 WORLD-010까지 완료됐다. 정책 티켓 때문에 WORLD-005부터 재실행하지 않는다.
+
 ## Gate와 티켓 대응
 
 | Gate | 티켓 |

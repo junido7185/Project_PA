@@ -2,6 +2,18 @@
 
 Append-only log for guarded automation and dry-run loop work.
 
+## 2026-08-11 - LOOP-POLICY-002 Completed
+
+- Ticket ID: `LOOP-POLICY-002`
+- Work type: bounded loop policy and state maintenance; no gameplay implementation
+- Baseline: `milestone/world-alpha-70@e0b5678d163e06cd5605e19cd4474aa8cf3654f4`
+- Implemented: `PREAPPROVED_MILESTONE_CONTINUATION`, explicit loop-state approval, single-active-ticket/per-ticket validation/local-commit boundary, hard blockers, terminal milestone stop, and one-time identical blocker reporting.
+- Approved sequence: `WORLD-005 → WORLD-006 → WORLD-006B → WORLD-007 → WORLD-008 → WORLD-009 → WORLD-010` only.
+- Validation: JSON parse PASS; bounded default gate retained; exact sequence and WORLD-010 boundary PASS; D3D11/crash and Git safety policy retained.
+- Existing milestone state: M70 was already complete at the baseline, so no WORLD ticket was reexecuted. `sequenceStartTicket=WORLD-005`, `nextTicket=null`, `completionReached=true`.
+- Changed gameplay files: none. Scene/Prefab/Packages/ProjectSettings/SaveData schema: none.
+- Stop reason: `M70_PLAYABLE_WORLD_ALPHA_COMPLETE` already reached. WORLD-011/MainGame require new human approval.
+
 ## 2026-06-26 - LOOP-DRYRUN-001 Created
 
 - Time: 2026-06-26

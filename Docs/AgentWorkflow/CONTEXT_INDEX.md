@@ -175,6 +175,22 @@ Human check: optional unless the doc becomes submission material.
 
 Forbidden changes: inventing validation results, changing gameplay files for documentation-only work.
 
+## Loop Engineering Policy Sprint
+
+Required:
+
+- `AGENTS.md`
+- `CLAUDE.md`
+- `Automation/LoopEngineering/loop-policy.json`
+- `Automation/LoopEngineering/State/loop-state.json`
+- `Automation/LoopEngineering/progress.md`
+
+Default: one bounded ticket, then human direction.
+
+Exception: `PREAPPROVED_MILESTONE_CONTINUATION` may advance to the next recorded ticket without another message only when the exact milestone sequence is human-preapproved in loop-state. Single-ticket activation, per-ticket validation, HARD BLOCKER handling, approved local commits, no-push, and the configured milestone stop remain mandatory. The exception never authorizes a ticket after `preapprovedThrough`.
+
+Validation: JSON parse, exact sequence boundary, one active ticket, blocker/non-blocker lists, D3D11/crash policy and Git safety invariants. Unity is not required for policy-only changes.
+
 ## World Architecture Context (WORLD tickets)
 
 Read in this order after the common entrance documents:

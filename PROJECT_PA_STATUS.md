@@ -1,5 +1,12 @@
 # Project PA Status
 
+## 2026-08-11 — LOOP-POLICY-002 COMPLETE
+
+- `PREAPPROVED_MILESTONE_CONTINUATION`을 프로젝트 loop policy와 state에 추가했다. 기본 bounded-ticket 사람 게이트는 그대로이며, 명시적으로 선승인되고 state에 기록된 sequence만 자동 연속할 수 있다.
+- M70 승인 sequence는 WORLD-005/006/006B/007/008/009/010으로 제한되며 ticket별 단일 active, 검증, 승인된 로컬 커밋, hard blocker, D3D11/crash 및 Git 안전 규칙을 유지한다.
+- 현재 baseline `e0b5678`에서 M70이 이미 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`이므로 완료된 WORLD 구현을 재실행하지 않았다. 현재 `nextTicket=null`; WORLD-011과 MainGame은 새 사람 승인 전까지 비활성이다.
+- 이번 정책 티켓은 게임 코드, Scene, Prefab, Packages, ProjectSettings, SaveData schema를 변경하지 않는다.
+
 ## 2026-08-11 — M70 PLAYABLE WORLD ALPHA COMPLETE
 
 - `WORLD-001` through `WORLD-010` are complete on `milestone/world-alpha-70`. The final ticket baseline was `46f6515`.
