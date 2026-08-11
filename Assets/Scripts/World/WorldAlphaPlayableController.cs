@@ -415,7 +415,70 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
             return $"노란 표지의 P.A. 잡화점을 찾으세요 · {TargetHint(_adapter?.RuntimeShop?.transform)}";
         if (!HasReachedWorkbench)
             return $"초록 표지의 제작 작업대를 찾으세요 · {TargetHint(_adapter?.RuntimeWorkbench?.transform)}";
-        return "첫 동선 확인 완료 · 낮 자원을 모아 상품 준비를 시작하세요.";
+        return $"첫 동선 확인 완료 · 낮 자원: {ResolveDaytimeObjective()}";
+    }
+
+    string ResolveDaytimeObjective()
+    {
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (_adapter == null || loop == null || !_adapter.DaytimeActivitiesBound)
+            return "활동 구역을 확인하고 있습니다.";
+
+        if (!loop.IsDailyActivityCompleted("forest-forage"))
+            return "숲 채집터에서 당근을 모으세요 · " +
+                   TargetHint(_adapter.FindDaytimeActivity("forest-forage")?.transform);
+
+        bool farmDone = loop.IsDailyActivityCompleted(FarmPlotInteraction.DailyHarvestActivityId);
+        FarmPlotInteraction availablePlot = _adapter.FarmPlots.FirstOrDefault(plot =>
+            plot != null && (plot.CurrentCrop == null || plot.CurrentCrop.isFullyGrown));
+        bool cropGrowing = _adapter.FarmPlots.Any(plot => plot?.CurrentCrop != null &&
+            !plot.CurrentCrop.isFullyGrown);
+        if (!farmDone && availablePlot != null)
+        {
+            Item seed = Resources.Load<Item>("Items/Item_15_Seed");
+            int seedCount = Inventory.instance != null && seed != null
+                ? Inventory.instance.CountItems(seed)
+                : 0;
+            if (availablePlot.CurrentCrop != null && availablePlot.CurrentCrop.isFullyGrown)
+                return $"마을 밭의 Wheat를 수확하세요 · {TargetHint(availablePlot.transform)}";
+            if (seedCount <= 0 && !cropGrowing)
+                return "농장 씨앗 주머니를 챙기세요 · " +
+                       TargetHint(_adapter.FindDaytimeActivity("farm-seed-pouch")?.transform);
+            if (!cropGrowing)
+                return $"씨앗을 마을 밭에 심으세요 · {TargetHint(availablePlot.transform)}";
+        }
+
+        if (!loop.IsDailyActivityCompleted("quarry-mining"))
+            return "작물이 자라는 동안 고지대 광맥에서 광석을 캐세요 · " +
+                   TargetHint(_adapter.FindDaytimeActivity("quarry-mining")?.transform);
+        if (!loop.IsDailyActivityCompleted("shore-forage"))
+            return "연못 낚시터에서 물고기를 낚으세요 · " +
+                   TargetHint(_adapter.FindDaytimeActivity("shore-forage")?.transform);
+        if (!farmDone)
+            return "Wheat가 다 자라면 마을 밭으로 돌아가 수확하세요.";
+        return "오늘 낮 활동 완료 · 상품을 제작하거나 잡화점 판매대에 진열하세요.";
+    }
+
+    string DaytimeActivitySummary()
+    {
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (loop == null) return "낮 활동 준비 중";
+        return $"낮 활동  {Done(loop.IsDailyActivityCompleted("forest-forage"))} 채집  " +
+               $"{Done(loop.IsDailyActivityCompleted(FarmPlotInteraction.DailyHarvestActivityId))} 농사  " +
+               $"{Done(loop.IsDailyActivityCompleted("quarry-mining"))} 채광  " +
+               $"{Done(loop.IsDailyActivityCompleted("shore-forage"))} 낚시  |  " +
+               $"가방 당근 {CountItem("Items/Item_Carrot")} · 밀 {CountItem("Items/Item_Wheat")} · " +
+               $"광석 {CountItem("Items/Item_Ore")} · 물고기 {CountItem("Items/Item_Fish")}";
+    }
+
+    static string Done(bool value) => value ? "[완료]" : "[ ]";
+
+    static int CountItem(string resourcePath)
+    {
+        Item item = Resources.Load<Item>(resourcePath);
+        return item != null && Inventory.instance != null
+            ? Inventory.instance.CountItems(item)
+            : 0;
     }
 
     string TargetHint(Transform target)
@@ -544,10 +607,12 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     {
         float width = Mathf.Min(720f, Screen.width - 420f);
         float left = (Screen.width - width) * 0.5f;
-        GUILayout.BeginArea(new Rect(left, 18f, width, 126f), GUI.skin.box);
+        GUILayout.BeginArea(new Rect(left, 18f, width, 152f), GUI.skin.box);
         GUILayout.Label($"Day 1 · 첫 마을 동선   |   {CurrentPlayerObjective}");
         GUILayout.Space(4f);
         GUILayout.Label(_lastAction);
+        GUILayout.Space(4f);
+        GUILayout.Label(DaytimeActivitySummary());
         GUILayout.Space(4f);
         GUILayout.Label("WASD 이동 · 가까운 오브젝트 Space 상호작용 · F5 저장 · F9 불러오기 · Esc 메뉴");
         GUILayout.EndArea();

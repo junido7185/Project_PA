@@ -4,9 +4,11 @@
 
 - Branch `milestone/gameplay-beta-85`, starting baseline `b176bdc`. 사람은 `BETA-001`~`BETA-010`과 ticket별 검증/로컬 커밋/자동 다음-ticket 전환을 명시적으로 선승인했다. push/rebase/reset/clean은 금지다.
 - `BETA-001 Player Onboarding and World Readability` 완료: fresh WorldSandbox는 Day 1 09:00, 새 생활 시작 prompt, WASD→P.A. 잡화점→제작 작업대→낮 자원 목표 순서를 제공한다. shop/workbench arrival은 4m다.
+- `BETA-002 Daytime Activity Completion` 완료: 기존 숲 채집/고정 밭/광질/낚시를 generated Forest/Meadow/Highland/Pond의 walkable cell에 배치하고 M70 플레이어의 기존 Space interaction, Inventory, Hotbar와 연결했다.
+- 낮 활동 결과는 Carrot2/Wheat3/Ore2/Fish2이며 기존 Raw 판매가 합계는 120G다. 당일 중복은 차단되고 다음날 다시 열린다. player HUD가 활동 방향·완료·가방 수량을 설명한다.
 - WORLD grid/placement/generator/navigation 개발 surface는 기본 숨김이며 F10으로 함께 복구한다. Scene YAML은 수정하지 않았고 existing M70 gameplay/input/save authority를 그대로 사용한다.
-- 증거: `Logs/BETA001_D3D11_Validation_Final.log`, `Logs/BETA001_WORLD010_Regression_Retry.log`, `Logs/BETA001_CoreSlice_Regression.log`, `Logs/BETA001_FinalDemoRoute_Regression.log` 모두 PASS; blocking Console 0, new crash 0.
-- 현재 유일한 활성 티켓은 `BETA-002 Daytime Activity Completion`. 기존 Gathering/Farming/Mining/Fishing 코드와 validator를 먼저 대조하고 최소 3개 활동을 WorldSandbox의 실제 이동·상호작용·Inventory·판매 가치로 연결한다.
+- 증거: `Logs/BETA002_D3D11_Validation_Final2.log`, `Logs/BETA002_Regression_BETA001.log`, `Logs/BETA002_Regression_WORLD010.log`, `Logs/BETA002_Regression_GatheringFishing.log`, `Logs/BETA002_Regression_MiningShop_Retry.log` PASS; blocking Console 0, new crash 0.
+- 현재 유일한 활성 티켓은 `BETA-003 Crafting and Production Expansion`. 기존 recipe/Workbench/CraftingService를 낮 활동 자원과 실제 판매 상품으로 연결한다.
 - Prototype_FirstDay Golden, WorldSandbox scene, MainGame, Prefab, Packages, ProjectSettings, Save schema v11은 승인 없는 변경 금지다.
 
 ## M70 및 Loop Policy 현재 상태 — 2026-08-11

@@ -62,6 +62,10 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     SaveManager _saveManager;
     NpcController _customer;
     ShopSlot _customerTargetSlot;
+    PlayerInteraction _playerInteraction;
+    Hotbar _playerHotbar;
+    DaytimeStockPrepPoint[] _daytimeActivityPoints = Array.Empty<DaytimeStockPrepPoint>();
+    FarmPlotInteraction[] _farmPlots = Array.Empty<FarmPlotInteraction>();
     Transform _salesDisplayRoot;
     Vector3 _salesDisplayBaseLocalPosition;
     Quaternion _salesDisplayBaseLocalRotation;
@@ -91,6 +95,13 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public Workbench RuntimeWorkbench => _workbench;
     public NpcController RuntimeCustomer => _customer;
     public SaveManager RuntimeSaveManager => _saveManager;
+    public PlayerInteraction PlayerInteraction => _playerInteraction;
+    public Hotbar PlayerHotbar => _playerHotbar;
+    public IReadOnlyList<DaytimeStockPrepPoint> DaytimeActivityPoints => _daytimeActivityPoints;
+    public IReadOnlyList<FarmPlotInteraction> FarmPlots => _farmPlots;
+    public bool DaytimeActivitiesBound => _playerInteraction != null && _playerHotbar != null &&
+                                          _daytimeActivityPoints.Length >= 4 &&
+                                          _farmPlots.Length >= FarmPlotInteraction.RuntimePlotCount;
     public Vector2Int SalesDisplayGrid => new Vector2Int(
         _salesDisplayGridX, _salesDisplayGridY);
     public int SalesDisplayQuarterTurns => _salesDisplayQuarterTurns;
@@ -277,6 +288,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         AddRuntimeLabel(_playerRoot.transform, "새 생활 시작점", new Color(0.76f, 0.95f, 1f));
         AddRuntimeLabel(_shopRoot.transform, "P.A. 잡화점 · 밤 영업", new Color(1f, 0.88f, 0.48f));
         AddRuntimeLabel(_workbenchRoot.transform, "제작 작업대 · 상품 준비", new Color(0.72f, 1f, 0.72f));
+        if (!ConfigurePlayerActivityInteraction(out reason) ||
+            !BindDaytimeActivitiesToGeneratedWorld(out reason))
+        {
+            return false;
+        }
         return true;
     }
 
@@ -360,6 +376,162 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         labelObject.transform.localPosition = new Vector3(0f, 2.2f, 0f);
         var label = labelObject.AddComponent<PrototypeWorldLabel>();
         label.Set(text, color, 1.35f);
+    }
+
+    bool ConfigurePlayerActivityInteraction(out string reason)
+    {
+        reason = string.Empty;
+        if (_playerRoot == null || _inventory == null)
+        {
+            reason = "The WorldSandbox player or Inventory is unavailable for daytime activity input.";
+            return false;
+        }
+
+        _playerHotbar = _playerRoot.GetComponent<Hotbar>() ?? _playerRoot.AddComponent<Hotbar>();
+        _inventory.hotbar = _playerHotbar;
+        _playerInteraction = _playerRoot.GetComponent<PlayerInteraction>() ??
+                             _playerRoot.AddComponent<PlayerInteraction>();
+        if (InventoryUI.instance != null)
+        {
+            InventoryUI.instance.inventory = _inventory;
+            InventoryUI.instance.hotbar = _playerHotbar;
+        }
+
+        return _playerInteraction != null && _playerHotbar != null;
+    }
+
+    bool BindDaytimeActivitiesToGeneratedWorld(out string reason)
+    {
+        reason = string.Empty;
+        _daytimeActivityPoints = FindObjectsByType<DaytimeStockPrepPoint>(
+                FindObjectsSortMode.None)
+            .Where(point => point != null)
+            .OrderBy(point => point.activityId, StringComparer.Ordinal)
+            .ToArray();
+        _farmPlots = FindObjectsByType<FarmPlotInteraction>(FindObjectsSortMode.None)
+            .Where(plot => plot != null)
+            .OrderBy(plot => plot.plotId, StringComparer.Ordinal)
+            .ToArray();
+
+        string[] requiredActivities =
+        {
+            "forest-forage", "farm-seed-pouch", "quarry-mining", "shore-forage"
+        };
+        if (requiredActivities.Any(id => FindDaytimeActivity(id) == null) ||
+            _farmPlots.Length < FarmPlotInteraction.RuntimePlotCount)
+        {
+            reason = "Existing Gathering, Farming, Mining or Fishing runtime activities are missing.";
+            return false;
+        }
+
+        if (!TryResolveAnchorCoordinate(WorldGenerationAnchorKind.Shop, new Vector2Int(-3, 3),
+                out Vector2Int garden) ||
+            !TryResolveAnchorCoordinate(WorldGenerationAnchorKind.Shop, new Vector2Int(4, 3),
+                out Vector2Int producer) ||
+            !TryResolveResourceCoordinate(WorldResourceKind.Forage,
+                WorldGenerationAnchorKind.ForestActivity, out Vector2Int forest) ||
+            !TryResolveResourceCoordinate(WorldResourceKind.Fish,
+                WorldGenerationAnchorKind.PondActivity, out Vector2Int fishing) ||
+            !TryResolveResourceCoordinate(WorldResourceKind.Stone,
+                WorldGenerationAnchorKind.HighlandActivity, out Vector2Int quarry) ||
+            !TryResolveAnchorCoordinate(WorldGenerationAnchorKind.MeadowActivity,
+                new Vector2Int(3, 3), out Vector2Int meadow) ||
+            !TryResolveAnchorCoordinate(WorldGenerationAnchorKind.MeadowActivity,
+                new Vector2Int(-3, 3), out Vector2Int seedPouch) ||
+            !TryResolveAnchorCoordinate(WorldGenerationAnchorKind.MeadowActivity,
+                new Vector2Int(-4, 1), out Vector2Int farmA) ||
+            !TryResolveAnchorCoordinate(WorldGenerationAnchorKind.MeadowActivity,
+                new Vector2Int(-1, 4), out Vector2Int farmB))
+        {
+            reason = "Generated world anchors could not provide safe daytime activity cells.";
+            return false;
+        }
+
+        RelocateActivity("garden-basket", garden, "상점 앞 준비 바구니");
+        RelocateActivity("producer-dropbox", producer, "생산자 납품함");
+        RelocateActivity("forest-forage", forest, "숲 채집터 · 당근 x2");
+        RelocateActivity("shore-forage", fishing, "연못 낚시터 · 물고기 x2");
+        RelocateActivity("meadow-forage", meadow, "초원 채집터 · 밀 x2");
+        RelocateActivity("quarry-mining", quarry, "고지대 광맥 · 광석 x2");
+        RelocateActivity("farm-seed-pouch", seedPouch, "농장 씨앗 주머니 · 씨앗 x2");
+        RelocateFarmPlot(_farmPlots[0], farmA);
+        RelocateFarmPlot(_farmPlots[1], farmB);
+
+        _lastAction = "숲 채집, 농사, 광질과 낚시가 생성 섬의 실제 활동 구역에 연결됐습니다.";
+        Debug.Log("[BETA-002] DAYTIME_READY gathering=true farming=true mining=true fishing=true");
+        return true;
+    }
+
+    public DaytimeStockPrepPoint FindDaytimeActivity(string activityId)
+    {
+        if (string.IsNullOrWhiteSpace(activityId)) return null;
+        return _daytimeActivityPoints.FirstOrDefault(point => point != null &&
+            string.Equals(point.activityId, activityId, StringComparison.Ordinal));
+    }
+
+    bool TryResolveResourceCoordinate(WorldResourceKind kind,
+        WorldGenerationAnchorKind nearbyAnchor, out Vector2Int coordinate)
+    {
+        coordinate = default;
+        if (_generated == null || !_generated.TryGetAnchor(nearbyAnchor,
+                out WorldGenerationAnchor anchor))
+        {
+            return false;
+        }
+
+        WorldResourceSpawnRecord spawn = _generated.ResourceSpawns
+            .Where(record => record.Kind == kind)
+            .OrderBy(record => (record.Coordinate - anchor.Coordinate).sqrMagnitude)
+            .ThenBy(record => record.SpawnKey, StringComparer.Ordinal)
+            .FirstOrDefault();
+        Vector2Int desired = string.IsNullOrWhiteSpace(spawn.SpawnKey)
+            ? anchor.Coordinate
+            : spawn.Coordinate;
+        return TryFindNearestWalkableCell(desired, out coordinate);
+    }
+
+    bool TryResolveAnchorCoordinate(WorldGenerationAnchorKind kind, Vector2Int offset,
+        out Vector2Int coordinate)
+    {
+        coordinate = default;
+        return _generated != null && _generated.TryGetAnchor(kind, out WorldGenerationAnchor anchor) &&
+               TryFindNearestWalkableCell(anchor.Coordinate + offset, out coordinate);
+    }
+
+    bool TryFindNearestWalkableCell(Vector2Int desired, out Vector2Int coordinate)
+    {
+        coordinate = default;
+        if (_grid == null) return false;
+        foreach (WorldCellData cell in _grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater)
+                     .OrderBy(cell => (cell.Coordinate - desired).sqrMagnitude)
+                     .ThenBy(cell => cell.Coordinate.y)
+                     .ThenBy(cell => cell.Coordinate.x))
+        {
+            coordinate = cell.Coordinate;
+            return true;
+        }
+        return false;
+    }
+
+    void RelocateActivity(string activityId, Vector2Int coordinate, string displayName)
+    {
+        DaytimeStockPrepPoint point = FindDaytimeActivity(activityId);
+        if (point == null || !_grid.CellToWorld(coordinate, out Vector3 world)) return;
+        point.transform.position = world + Vector3.up * 0.35f;
+        point.Configure(point.activityId, point.itemResourcePath, point.grantCount, displayName);
+
+        MeshRenderer primitiveRenderer = point.GetComponent<MeshRenderer>();
+        if (primitiveRenderer != null) primitiveRenderer.enabled = false;
+
+        GameObject dressing = GameObject.Find($"PA_DemoDressing_Prep_{activityId}");
+        if (dressing != null) dressing.transform.position = point.transform.position;
+    }
+
+    void RelocateFarmPlot(FarmPlotInteraction plot, Vector2Int coordinate)
+    {
+        if (plot == null || !_grid.CellToWorld(coordinate, out Vector3 world)) return;
+        plot.transform.position = world + Vector3.up * 0.03f;
     }
 
     public bool BeginDayForValidation(float hour = 9f, int day = 2)
@@ -1136,6 +1308,394 @@ public static class PA_WorldGameplayAdapterTools
     {
         if (!condition) throw new InvalidOperationException(message);
         Debug.Log($"[WORLD-009] PASS {message}");
+    }
+}
+
+public static class PA_Beta002DaytimeActivityValidator
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.BETA002.Active";
+    const string FailedKey = "PA.BETA002.Failed";
+    const string ConsoleErrorKey = "PA.BETA002.ConsoleErrors";
+    const string FrameKey = "PA.BETA002.Frames";
+    const string StageKey = "PA.BETA002.Stage";
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+    static DayNightShopLoopController _loop;
+    static FarmPlotInteraction _farmPlot;
+    static float _stageStartedAt;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        Subscribe();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/Beta/BETA-002/Validate Daytime Activity Completion")]
+    public static void RunBeta002Validation()
+    {
+        RunInternal();
+    }
+
+    public static void RunBeta002ValidationBatch()
+    {
+        RunInternal();
+    }
+
+    static void RunInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(FrameKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            Subscribe();
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void Subscribe()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            Finish();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(FrameKey, 0) + 1;
+        SessionState.SetInt(FrameKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+
+        try
+        {
+            ResolveRuntime();
+            bool runtimeReady = _alpha != null && _alpha.IsReady && _adapter != null &&
+                                _adapter.DaytimeActivitiesBound;
+            if (!runtimeReady && frames < 900)
+            {
+                return;
+            }
+            if (!runtimeReady)
+                throw new InvalidOperationException(
+                    "WorldSandbox did not bind existing daytime activities to the playable runtime.");
+
+            if (stage == 0)
+            {
+                Require(true,
+                    "WorldSandbox binds existing daytime activities to the playable runtime");
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(_adapter.PlayerInteraction != null && _adapter.PlayerHotbar != null &&
+                        Inventory.instance == _adapter.PlayerInventory &&
+                        Inventory.instance.hotbar == _adapter.PlayerHotbar,
+                    "the M70 player uses existing Space interaction, Inventory and Hotbar authorities");
+
+                string[] coreIds =
+                {
+                    "forest-forage", "farm-seed-pouch", "quarry-mining", "shore-forage"
+                };
+                foreach (string id in coreIds)
+                {
+                    DaytimeStockPrepPoint point = _adapter.FindDaytimeActivity(id);
+                    Require(point != null && _alpha.Grid.WorldToCell(point.transform.position,
+                                out Vector2Int coordinate) &&
+                            _alpha.Grid.TryGetCell(coordinate, out WorldCellData cell) &&
+                            cell.IsWalkable && !cell.HasWater,
+                        $"{id} resolves to a generated walkable island cell");
+                    Require(point.GetComponent<MeshRenderer>() == null ||
+                            !point.GetComponent<MeshRenderer>().enabled,
+                        $"{id} does not expose its raw runtime cube");
+                }
+                Require(_adapter.FarmPlots.Count >= FarmPlotInteraction.RuntimePlotCount &&
+                        _adapter.FarmPlots.All(plot => plot != null &&
+                            _alpha.Grid.WorldToCell(plot.transform.position, out _)),
+                    "two interactive farm plots resolve inside the generated meadow");
+
+                ClearInventory();
+                _loop.SimulatePhaseForValidation(9f, 1);
+                _loop.ResetDayPrepForValidation();
+                Require(_alpha.BeginNewGame() && MoveAwayFromStart(3f),
+                    "the player starts the onboarding route before daytime play");
+                SetStage(1);
+                return;
+            }
+
+            if (frames < 3) return;
+            if (stage == 1)
+            {
+                Require(_alpha.HasMoved && MoveNear(_adapter.RuntimeShop.transform, 4f),
+                    "the player can reach the shop landmark before daytime activities");
+                SetStage(2);
+                return;
+            }
+
+            if (stage == 2)
+            {
+                Require(_alpha.HasReachedShop && MoveNear(_adapter.RuntimeWorkbench.transform, 4f),
+                    "the player can reach the workbench landmark before daytime activities");
+                SetStage(3);
+                return;
+            }
+
+            if (stage == 3)
+            {
+                Require(_alpha.HasReachedWorkbench &&
+                        _alpha.CurrentPlayerObjective.Contains("숲 채집터"),
+                    "the player-facing objective hands off from onboarding to Gathering");
+
+                DaytimeStockPrepPoint forest = _adapter.FindDaytimeActivity("forest-forage");
+                Require(MoveNear(forest.transform, 2.25f) && InvokePlayerInteraction(),
+                    "existing PlayerInteraction executes the forest Space interaction path");
+                Item carrot = Resources.Load<Item>("Items/Item_Carrot");
+                Require(Count(carrot) == 2 && _loop.IsDailyActivityCompleted("forest-forage"),
+                    "Gathering grants Carrot x2 to Inventory and records daily completion");
+
+                DaytimeStockPrepPoint seeds = _adapter.FindDaytimeActivity("farm-seed-pouch");
+                seeds.Interact(_adapter.PlayerRoot);
+                Item seed = Resources.Load<Item>("Items/Item_15_Seed");
+                Require(Count(seed) == 2,
+                    "the generated farm seed pouch grants two existing Seed items");
+                _farmPlot = _adapter.FarmPlots.First(plot => plot != null && plot.CurrentCrop == null);
+                _farmPlot.growthSecondsPerStage = 0.1f;
+                _farmPlot.Interact(_adapter.PlayerRoot);
+                Require(_farmPlot.CurrentCrop != null && Count(seed) == 1,
+                    "Farming consumes one Seed and starts the existing Wheat crop");
+                SetStage(4);
+                return;
+            }
+
+            if (stage == 4)
+            {
+                DaytimeStockPrepPoint forest = _adapter.FindDaytimeActivity("forest-forage");
+                Item carrot = Resources.Load<Item>("Items/Item_Carrot");
+                if (_farmPlot?.CurrentCrop != null && !_farmPlot.CurrentCrop.isFullyGrown &&
+                    Time.realtimeSinceStartup - _stageStartedAt < 3f)
+                    return;
+                Require(_farmPlot?.CurrentCrop != null && _farmPlot.CurrentCrop.isFullyGrown,
+                    "the planted Wheat reaches its harvestable stage");
+                _farmPlot.Interact(_adapter.PlayerRoot);
+                Item wheat = Resources.Load<Item>("Items/Item_Wheat");
+                Require(Count(wheat) == 3 &&
+                        _loop.IsDailyActivityCompleted(FarmPlotInteraction.DailyHarvestActivityId),
+                    "Farming grants Wheat x3 and records a daily harvest");
+
+                DaytimeStockPrepPoint quarry = _adapter.FindDaytimeActivity("quarry-mining");
+                MiningSpot mining = quarry.GetComponentInChildren<MiningSpot>(true);
+                mining.Interact(_adapter.PlayerRoot);
+                Require(mining.IsMining && mining.CompleteMiningForValidation(_adapter.PlayerRoot),
+                    "Mining performs its strike-and-collect action");
+                Item ore = Resources.Load<Item>("Items/Item_Ore");
+                Require(Count(ore) == 2 && _loop.IsDailyActivityCompleted("quarry-mining"),
+                    "Mining grants Ore x2 to Inventory and records daily completion");
+
+                DaytimeStockPrepPoint shore = _adapter.FindDaytimeActivity("shore-forage");
+                FishingSpot fishing = shore.GetComponentInChildren<FishingSpot>(true);
+                fishing.Interact(_adapter.PlayerRoot);
+                Require(fishing.IsFishing && fishing.CompleteCatchForValidation(_adapter.PlayerRoot),
+                    "the existing Fishing foundation performs its cast-and-catch action");
+                Item fish = Resources.Load<Item>("Items/Item_Fish");
+                Require(Count(fish) == 2 && _loop.IsDailyActivityCompleted("shore-forage"),
+                    "Fishing grants Fish x2 to Inventory and records daily completion");
+
+                Require(new[] { carrot, wheat, ore, fish }.All(item =>
+                            item != null && item.category == ItemCategory.Raw && item.basePrice > 0),
+                    "all four daytime results are existing sellable Raw economy items");
+                int value = carrot.basePrice * 2 + wheat.basePrice * 3 +
+                            ore.basePrice * 2 + fish.basePrice * 2;
+                Require(value > 0, $"the completed daytime route creates positive shop value ({value}G)");
+                Require(_alpha.CurrentPlayerObjective.Contains("오늘 낮 활동 완료"),
+                    "the player-facing objective recognizes the completed daytime route");
+
+                int carrotBefore = Count(carrot);
+                forest.Interact(_adapter.PlayerRoot);
+                mining.Interact(_adapter.PlayerRoot);
+                fishing.Interact(_adapter.PlayerRoot);
+                Require(Count(carrot) == carrotBefore && !mining.IsMining && !fishing.IsFishing,
+                    "same-day duplicate Gathering, Mining and Fishing rewards are blocked");
+
+                _loop.SimulatePhaseForValidation(9f, 2);
+                Require(_loop.IsDayPrepPointAvailable(forest) &&
+                        _loop.IsDayPrepPointAvailable(quarry) &&
+                        _loop.IsDayPrepPointAvailable(shore),
+                    "daily activity points reactivate on the next morning");
+                Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                    "blocking runtime Console Error/Exception/Assert count is 0");
+                Require(!SceneManager.GetActiveScene().isDirty,
+                    "BETA-002 remains runtime-only and leaves WorldSandbox scene clean");
+                Debug.Log($"[BETA-002] PLAY_MODE_PASS gathering=true farming=true mining=true " +
+                          $"fishing=true inventory=true economyValue={value} console=0");
+                EditorApplication.update -= ValidateRuntime;
+                EditorApplication.ExitPlaymode();
+            }
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+        _loop = DayNightShopLoopController.Instance ??
+                UnityEngine.Object.FindFirstObjectByType<DayNightShopLoopController>();
+    }
+
+    static bool MoveAwayFromStart(float minimumDistance)
+    {
+        Vector3 origin = _adapter.PlayerRoot.transform.position;
+        foreach (WorldCellData cell in _alpha.Grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater)
+                     .OrderBy(cell => FlatDistance(origin, CellWorld(cell.Coordinate))))
+        {
+            float distance = FlatDistance(origin, CellWorld(cell.Coordinate));
+            if (distance >= minimumDistance && distance <= 16f)
+                return _alpha.MovePlayerToCellForValidation(cell.Coordinate);
+        }
+        return false;
+    }
+
+    static bool MoveNear(Transform target, float maximumDistance)
+    {
+        if (target == null) return false;
+        foreach (WorldCellData cell in _alpha.Grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater)
+                     .OrderBy(cell => FlatDistance(target.position, CellWorld(cell.Coordinate))))
+        {
+            Vector3 world = CellWorld(cell.Coordinate);
+            if (FlatDistance(target.position, world) > maximumDistance) return false;
+            if (!_alpha.MovePlayerToCellForValidation(cell.Coordinate)) return false;
+            Vector3 facing = target.position - _adapter.PlayerRoot.transform.position;
+            facing.y = 0f;
+            if (facing.sqrMagnitude > 0.001f)
+                _adapter.PlayerRoot.transform.rotation = Quaternion.LookRotation(facing.normalized);
+            Physics.SyncTransforms();
+            return true;
+        }
+        return false;
+    }
+
+    static bool InvokePlayerInteraction()
+    {
+        var method = typeof(PlayerInteraction).GetMethod("TryInteract",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        if (method == null || _adapter.PlayerInteraction == null) return false;
+        method.Invoke(_adapter.PlayerInteraction, null);
+        return true;
+    }
+
+    static Vector3 CellWorld(Vector2Int coordinate)
+    {
+        return _alpha.Grid.CellToWorld(coordinate, out Vector3 world)
+            ? world
+            : new Vector3(float.MaxValue, 0f, float.MaxValue);
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    static int Count(Item item)
+    {
+        return item != null && Inventory.instance != null ? Inventory.instance.CountItems(item) : 0;
+    }
+
+    static void ClearInventory()
+    {
+        if (Inventory.instance == null) return;
+        foreach (InventorySlot slot in Inventory.instance.slots) slot?.Clear();
+        if (Inventory.instance.hotbar != null)
+            foreach (InventorySlot slot in Inventory.instance.hotbar.slots) slot?.Clear();
+        Inventory.instance.RefreshAllUI();
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(FrameKey, 0);
+        _stageStartedAt = Time.realtimeSinceStartup;
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+        SessionState.SetInt(ConsoleErrorKey,
+            SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[BETA-002] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else Finish();
+    }
+
+    static void Finish()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int errors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(FrameKey);
+        SessionState.EraseInt(StageKey);
+        Debug.Log(failed
+            ? $"[BETA-002] FINISHED_WITH_ERRORS consoleErrors={errors}"
+            : "[BETA-002] FINISHED_PASS gathering=true farming=true mining=true " +
+              "fishing=true inventory=true economy=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[BETA-002] PASS {message}");
     }
 }
 #endif

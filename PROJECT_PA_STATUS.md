@@ -1,5 +1,16 @@
 # Project PA Status
 
+## 2026-08-11 — BETA-002 COMPLETE / DAYTIME ACTIVITIES PLAYABLE
+
+- WorldSandbox 원점 fallback에 있던 기존 낮 활동을 generated island에 연결했다: Forest Gathering, Meadow Farming, Highland Mining, Pond Fishing.
+- M70 runtime player에 기존 `PlayerInteraction`과 `Hotbar`를 연결했다. 숲 활동은 실제 PlayerInteraction의 Space 탐색 경로로 검증했고 모든 보상은 canonical Inventory로 들어간다.
+- 농사는 씨앗 주머니 Seed x2→고정 밭 심기→성장→Wheat x3 수확을 수행하며, 수확 완료는 기존 일일 활동 저장 목록에 `farm-harvest`로 기록된다.
+- 광질은 타격 feedback 후 Ore x2, 낚시는 cast/catch 후 Fish x2를 지급한다. 숲 Carrot x2까지 합친 기존 Raw 상품 기본가는 하루 120G다.
+- 당일 중복 보상은 차단되고 다음날 활동이 다시 열린다. 플레이어 HUD는 방향, 활동 완료, Carrot/Wheat/Ore/Fish 보유량을 표시한다. 원시 활동 큐브 renderer는 WorldSandbox에서 숨긴다.
+- D3D11 BETA-002, BETA-001, WORLD-010, Prototype Gathering/Fishing, Mining/Shop 회귀 PASS; blocking Console 0, compile errors 0, new crash 0.
+- Mining validator의 낡은 v10 고정 비교만 현재 v11 상수로 정합했다. Save schema/DTO, Scene, Prefab, Packages, ProjectSettings는 변경하지 않았다.
+- Next: `BETA-003 Crafting and Production Expansion`.
+
 ## 2026-08-11 — BETA-001 COMPLETE / M85 GAMEPLAY BETA ACTIVE
 
 - Started from clean `b176bdc` and created `milestone/gameplay-beta-85` under the explicitly preapproved `BETA-001`~`BETA-010` sequence.

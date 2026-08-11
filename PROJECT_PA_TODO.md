@@ -5,8 +5,8 @@
 Status: `IN_PROGRESS`; branch `milestone/gameplay-beta-85`; approved through `BETA-010`.
 
 - [x] BETA-001 — Player Onboarding and World Readability: Day 1 start prompt, first objective route, functional landmarks, player-facing HUD, default-hidden development surfaces, D3D11/M70/Golden regressions.
-- [ ] BETA-002 — Daytime Activity Completion: Gathering, Farming, Mining, Inventory/economy connection; scope Fishing from existing implementation.
-- [ ] BETA-003 — Crafting and Production Expansion.
+- [x] BETA-002 — Daytime Activity Completion: generated-island Gathering/Farming/Mining/Fishing, Space interaction, Inventory, 120G Raw value, daily reset.
+- [ ] BETA-003 — Crafting and Production Expansion: connect actual daytime resources to meaningful recipes, workbench UI/state, processed sale value.
 - [ ] BETA-004 — Shop Readability and Merchandising.
 - [ ] BETA-005 — Customer Strategy and Feedback.
 - [ ] BETA-006 — Phone Hiring and Feed Completion.

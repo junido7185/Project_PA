@@ -4,6 +4,7 @@ using UnityEngine;
 public class FarmPlotInteraction : MonoBehaviour, IInteractable
 {
     public const int RuntimePlotCount = 2;
+    public const string DailyHarvestActivityId = "farm-harvest";
 
     [Header("고정 밭")]
     public string plotId = "farm-plot-1";
@@ -83,6 +84,7 @@ public class FarmPlotInteraction : MonoBehaviour, IInteractable
             return;
         }
 
+        DayNightShopLoopController.Instance?.TryCompleteDailyActivity(DailyHarvestActivityId);
         ShowFeedback($"수확 완료 · Wheat x{count}");
         RefreshLabel();
     }

@@ -2,6 +2,17 @@
 
 Append-only log for guarded automation and dry-run loop work.
 
+## 2026-08-11 - BETA-002 Completed
+
+- Ticket ID: `BETA-002 Daytime Activity Completion`
+- Baseline/branch: `9bf71d6c85cb35a8d18c735769e1969c3de9e6e9` / `milestone/gameplay-beta-85`
+- Implemented: existing Gathering/Farming/Mining/Fishing relocated from origin fallback positions to generated Forest/Meadow/Highland/Pond activity cells.
+- Player path: existing `PlayerInteraction`, `Inventory`, and `Hotbar` now bind to the M70 WorldSandbox player; objective/HUD show activity directions, completion, and resource counts.
+- Results: Carrot x2, Wheat x3, Ore x2, Fish x2; all are existing sellable Raw items with 120G combined base value. Same-day duplicates are blocked and activity points reopen next morning.
+- Validation: Runtime/Editor compile 0 errors; D3D11 BETA-002, BETA-001, M70 WORLD-010, Prototype Gathering/Fishing and Mining/Shop regressions PASS; blocking Console 0; new crash 0.
+- Validator maintenance: stale Mining v10 assertion now follows existing v11 `WorldPersistenceMigration.AdditiveWorldSaveVersion`; schema itself is unchanged.
+- Final state: `BETA_002_COMPLETE`; next preapproved ticket: `BETA-003`.
+
 ## 2026-08-11 - BETA-001 Completed
 
 - Ticket ID: `BETA-001 Player Onboarding and World Readability`

@@ -7,7 +7,7 @@
     "completionTarget": "M85_GAMEPLAY_BETA_COMPLETE",
     "branch": "milestone/gameplay-beta-85",
     "checkpointCommit": "b176bdcac8d140ffa53e8b907ef7da3576a44a70",
-    "completedTicketCommits": 1,
+    "completedTicketCommits": 2,
     "commitLimit": 10
   },
   "worldArchitectureApproval": {
@@ -73,7 +73,7 @@
     ],
     "sequenceStartTicket": "BETA-001",
     "initialNextTicket": "BETA-001",
-    "nextTicket": "BETA-002",
+    "nextTicket": "BETA-003",
     "preapprovedThrough": "BETA-010",
     "stopAtMilestone": "M85_GAMEPLAY_BETA_COMPLETE",
     "completionReached": false,
@@ -112,18 +112,18 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "BETA-001",
+  "ticketId": "BETA-002",
   "status": "completed",
-  "finalState": "BETA_001_COMPLETE",
-  "goal": "Make a fresh WorldSandbox session understandable to a player through Day 1 onboarding, landmark guidance, and player-facing presentation while preserving M70 and Golden regressions.",
+  "finalState": "BETA_002_COMPLETE",
+  "goal": "Connect existing Gathering, Farming, Mining and Fishing to generated WorldSandbox activity zones, actual player interaction, Inventory and sellable economy value.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
-    "commit": "b176bdcac8d140ffa53e8b907ef7da3576a44a70",
+    "commit": "9bf71d6c85cb35a8d18c735769e1969c3de9e6e9",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 15,
+    "dirtyPathCountAtStop": 14,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
@@ -138,18 +138,24 @@
     "editor": "PASS: dotnet Assembly-CSharp-Editor; 0 errors; pre-existing CS8785 and PA_ErrorTracker CS0414 warnings only"
   },
   "validators": {
-    "beta001Log": "Logs/BETA001_D3D11_Validation_Final.log",
-    "world010RegressionLog": "Logs/BETA001_WORLD010_Regression_Retry.log",
-    "coreSliceGoldenLog": "Logs/BETA001_CoreSlice_Regression.log",
-    "finalDemoGoldenLog": "Logs/BETA001_FinalDemoRoute_Regression.log",
+    "beta002Log": "Logs/BETA002_D3D11_Validation_Final2.log",
+    "beta001RegressionLog": "Logs/BETA002_Regression_BETA001.log",
+    "world010RegressionLog": "Logs/BETA002_Regression_WORLD010.log",
+    "gatheringFishingRegressionLog": "Logs/BETA002_Regression_GatheringFishing.log",
+    "miningShopRegressionLog": "Logs/BETA002_Regression_MiningShop_Retry.log",
     "passed": [
       "Unity D3D11 Runtime and Editor compile",
-      "fresh WorldSandbox Day 1 09:00 start and new-life prompt",
-      "WASD movement objective followed by shop and workbench landmark route",
-      "WORLD development panels hidden by default and restored with F10",
-      "WorldSandbox remains serialized clean with runtime-only onboarding",
+      "existing PlayerInteraction, Inventory and Hotbar on the M70 runtime player",
+      "generated walkable island cells for forest, farm, highland mine and pond fishing",
+      "Space-path Gathering gives Carrot x2",
+      "Seed pouch, planting, growth and harvest give Wheat x3",
+      "Mining gives Ore x2 and Fishing gives Fish x2 through their existing action layers",
+      "same-day duplicate blocking and next-morning reactivation",
+      "four existing Raw items produce 120G combined base shop value",
+      "raw runtime activity cubes hidden while existing visual dressing remains available",
       "M70 movement, gather, craft, shop, customer, revenue, save and restart restore regression",
-      "Prototype_FirstDay Core Slice and Final Demo Route Golden regressions",
+      "Prototype Gathering/Fishing sale and Mining/Ore sale/save regressions",
+      "BETA-001 onboarding regression",
       "blocking Console Error/Exception/Assert 0"
     ]
   },
@@ -312,6 +318,24 @@
     "sceneSerializationChanged": false,
     "nextTicket": "BETA-002"
   },
+  "gameplayBetaDaytimeActivities": {
+    "ticket": "BETA-002",
+    "state": "BETA_002_COMPLETE",
+    "sceneScope": "WorldSandbox runtime only",
+    "playerAuthorities": ["PlayerInteraction", "Inventory", "Hotbar"],
+    "generatedZones": {
+      "Gathering": "ForestActivity / Forage spawn / Carrot x2",
+      "Farming": "MeadowActivity / Seed x2 / Wheat x3 harvest",
+      "Mining": "HighlandActivity / Stone spawn / Ore x2",
+      "Fishing": "PondActivity / Fish spawn shoreline / Fish x2"
+    },
+    "combinedBaseShopValue": 120,
+    "dailyDuplicateBlocked": true,
+    "nextMorningReactivation": true,
+    "rawPrimitiveActivityRenderersHidden": true,
+    "saveSchemaChanged": false,
+    "nextTicket": "BETA-003"
+  },
   "shopFurniture": {
     "authority": "existing ShopCustomizationController over GridService shop.interior",
     "cellSizeMeters": 2,
@@ -355,17 +379,16 @@
     "reason": "Automatic Game View capture was not retried. Runtime object, bounds, interaction, restart and Console gates provide the bounded functional evidence; no manual capture is requested."
   },
   "changedPaths": [
-    "Assets/Scripts/World/WorldAlphaPlayableController.cs",
+    "Assets/Editor/PA_MiningShopLoopValidator.cs",
+    "Assets/Scripts/FarmPlotInteraction.cs",
     "Assets/Scripts/World/WorldGameplayAdapterService.cs",
-    "Assets/Scripts/World/WorldNavigationService.cs",
+    "Assets/Scripts/World/WorldAlphaPlayableController.cs",
     "Automation/LoopEngineering/validator-registry.json",
-    "Automation/LoopEngineering/loop-policy.json",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
     "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
-    "PROJECT_PA_CURRENT_MILESTONE.md",
     "PROJECT_PA_STATUS.md",
     "PROJECT_PA_TODO.md",
     "PROJECT_PA_SESSION_REPORT.md",
@@ -390,10 +413,12 @@
   "world010Completed": true,
   "beta001Started": true,
   "beta001Completed": true,
-  "beta002Started": false,
+  "beta002Started": true,
+  "beta002Completed": true,
+  "beta003Started": false,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-11",
   "stoppedAt": "2026-08-11",
-  "stopReason": "BETA-001 passed its D3D11 onboarding validator plus M70, Core Slice and Final Demo Route regressions. The approved M85 sequence continues.",
-  "nextAction": "Create the BETA-001 local ticket commit, then activate BETA-002 Daytime Activity Expansion without an intermediate human gate."
+  "stopReason": "BETA-002 passed its D3D11 four-activity validator plus BETA-001, M70, Gathering/Fishing and Mining/Shop regressions. The approved M85 sequence continues.",
+  "nextAction": "Create the BETA-002 local ticket commit, then activate BETA-003 Crafting and Production Expansion without an intermediate human gate."
 }

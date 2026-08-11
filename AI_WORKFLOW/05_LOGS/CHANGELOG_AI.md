@@ -1041,3 +1041,12 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - WORLD grid/placement/generator/navigation 개발 UI는 기본 숨김이며 F10이 모두 복구한다. Scene 직렬화나 별도 input/gameplay manager는 추가하지 않았다.
 - D3D11 BETA-001 전용 검증, M70 WORLD-010 save/restart 회귀, Prototype Core Slice/Final Demo Route Golden 회귀가 모두 PASS했다. compile 오류 0, blocking Console 0, 신규 crash 0이다.
 - Scene/Prefab/Packages/ProjectSettings/Save schema/MainGame/Prototype_FirstDay content는 무변경이다. 자동 캡처 파일은 생성되지 않아 `CAPTURE_EVIDENCE_DEBT`로 유지하며 다음은 `BETA-002`다.
+
+## 2026-08-11 — Codex — BETA-002 Daytime Activity Completion (DONE)
+
+- 기존 DayNight 낮 활동을 WorldSandbox generated anchor/resource cell에 재배치했다: Forest/Carrot, Meadow/Seed·Wheat, Highland/Ore, Pond/Fish.
+- M70 runtime player에 기존 `PlayerInteraction`/`Hotbar`를 연결하고 canonical Inventory를 공유했다. 실제 Space 탐색 경로로 숲 채집을 실행했다.
+- Seed x2→심기→Wheat x3 수확, Mining strike→Ore x2, Fishing cast→Fish x2를 연결했다. 네 Raw 결과의 기존 기본 판매가는 합계 120G다.
+- activity HUD가 방향·완료·가방 수량을 안내한다. 당일 중복 보상은 차단되고 다음날 재활성화한다. 원시 runtime cube renderer는 숨기고 기존 presentation dressing을 유지한다.
+- D3D11 BETA-002/BETA-001/WORLD-010과 Prototype Gathering/Fishing, Mining/Shop 회귀가 PASS했다. Mining validator의 stale v10 비교를 기존 current-v11 상수로 바꿨으며 schema는 변경하지 않았다.
+- compile errors 0, blocking Console 0, new crash 0. Scene/Prefab/Packages/ProjectSettings/SaveData DTO는 변경하지 않았다. 다음은 `BETA-003`다.

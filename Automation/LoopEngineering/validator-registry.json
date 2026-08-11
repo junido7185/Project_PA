@@ -191,6 +191,17 @@
       "humanFollowUp": "Player-facing wording and final visual polish can be reviewed at the M85 integrated playtest."
     },
     {
+      "id": "beta-002-daytime-activities",
+      "executeMethod": "PA_Beta002DaytimeActivityValidator.RunBeta002ValidationBatch",
+      "sourceFile": "Assets/Scripts/World/WorldGameplayAdapterService.cs",
+      "purpose": "Validate generated-island Gathering, Farming, Mining and Fishing through existing Space interaction, Inventory, daily activity, and economy item authorities.",
+      "workflowTypes": ["gameplay-beta", "daytime-activity", "inventory", "economy", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first generated-cell, interaction, reward, daily-reset, or economy-value assertion.",
+      "humanFollowUp": "Travel distance and activity feel can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

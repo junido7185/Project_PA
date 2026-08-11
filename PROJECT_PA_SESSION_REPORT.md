@@ -1,5 +1,15 @@
 # PROJECT_PA_SESSION_REPORT.md
 
+## 2026-08-11 — BETA-002 Daytime Activity Completion
+
+- Started from clean BETA-001 commit `9bf71d6` and audited the existing daytime stack. Gathering, Farming, Mining, and Fishing already existed but spawned around the origin before the WorldSandbox generated player/shop became available.
+- Reused `DayNightShopLoopController`, `DaytimeStockPrepPoint`, `FarmPlotInteraction`, `MiningSpot`, and `FishingSpot`; no new activity authority was created. The WorldGameplay adapter now relocates them to generated Forest/Meadow/Highland/Pond cells.
+- Added existing `PlayerInteraction` and `Hotbar` components to the M70 runtime player and linked its canonical Inventory. Space interaction was exercised through the actual private interaction search path, not a validator-only reward shortcut.
+- Completed route: Carrot x2 gathering; Seed x2 pouch→plant→Wheat x3 harvest; Ore x2 mining; Fish x2 fishing. Same-day repeats fail safely, Day 2 morning reactivates the activities, and existing Raw base prices total 120G.
+- Player-facing HUD now points to each activity in order and shows daily completion plus inventory counts. Root primitive activity renderers are hidden; existing cozy runtime dressing remains the presentation layer.
+- D3D11 BETA-002 and BETA-001/M70 WORLD-010 regressions passed. Prototype Gathering/Fishing sale and Mining/Ore sale/save validators also passed after replacing their stale schema-v10 assertion with the current existing v11 constant.
+- Runtime/Editor compile errors, blocking Console errors, and new crashes are 0. Scene, Prefab, Packages, ProjectSettings, Save schema/DTO remain unchanged. Next ticket is BETA-003.
+
 ## 2026-08-11 — BETA-001 Player Onboarding and World Readability
 
 - Confirmed the exact clean baseline `b176bdcac8d140ffa53e8b907ef7da3576a44a70`, created `milestone/gameplay-beta-85`, and recorded the human-preapproved BETA-001~010 continuation.

@@ -9,10 +9,10 @@
 
 ## 현재 작업
 
-`BETA-002 Daytime Activity Completion` — M85 선승인 sequence의 다음 단일 활성 티켓.
+`BETA-003 Crafting and Production Expansion` — M85 선승인 sequence의 다음 단일 활성 티켓.
 
-- Baseline: BETA-001 로컬 커밋 직후 `milestone/gameplay-beta-85`
-- 목표: 기존 Gathering/Farming/Mining을 WorldSandbox에서 실제 이동·상호작용·Inventory·판매 가치로 연결하고 Fishing은 기존 기반을 조사해 범위를 결정한다.
+- Baseline: BETA-002 로컬 커밋 직후 `milestone/gameplay-beta-85`
+- 목표: BETA-002의 Carrot/Wheat/Ore/Fish/Wood 자원을 기존 RecipeData/CraftingService/Workbench와 연결해 실제 플레이용 가공품 세트와 판매 가치를 제공한다.
 - 보존: `Prototype_FirstDay.unity` Golden, M70 월드/저장 권위, Save schema v11, 기존 gameplay authority.
-- 금지: Scene/Prefab/Packages/ProjectSettings/Save schema 변경, 신규 병렬 인벤토리·경제·입력 시스템, push/rebase/reset/clean.
-- 전환 근거: `BETA-001` D3D11 전용 검증, M70 WORLD-010 회귀, Core Slice Golden, Final Demo Route Golden 모두 PASS; blocking Console 0.
+- 금지: Scene/Prefab/Packages/ProjectSettings/Save schema 변경, 신규 병렬 제작/인벤토리/경제 시스템, push/rebase/reset/clean.
+- 전환 근거: `BETA-002` D3D11 네 활동, BETA-001, M70 WORLD-010, Prototype Gathering/Fishing 및 Mining/Shop 회귀 모두 PASS; blocking Console 0.
