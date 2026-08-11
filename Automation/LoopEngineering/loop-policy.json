@@ -58,6 +58,28 @@
       "localTicketCommitsAllowed": true,
       "pushAllowed": false,
       "status": "completed"
+    },
+    {
+      "goalId": "M85_GAMEPLAY_BETA",
+      "humanPreapproved": true,
+      "autonomousContinuation": true,
+      "ticketSequence": [
+        "BETA-001",
+        "BETA-002",
+        "BETA-003",
+        "BETA-004",
+        "BETA-005",
+        "BETA-006",
+        "BETA-007",
+        "BETA-008",
+        "BETA-009",
+        "BETA-010"
+      ],
+      "preapprovedThrough": "BETA-010",
+      "stopAtMilestone": "M85_GAMEPLAY_BETA_COMPLETE",
+      "localTicketCommitsAllowed": true,
+      "pushAllowed": false,
+      "status": "in_progress"
     }
   ],
   "hardBlockers": [

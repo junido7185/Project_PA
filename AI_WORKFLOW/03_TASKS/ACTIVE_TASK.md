@@ -9,4 +9,10 @@
 
 ## 현재 작업
 
-없음. `LOOP-POLICY-002 Enable Preapproved Autonomous Milestone Continuation`은 2026-08-11 완료됐다. 기본 bounded-ticket 사람 게이트를 유지하면서, loop-state에 사람이 승인한 정확한 milestone sequence가 있으면 그 범위 안에서만 다음 ticket을 자동 활성화하는 `PREAPPROVED_MILESTONE_CONTINUATION` 예외를 추가했다. M70 sequence는 이미 WORLD-010과 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`에 도달했으므로 WORLD-005부터 재실행하지 않는다. WORLD-011 이후와 MainGame 통합은 새 사람 승인 전 활성화하지 않는다.
+`BETA-002 Daytime Activity Completion` — M85 선승인 sequence의 다음 단일 활성 티켓.
+
+- Baseline: BETA-001 로컬 커밋 직후 `milestone/gameplay-beta-85`
+- 목표: 기존 Gathering/Farming/Mining을 WorldSandbox에서 실제 이동·상호작용·Inventory·판매 가치로 연결하고 Fishing은 기존 기반을 조사해 범위를 결정한다.
+- 보존: `Prototype_FirstDay.unity` Golden, M70 월드/저장 권위, Save schema v11, 기존 gameplay authority.
+- 금지: Scene/Prefab/Packages/ProjectSettings/Save schema 변경, 신규 병렬 인벤토리·경제·입력 시스템, push/rebase/reset/clean.
+- 전환 근거: `BETA-001` D3D11 전용 검증, M70 WORLD-010 회귀, Core Slice Golden, Final Demo Route Golden 모두 PASS; blocking Console 0.

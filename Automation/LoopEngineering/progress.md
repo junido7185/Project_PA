@@ -2,6 +2,17 @@
 
 Append-only log for guarded automation and dry-run loop work.
 
+## 2026-08-11 - BETA-001 Completed
+
+- Ticket ID: `BETA-001 Player Onboarding and World Readability`
+- Baseline/branch: `b176bdcac8d140ffa53e8b907ef7da3576a44a70` / `milestone/gameplay-beta-85`
+- Implemented: fresh Day 1 09:00 start, new-life prompt, WASD→shop→workbench→daytime-resource objective route, functional runtime labels, and compact player HUD.
+- Development mode: WORLD grid/placement/generator/navigation surfaces default hidden; F10 restores and hides them together.
+- Validation: Runtime/Editor compile 0 errors; D3D11 BETA-001 PASS; M70 WORLD-010 save/restart PASS; Prototype Core Slice and Final Demo Route Golden PASS; blocking Console 0; new crash 0.
+- Protected paths: Scene/Prefab/Packages/ProjectSettings/Save schema/MainGame/Prototype_FirstDay content unchanged.
+- Capture: `CAPTURE_EVIDENCE_DEBT`; an existing capture request did not create a file and did not block functional completion.
+- Final state: `BETA_001_COMPLETE`; next preapproved ticket: `BETA-002`.
+
 ## 2026-08-11 - LOOP-POLICY-002 Completed
 
 - Ticket ID: `LOOP-POLICY-002`

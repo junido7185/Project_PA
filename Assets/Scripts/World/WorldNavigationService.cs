@@ -136,6 +136,15 @@ public static class WorldCellReachability
 [RequireComponent(typeof(WorldGridService), typeof(WorldBuildingPlacementService))]
 public sealed class WorldNavigationService : MonoBehaviour
 {
+    bool _debugOverlayVisible = true;
+
+    public bool DebugOverlayVisible => _debugOverlayVisible;
+
+    public void SetDebugOverlayVisible(bool visible)
+    {
+        _debugOverlayVisible = visible;
+    }
+
     public const int SectorSizeChunks = 2;
     public const int SectorOverlapCells = 1;
     public const int NavigationProxyLayer = 2; // built-in Ignore Raycast
@@ -263,7 +272,8 @@ public sealed class WorldNavigationService : MonoBehaviour
 
     void OnGUI()
     {
-        if (!Application.isPlaying || SceneManager.GetActiveScene().name != "WorldSandbox")
+        if (!_debugOverlayVisible || !Application.isPlaying ||
+            SceneManager.GetActiveScene().name != "WorldSandbox")
             return;
         GUILayout.BeginArea(new Rect(Mathf.Max(8f, Screen.width - 338f), 12f, 326f, 104f),
             GUI.skin.box);

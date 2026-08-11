@@ -1,5 +1,21 @@
 # Project PA TODO
 
+## Milestone M85 — GAMEPLAY BETA (2026-08-11)
+
+Status: `IN_PROGRESS`; branch `milestone/gameplay-beta-85`; approved through `BETA-010`.
+
+- [x] BETA-001 — Player Onboarding and World Readability: Day 1 start prompt, first objective route, functional landmarks, player-facing HUD, default-hidden development surfaces, D3D11/M70/Golden regressions.
+- [ ] BETA-002 — Daytime Activity Completion: Gathering, Farming, Mining, Inventory/economy connection; scope Fishing from existing implementation.
+- [ ] BETA-003 — Crafting and Production Expansion.
+- [ ] BETA-004 — Shop Readability and Merchandising.
+- [ ] BETA-005 — Customer Strategy and Feedback.
+- [ ] BETA-006 — Phone Hiring and Feed Completion.
+- [ ] BETA-007 — Village Response and NPC Integration.
+- [ ] BETA-008 — 7-Day Progression.
+- [ ] BETA-009 — Persistence and Recovery Pass.
+- [ ] BETA-010 — M85 Full Playable Beta Integration.
+- [ ] M85 integrated human playtest once at milestone end; keep visual/capture/audio/B06/F10 polish in `M85_HUMAN_REVIEW_BACKLOG` unless it blocks comprehension.
+
 ## LOOP-POLICY-002 — Preapproved Milestone Continuation (2026-08-11)
 
 - [x] 기본 bounded-ticket 사람 승인 게이트 유지.

@@ -272,11 +272,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             return false;
         }
 
-        _clock.ForceSet(9f, 2, "WORLD-009 bootstrap");
-        _dayLoop.SimulatePhaseForValidation(9f, 2);
-        AddRuntimeLabel(_playerRoot.transform, "플레이어 시작", new Color(0.76f, 0.95f, 1f));
-        AddRuntimeLabel(_shopRoot.transform, "B01 · 밤 상점", new Color(1f, 0.88f, 0.48f));
-        AddRuntimeLabel(_workbenchRoot.transform, "B05 · 제작", new Color(0.72f, 1f, 0.72f));
+        _clock.ForceSet(9f, 1, "BETA-001 WorldSandbox fresh session");
+        _dayLoop.SimulatePhaseForValidation(9f, 1);
+        AddRuntimeLabel(_playerRoot.transform, "새 생활 시작점", new Color(0.76f, 0.95f, 1f));
+        AddRuntimeLabel(_shopRoot.transform, "P.A. 잡화점 · 밤 영업", new Color(1f, 0.88f, 0.48f));
+        AddRuntimeLabel(_workbenchRoot.transform, "제작 작업대 · 상품 준비", new Color(0.72f, 1f, 0.72f));
         return true;
     }
 
@@ -501,7 +501,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             reason = "Day/night authority is unavailable.";
             return false;
         }
-        _dayLoop.SimulatePhaseForValidation(19f, Mathf.Max(2, day));
+        _dayLoop.SimulatePhaseForValidation(19f, Mathf.Max(1, day));
         if (!_dayLoop.TryOpenShop() || !_dayLoop.IsShopOpenForCustomers)
         {
             reason = "DayNightShopLoopController did not open the customer gate.";

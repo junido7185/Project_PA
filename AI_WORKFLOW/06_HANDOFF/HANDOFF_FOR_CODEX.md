@@ -1,5 +1,14 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
+## M85 Gameplay Beta 현재 상태 — 2026-08-11
+
+- Branch `milestone/gameplay-beta-85`, starting baseline `b176bdc`. 사람은 `BETA-001`~`BETA-010`과 ticket별 검증/로컬 커밋/자동 다음-ticket 전환을 명시적으로 선승인했다. push/rebase/reset/clean은 금지다.
+- `BETA-001 Player Onboarding and World Readability` 완료: fresh WorldSandbox는 Day 1 09:00, 새 생활 시작 prompt, WASD→P.A. 잡화점→제작 작업대→낮 자원 목표 순서를 제공한다. shop/workbench arrival은 4m다.
+- WORLD grid/placement/generator/navigation 개발 surface는 기본 숨김이며 F10으로 함께 복구한다. Scene YAML은 수정하지 않았고 existing M70 gameplay/input/save authority를 그대로 사용한다.
+- 증거: `Logs/BETA001_D3D11_Validation_Final.log`, `Logs/BETA001_WORLD010_Regression_Retry.log`, `Logs/BETA001_CoreSlice_Regression.log`, `Logs/BETA001_FinalDemoRoute_Regression.log` 모두 PASS; blocking Console 0, new crash 0.
+- 현재 유일한 활성 티켓은 `BETA-002 Daytime Activity Completion`. 기존 Gathering/Farming/Mining/Fishing 코드와 validator를 먼저 대조하고 최소 3개 활동을 WorldSandbox의 실제 이동·상호작용·Inventory·판매 가치로 연결한다.
+- Prototype_FirstDay Golden, WorldSandbox scene, MainGame, Prefab, Packages, ProjectSettings, Save schema v11은 승인 없는 변경 금지다.
+
 ## M70 및 Loop Policy 현재 상태 — 2026-08-11
 
 - Branch `milestone/world-alpha-70`; LOOP-POLICY-002 기준 baseline은 `e0b5678`이며 WORLD-001~010 구현과 자동 회귀가 완료됐다. 최종 상태는 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`다.

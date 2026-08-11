@@ -1,5 +1,14 @@
 # Project PA Current Milestone
 
+## M85 Gameplay Beta — Active (2026-08-11)
+
+- Branch: `milestone/gameplay-beta-85`; clean starting baseline: `b176bdcac8d140ffa53e8b907ef7da3576a44a70`.
+- Completion target: `M85_GAMEPLAY_BETA_COMPLETE` — a new player can understand and play Day 1, continue through Day 7, earn and spend money, see customer/village response, and resume from save without developer guidance.
+- Preapproved bounded sequence: `BETA-001 → BETA-002 → BETA-003 → BETA-004 → BETA-005 → BETA-006 → BETA-007 → BETA-008 → BETA-009 → BETA-010`.
+- `BETA-001 Player Onboarding and World Readability` is complete: WorldSandbox now starts at Day 1 09:00 with a new-life prompt, WASD objective, shop/workbench landmark route, compact player HUD, and WORLD developer surfaces hidden until F10.
+- Current single active ticket: `BETA-002 Daytime Activity Completion`.
+- M70 remains a protected regression foundation. `Prototype_FirstDay` remains the Golden Regression Scene; no MainGame integration is implied.
+
 Date: 2026-06-19
 
 ## 2026-06-21 Current Direction

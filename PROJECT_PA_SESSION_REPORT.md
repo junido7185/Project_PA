@@ -1,5 +1,16 @@
 # PROJECT_PA_SESSION_REPORT.md
 
+## 2026-08-11 — BETA-001 Player Onboarding and World Readability
+
+- Confirmed the exact clean baseline `b176bdcac8d140ffa53e8b907ef7da3576a44a70`, created `milestone/gameplay-beta-85`, and recorded the human-preapproved BETA-001~010 continuation.
+- Reused the M70 WorldSandbox composition rather than adding gameplay authorities. Fresh sessions now force Day 1 09:00 and expose a start prompt plus movement→shop→workbench→daytime-resource objective route.
+- Replaced the always-visible M70 developer presentation with a compact player HUD. WORLD grid/placement/generator/navigation diagnostics are hidden by default and recover together through F10.
+- Corrected landmark completion from a 10m broad radius to a 4m interaction-scale radius; this prevents the shop anchor 6.3m from the start from being considered visited before the player moves.
+- Added a runtime-only BETA-001 validator in the existing controller file. Final D3D11 log: `Logs/BETA001_D3D11_Validation_Final.log` → onboarding/landmarks/F10/scene clean/console 0 PASS.
+- Regressions: `Logs/BETA001_WORLD010_Regression_Retry.log` M70 complete save/restart PASS; `Logs/BETA001_CoreSlice_Regression.log` and `Logs/BETA001_FinalDemoRoute_Regression.log` Prototype Golden routes PASS.
+- Runtime and Editor compilation PASS with 0 errors. No Scene, Prefab, ProjectSettings, Packages, Save schema, MainGame, or Golden scene change; no new crash.
+- Capture creation was requested by an existing Golden validator but no image file appeared, so `CAPTURE_EVIDENCE_DEBT` remains nonblocking. Next ticket automatically activates as `BETA-002`.
+
 ## 2026-08-11 — LOOP-POLICY-002 Preapproved Milestone Continuation
 
 - 반복된 `blocked → active → blocked` 원인은 다음 사람 ticket을 요구하는 기본 bounded gate에 이미 승인된 milestone 범위를 표현하는 제한적 예외가 없었던 것이다.

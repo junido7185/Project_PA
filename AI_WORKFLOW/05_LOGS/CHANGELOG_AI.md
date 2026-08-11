@@ -1032,3 +1032,12 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 동일 원인의 blocker 반복 보고는 한 번으로 제한하고, 중간 사용자 메시지 부재·캡처 debt·비차단 polish는 승인 범위 내부 blocker가 아니도록 명시했다.
 - 기준 commit `e0b5678`에는 M70 전체가 이미 완료되어 있어 WORLD 구현을 재실행하지 않았다. loop-state는 최초 시작점 WORLD-005와 완료 상태 `nextTicket=null`을 함께 기록한다.
 - 게임 코드, Scene, Prefab, Packages, ProjectSettings, SaveData schema는 변경하지 않았다. JSON/policy 정적 검증과 clean-baseline preflight만 수행한다.
+
+## 2026-08-11 — Codex — BETA-001 Player Onboarding and World Readability (DONE)
+
+- clean baseline `b176bdc`에서 `milestone/gameplay-beta-85`를 만들고 M85 `BETA-001`~`BETA-010` 선승인 sequence를 loop policy/state에 기록했다.
+- WorldSandbox fresh session을 Day 1 09:00으로 시작하고, 새 생활 시작 prompt와 WASD→P.A. 잡화점→제작 작업대→낮 자원 준비의 player-facing objective 흐름을 추가했다.
+- 기존 generated anchor와 gameplay authority를 그대로 사용해 상점/작업대 역할 라벨을 제공했다. 도착 반경은 시작 직후 상점이 자동 완료되지 않는 4m로 정합했다.
+- WORLD grid/placement/generator/navigation 개발 UI는 기본 숨김이며 F10이 모두 복구한다. Scene 직렬화나 별도 input/gameplay manager는 추가하지 않았다.
+- D3D11 BETA-001 전용 검증, M70 WORLD-010 save/restart 회귀, Prototype Core Slice/Final Demo Route Golden 회귀가 모두 PASS했다. compile 오류 0, blocking Console 0, 신규 crash 0이다.
+- Scene/Prefab/Packages/ProjectSettings/Save schema/MainGame/Prototype_FirstDay content는 무변경이다. 자동 캡처 파일은 생성되지 않아 `CAPTURE_EVIDENCE_DEBT`로 유지하며 다음은 `BETA-002`다.

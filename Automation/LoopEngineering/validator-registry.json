@@ -180,6 +180,17 @@
       "humanFollowUp": "Human must judge placeholder visual quality."
     },
     {
+      "id": "beta-001-player-onboarding",
+      "executeMethod": "PA_Beta001OnboardingValidator.RunBeta001ValidationBatch",
+      "sourceFile": "Assets/Scripts/World/WorldAlphaPlayableController.cs",
+      "purpose": "Validate Day 1 WorldSandbox onboarding, player-facing shop/workbench landmarks, hidden WORLD development surfaces, and F10 diagnostic recovery.",
+      "workflowTypes": ["gameplay-beta", "onboarding", "world-readability", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first onboarding route, landmark, or development-overlay assertion.",
+      "humanFollowUp": "Player-facing wording and final visual polish can be reviewed at the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

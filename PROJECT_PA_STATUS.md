@@ -1,5 +1,15 @@
 # Project PA Status
 
+## 2026-08-11 — BETA-001 COMPLETE / M85 GAMEPLAY BETA ACTIVE
+
+- Started from clean `b176bdc` and created `milestone/gameplay-beta-85` under the explicitly preapproved `BETA-001`~`BETA-010` sequence.
+- A fresh WorldSandbox session now starts on Day 1 at 09:00 and presents a player-facing new-life prompt. The first route progresses from WASD movement to the P.A. night shop, the crafting workbench, then daytime resource play.
+- Shop/workbench role labels are attached to the existing runtime gameplay anchors. Landmark arrival uses a 4m interaction-scale radius so the nearby shop is not auto-completed at spawn.
+- WORLD grid, placement, island-generation and navigation development surfaces default hidden. F10 restores all of them for diagnostics without serializing scene changes.
+- D3D11 `BETA-001`, M70 WORLD-010 restart/save regression, Prototype Core Slice, and Final Demo Route all PASS with blocking Console 0. Runtime/Editor compile errors are 0; no new crash exists.
+- Scene, Prefab, Packages, ProjectSettings, Save schema/DTO, MainGame, and `Prototype_FirstDay` content were not changed. Automatic capture remains `CAPTURE_EVIDENCE_DEBT` and is nonblocking.
+- Next active ticket: `BETA-002 Daytime Activity Completion`.
+
 ## 2026-08-11 — LOOP-POLICY-002 COMPLETE
 
 - `PREAPPROVED_MILESTONE_CONTINUATION`을 프로젝트 loop policy와 state에 추가했다. 기본 bounded-ticket 사람 게이트는 그대로이며, 명시적으로 선승인되고 state에 기록된 sequence만 자동 연속할 수 있다.

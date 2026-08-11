@@ -19,6 +19,8 @@ using UnityEngine.Rendering;
 [DefaultExecutionOrder(200)]
 public sealed class WorldAlphaPlayableController : MonoBehaviour
 {
+    const float LandmarkReachDistance = 4f;
+
     WorldGridService _grid;
     WorldGridDebugView _gridDebug;
     WorldGeneratedIslandDebugView _islandView;
@@ -27,7 +29,9 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     WorldPlayerTraversalGuard _traversalGuard;
     Vector3 _movementOrigin;
     bool _projectionRefreshRequested;
-    string _lastAction = "World Alpha is connecting its validated systems.";
+    bool _developmentOverlayVisible;
+    bool _startPromptVisible;
+    string _lastAction = "플레이 가능한 섬 생활을 준비하고 있습니다.";
 
     public static WorldAlphaPlayableController Instance { get; private set; }
     public bool IsReady { get; private set; }
@@ -44,6 +48,13 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool HasRevenue { get; private set; }
     public bool HasSaved { get; private set; }
     public bool HasRestored { get; private set; }
+    public bool HasStartedBeta { get; private set; }
+    public bool HasReachedShop { get; private set; }
+    public bool HasReachedWorkbench { get; private set; }
+    public bool DevelopmentOverlayVisible => _developmentOverlayVisible;
+    public bool StartPromptVisible => IsReady && _startPromptVisible;
+    public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
+    public string CurrentPlayerObjective => ResolvePlayerObjective();
     public string LastAction => _lastAction;
     public WorldGameplayAdapterService Adapter => _adapter;
     public WorldGridService Grid => _grid;
@@ -109,19 +120,30 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
 
         _movementOrigin = _adapter.PlayerRoot.transform.position;
         IsReady = true;
-        _lastAction = "Walk, gather, craft, shape the island, move the shed/display, then open the shop.";
+        _startPromptVisible = true;
+        ApplyDevelopmentMode(false);
+        _lastAction = "새 섬 생활을 시작해 첫날 동선을 익혀 보세요.";
         Debug.Log("[WORLD-010] RUNTIME_READY playableWorldAlpha=true movement=true projection=64chunks");
     }
 
     void Update()
     {
         if (!IsReady) return;
+        if (WasDevelopmentTogglePressed())
+            SetDevelopmentOverlayVisible(!_developmentOverlayVisible);
+        if (!HasStartedBeta && (Input.GetKeyDown(KeyCode.Return) ||
+                                Input.GetKeyDown(KeyCode.KeypadEnter) ||
+                                Input.GetKeyDown(KeyCode.Space)))
+        {
+            BeginNewGame();
+        }
         if (!HasMoved && _adapter.PlayerRoot != null)
         {
             Vector3 delta = _adapter.PlayerRoot.transform.position - _movementOrigin;
             delta.y = 0f;
             HasMoved = delta.sqrMagnitude >= 2.25f;
         }
+        RefreshPlayerFacingProgress();
         if (_adapter.CustomerPurchaseCompleted)
         {
             HasCustomerPurchase = true;
@@ -318,6 +340,108 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         return _traversalGuard.TryTeleportTo(world + Vector3.up * 0.05f);
     }
 
+    public bool BeginNewGame()
+    {
+        if (!IsReady || _adapter?.PlayerRoot == null) return false;
+        HasStartedBeta = true;
+        _startPromptVisible = false;
+        _movementOrigin = _adapter.PlayerRoot.transform.position;
+        HasMoved = false;
+        HasReachedShop = false;
+        HasReachedWorkbench = false;
+        _lastAction = "Day 1 시작 · 먼저 움직인 뒤 잡화점과 제작 작업대를 확인하세요.";
+        return GameClock.Instance != null && GameClock.Instance.CurrentDay == 1;
+    }
+
+    public void SetDevelopmentOverlayVisible(bool visible)
+    {
+        _developmentOverlayVisible = visible;
+        ApplyDevelopmentMode(visible);
+    }
+
+    void ApplyDevelopmentMode(bool visible)
+    {
+        if (_gridDebug != null) _gridDebug.enabled = visible;
+        Transform gridLines = transform.Find("WorldGridDebugLines_Runtime");
+        if (gridLines != null) gridLines.gameObject.SetActive(visible);
+
+        WorldBuildingPlacementDebugController placementDebug =
+            GetComponent<WorldBuildingPlacementDebugController>();
+        if (placementDebug != null) placementDebug.enabled = visible;
+        if (_islandView != null) _islandView.enabled = visible;
+
+        WorldNavigationService navigation = GetComponent<WorldNavigationService>();
+        if (navigation != null) navigation.SetDebugOverlayVisible(visible);
+        if (CoreSlicePresentationMode.Instance != null)
+            CoreSlicePresentationMode.Instance.SetDevelopmentOverlaysVisible(visible);
+    }
+
+    bool WasDevelopmentTogglePressed()
+    {
+        try
+        {
+            return Input.GetKeyDown(KeyCode.F10);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    void RefreshPlayerFacingProgress()
+    {
+        if (!HasStartedBeta || _adapter?.PlayerRoot == null) return;
+        Vector3 player = _adapter.PlayerRoot.transform.position;
+        if (!HasReachedShop && _adapter.RuntimeShop != null &&
+            FlatDistance(player, _adapter.RuntimeShop.transform.position) <= LandmarkReachDistance)
+        {
+            HasReachedShop = true;
+            _lastAction = "잡화점 위치를 확인했습니다. 낮에 준비한 상품은 이곳에서 밤에 판매합니다.";
+        }
+        if (!HasReachedWorkbench && _adapter.RuntimeWorkbench != null &&
+            FlatDistance(player, _adapter.RuntimeWorkbench.transform.position) <= LandmarkReachDistance)
+        {
+            HasReachedWorkbench = true;
+            _lastAction = "제작 작업대 위치를 확인했습니다. 자원을 가공해 더 가치 있는 상품을 만드세요.";
+        }
+    }
+
+    string ResolvePlayerObjective()
+    {
+        if (!IsReady) return "섬 생활을 준비하고 있습니다.";
+        if (!HasStartedBeta) return "새 섬 생활을 시작하세요.";
+        if (!HasMoved) return "WASD로 움직여 이동 방법을 익히세요.";
+        if (!HasReachedShop)
+            return $"노란 표지의 P.A. 잡화점을 찾으세요 · {TargetHint(_adapter?.RuntimeShop?.transform)}";
+        if (!HasReachedWorkbench)
+            return $"초록 표지의 제작 작업대를 찾으세요 · {TargetHint(_adapter?.RuntimeWorkbench?.transform)}";
+        return "첫 동선 확인 완료 · 낮 자원을 모아 상품 준비를 시작하세요.";
+    }
+
+    string TargetHint(Transform target)
+    {
+        if (target == null || _adapter?.PlayerRoot == null) return "위치 확인 중";
+        Vector3 delta = target.position - _adapter.PlayerRoot.transform.position;
+        delta.y = 0f;
+        float distance = delta.magnitude;
+        if (distance < 0.1f) return "도착";
+        float x = delta.x / distance;
+        float z = delta.z / distance;
+        string direction;
+        if (Mathf.Abs(x) > 0.72f) direction = x > 0f ? "동쪽" : "서쪽";
+        else if (Mathf.Abs(z) > 0.72f) direction = z > 0f ? "북쪽" : "남쪽";
+        else if (x > 0f) direction = z > 0f ? "북동쪽" : "남동쪽";
+        else direction = z > 0f ? "북서쪽" : "남서쪽";
+        return $"{direction} {distance:0}m";
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
     async void SaveFromUi()
     {
         try
@@ -351,6 +475,16 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     void OnGUI()
     {
         if (!Application.isPlaying || !IsReady) return;
+        if (!HasStartedBeta)
+        {
+            DrawStartPrompt();
+            return;
+        }
+        if (!_developmentOverlayVisible)
+        {
+            DrawPlayerFacingHud();
+            return;
+        }
         float left = Mathf.Max(740f, Screen.width - 474f);
         GUILayout.BeginArea(new Rect(left, 18f, 456f, 525f), GUI.skin.box);
         GUILayout.Label("M70 PLAYABLE WORLD ALPHA");
@@ -382,6 +516,40 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         GUILayout.EndHorizontal();
         GUILayout.Space(4f);
         GUILayout.Label(_lastAction);
+        GUILayout.EndArea();
+    }
+
+    void DrawStartPrompt()
+    {
+        float width = Mathf.Min(620f, Screen.width - 40f);
+        float height = 260f;
+        float left = (Screen.width - width) * 0.5f;
+        float top = (Screen.height - height) * 0.5f;
+        GUILayout.BeginArea(new Rect(left, top, width, height), GUI.skin.box);
+        GUILayout.Space(12f);
+        GUILayout.Label("PROJECT P.A. · 새로운 섬 생활");
+        GUILayout.Space(12f);
+        GUILayout.Label("낮에는 섬을 돌아다니며 자원과 상품을 준비하고,\n밤에는 마을의 잡화점을 열어 주민을 맞이합니다.");
+        GUILayout.Space(12f);
+        GUILayout.Label("첫날 목표 · 이동 방법을 익히고 잡화점과 제작 작업대 위치를 확인하세요.");
+        GUILayout.Space(12f);
+        if (GUILayout.Button("새 섬 생활 시작  [Enter / Space]", GUILayout.Height(44f)))
+            BeginNewGame();
+        GUILayout.Space(8f);
+        GUILayout.Label("저장: F5 또는 Esc 메뉴 · 불러오기: F9 · 개발 정보: F10");
+        GUILayout.EndArea();
+    }
+
+    void DrawPlayerFacingHud()
+    {
+        float width = Mathf.Min(720f, Screen.width - 420f);
+        float left = (Screen.width - width) * 0.5f;
+        GUILayout.BeginArea(new Rect(left, 18f, width, 126f), GUI.skin.box);
+        GUILayout.Label($"Day 1 · 첫 마을 동선   |   {CurrentPlayerObjective}");
+        GUILayout.Space(4f);
+        GUILayout.Label(_lastAction);
+        GUILayout.Space(4f);
+        GUILayout.Label("WASD 이동 · 가까운 오브젝트 Space 상호작용 · F5 저장 · F9 불러오기 · Esc 메뉴");
         GUILayout.EndArea();
     }
 
@@ -1002,6 +1170,300 @@ public static class PA_WorldAlphaIntegrationTools
     {
         if (!condition) throw new InvalidOperationException(message);
         Debug.Log($"[WORLD-010] PASS {message}");
+    }
+}
+
+public static class PA_Beta001OnboardingValidator
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.BETA001.Active";
+    const string FailedKey = "PA.BETA001.Failed";
+    const string ConsoleErrorKey = "PA.BETA001.ConsoleErrors";
+    const string FrameKey = "PA.BETA001.Frames";
+    const string StageKey = "PA.BETA001.Stage";
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        Subscribe();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/Beta/BETA-001/Validate Player Onboarding and World Readability")]
+    public static void RunBeta001Validation()
+    {
+        RunInternal();
+    }
+
+    public static void RunBeta001ValidationBatch()
+    {
+        RunInternal();
+    }
+
+    static void RunInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(FrameKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            Subscribe();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            Require(UnityEngine.Object.FindObjectsByType<WorldAlphaPlayableController>(
+                    FindObjectsSortMode.None).Length == 0,
+                "BETA onboarding remains runtime-only without scene serialization");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void Subscribe()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SessionState.SetInt(FrameKey, 0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            Finish();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(FrameKey, 0) + 1;
+        SessionState.SetInt(FrameKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+
+        try
+        {
+            ResolveRuntime();
+            if ((_alpha == null || !_alpha.IsReady) && frames < 900) return;
+            Require(_alpha != null && _alpha.IsReady,
+                "WorldSandbox reaches the connected playable runtime");
+
+            if (stage == 0)
+            {
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(GameClock.Instance != null && GameClock.Instance.CurrentDay == 1 &&
+                        Mathf.Abs(GameClock.Instance.CurrentHour - 9f) < 0.1f,
+                    "a fresh WorldSandbox session starts safely on Day 1 at 09:00");
+                Require(_alpha.StartPromptVisible && !_alpha.HasStartedBeta &&
+                        !_alpha.DevelopmentOverlayVisible,
+                    "the player sees a new-game prompt while development panels default hidden");
+                Require(!_alpha.GetComponent<WorldGridDebugView>().enabled &&
+                        !_alpha.GetComponent<WorldBuildingPlacementDebugController>().enabled &&
+                        !_alpha.IslandView.enabled &&
+                        !_alpha.GetComponent<WorldNavigationService>().DebugOverlayVisible,
+                    "WORLD grid, placement, generator and navigation debug views are hidden");
+                Require(_adapter.PlayerRoot.GetComponent<CharacterController>() != null &&
+                        _adapter.PlayerRoot.GetComponent<WorldPlayerTraversalGuard>() != null &&
+                        Camera.main != null && Camera.main.GetComponent<CameraController>()?.target ==
+                        _adapter.PlayerRoot.transform,
+                    "safe player start, existing movement and camera follow remain connected");
+
+                PrototypeWorldLabel[] shopLabels = _adapter.RuntimeShop.transform.root
+                    .GetComponentsInChildren<PrototypeWorldLabel>(true);
+                PrototypeWorldLabel[] workbenchLabels = _adapter.RuntimeWorkbench.transform.root
+                    .GetComponentsInChildren<PrototypeWorldLabel>(true);
+                Require(shopLabels.Any(label => label.label.Contains("P.A. 잡화점")) &&
+                        workbenchLabels.Any(label => label.label.Contains("제작 작업대")),
+                    "player-facing shop and workbench landmarks identify their roles");
+                Require(_alpha.BeginNewGame() && _alpha.PlayerFacingHudVisible &&
+                        _alpha.CurrentPlayerObjective.Contains("WASD"),
+                    "new game begins with a concrete first movement objective");
+
+                Require(MoveToNearbyWalkable(_adapter.PlayerRoot.transform.position, 3f),
+                    "validator moves the player through a nearby safe cell");
+                SetStage(1);
+                return;
+            }
+
+            if (frames < 3) return;
+            if (stage == 1)
+            {
+                Require(_alpha.HasMoved && _alpha.CurrentPlayerObjective.Contains("잡화점"),
+                    "movement advances the objective toward the shop landmark");
+                Require(MoveNear(_adapter.RuntimeShop.transform.position, 10f),
+                    "a walkable cell exists near the shop");
+                SetStage(2);
+                return;
+            }
+
+            if (stage == 2)
+            {
+                Require(_alpha.HasReachedShop && _alpha.CurrentPlayerObjective.Contains("제작 작업대"),
+                    "reaching the shop explains its night-sale role and advances the route");
+                Require(MoveNear(_adapter.RuntimeWorkbench.transform.position, 10f),
+                    "a walkable cell exists near the workbench");
+                SetStage(3);
+                return;
+            }
+
+            Require(_alpha.HasReachedShop && _alpha.HasReachedWorkbench &&
+                    _alpha.CurrentPlayerObjective.Contains("첫 동선 확인 완료"),
+                "the player can finish the first shop/workbench orientation route");
+            Require(_alpha.CurrentPlayerObjective.Contains("낮 자원"),
+                "the completed route hands off to daytime resource play");
+
+            _alpha.SetDevelopmentOverlayVisible(true);
+            Require(_alpha.DevelopmentOverlayVisible &&
+                    _alpha.GetComponent<WorldGridDebugView>().enabled &&
+                    _alpha.GetComponent<WorldBuildingPlacementDebugController>().enabled &&
+                    _alpha.IslandView.enabled &&
+                    _alpha.GetComponent<WorldNavigationService>().DebugOverlayVisible,
+                "F10 development mode can restore every WORLD diagnostic surface");
+            _alpha.SetDevelopmentOverlayVisible(false);
+            Require(_alpha.PlayerFacingHudVisible &&
+                    !_alpha.GetComponent<WorldGridDebugView>().enabled &&
+                    !_alpha.GetComponent<WorldBuildingPlacementDebugController>().enabled &&
+                    !_alpha.IslandView.enabled &&
+                    !_alpha.GetComponent<WorldNavigationService>().DebugOverlayVisible,
+                "returning to player view removes debug panels and inputs again");
+            Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                "blocking runtime Console Error/Exception/Assert count is 0");
+            Require(!SceneManager.GetActiveScene().isDirty,
+                "BETA-001 runtime presentation leaves WorldSandbox scene clean");
+            Debug.Log("[BETA-001] PLAY_MODE_PASS day1=true safeStart=true objective=true " +
+                      "shopLandmark=true workbenchLandmark=true devOverlayDefaultHidden=true " +
+                      "f10Recovery=true console=0");
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.ExitPlaymode();
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static bool MoveToNearbyWalkable(Vector3 originWorld, float minimumDistance)
+    {
+        foreach (WorldCellData cell in _alpha.Grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater)
+                     .OrderBy(cell => FlatDistance(originWorld,
+                         CellWorld(cell.Coordinate))))
+        {
+            Vector3 world = CellWorld(cell.Coordinate);
+            float distance = FlatDistance(originWorld, world);
+            if (distance >= minimumDistance && distance <= 16f)
+                return _alpha.MovePlayerToCellForValidation(cell.Coordinate);
+        }
+        return false;
+    }
+
+    static bool MoveNear(Vector3 targetWorld, float maximumDistance)
+    {
+        foreach (WorldCellData cell in _alpha.Grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater)
+                     .OrderBy(cell => FlatDistance(targetWorld,
+                         CellWorld(cell.Coordinate))))
+        {
+            Vector3 world = CellWorld(cell.Coordinate);
+            if (FlatDistance(targetWorld, world) <= maximumDistance)
+                return _alpha.MovePlayerToCellForValidation(cell.Coordinate);
+            break;
+        }
+        return false;
+    }
+
+    static Vector3 CellWorld(Vector2Int coordinate)
+    {
+        return _alpha.Grid.CellToWorld(coordinate, out Vector3 world)
+            ? world
+            : new Vector3(float.MaxValue, 0f, float.MaxValue);
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(FrameKey, 0);
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+        SessionState.SetInt(ConsoleErrorKey,
+            SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[BETA-001] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else Finish();
+    }
+
+    static void Finish()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int errors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(FrameKey);
+        SessionState.EraseInt(StageKey);
+        Debug.Log(failed
+            ? $"[BETA-001] FINISHED_WITH_ERRORS consoleErrors={errors}"
+            : "[BETA-001] FINISHED_PASS playerOnboarding=true worldReadability=true " +
+              "devOverlayHidden=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[BETA-001] PASS {message}");
     }
 }
 #endif
