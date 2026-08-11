@@ -2122,3 +2122,11 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - WORLD-007/005/006, InteriorCustomer, FinalDemoRoute 회귀가 PASS했다. compile 오류·전용 blocking Console·신규 crash는 0이다.
 - Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다. 캡처와 고객 validator 종료 뒤 late-visitor NavMesh teardown 진단은 비차단 부채다.
 - 최종 판정 `WORLD_008_COMPLETE`; 다음 활성 티켓은 승인된 WORLD-009다.
+
+## 2026-08-11 WORLD-009 Existing Gameplay World Adapter — COMPLETE
+
+- WorldSandbox Play Mode가 seed 9009의 provisional 128×128 월드를 실제 grid로 설치하고 generated anchor에 Player Inventory, 실제 B01 MarketStall, B05 Workbench를 runtime-only로 연결한다.
+- 기존 `PA_RuntimeSceneBinder`의 EconomyService, GameClock, DayNightShopLoopController, ItemRegistry, SalesLogManager, SaveManager를 단일 권위로 재사용한다. 병렬 gameplay manager stack은 없다.
+- 검증 루프는 Timber x2 → Wood x2 → Recipe_Plank/B05 제작 → B01 ShopSlot 진열 → 밤 개점 → NpcController 구매 → Economy 1G → save → restart 상태 변조 → seed/resource/inventory/clock/shop/economy 복원이다.
+- `Logs/WORLD009_Validation_DontSaveFix.log`와 WORLD-001/007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute 회귀가 D3D11에서 PASS했다. blocking Console과 신규 crash는 0이다.
+- 저장 schema v11, Prototype_FirstDay, WorldSandbox YAML, MainGame, Prefab, Packages, ProjectSettings는 변경하지 않았다. 다음 활성 티켓은 선승인된 WORLD-010이다.

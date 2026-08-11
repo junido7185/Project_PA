@@ -30,6 +30,15 @@ public class SaveManager : MonoBehaviour
         _repository = new LocalJsonSaveRepository();
     }
 
+#if UNITY_EDITOR
+    // WORLD-009 validator must exercise the real SaveManager without touching a player's
+    // persistent save. Kept editor-only so production save authority and schema stay unchanged.
+    internal void SetRepositoryForValidation(ISaveRepository repository)
+    {
+        _repository = repository ?? new LocalJsonSaveRepository();
+    }
+#endif
+
     void Start()
     {
         if (PlayerInputHandler.Instance != null)

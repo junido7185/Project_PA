@@ -617,3 +617,13 @@ Append-only log for guarded automation and dry-run loop work.
 - InteriorCustomer emitted one post-pass Play Mode teardown diagnostic (`Failed to create agent because there is no valid NavMesh`) after its successful full visit; retain as nonblocking teardown harness debt.
 - No Scene, Prefab, Package or ProjectSettings content changed. Capture remains `CAPTURE_EVIDENCE_DEBT`.
 - Final state: `WORLD_008_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-009 Existing Gameplay World Adapter`.
+
+## 2026-08-11 — WORLD-009 Existing Gameplay World Adapter
+
+- Added a WorldSandbox runtime-only adapter and adopted the existing `PA_RuntimeSceneBinder` authorities instead of creating parallel Inventory, economy, crafting, shop, customer, clock or save systems.
+- Stable Timber spawns grant Wood through Inventory; the real Recipe_Plank/CraftingService/B05 path crafts Plank, B01 ShopSlot stocks it, and the existing NpcController visits after explicit night opening and purchases through EconomyService.
+- The real SaveManager used an Editor-only isolated LocalJsonSaveRepository during validation. Seed 9009, resource consumption, Fish inventory, Day 3 clock, the post-sale empty slot and revenue restored after deliberate restart-state mutation; schema remains v11.
+- `Logs/WORLD009_Validation_DontSaveFix.log` passed D3D11 Edit/Play, sixteen navigation sectors, the full loop, save/restart/restore and blocking Console 0.
+- WORLD-001/007/008, CraftingRecipeCard, CustomerArrival and FinalDemoRoute regressions passed. WORLD-001 now distinguishes the authored 16x16 fixture from the approved generated 128x128 runtime authority.
+- Scene/Prefab/Packages/ProjectSettings/SaveData schema remain unchanged; new crash count is zero and capture remains `CAPTURE_EVIDENCE_DEBT`.
+- Final state: `WORLD_009_COMPLETE`. Create the approved local ticket commit, then activate preapproved `WORLD-010 M70 Integration and Regression`.

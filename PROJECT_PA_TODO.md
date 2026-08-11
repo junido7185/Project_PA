@@ -1614,3 +1614,17 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [ ] 비차단: InteriorCustomer 성공 종료 뒤 late-visitor NavMesh teardown 진단 문구 정리.
 - [ ] 승인된 WORLD-008 로컬 ticket commit 생성.
 - [ ] 다음 단일 티켓: `WORLD-009 Existing Gameplay World Adapter` — 기존 Inventory/Crafting/Shop/Gathering/DayNight/NPC 목적지를 월드 권위에 연결.
+
+## WORLD-009 Existing Gameplay World Adapter
+
+- [x] WorldSandbox runtime-only adapter와 deterministic seed 9009 bootstrap.
+- [x] stable Forage/Timber/Stone/Fish spawn을 기존 Item/Inventory에 매핑.
+- [x] Timber 2 → Recipe_Plank/CraftingService/B05 → Plank 1 → B01 ShopSlot 진열.
+- [x] 기존 Day/Night 개점 gate와 NpcController generated Start→B01 구매 경로.
+- [x] EconomyService balance/cumulative revenue 반영.
+- [x] 격리된 실제 SaveManager save → 다른 seed/state 변조 → seed/resource/inventory/clock/shop/economy 복원.
+- [x] schema v11 유지, Scene/Prefab/Packages/ProjectSettings/사용자 저장 무변경.
+- [x] WORLD-009 및 WORLD-001/007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute D3D11 PASS.
+- [x] 최종 상태 `WORLD_009_COMPLETE`.
+- [ ] 승인된 WORLD-009 local ticket commit 생성.
+- [ ] 다음 단일 티켓: `WORLD-010 M70 Integration and Regression` — 10~20분 World Alpha와 Golden regression 최종 통합.

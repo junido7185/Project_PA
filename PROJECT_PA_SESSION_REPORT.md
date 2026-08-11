@@ -2750,3 +2750,21 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 
 - Scene/Prefab/Packages/ProjectSettings/Save schema는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 상태 `WORLD_008_COMPLETE`. 승인된 local commit 뒤 WORLD-009 Existing Gameplay World Adapter로 자동 전환한다.
+
+## 2026-08-11 — WORLD-009 Existing Gameplay World Adapter
+
+### 구현
+
+- WorldSandbox 전용 adapter가 기존 `PA_RuntimeSceneBinder`의 global authorities를 채택하고 generated root에는 Player Inventory와 실제 B01/B05 기능 인스턴스만 둔다.
+- generator spawn key를 기존 Item에 매핑하고 WORLD-007 resource state에 소비를 기록한다. 실제 Recipe_Plank, CraftingService, B05 feedback, B01 ShopSlot, DayNight gate, NpcController/PurchaseEvaluator, EconomyService를 그대로 연결했다.
+- SaveManager에는 `UNITY_EDITOR` 전용 repository 주입점만 추가해 validator가 사용자 save 대신 `Logs/WorldGameplay/<timestamp>`를 사용한다. DTO/schema는 바꾸지 않았다.
+
+### 검증
+
+- `Logs/WORLD009_Validation_DontSaveFix.log`: authority 각 1개, Timber 2회, Wood 2→Plank 1, B01 진열, Day 2 개점, NPC 방문/1G 구매, Day 3 Fish, 격리 save, restart mutation, seed/resource/inventory/clock/slot/economy 복원, 16 sectors, Console 0 PASS.
+- WORLD-001/007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute 회귀가 성공 종료했다. authored WorldGrid fixture는 16×16, WORLD-009 runtime grid는 deterministic seed 9009의 128×128로 각각 검증했다.
+
+### 판정
+
+- Runtime/Editor compile 오류, blocking Console, 신규 crash는 0이다. Prototype_FirstDay/MainGame/WorldSandbox YAML/Prefab/Packages/ProjectSettings/SaveData schema는 무변경이다.
+- 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태 `WORLD_009_COMPLETE`. local commit 뒤 WORLD-010으로 자동 전환한다.

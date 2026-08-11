@@ -89,7 +89,7 @@ public static class PA_WorldSandboxTools
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             ValidateScene(scene, false);
             WorldGridService service = FindSingleSceneComponent<WorldGridService>(scene);
-            ulong editHash = ValidateGridContract(service);
+            ulong editHash = ValidateGridContract(service, false);
 
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetBool(RanKey, false);
@@ -226,10 +226,22 @@ public static class PA_WorldSandboxTools
         ValidateScene(scene, true);
 
         WorldGridService service = FindSingleSceneComponent<WorldGridService>(scene);
-        ulong runtimeHash = ValidateGridContract(service);
+        bool generatedRuntime = WorldGameplayAdapterService.Instance != null &&
+                                WorldGameplayAdapterService.Instance.IsReady;
+        ulong runtimeHash = ValidateGridContract(service, generatedRuntime);
         string editHash = SessionState.GetString(RuntimeHashKey, string.Empty);
-        Require(runtimeHash.ToString("X16") == editHash,
-            $"Edit/Play deterministic cell checksum matches ({runtimeHash:X16})");
+        if (generatedRuntime)
+        {
+            ulong generatedHash = ComputeCellHash(WorldIslandGenerator.Generate(
+                WorldGameplayAdapterService.DefaultWorldSeed).TerrainCells);
+            Require(runtimeHash == generatedHash,
+                $"runtime grid matches deterministic seed 9009 ({runtimeHash:X16})");
+        }
+        else
+        {
+            Require(runtimeHash.ToString("X16") == editHash,
+                $"Edit/Play deterministic cell checksum matches ({runtimeHash:X16})");
+        }
 
         WorldGridDebugView debugView = FindSingleSceneComponent<WorldGridDebugView>(scene);
         Require(debugView.IsRuntimeGeometryReady,
@@ -316,7 +328,21 @@ public static class PA_WorldSandboxTools
         Require(roots.Count(root => root.name == "Directional Light") == 1, "scene has one Directional Light root");
         Require(roots.Count(root => root.name == "WorldGrid") == 1, "scene has one WorldGrid root");
         Require(FindSceneComponents<Camera>(scene).Count == 1, "scene has exactly one Camera");
-        Require(FindSceneComponents<Light>(scene).Count == 1, "scene has exactly one Light");
+        List<Light> lights = FindSceneComponents<Light>(scene);
+        if (runtime)
+        {
+            Require(lights.Count(candidate => candidate != null &&
+                        candidate.transform.root.name == "Directional Light" &&
+                        candidate.type == LightType.Directional) == 1 &&
+                    lights.All(candidate => candidate != null &&
+                        (candidate.transform.root.name == "Directional Light" ||
+                         candidate.transform.root.name == WorldGameplayAdapterService.RuntimeRootName)),
+                $"runtime keeps one authored Directional Light and only adapter-local helper lights ({lights.Count} total)");
+        }
+        else
+        {
+            Require(lights.Count == 1, "authored scene has exactly one Light");
+        }
         Require(FindSceneComponents<WorldGridService>(scene).Count == 1,
             "scene has exactly one WorldGridService");
         Require(FindSceneComponents<WorldGridDebugView>(scene).Count == 1,
@@ -325,7 +351,7 @@ public static class PA_WorldSandboxTools
         Camera camera = FindSingleSceneComponent<Camera>(scene);
         Require(camera.CompareTag("MainCamera"), "camera uses MainCamera tag");
         Require(camera.orthographic, "WorldSandbox camera is orthographic");
-        Light light = FindSingleSceneComponent<Light>(scene);
+        Light light = lights.Single(candidate => candidate.transform.root.name == "Directional Light");
         Require(light.type == LightType.Directional, "WorldSandbox light is directional");
 
         List<MonoBehaviour> behaviours = FindSceneComponents<MonoBehaviour>(scene);
@@ -333,12 +359,15 @@ public static class PA_WorldSandboxTools
         {
             int duplicateManagers = ForbiddenManagerTypeNames.Sum(typeName =>
                 Mathf.Max(0, behaviours.Count(component => component.GetType().Name == typeName) - 1));
-            int shopOrNpcInstances = behaviours.Count(component =>
-                component.GetType().Name == "Shop" || component.GetType().Name == "NpcController");
+            int shopInstances = behaviours.Count(component => component.GetType().Name == "Shop");
+            int npcInstances = behaviours.Count(component => component.GetType().Name == "NpcController");
+            int adapterInstances = behaviours.Count(component =>
+                component.GetType().Name == "WorldGameplayAdapterService");
             Require(duplicateManagers == 0,
                 "global runtime bootstrap creates no duplicate gameplay managers");
-            Require(shopOrNpcInstances == 0,
-                "WorldSandbox runtime contains no Shop or NPC gameplay instances");
+            Require((shopInstances == 0 && npcInstances == 0) ||
+                    (adapterInstances == 1 && shopInstances == 1 && npcInstances <= 1),
+                "WorldSandbox runtime contains only the approved WORLD-009 Shop/NPC adapter instances");
         }
         else
         {
@@ -357,20 +386,23 @@ public static class PA_WorldSandboxTools
         }
     }
 
-    static ulong ValidateGridContract(WorldGridService service)
+    static ulong ValidateGridContract(WorldGridService service, bool generatedRuntime)
     {
         Require(service != null, "WorldGridService exists");
         WorldGridDefinition definition = service.Definition;
+        int expectedWidth = generatedRuntime ? 128 : 16;
+        int expectedHeight = generatedRuntime ? 128 : 16;
+        int expectedCellCount = expectedWidth * expectedHeight;
         Require(Mathf.Approximately(definition.CellSize, 2f), "cell size is 2m");
-        Require(definition.Width == 16 && definition.Height == 16,
-            $"grid dimensions are 16x16 ({definition.Width}x{definition.Height})");
+        Require(definition.Width == expectedWidth && definition.Height == expectedHeight,
+            $"grid dimensions are {expectedWidth}x{expectedHeight} ({definition.Width}x{definition.Height})");
         Require(definition.ChunkSize == 16, "chunk size is 16x16 cells");
         Require(Mathf.Approximately(definition.ElevationStep, 1f), "elevation step is 1m");
         Require(definition.MinElevationLevel == 0 && definition.MaxElevationLevel == 6,
             "elevation range is level 0..6");
         Require(definition.WorldOrigin == Vector3.zero, "explicit world origin is Vector3.zero at cell (0,0) center");
-        Require(service.TotalCellCount == 256 && service.Cells.Count == 256,
-            $"total/read-only cell count is 256 ({service.TotalCellCount}/{service.Cells.Count})");
+        Require(service.TotalCellCount == expectedCellCount && service.Cells.Count == expectedCellCount,
+            $"total/read-only cell count is {expectedCellCount} ({service.TotalCellCount}/{service.Cells.Count})");
         Require(service.Cells is ICollection<WorldCellData> collection && collection.IsReadOnly,
             "cell collection rejects mutation through collection API");
         Require(typeof(WorldCellData).IsValueType &&
@@ -385,15 +417,28 @@ public static class PA_WorldSandboxTools
                     cell.ElevationLevel <= definition.MaxElevationLevel,
                 $"cell {cell.Coordinate} elevation is within definition bounds", false);
             elevationHistogram[cell.ElevationLevel]++;
-            Require(cell.GroundType == WorldGroundType.Default, $"cell {cell.Coordinate} ground is Default", false);
-            Require(!cell.HasWater && !cell.HasPath, $"cell {cell.Coordinate} has no water/path", false);
+            if (!generatedRuntime)
+            {
+                Require(cell.GroundType == WorldGroundType.Default,
+                    $"cell {cell.Coordinate} ground is Default", false);
+                Require(!cell.HasWater && !cell.HasPath,
+                    $"cell {cell.Coordinate} has no water/path", false);
+            }
+            else
+            {
+                Require(Enum.IsDefined(typeof(WorldGroundType), cell.GroundType) &&
+                        Enum.IsDefined(typeof(WorldPathType), cell.PathType),
+                    $"generated cell {cell.Coordinate} surface enums are valid", false);
+            }
             Require(cell.Occupancy == WorldCellOccupancy.Empty, $"cell {cell.Coordinate} occupancy is Empty", false);
             if (!coordinates.Add(cell.Coordinate))
                 throw new InvalidOperationException($"Duplicate cell coordinate {cell.Coordinate}");
         }
-        Require(coordinates.Count == 256, "all 256 coordinates are unique");
-        if (service.BootstrapProfile == WorldGridBootstrapProfile.Flat)
-            Require(elevationHistogram[0] == 256, "flat bootstrap keeps all 256 cells at level 0");
+        Require(coordinates.Count == expectedCellCount,
+            $"all {expectedCellCount} coordinates are unique");
+        if (!generatedRuntime && service.BootstrapProfile == WorldGridBootstrapProfile.Flat)
+            Require(elevationHistogram[0] == expectedCellCount,
+                $"flat bootstrap keeps all {expectedCellCount} cells at level 0");
         else
             Require(elevationHistogram.All(count => count > 0),
                 "terrain bootstrap keeps authoritative elevations across levels 0..6");
@@ -401,9 +446,9 @@ public static class PA_WorldSandboxTools
         var corners = new[]
         {
             new Vector2Int(0, 0),
-            new Vector2Int(15, 0),
-            new Vector2Int(0, 15),
-            new Vector2Int(15, 15)
+            new Vector2Int(expectedWidth - 1, 0),
+            new Vector2Int(0, expectedHeight - 1),
+            new Vector2Int(expectedWidth - 1, expectedHeight - 1)
         };
         foreach (Vector2Int corner in corners)
         {
@@ -413,9 +458,13 @@ public static class PA_WorldSandboxTools
 
         Require(service.CellToWorld(Vector2Int.zero, out Vector3 originWorld) && originWorld == Vector3.zero,
             "cell (0,0) center equals worldOrigin");
-        Require(service.CellToWorld(new Vector2Int(15, 15), out Vector3 farWorld) &&
-                farWorld == new Vector3(30f, 0f, 30f),
-            "cell (15,15) center resolves to (30,0,30)");
+        var farCoordinate = new Vector2Int(expectedWidth - 1, expectedHeight - 1);
+        Require(service.TryGetCell(farCoordinate, out WorldCellData farCell) &&
+                service.CellToWorld(farCoordinate, out Vector3 farWorld) &&
+                farWorld == new Vector3((expectedWidth - 1) * definition.CellSize,
+                    farCell.ElevationLevel * definition.ElevationStep,
+                    (expectedHeight - 1) * definition.CellSize),
+            $"far corner {farCoordinate} resolves through its authoritative elevation");
 
         for (int index = 0; index < service.TotalCellCount; index++)
         {
@@ -426,16 +475,22 @@ public static class PA_WorldSandboxTools
                 throw new InvalidOperationException($"Index round trip failed at {index}");
             }
 
-            if (!service.CellToChunk(coordinate, out Vector2Int chunk) || chunk != Vector2Int.zero)
+            var expectedChunk = new Vector2Int(
+                coordinate.x / definition.ChunkSize,
+                coordinate.y / definition.ChunkSize);
+            if (!service.CellToChunk(coordinate, out Vector2Int chunk) || chunk != expectedChunk)
                 throw new InvalidOperationException($"Chunk mapping failed at {coordinate}: {chunk}");
         }
-        Require(true, "all 256 index/cell round trips pass");
-        Require(true, "all cells map to the single test chunk (0,0)");
+        Require(true, $"all {expectedCellCount} index/cell round trips pass");
+        Require(true, generatedRuntime
+            ? "all generated cells map to their 8x8 chunk authority"
+            : "all authored cells map to the single test chunk (0,0)");
 
         var random = new System.Random(1001);
         for (int iteration = 0; iteration < 10000; iteration++)
         {
-            var coordinate = new Vector2Int(random.Next(0, 16), random.Next(0, 16));
+            var coordinate = new Vector2Int(
+                random.Next(0, expectedWidth), random.Next(0, expectedHeight));
             if (!service.CellToWorld(coordinate, out Vector3 center))
                 throw new InvalidOperationException($"CellToWorld failed at {coordinate}");
             float offsetX = ((float)random.NextDouble() * 0.98f - 0.49f) * definition.CellSize;
@@ -450,15 +505,15 @@ public static class PA_WorldSandboxTools
         float halfCell = definition.CellSize * 0.5f;
         Require(!service.IsValidCell(new Vector2Int(-1, 0)) &&
                 !service.IsValidCell(new Vector2Int(0, -1)) &&
-                !service.IsValidCell(new Vector2Int(16, 0)) &&
-                !service.IsValidCell(new Vector2Int(0, 16)),
+                !service.IsValidCell(new Vector2Int(expectedWidth, 0)) &&
+                !service.IsValidCell(new Vector2Int(0, expectedHeight)),
             "negative and upper-bound cell coordinates fail safely");
         Require(!service.TryGetCell(new Vector2Int(-1, -1), out _), "out-of-bounds TryGetCell fails safely");
-        Require(!service.TryIndexToCell(-1, out _) && !service.TryIndexToCell(256, out _),
+        Require(!service.TryIndexToCell(-1, out _) && !service.TryIndexToCell(expectedCellCount, out _),
             "out-of-bounds indices fail safely");
-        Require(!service.CellToWorld(new Vector2Int(16, 16), out _),
+        Require(!service.CellToWorld(new Vector2Int(expectedWidth, expectedHeight), out _),
             "out-of-bounds CellToWorld fails safely");
-        Require(!service.CellToChunk(new Vector2Int(16, 16), out _),
+        Require(!service.CellToChunk(new Vector2Int(expectedWidth, expectedHeight), out _),
             "out-of-bounds CellToChunk fails safely");
 
         Vector3 origin = definition.WorldOrigin;

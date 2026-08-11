@@ -553,3 +553,42 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 영향: 새 WORLD-008 assembly가 생성되기 전의 정적 오류다. Scene·Prefab·Packages·ProjectSettings·SaveData와 기존 런타임 상태에는 변화가 없고 Unity native crash도 없다.
 - 복구: `Stopwatch`만 alias하고 `out` 변수를 조건식 전에 초기화한다. 기능 설계나 API는 바꾸지 않으며 이 원인에 대한 컴파일 재시도는 한 번만 수행한다.
 - 확인: `Logs/WORLD008_Compile_Retry.log`와 강화된 `Logs/WORLD008_Strengthened_Compile.log`가 Runtime/Editor compile 오류 0으로 종료됐고, `Logs/WORLD008_Validation_Final.log`도 전체 PASS했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 validator 두 번째 채집 사유 definite-assignment
+
+- 증상: WORLD-009 첫 D3D11 compile에서 `WorldGameplayAdapterService.cs` validator의 `gatherReasonB`가 `CS0165`로 중단됐다.
+- 원인: 두 번의 `TryGatherNext`를 `&&`로 연결한 조건 안에서 두 번째 `out` 변수를 선언한 뒤 Require 메시지에서 사용해, 첫 호출 실패 시 두 번째 호출이 실행되지 않는 단락 평가를 컴파일러가 정확히 감지했다.
+- 영향: 신규 validator assembly 생성 전의 정적 오류다. 런타임 adapter, Scene, Prefab, Packages, ProjectSettings, SaveData와 사용자 저장에는 실행 또는 변경 영향이 없고 Unity native crash도 없다.
+- 복구: 두 채집 호출을 별도 bool 문장으로 평가한 뒤 결과를 함께 검증한다. 기능/API를 바꾸지 않으며 같은 D3D11 validator는 한 번만 재실행한다. 동일 오류가 반복되면 추가 구현 없이 중단한다.
+- 확인: 두 호출을 별도 문장으로 분리한 재시도에서 Runtime/Editor compile과 WORLD-009 Edit Mode 계약이 오류 0으로 통과했다. 다음 중단은 이 원인이 아니라 기존 `PA_RuntimeSceneBinder` 전역 권위와 신규 어댑터 권위 수량 계약의 통합 문제였다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 기존 RuntimeSceneBinder 권위 중복 생성
+
+- 증상: WORLD-009 첫 Play Mode 검증에서 D3D11과 adapter Ready는 통과했지만 Economy/GameClock/DayNight/Save/ItemRegistry를 각 1개만 유지한다는 수량 계약이 실패했다.
+- 원인: 모든 씬에서 먼저 실행되는 기존 `PA_RuntimeSceneBinder`가 `[Services]`에 전역 권위를 이미 제공하는데, 초기 adapter 구현이 별도 비활성 runtime root에 같은 컴포넌트를 추가했다. 활성화 시 일부 singleton은 지연 파괴되고 `SaveManager`처럼 자체 중복 방어가 없는 타입은 그대로 중복됐다.
+- 영향: validator가 자원·제작·판매를 시작하기 전에 중단됐다. 격리 repository 주입 전이므로 사용자 저장 영향은 없고 Scene/Prefab/Packages/ProjectSettings/SaveData 변경 및 Unity native crash도 없다.
+- 복구: adapter는 `PA_RuntimeSceneBinder`가 만든 기존 권위를 조회·채택하고, generated runtime root에는 Player Inventory와 B01/B05 기능 인스턴스만 둔다. 수량 진단을 assertion에 포함하고 같은 Play Mode 경로를 한 번 검증한다.
+- 확인: 수정 후 Economy/GameClock/DayNight/Save는 모두 정확히 1개로 확인되어 별도 manager stack 중복이 해소됐다. 남은 `Inventory=0` 표시는 실제 파괴가 아니라 `HideFlags.DontSave` 런타임 증거를 제외하는 validator 조회 API 문제로 분리됐다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 DontSave Player Inventory 조회 누락
+
+- 증상: 기존 전역 권위 채택 수정 후 수량 진단은 `adapter=1, inventory=0, economy=1, clock=1, loop=1, save=1`로 종료됐다.
+- 원인: player와 gameplay runtime root는 scene YAML 오염 방지를 위해 `HideFlags.DontSave`다. validator가 사용한 `Object.FindObjectsByType<Inventory>`는 이 객체를 결과에서 제외했지만 adapter의 직접 참조와 `Inventory.instance`는 정상 활성 상태였다.
+- 영향: 수량 assertion 이전까지 adapter Ready와 기존 전역 권위 단일화는 통과했다. 자원/제작/판매와 저장은 아직 실행 전이며 사용자 저장, Scene, Prefab, Packages, ProjectSettings, SaveData 영향 및 crash는 없다.
+- 복구: `Resources.FindObjectsOfTypeAll<Inventory>` 결과를 유효하고 로드된 scene 객체로 제한해 DontSave runtime inventory를 세고, 그 하나가 `Inventory.instance`와 adapter의 PlayerInventory에 동일한지 함께 검증한다. 프로덕션 로직은 변경하지 않는다.
+- 확인: `Logs/WORLD009_Validation_DontSaveFix.log`에서 adapter/player/B01/B05 권위, Timber 2회 채집, Plank 제작·진열, NpcController 이동·구매, Economy 수익, 격리 SaveManager 저장, 재시작 상태 변조, seed/resource/inventory/clock/shop/economy 복원이 모두 PASS했다. blocking Console Error/Exception/Assert와 신규 crash는 0이다.
+
+## [RESOLVED] 2026-08-11 — WORLD-001 회귀의 runtime Light 1개 구가정
+
+- 증상: WORLD-009 전용 validator와 WORLD-007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute 회귀 통과 후 WORLD-001 회귀가 Play Mode의 `scene has exactly one Light`에서 중단됐다. Edit Mode authored scene의 Light 1개, Missing Script/Reference 0 계약은 이미 통과했다.
+- 원인: WORLD-001 당시 WorldSandbox에는 gameplay instance가 없었지만, WORLD-009가 실제 B01/B05 기능 프리팹을 runtime-only root에 연결하면서 해당 기능 에셋의 보조 Light가 함께 활성화됐다. validator가 authored light와 승인된 runtime helper light를 구분하지 않았다.
+- 영향: 첫 WORLD-001 runtime assertion 단계의 구계약 실패다. WorldGrid와 adapter 전용 검증은 정상이며 Scene YAML, Prefab, Packages, ProjectSettings, SaveData, 사용자 저장 및 crash 영향은 없다.
+- 복구: Edit Mode는 정확히 Light 1개를 계속 요구한다. Play Mode는 authored `Directional Light` root의 Directional Light 1개를 유지하면서 추가 Light가 오직 `WorldGameplay_Runtime` 아래에만 있는지 검사한다. 무관한 runtime light는 계속 거부한다.
+- 확인: 수정 후 같은 회귀에서 authored Directional Light 1개와 adapter-local helper Light 1개만 존재하는 계약이 PASS했다. 다음 중단은 Light가 아니라 WORLD-009 이후에도 runtime grid가 16×16일 것이라는 별도의 구가정이었다.
+
+## [OPEN] 2026-08-11 — WORLD-001 회귀의 runtime 16×16 fixture 구가정
+
+- 증상: Light 계약 수정 후 WORLD-001 회귀가 Play Mode grid `128×128`을 발견하고 `16×16` 기대에서 중단됐다. Edit Mode의 authored 16×16 fixture 검증은 전체 PASS했다.
+- 원인: WORLD-001은 authored fixture와 Play Mode authority가 동일한 시절의 validator다. WORLD-009 adapter는 승인된 deterministic seed 9009의 provisional 128×128 결과를 실제 `WorldGridService`에 설치하므로 runtime 크기·지면/물/길 구성·chunk 수·checksum이 의도적으로 달라진다.
+- 영향: generated gameplay adapter의 정상 부트 이후 stale assertion만 실패했다. 전용 WORLD-009와 WORLD-007/008 및 Golden gameplay 회귀는 PASS이며 Scene/Prefab/Packages/ProjectSettings/SaveData/사용자 저장과 crash 영향은 없다.
+- 복구: Edit Mode는 기존 16×16, 256셀, 단일 chunk checksum 계약을 그대로 유지한다. 승인 adapter가 Ready인 Play Mode는 128×128, 16,384셀, 8×8 chunk 좌표, 유효 surface enum, deterministic seed 9009 checksum을 검증하고 이후 프레임 안정성은 runtime checksum끼리 비교한다.

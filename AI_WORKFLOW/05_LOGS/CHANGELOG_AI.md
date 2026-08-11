@@ -1006,3 +1006,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - WORLD-008 D3D11 및 WORLD-007/005/006, InteriorCustomer, FinalDemoRoute 회귀가 PASS했다. compile 오류·전용 blocking Console·신규 crash는 0이다.
 - InteriorCustomer post-pass teardown 진단과 캡처는 비차단 debt다. Scene/Prefab/Save schema는 무변경이다.
 - 승인된 로컬 ticket commit 뒤 WORLD-009로 진행한다. push/rebase/reset-hard/clean은 하지 않는다.
+
+## 2026-08-11 — Codex — WORLD-009 Existing Gameplay World Adapter (DONE)
+
+- WorldSandbox runtime-only adapter로 generated seed 9009와 기존 gameplay authorities를 연결했다.
+- Timber x2 → Inventory Wood x2 → Recipe_Plank/B05 → Plank → B01 ShopSlot → night open → NpcController purchase → Economy revenue 경로를 실제 기존 코드로 완성했다.
+- Editor validator는 격리 repository로 실제 SaveManager save/restart/restore를 수행해 seed, resource consumption, Fish inventory, Day 3 clock, post-sale slot과 revenue를 복원했다. schema v11은 유지했다.
+- WORLD-009와 WORLD-001/007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute가 D3D11에서 PASS했다. blocking Console/crash 0, Scene/Prefab/Packages/ProjectSettings 무변경이다.
+- WORLD-009 local commit 뒤 선승인된 WORLD-010으로 계속한다. push/rebase/reset-hard/clean은 하지 않는다.
