@@ -2810,3 +2810,24 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 
 - Runtime/Editor compile 오류, blocking Console, 신규 crash는 0이다. Prototype_FirstDay/MainGame/WorldSandbox YAML/Prefab/Packages/ProjectSettings/SaveData schema는 무변경이다.
 - 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태 `WORLD_009_COMPLETE`. local commit 뒤 WORLD-010으로 자동 전환한다.
+
+## 2026-08-12 — BETA-003 Crafting and Production Expansion
+
+### 구현
+
+- 기존 BuildingData/Prefab을 통해 B06 Kitchen과 B07 Forge를 WorldSandbox generated walkable cell에 runtime-only로 연결했다. B05 Basic과 함께 별도 제작·인벤토리·경제 권위를 만들지 않는다.
+- 플레이어 objective/HUD는 낮 활동 완료 뒤 보유 원재료에 맞는 시설 방향과 가공품 수량, B01 진열 다음 단계를 표시한다.
+- BETA-003 validator는 UI 컨텍스트를 연 뒤 다음 stage/frame에서 검사해 `CraftingUI`의 deferred card destruction과 실제 플레이 프레임 순서를 일치시킨다. assertion 삭제나 timeout 확대는 없다.
+
+### 검증
+
+- `Logs/BETA003_D3D11_Validation_ThirdApproved.log`: B05/B06/B07, 카드 2/3/2, 부족 상태, 실제 5개 제작, 품질·가격, 118G→203G, B01 28G 판매, Console 0 PASS.
+- `Logs/BETA003_Regression_CraftingRecipeCard.log`: 기존 Basic 2개, 부족 상태, Wood→Plank, Inventory와 feedback pulse PASS.
+- `Logs/BETA003_Regression_ProcessingChain.log`: Bread 가공, 양의 margin, advisor와 결과 지급 PASS.
+- `Logs/BETA003_Regression_BETA002.log`: Space 상호작용, 네 낮 활동, Inventory, 당일 차단/다음날 재활성 PASS.
+- Runtime/Editor compile 오류 0. 기존 CS8785/CS0414 경고만 유지되며 신규 crash는 0이다.
+
+### 판정
+
+- Scene/Prefab/Packages/ProjectSettings/Save schema 무변경. 자동 캡처는 수행하지 않아 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 상태 `BETA_003_COMPLETE`. 승인된 local commit 뒤 `BETA-004 Shop Readability and Merchandising`로 자동 전환한다.

@@ -1674,3 +1674,18 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 최종 상태 `WORLD_009_COMPLETE`.
 - [ ] 승인된 WORLD-009 local ticket commit 생성.
 - [ ] 다음 단일 티켓: `WORLD-010 M70 Integration and Regression` — 10~20분 World Alpha와 Golden regression 최종 통합.
+
+## BETA-003 Crafting and Production Expansion
+
+- [x] generated WorldSandbox에 기존 B05 Basic/B06 Kitchen/B07 Forge 기능 시설 연결.
+- [x] Kitchen/Forge/Basic 카드 3/2/2 표시와 프레임 안전 컨텍스트 전환.
+- [x] 재료 부족 보유량 표시, 무차감·무지급, 충분 시 선택·실제 제작.
+- [x] BETA-002의 Carrot/Wheat/Fish/Ore/Wood를 기존 5개 RecipeData/CraftingService와 연결.
+- [x] 가공 결과 ItemInstance 품질과 기본 가격 메타 보존.
+- [x] 원재료 118G → 가공품 203G 가치 상승과 B01 실제 28G 판매.
+- [x] Basic 카드 2개/Wood→Plank, ProcessingChain, BETA-002 낮 활동 회귀 PASS.
+- [x] Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0.
+- [x] Scene/Prefab/Packages/ProjectSettings/Save schema 무변경.
+- [x] 최종 상태 `BETA_003_COMPLETE`.
+- [ ] 비차단: M85 통합 플레이테스트에서 시설 간격·카드 미감 확인 (`CAPTURE_EVIDENCE_DEBT`).
+- [ ] 다음 단일 티켓: `BETA-004 Shop Readability and Merchandising`.

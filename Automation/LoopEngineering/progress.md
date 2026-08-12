@@ -672,3 +672,19 @@ Append-only log for guarded automation and dry-run loop work.
 - Bounded regressions PASS: WORLD-006B, WORLD-007, WORLD-008 and WORLD-009.
 - Runtime/Editor compile PASS; no new crash. Scene/Prefab/Packages/ProjectSettings/SaveData schema unchanged.
 - Automatic continuation stops at M70. Next action requires a new bounded human-approved ticket; MainGame integration remains separately gated.
+
+## 2026-08-12 — BETA-003 explicit validator retry approval
+
+- Human explicitly released the BETA-003 validator-stage and third isolated D3D11 execution blockers.
+- Preserved `milestone/gameplay-beta-85@23a881a` and the three approved dirty BETA-003 paths; no unexpected user change was present.
+- Both prior D3D11 logs passed B05/B06/B07 binding and Kitchen card visibility, then counted five Forge cards because `CraftingUI` defers destruction of the three prior Kitchen cards until the end of the frame.
+- Approved minimal correction: split each UI context transition into `open -> next validator stage/frame -> inspect`, without removing assertions or changing CraftingService, Inventory, RecipeData, ItemInstance, scenes, prefabs, Packages, ProjectSettings, or save schema.
+- Exactly one third isolated D3D11 BETA-003 run is authorized. A repeated stage failure or native crash stops the ticket without a fourth automatic retry.
+
+## 2026-08-12 — BETA-003 Crafting and Production Expansion
+
+- Split Kitchen, Forge and Basic UI validation into open/context-frame/inspect stages while retaining every card, layout, viewport, shortage and transaction assertion.
+- The human-approved third isolated run `Logs/BETA003_D3D11_Validation_ThirdApproved.log` passed D3D11, three facilities, recipe cards 3/2/2, five actual crafts, ItemInstance quality/base-price metadata, raw 118G to processed 203G, B01 stock/sale 28G, scene clean and Console 0.
+- `BETA003_Regression_CraftingRecipeCard.log`, `BETA003_Regression_ProcessingChain.log` and `BETA003_Regression_BETA002.log` passed the required Basic/Wood-to-Plank, processing chain and daytime-resource-to-Inventory regressions.
+- Runtime/Editor compile passed with zero errors and pre-existing CS8785/CS0414 warnings only. No new crash or Scene/Prefab/Packages/ProjectSettings/Save schema change occurred.
+- Final state: `BETA_003_COMPLETE`. Create the approved local ticket commit and activate preapproved `BETA-004 Shop Readability and Merchandising`.

@@ -37,6 +37,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
     const string MarketBuildingResource = "Buildings/Building_B01_MarketStall";
     const string WorkbenchBuildingResource = "Buildings/Building_B05_Workbench";
+    const string KitchenBuildingResource = "Buildings/Building_B06_KitchenStation";
+    const string ForgeBuildingResource = "Buildings/Building_B07_BlacksmithForge";
     const string PlankRecipeResource = "Recipes/Recipe_Plank";
     const string ResourceActivityPrefix = "world-resource:";
     const float CustomerTimeoutSeconds = 24f;
@@ -51,11 +53,15 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     GameObject _playerRoot;
     GameObject _shopRoot;
     GameObject _workbenchRoot;
+    GameObject _kitchenRoot;
+    GameObject _forgeRoot;
     GameObject _customerRoot;
     Inventory _inventory;
     Shop _shop;
     ShopSlot[] _shopSlots = Array.Empty<ShopSlot>();
     Workbench _workbench;
+    Workbench _kitchen;
+    Workbench _forge;
     EconomyService _economy;
     GameClock _clock;
     DayNightShopLoopController _dayLoop;
@@ -93,6 +99,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public Shop RuntimeShop => _shop;
     public IReadOnlyList<ShopSlot> RuntimeShopSlots => _shopSlots;
     public Workbench RuntimeWorkbench => _workbench;
+    public Workbench RuntimeKitchen => _kitchen;
+    public Workbench RuntimeForge => _forge;
     public NpcController RuntimeCustomer => _customer;
     public SaveManager RuntimeSaveManager => _saveManager;
     public PlayerInteraction PlayerInteraction => _playerInteraction;
@@ -102,6 +110,10 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public bool DaytimeActivitiesBound => _playerInteraction != null && _playerHotbar != null &&
                                           _daytimeActivityPoints.Length >= 4 &&
                                           _farmPlots.Length >= FarmPlotInteraction.RuntimePlotCount;
+    public bool ProductionFacilitiesBound =>
+        _workbench != null && _workbench.workbenchType == WorkbenchType.BasicWorkbench &&
+        _kitchen != null && _kitchen.workbenchType == WorkbenchType.Kitchen &&
+        _forge != null && _forge.workbenchType == WorkbenchType.Forge;
     public Vector2Int SalesDisplayGrid => new Vector2Int(
         _salesDisplayGridX, _salesDisplayGridY);
     public int SalesDisplayQuarterTurns => _salesDisplayQuarterTurns;
@@ -143,7 +155,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         }
 
         State = WorldGameplayAdapterState.Ready;
-        _lastAction = "Generated resources, B05 crafting, B01 sales, customer, economy and save are connected.";
+        _lastAction = "Generated resources, B05/B06/B07 production, B01 sales, customer, economy and save are connected.";
+        Debug.Log("[BETA-003] PRODUCTION_READY authorities=existing basic=B05 kitchen=B06 forge=B07");
         Debug.Log("[WORLD-009] RUNTIME_READY authorities=existing seed=9009 shop=B01 workbench=B05");
     }
 
@@ -250,6 +263,16 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         {
             return false;
         }
+        if (!TryInstantiateBuilding(KitchenBuildingResource, "BETA003_Kitchen_Runtime",
+                WorldGenerationAnchorKind.MeadowActivity, false, out _kitchenRoot, out reason))
+        {
+            return false;
+        }
+        if (!TryInstantiateBuilding(ForgeBuildingResource, "BETA003_Forge_Runtime",
+                WorldGenerationAnchorKind.HighlandActivity, false, out _forgeRoot, out reason))
+        {
+            return false;
+        }
 
         if (!_generated.TryGetAnchor(WorldGenerationAnchorKind.Start, out WorldGenerationAnchor start) ||
             !_grid.CellToWorld(start.Coordinate, out Vector3 playerPosition))
@@ -269,6 +292,12 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _workbench = _workbenchRoot != null
             ? _workbenchRoot.GetComponentInChildren<Workbench>(true)
             : null;
+        _kitchen = _kitchenRoot != null
+            ? _kitchenRoot.GetComponentInChildren<Workbench>(true)
+            : null;
+        _forge = _forgeRoot != null
+            ? _forgeRoot.GetComponentInChildren<Workbench>(true)
+            : null;
         _shopSlots = _shopRoot != null
             ? _shopRoot.GetComponentsInChildren<ShopSlot>(true)
                 .OrderBy(slot => slot.name, StringComparer.Ordinal).ToArray()
@@ -277,20 +306,42 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
         if (_inventory == null || _economy == null || _clock == null || _dayLoop == null ||
             _saveManager == null || ItemRegistry.Instance == null || _shop == null ||
-            _shopSlots.Length == 0 || _workbench == null)
+            _shopSlots.Length == 0 || !ProductionFacilitiesBound)
         {
             reason = "One or more existing gameplay authorities failed to activate.";
             return false;
         }
+
+        if (!PositionProductionFacilities(out reason)) return false;
 
         _clock.ForceSet(9f, 1, "BETA-001 WorldSandbox fresh session");
         _dayLoop.SimulatePhaseForValidation(9f, 1);
         AddRuntimeLabel(_playerRoot.transform, "새 생활 시작점", new Color(0.76f, 0.95f, 1f));
         AddRuntimeLabel(_shopRoot.transform, "P.A. 잡화점 · 밤 영업", new Color(1f, 0.88f, 0.48f));
         AddRuntimeLabel(_workbenchRoot.transform, "제작 작업대 · 상품 준비", new Color(0.72f, 1f, 0.72f));
+        AddRuntimeLabel(_kitchenRoot.transform, "주방 가공대 · 식재료 요리", new Color(1f, 0.72f, 0.46f));
+        AddRuntimeLabel(_forgeRoot.transform, "대장간 용광로 · 광석 가공", new Color(1f, 0.48f, 0.34f));
         if (!ConfigurePlayerActivityInteraction(out reason) ||
             !BindDaytimeActivitiesToGeneratedWorld(out reason))
         {
+            return false;
+        }
+        return true;
+    }
+
+    bool PositionProductionFacilities(out string reason)
+    {
+        reason = string.Empty;
+        if (!TryPositionExistingRuntimeObjectAtOffset(_kitchenRoot,
+                WorldGenerationAnchorKind.MeadowActivity, new Vector2Int(6, -2)))
+        {
+            reason = "The generated meadow could not provide a safe B06 Kitchen cell.";
+            return false;
+        }
+        if (!TryPositionExistingRuntimeObjectAtOffset(_forgeRoot,
+                WorldGenerationAnchorKind.HighlandActivity, new Vector2Int(4, 3)))
+        {
+            reason = "The generated highland could not provide a safe B07 Forge cell.";
             return false;
         }
         return true;
@@ -800,6 +851,10 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _generated = WorldIslandGenerator.Generate(seed);
         PositionExistingRuntimeObject(_shopRoot, WorldGenerationAnchorKind.Shop, true);
         PositionExistingRuntimeObject(_workbenchRoot, WorldGenerationAnchorKind.MeadowActivity, false);
+        TryPositionExistingRuntimeObjectAtOffset(_kitchenRoot,
+            WorldGenerationAnchorKind.MeadowActivity, new Vector2Int(6, -2));
+        TryPositionExistingRuntimeObjectAtOffset(_forgeRoot,
+            WorldGenerationAnchorKind.HighlandActivity, new Vector2Int(4, 3));
         if (_generated.TryGetAnchor(WorldGenerationAnchorKind.Start, out WorldGenerationAnchor start) &&
             _grid.CellToWorld(start.Coordinate, out Vector3 playerPosition) && _playerRoot != null)
         {
@@ -823,6 +878,27 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         if (lookDirection.sqrMagnitude > 0.01f)
             instance.transform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
         AlignObjectToGround(instance, worldPosition);
+    }
+
+    bool TryPositionExistingRuntimeObjectAtOffset(
+        GameObject instance,
+        WorldGenerationAnchorKind anchorKind,
+        Vector2Int offset)
+    {
+        if (instance == null ||
+            !TryResolveAnchorCoordinate(anchorKind, offset, out Vector2Int coordinate) ||
+            !_grid.CellToWorld(coordinate, out Vector3 worldPosition))
+        {
+            return false;
+        }
+
+        Vector3 lookDirection = ResolveLookDirection(coordinate,
+            WorldGenerationAnchorKind.Start);
+        if (lookDirection.sqrMagnitude > 0.01f)
+            instance.transform.rotation = Quaternion.LookRotation(
+                lookDirection.normalized, Vector3.up);
+        AlignObjectToGround(instance, worldPosition);
+        return true;
     }
 
     public WorldStateSaveData CaptureWorldState()
@@ -1696,6 +1772,465 @@ public static class PA_Beta002DaytimeActivityValidator
     {
         if (!condition) throw new InvalidOperationException(message);
         Debug.Log($"[BETA-002] PASS {message}");
+    }
+}
+
+public static class PA_Beta003CraftingProductionValidator
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.BETA003.Active";
+    const string FailedKey = "PA.BETA003.Failed";
+    const string ConsoleErrorKey = "PA.BETA003.ConsoleErrors";
+    const string FrameKey = "PA.BETA003.Frames";
+    const string StageKey = "PA.BETA003.Stage";
+
+    static readonly string[] RecipePaths =
+    {
+        "Recipes/Recipe_BakedPotato",
+        "Recipes/Recipe_Bread",
+        "Recipes/Recipe_GrilledFish",
+        "Recipes/Recipe_IronBar",
+        "Recipes/Recipe_Plank"
+    };
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+    static CraftingUI _craftingUi;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        Subscribe();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/Beta/BETA-003/Validate Crafting and Production Expansion")]
+    public static void RunBeta003Validation()
+    {
+        RunInternal();
+    }
+
+    public static void RunBeta003ValidationBatch()
+    {
+        RunInternal();
+    }
+
+    static void RunInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(FrameKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            Subscribe();
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void Subscribe()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            Finish();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(FrameKey, 0) + 1;
+        SessionState.SetInt(FrameKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+
+        try
+        {
+            ResolveRuntime();
+            bool runtimeReady = _alpha != null && _alpha.IsReady && _adapter != null &&
+                                _adapter.ProductionFacilitiesBound && _craftingUi != null;
+            if (!runtimeReady && frames < 900) return;
+            if (!runtimeReady)
+                throw new InvalidOperationException(
+                    "WorldSandbox did not bind the existing B05/B06/B07 production facilities.");
+
+            if (stage == 0)
+            {
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(_adapter.RuntimeWorkbench.workbenchType == WorkbenchType.BasicWorkbench &&
+                        _adapter.RuntimeKitchen.workbenchType == WorkbenchType.Kitchen &&
+                        _adapter.RuntimeForge.workbenchType == WorkbenchType.Forge,
+                    "existing B05 Basic, B06 Kitchen and B07 Forge workbench authorities are active");
+                Require(IsGeneratedWalkable(_adapter.RuntimeWorkbench.transform) &&
+                        IsGeneratedWalkable(_adapter.RuntimeKitchen.transform) &&
+                        IsGeneratedWalkable(_adapter.RuntimeForge.transform),
+                    "all three production facilities occupy generated walkable island cells");
+                Require(FlatDistance(_adapter.RuntimeWorkbench.transform.position,
+                            _adapter.RuntimeKitchen.transform.position) >= 4f,
+                    "the Kitchen is separated from the Basic workbench interaction space");
+                DaytimeStockPrepPoint quarry = _adapter.FindDaytimeActivity("quarry-mining");
+                Require(quarry != null && FlatDistance(quarry.transform.position,
+                            _adapter.RuntimeForge.transform.position) >= 4f,
+                    "the Forge is separated from the generated mining interaction space");
+                Require(HasRoleLabel(_adapter.RuntimeKitchen, "주방 가공대") &&
+                        HasRoleLabel(_adapter.RuntimeForge, "대장간 용광로"),
+                    "player-facing labels explain the Kitchen and Forge roles");
+
+                ClearInventory();
+                OpenWorkbenchCards(_adapter.RuntimeKitchen);
+                SetStage(1);
+                return;
+            }
+
+            if (frames < 3) return;
+            if (stage == 1)
+            {
+                ValidateOpenWorkbenchCards(WorkbenchType.Kitchen,
+                    expectedMinimum: 3, requireShortageText: true);
+                OpenWorkbenchCards(_adapter.RuntimeForge);
+                SetStage(2);
+                return;
+            }
+
+            if (frames < 3) return;
+            if (stage == 2)
+            {
+                ValidateOpenWorkbenchCards(WorkbenchType.Forge,
+                    expectedMinimum: 1, requireShortageText: true);
+                OpenWorkbenchCards(_adapter.RuntimeWorkbench);
+                SetStage(3);
+                return;
+            }
+
+            if (frames < 3) return;
+            if (stage == 3)
+            {
+                ValidateOpenWorkbenchCards(WorkbenchType.BasicWorkbench,
+                    expectedMinimum: 2, requireShortageText: true);
+                Require(VisibleRecipeCardNames().Contains("Recipe_Recipe_Plank") &&
+                        VisibleRecipeCardNames().Contains("Recipe_Recipe_Furniture"),
+                    "the two existing Basic recipe cards remain visible");
+                RecipeData baked = LoadRecipe(RecipePaths[0]);
+                int outputBefore = Count(baked.outputItem);
+                Require(!CraftingService.TryCraft(baked, _adapter.RuntimeKitchen) &&
+                        Count(baked.outputItem) == outputBefore,
+                    "insufficient ingredients block execution without hiding or granting the recipe output");
+                _craftingUi.Close();
+                RecipeData[] recipes = RecipePaths.Select(LoadRecipe).ToArray();
+                foreach (RecipeData recipe in recipes) SeedIngredients(recipe, 1.05f);
+                OpenWorkbenchCards(_adapter.RuntimeKitchen);
+                SetStage(4);
+                return;
+            }
+
+            if (frames < 3) return;
+            if (stage == 4)
+            {
+                ValidateOpenWorkbenchCards(WorkbenchType.Kitchen,
+                    expectedMinimum: 3, requireShortageText: false);
+                Require(VisibleRecipeCardNames().Contains("Recipe_Recipe_BakedPotato") &&
+                        VisibleRecipeCardNames().Contains("Recipe_Recipe_Bread") &&
+                        VisibleRecipeCardNames().Contains("Recipe_Recipe_GrilledFish"),
+                    "the actual ingredient-ready Kitchen recipes remain visible and selectable");
+                Require(_craftingUi.slotParent.Cast<Transform>()
+                        .Where(card => card != null && card.name.StartsWith("Recipe_", StringComparison.Ordinal))
+                        .All(card => card.GetComponent<UnityEngine.UI.Button>()?.interactable == true),
+                    "ingredient-ready Tier 0 Kitchen recipe cards are selectable");
+                _craftingUi.Close();
+                RecipeData[] recipes = RecipePaths.Select(LoadRecipe).ToArray();
+
+                ProcessingOpportunityController advisor =
+                    ProcessingOpportunityController.Instance ??
+                    UnityEngine.Object.FindFirstObjectByType<ProcessingOpportunityController>();
+                Require(advisor != null, "the existing processing value advisor is active");
+
+                int totalInputValue = 0;
+                int totalOutputBaseValue = 0;
+                int kitchenFeedbackBefore = _adapter.RuntimeKitchen.CraftFeedbackCount;
+                int basicFeedbackBefore = _adapter.RuntimeWorkbench.CraftFeedbackCount;
+                foreach (RecipeData recipe in recipes)
+                {
+                    Workbench workbench = WorkbenchFor(recipe);
+                    ProcessingOpportunityController.Opportunity opportunity = advisor.Evaluate(recipe);
+                    Require(opportunity != null && opportunity.expectedMargin > 0 &&
+                            opportunity.expectedOutputValue > opportunity.inputBaseValue,
+                        $"{recipe.recipeName} exposes a positive quality-adjusted processing margin");
+                    totalInputValue += opportunity.inputBaseValue;
+                    totalOutputBaseValue += recipe.outputItem.basePrice * recipe.outputCount;
+
+                    int before = Count(recipe.outputItem);
+                    Require(CraftingService.TryCraft(recipe, workbench) &&
+                            Count(recipe.outputItem) == before + recipe.outputCount,
+                        $"CraftingService completes {recipe.recipeName} at its existing workbench");
+                    ItemInstance output = FindInstance(recipe.outputItem);
+                    Require(output != null && output.quality > 1f &&
+                            output.quality >= recipe.baseOutputQuality &&
+                            output.EffectivePrice == recipe.outputItem.basePrice,
+                        $"{recipe.outputItem.itemName} preserves recipe quality and base price metadata in ItemInstance");
+                }
+
+                Require(totalOutputBaseValue > totalInputValue,
+                    $"the five product set raises raw base value ({totalInputValue}G -> {totalOutputBaseValue}G)");
+                Require(_adapter.RuntimeKitchen.CraftFeedbackCount == kitchenFeedbackBefore + 3 &&
+                        _adapter.RuntimeWorkbench.CraftFeedbackCount == basicFeedbackBefore + 1,
+                    "Kitchen and Basic workbench provide success feedback for completed products");
+                Require(recipes.All(recipe => recipe.outputItem.category == ItemCategory.Processed &&
+                                      recipe.outputItem.basePrice > 0),
+                    "all five outputs are existing sellable Processed economy items");
+
+                int moneyBefore = EconomyService.Instance.Money;
+                Require(_adapter.TryStockCraftedProduct(out ShopSlot saleSlot,
+                            out string stockReason) && saleSlot != null && !saleSlot.IsEmpty,
+                    $"an actual processed ItemInstance enters the B01 display ({stockReason})");
+                float stockedQuality = saleSlot.currentItem.quality;
+                Require(stockedQuality > 1f && saleSlot.EffectiveDisplayPrice > 0,
+                    "the B01 display preserves processed quality and a positive player-facing price");
+                Require(_adapter.TryOpenShopForNight(1, out string openReason),
+                    $"the existing day/night gate opens the shop ({openReason})");
+                Require(saleSlot.TryPurchaseByNpc("BETA003_VALIDATOR", out int paid) &&
+                        paid > 0 && EconomyService.Instance.Money == moneyBefore + paid,
+                    "the processed product completes the existing sale and economy deposit path");
+
+                Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                    "blocking runtime Console Error/Exception/Assert count is 0");
+                Require(!SceneManager.GetActiveScene().isDirty,
+                    "BETA-003 remains runtime-only and leaves WorldSandbox scene clean");
+                Debug.Log($"[BETA-003] PLAY_MODE_PASS facilities=3 recipes={recipes.Length} " +
+                          $"rawValue={totalInputValue} productValue={totalOutputBaseValue} " +
+                          $"quality=true ui=true sale={paid}G console=0");
+                EditorApplication.update -= ValidateRuntime;
+                EditorApplication.ExitPlaymode();
+            }
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+        _craftingUi = CraftingUI.instance ??
+                      UnityEngine.Object.FindFirstObjectByType<CraftingUI>();
+    }
+
+    static void OpenWorkbenchCards(Workbench workbench)
+    {
+        if (workbench == null)
+            throw new InvalidOperationException("Production workbench context is missing.");
+        _craftingUi.OpenForWorkbench(workbench);
+    }
+
+    static void ValidateOpenWorkbenchCards(WorkbenchType type,
+        int expectedMinimum, bool requireShortageText)
+    {
+        Require(_craftingUi.IsOpen && _craftingUi.ActiveWorkbench != null &&
+                _craftingUi.ActiveWorkbench.workbenchType == type,
+            $"{type} is the active crafting UI context after the frame boundary");
+        Canvas.ForceUpdateCanvases();
+        var cards = _craftingUi.slotParent.Cast<Transform>()
+            .Where(child => child != null && child.name.StartsWith("Recipe_", StringComparison.Ordinal))
+            .ToArray();
+        int expected = Resources.LoadAll<RecipeData>("Recipes")
+            .Count(recipe => recipe != null && recipe.requiredWorkbench == type);
+        Require(expected >= expectedMinimum && cards.Length == expected,
+            $"{type} UI card count matches its existing recipe set ({cards.Length})");
+        Require(cards.All(card => card.gameObject.activeInHierarchy &&
+                                  card is RectTransform rect &&
+                                  rect.rect.width > 0f && rect.rect.height > 0f),
+            $"{type} recipe cards are active with non-zero layout bounds");
+        RectTransform viewport = _craftingUi.slotParent.parent as RectTransform;
+        Require(viewport != null && cards.All(card => IntersectsViewport(
+                    viewport, (RectTransform)card)),
+            $"{type} recipe cards intersect the visible ScrollRect viewport");
+        if (requireShortageText)
+        {
+            Require(cards.Any(card => card.GetComponentInChildren<TMPro.TMP_Text>(true)?.text
+                        .Contains("0/") == true),
+                $"{type} cards remain visible and show owned/required counts with no materials");
+        }
+    }
+
+    static HashSet<string> VisibleRecipeCardNames()
+    {
+        return _craftingUi.slotParent.Cast<Transform>()
+            .Where(child => child != null && child.gameObject.activeInHierarchy &&
+                            child.name.StartsWith("Recipe_", StringComparison.Ordinal))
+            .Select(child => child.name)
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    static bool IntersectsViewport(RectTransform viewport, RectTransform card)
+    {
+        Bounds bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(viewport, card);
+        Rect rect = viewport.rect;
+        return bounds.max.x >= rect.xMin && bounds.min.x <= rect.xMax &&
+               bounds.max.y >= rect.yMin && bounds.min.y <= rect.yMax;
+    }
+
+    static bool IsGeneratedWalkable(Transform target)
+    {
+        return target != null && _alpha.Grid.WorldToCell(target.position,
+                   out Vector2Int coordinate) &&
+               _alpha.Grid.TryGetCell(coordinate, out WorldCellData cell) &&
+               cell.IsWalkable && !cell.HasWater;
+    }
+
+    static bool HasRoleLabel(Workbench workbench, string text)
+    {
+        return workbench != null && workbench.transform.root
+            .GetComponentsInChildren<PrototypeWorldLabel>(true)
+            .Any(label => label != null && label.label.Contains(text));
+    }
+
+    static RecipeData LoadRecipe(string path)
+    {
+        RecipeData recipe = Resources.Load<RecipeData>(path);
+        if (recipe == null || recipe.outputItem == null || recipe.ingredients == null ||
+            recipe.ingredients.Count == 0)
+            throw new InvalidOperationException($"Existing production recipe is invalid: {path}");
+        return recipe;
+    }
+
+    static Workbench WorkbenchFor(RecipeData recipe)
+    {
+        return recipe.requiredWorkbench switch
+        {
+            WorkbenchType.BasicWorkbench => _adapter.RuntimeWorkbench,
+            WorkbenchType.Kitchen => _adapter.RuntimeKitchen,
+            WorkbenchType.Forge => _adapter.RuntimeForge,
+            _ => null
+        };
+    }
+
+    static void SeedIngredients(RecipeData recipe, float quality)
+    {
+        foreach (RecipeIngredient ingredient in recipe.ingredients)
+        {
+            if (ingredient == null || ingredient.item == null || ingredient.count <= 0) continue;
+            var instance = new ItemInstance(ingredient.item, ingredient.count)
+            {
+                quality = quality,
+                currentPrice = ingredient.item.basePrice
+            };
+            Require(Inventory.instance.AddInstance(instance),
+                $"seeded {ingredient.item.itemName} x{ingredient.count} from the BETA-002 resource contract");
+        }
+    }
+
+    static ItemInstance FindInstance(Item item)
+    {
+        if (item == null || Inventory.instance == null) return null;
+        InventorySlot slot = Inventory.instance.slots
+            .FirstOrDefault(candidate => candidate != null && !candidate.IsEmpty &&
+                                         candidate.item == item);
+        if (slot != null) return slot.instance;
+        return Inventory.instance.hotbar?.slots?
+            .FirstOrDefault(candidate => candidate != null && !candidate.IsEmpty &&
+                                         candidate.item == item)?.instance;
+    }
+
+    static int Count(Item item)
+    {
+        return item != null && Inventory.instance != null
+            ? Inventory.instance.CountItems(item)
+            : 0;
+    }
+
+    static void ClearInventory()
+    {
+        if (Inventory.instance == null) return;
+        foreach (InventorySlot slot in Inventory.instance.slots) slot?.Clear();
+        if (Inventory.instance.hotbar != null)
+            foreach (InventorySlot slot in Inventory.instance.hotbar.slots) slot?.Clear();
+        Inventory.instance.RefreshAllUI();
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(FrameKey, 0);
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+        SessionState.SetInt(ConsoleErrorKey,
+            SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[BETA-003] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else Finish();
+    }
+
+    static void Finish()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int errors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(FrameKey);
+        SessionState.EraseInt(StageKey);
+        Debug.Log(failed
+            ? $"[BETA-003] FINISHED_WITH_ERRORS consoleErrors={errors}"
+            : "[BETA-003] FINISHED_PASS facilities=3 recipes=5 quality=true " +
+              "ui=true sale=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[BETA-003] PASS {message}");
     }
 }
 #endif

@@ -202,6 +202,17 @@
       "humanFollowUp": "Travel distance and activity feel can be reviewed once during the M85 integrated playtest."
     },
     {
+      "id": "beta-003-crafting-production",
+      "executeMethod": "PA_Beta003CraftingProductionValidator.RunBeta003ValidationBatch",
+      "sourceFile": "Assets/Scripts/World/WorldGameplayAdapterService.cs",
+      "purpose": "Validate BETA-002 resources through existing B05/B06/B07 recipe cards, CraftingService quality metadata, B01 display and sale authorities.",
+      "workflowTypes": ["gameplay-beta", "crafting", "processing", "ui", "economy", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first facility placement, recipe-card, material transaction, quality, value, display, or sale assertion.",
+      "humanFollowUp": "Facility spacing and final recipe-card visual polish can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

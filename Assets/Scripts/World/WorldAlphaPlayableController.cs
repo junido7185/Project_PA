@@ -456,7 +456,40 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
                    TargetHint(_adapter.FindDaytimeActivity("shore-forage")?.transform);
         if (!farmDone)
             return "Wheat가 다 자라면 마을 밭으로 돌아가 수확하세요.";
-        return "오늘 낮 활동 완료 · 상품을 제작하거나 잡화점 판매대에 진열하세요.";
+        return ResolveProductionObjective();
+    }
+
+    string ResolveProductionObjective()
+    {
+        if (_adapter == null || !_adapter.ProductionFacilitiesBound)
+            return "오늘 낮 활동 완료 · 가공 시설을 확인하고 있습니다.";
+
+        if (CountItem("Items/Item_Carrot") >= 2 ||
+            CountItem("Items/Item_Wheat") >= 3 ||
+            CountItem("Items/Item_Fish") >= 1)
+        {
+            return "오늘 낮 활동 완료 · 주방 가공대에서 식재료를 상품으로 만드세요 · " +
+                   TargetHint(_adapter.RuntimeKitchen?.transform);
+        }
+        if (CountItem("Items/Item_Ore") >= 2)
+        {
+            return "오늘 낮 활동 완료 · 대장간 용광로에서 광석을 철괴로 만드세요 · " +
+                   TargetHint(_adapter.RuntimeForge?.transform);
+        }
+        if (CountItem("Items/Item_Wood") >= 2)
+        {
+            return "오늘 낮 활동 완료 · 제작 작업대에서 목재를 판자로 만드세요 · " +
+                   TargetHint(_adapter.RuntimeWorkbench?.transform);
+        }
+
+        int processed = CountItem("Items/Item_09_BakedPotato") +
+                        CountItem("Items/Item_BreadLoaf") +
+                        CountItem("Items/Item_10_GrilledFish") +
+                        CountItem("Items/Item_IronBar") +
+                        CountItem("Items/Item_Plank");
+        return processed > 0
+            ? "오늘 낮 활동 완료 · 가공 상품을 P.A. 잡화점 판매대에 진열하세요."
+            : "오늘 낮 활동 완료 · 상품을 제작하거나 잡화점 판매대에 진열하세요.";
     }
 
     string DaytimeActivitySummary()
@@ -468,7 +501,17 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
                $"{Done(loop.IsDailyActivityCompleted("quarry-mining"))} 채광  " +
                $"{Done(loop.IsDailyActivityCompleted("shore-forage"))} 낚시  |  " +
                $"가방 당근 {CountItem("Items/Item_Carrot")} · 밀 {CountItem("Items/Item_Wheat")} · " +
-               $"광석 {CountItem("Items/Item_Ore")} · 물고기 {CountItem("Items/Item_Fish")}";
+               $"광석 {CountItem("Items/Item_Ore")} · 물고기 {CountItem("Items/Item_Fish")}  |  " +
+               $"가공품 {ProcessedItemCount()}";
+    }
+
+    int ProcessedItemCount()
+    {
+        return CountItem("Items/Item_09_BakedPotato") +
+               CountItem("Items/Item_BreadLoaf") +
+               CountItem("Items/Item_10_GrilledFish") +
+               CountItem("Items/Item_IronBar") +
+               CountItem("Items/Item_Plank");
     }
 
     static string Done(bool value) => value ? "[완료]" : "[ ]";

@@ -629,3 +629,12 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 해결: `PREAPPROVED_MILESTONE_CONTINUATION`을 추가했다. loop-state에 승인 범위가 기록되고 다음 ticket이 그 범위 안에 있을 때만 한 번에 하나씩 검증·로컬 커밋 후 자동 전환하며, 동일 blocker는 한 번만 기록한다.
 - 안전 경계: M70은 `WORLD-005`, `WORLD-006`, `WORLD-006B`, `WORLD-007`, `WORLD-008`, `WORLD-009`, `WORLD-010`만 승인한다. hard blocker, D3D11/crash, Git 안전 규칙은 유지하고 WORLD-010 또는 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`에서 중단한다.
 - 현재 상태: 기준 commit `e0b5678`에서 위 sequence가 이미 완료됐으므로 재실행하지 않았다. `nextTicket=null`, completion reached로 기록했고 WORLD-011/MainGame은 새 사람 승인 대상이다.
+
+## [RESOLVED] 2026-08-11 — BETA-003 workbench 전환 validator의 deferred card destruction
+
+- 증상: `Logs/BETA003_D3D11_Validation.log`와 `Logs/BETA003_D3D11_Validation_Retry.log`에서 B05/B06/B07 런타임 배치, D3D11, walkable cell, 시설 간격, 역할 표지, Kitchen 카드 3개의 활성·크기·viewport·재료 부족 표시까지 PASS한 뒤 Forge 카드 수가 5개로 집계되어 중단됐다.
+- 원인: `CraftingUI.GenerateSlotsForContext`는 이전 카드를 Play Mode의 지연 `Destroy`로 제거하고 새 카드를 같은 프레임에 만든다. validator가 Forge 컨텍스트를 연 그 프레임에 Kitchen 카드 3개와 Forge 카드 2개를 함께 세었다. 첫 재시도는 Kitchen 검증과 Forge 열기 사이에 프레임을 두었지만, 실제 제거 예약은 Forge를 여는 시점에 발생하므로 같은 원인이 반복됐다.
+- 영향: 실제 제작·품질·가격·B01 판매 assertion에 도달하기 전의 validator 순서 문제다. Runtime/Editor 정적 컴파일은 오류 0이며 Scene/Prefab/Packages/ProjectSettings/Save schema 변경, 사용자 저장 영향, native crash는 없다. BETA-003은 완료 또는 커밋되지 않았고 M85 다음 티켓도 시작하지 않았다.
+- 중단: 프로젝트 규칙의 동일 원인 2회 실패 후 세 번째 시도 금지에 따라 이 세션에서는 추가 Unity 실행을 하지 않는다.
+- 권장 다음 조치: 새 세션에서 Forge를 한 번 연 뒤 최소 한 프레임을 기다리고 카드 수를 검사하도록 validator stage를 분리한다. 프로덕션 UI 로직을 변경할 필요는 없다. 그 후 BETA-003 D3D11 통합 검증을 1회 수행하고, 통과할 때만 회귀·문서·로컬 티켓 커밋으로 진행한다.
+- 사람 승인 및 해결: 2026-08-12 사람이 stage 최소 수정과 세 번째 격리 D3D11 실행을 명시적으로 승인했다. Kitchen·Forge·Basic 각 컨텍스트를 연 뒤 다음 validator stage/frame에서 검사하도록 분리했다. `Logs/BETA003_D3D11_Validation_ThirdApproved.log`에서 카드 수 3/2/2, 재료 부족 무차감·무지급, 5개 실제 제작, 품질·가격, B01 진열·판매와 Console 0이 PASS했다. 네 번째 재시도는 필요하지 않았다.

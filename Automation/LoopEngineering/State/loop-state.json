@@ -7,7 +7,7 @@
     "completionTarget": "M85_GAMEPLAY_BETA_COMPLETE",
     "branch": "milestone/gameplay-beta-85",
     "checkpointCommit": "b176bdcac8d140ffa53e8b907ef7da3576a44a70",
-    "completedTicketCommits": 2,
+    "completedTicketCommits": 3,
     "commitLimit": 10
   },
   "worldArchitectureApproval": {
@@ -73,13 +73,30 @@
     ],
     "sequenceStartTicket": "BETA-001",
     "initialNextTicket": "BETA-001",
-    "nextTicket": "BETA-003",
+    "nextTicket": "BETA-004",
     "preapprovedThrough": "BETA-010",
     "stopAtMilestone": "M85_GAMEPLAY_BETA_COMPLETE",
     "completionReached": false,
     "requiresIntermediateHumanApproval": false,
     "localTicketCommitsAllowed": true,
     "pushAllowed": false
+  },
+  "beta003RetryApproval": {
+    "approvedOn": "2026-08-12",
+    "humanApproved": true,
+    "scope": [
+      "minimal validator stage ordering fix",
+      "one third isolated D3D11 BETA-003 execution"
+    ],
+    "releasedBlockers": [
+      "BETA-003 validator stage modification approval required",
+      "third D3D11 execution approval required"
+    ],
+    "retryLimit": 1,
+    "fourthRetryAllowed": false,
+    "activeTicket": "BETA-003",
+    "status": "consumed_pass",
+    "validationLog": "Logs/BETA003_D3D11_Validation_ThirdApproved.log"
   },
   "loopPolicyMaintenance": {
     "ticketId": "LOOP-POLICY-002",
@@ -112,18 +129,18 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "BETA-002",
+  "ticketId": "BETA-003",
   "status": "completed",
-  "finalState": "BETA_002_COMPLETE",
-  "goal": "Connect existing Gathering, Farming, Mining and Fishing to generated WorldSandbox activity zones, actual player interaction, Inventory and sellable economy value.",
+  "finalState": "BETA_003_COMPLETE",
+  "goal": "Connect BETA-002 raw resources to the existing recipe, crafting, quality, UI, shop display and sale authorities through generated-world production facilities.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
-    "commit": "9bf71d6c85cb35a8d18c735769e1969c3de9e6e9",
+    "commit": "23a881a2d3f3f35ee751d68c25aa174da2ae72bc",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 14,
+    "dirtyPathCountAtStop": 13,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
@@ -138,24 +155,22 @@
     "editor": "PASS: dotnet Assembly-CSharp-Editor; 0 errors; pre-existing CS8785 and PA_ErrorTracker CS0414 warnings only"
   },
   "validators": {
-    "beta002Log": "Logs/BETA002_D3D11_Validation_Final2.log",
-    "beta001RegressionLog": "Logs/BETA002_Regression_BETA001.log",
-    "world010RegressionLog": "Logs/BETA002_Regression_WORLD010.log",
-    "gatheringFishingRegressionLog": "Logs/BETA002_Regression_GatheringFishing.log",
-    "miningShopRegressionLog": "Logs/BETA002_Regression_MiningShop_Retry.log",
+    "beta003Log": "Logs/BETA003_D3D11_Validation_ThirdApproved.log",
+    "craftingRecipeCardRegressionLog": "Logs/BETA003_Regression_CraftingRecipeCard.log",
+    "processingChainRegressionLog": "Logs/BETA003_Regression_ProcessingChain.log",
+    "beta002RegressionLog": "Logs/BETA003_Regression_BETA002.log",
     "passed": [
       "Unity D3D11 Runtime and Editor compile",
-      "existing PlayerInteraction, Inventory and Hotbar on the M70 runtime player",
-      "generated walkable island cells for forest, farm, highland mine and pond fishing",
-      "Space-path Gathering gives Carrot x2",
-      "Seed pouch, planting, growth and harvest give Wheat x3",
-      "Mining gives Ore x2 and Fishing gives Fish x2 through their existing action layers",
-      "same-day duplicate blocking and next-morning reactivation",
-      "four existing Raw items produce 120G combined base shop value",
-      "raw runtime activity cubes hidden while existing visual dressing remains available",
-      "M70 movement, gather, craft, shop, customer, revenue, save and restart restore regression",
-      "Prototype Gathering/Fishing sale and Mining/Ore sale/save regressions",
-      "BETA-001 onboarding regression",
+      "existing B05 Basic, B06 Kitchen and B07 Forge on generated walkable cells",
+      "Kitchen, Forge and Basic recipe-card counts are 3, 2 and 2 after frame-safe context transitions",
+      "ingredient shortages remain visible and block without consumption or output",
+      "Carrot, Wheat, Fish, Ore and Wood craft through five existing recipes and facilities",
+      "ItemInstance quality and base-price metadata survive crafting and B01 stocking",
+      "five-product raw base value rises from 118G to 203G",
+      "a processed product sells through B01 and deposits 28G",
+      "Basic recipe cards and Wood-to-Plank craft/pulse regression",
+      "ProcessingChain Bread margin/advisor/craft regression",
+      "BETA-002 Space interaction, four activities and Inventory regression",
       "blocking Console Error/Exception/Assert 0"
     ]
   },
@@ -336,6 +351,24 @@
     "saveSchemaChanged": false,
     "nextTicket": "BETA-003"
   },
+  "gameplayBetaCraftingProduction": {
+    "ticket": "BETA-003",
+    "state": "BETA_003_COMPLETE",
+    "sceneScope": "WorldSandbox runtime only",
+    "facilities": {
+      "BasicWorkbench": "B05 / 2 visible recipes",
+      "Kitchen": "B06 / 3 visible recipes",
+      "Forge": "B07 / 2 visible recipes"
+    },
+    "validatedProducts": ["BakedPotato", "BreadLoaf", "GrilledFish", "IronBar", "Plank"],
+    "rawBaseValue": 118,
+    "processedBaseValue": 203,
+    "validatedSaleGold": 28,
+    "qualityMetadataPreserved": true,
+    "shortageTransactionAtomic": true,
+    "saveSchemaChanged": false,
+    "nextTicket": "BETA-004"
+  },
   "shopFurniture": {
     "authority": "existing ShopCustomizationController over GridService shop.interior",
     "cellSizeMeters": 2,
@@ -379,14 +412,13 @@
     "reason": "Automatic Game View capture was not retried. Runtime object, bounds, interaction, restart and Console gates provide the bounded functional evidence; no manual capture is requested."
   },
   "changedPaths": [
-    "Assets/Editor/PA_MiningShopLoopValidator.cs",
-    "Assets/Scripts/FarmPlotInteraction.cs",
     "Assets/Scripts/World/WorldGameplayAdapterService.cs",
     "Assets/Scripts/World/WorldAlphaPlayableController.cs",
     "Automation/LoopEngineering/validator-registry.json",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
     "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
     "PROJECT_PA_STATUS.md",
@@ -415,10 +447,11 @@
   "beta001Completed": true,
   "beta002Started": true,
   "beta002Completed": true,
-  "beta003Started": false,
+  "beta003Started": true,
+  "beta003Completed": true,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-11",
-  "stoppedAt": "2026-08-11",
-  "stopReason": "BETA-002 passed its D3D11 four-activity validator plus BETA-001, M70, Gathering/Fishing and Mining/Shop regressions. The approved M85 sequence continues.",
-  "nextAction": "Create the BETA-002 local ticket commit, then activate BETA-003 Crafting and Production Expansion without an intermediate human gate."
+  "stoppedAt": "2026-08-12",
+  "stopReason": "BETA-003 passed the human-approved third D3D11 run plus CraftingRecipeCard, ProcessingChain and BETA-002 regressions with blocking Console 0 and no new crash.",
+  "nextAction": "Create the approved BETA-003 local ticket commit, then continue automatically with preapproved BETA-004 Shop Readability and Merchandising."
 }

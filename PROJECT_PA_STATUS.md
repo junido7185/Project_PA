@@ -2169,3 +2169,12 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 검증 루프는 Timber x2 → Wood x2 → Recipe_Plank/B05 제작 → B01 ShopSlot 진열 → 밤 개점 → NpcController 구매 → Economy 1G → save → restart 상태 변조 → seed/resource/inventory/clock/shop/economy 복원이다.
 - `Logs/WORLD009_Validation_DontSaveFix.log`와 WORLD-001/007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute 회귀가 D3D11에서 PASS했다. blocking Console과 신규 crash는 0이다.
 - 저장 schema v11, Prototype_FirstDay, WorldSandbox YAML, MainGame, Prefab, Packages, ProjectSettings는 변경하지 않았다. 다음 활성 티켓은 선승인된 WORLD-010이다.
+
+## 2026-08-12 BETA-003 Crafting and Production Expansion — COMPLETE
+
+- WorldSandbox의 generated Meadow/Highland에 기존 B06 Kitchen과 B07 Forge를 runtime-only로 배치했다. B05/B06/B07은 각각 Basic/Kitchen/Forge 기존 Workbench 권위를 유지한다.
+- 플레이어 HUD는 낮 활동 산출물에 따라 실제 가공 시설과 진열 다음 단계를 안내한다. Kitchen/Forge/Basic recipe card는 각각 3/2/2개가 보이고, 재료 부족 상태에서도 보유량/필요량을 확인할 수 있다.
+- 부족 상태는 재료와 결과를 변경하지 않는다. 충분한 Carrot/Wheat/Fish/Ore/Wood는 기존 `CraftingService`를 통해 구운 감자·BreadLoaf·생선구이·IronBar·Plank로 가공되며 품질과 가격 메타가 보존된다.
+- 원재료 기본가 합계 118G가 가공품 203G로 증가했고, 품질이 보존된 가공품 1개가 B01에서 실제 28G에 판매됐다.
+- BETA-003, CraftingRecipeCard, ProcessingChain, BETA-002 D3D11 검증이 PASS했다. blocking Console 0, 신규 crash 0, Runtime/Editor compile 오류 0이다.
+- Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 다음 활성 티켓은 `BETA-004 Shop Readability and Merchandising`이다.

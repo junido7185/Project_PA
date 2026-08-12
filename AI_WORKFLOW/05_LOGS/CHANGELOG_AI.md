@@ -1050,3 +1050,13 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - activity HUD가 방향·완료·가방 수량을 안내한다. 당일 중복 보상은 차단되고 다음날 재활성화한다. 원시 runtime cube renderer는 숨기고 기존 presentation dressing을 유지한다.
 - D3D11 BETA-002/BETA-001/WORLD-010과 Prototype Gathering/Fishing, Mining/Shop 회귀가 PASS했다. Mining validator의 stale v10 비교를 기존 current-v11 상수로 바꿨으며 schema는 변경하지 않았다.
 - compile errors 0, blocking Console 0, new crash 0. Scene/Prefab/Packages/ProjectSettings/SaveData DTO는 변경하지 않았다. 다음은 `BETA-003`다.
+
+## 2026-08-12 — Codex — BETA-003 Crafting and Production Expansion (DONE)
+
+- WorldSandbox runtime-only 구성에 기존 B06 Kitchen과 B07 Forge를 generated Meadow/Highland의 안전한 셀에 연결했다. B05 Basic을 포함한 세 시설은 기존 BuildingData·Prefab·Workbench 권위를 그대로 사용한다.
+- 낮 활동 완료 뒤 HUD가 보유 Carrot/Wheat/Fish/Ore/Wood에 맞춰 주방·대장간·기본 작업대를 안내하고, 가공품 수량과 잡화점 진열 다음 단계를 보여 준다.
+- Kitchen/Forge/Basic 카드 수 3/2/2, 부족 재료 보유량 표시, 부족 시 무차감·무지급, 재료 충분 시 실제 선택 가능 상태를 검증했다. 기존 Basic 카드 2개와 Wood→Plank도 유지된다.
+- 기존 레시피 5개로 구운 감자·빵·생선구이·철괴·판자를 제작했다. `CraftingService`가 실제 재료를 차감하고 `ItemInstance` 품질·기본 가격을 보존했으며 원재료 118G가 가공품 203G로 상승했다.
+- 품질이 보존된 가공품을 실제 B01에 진열하고 기존 밤 영업/판매 권위로 28G를 판매했다. `Logs/BETA003_D3D11_Validation_ThirdApproved.log`에서 Console 0과 WorldSandbox clean을 확인했다.
+- CraftingRecipeCard, ProcessingChain, BETA-002 회귀가 D3D11에서 PASS했다. Runtime/Editor compile 오류 0, 신규 crash 0이며 Scene/Prefab/Packages/ProjectSettings/Save schema는 변경하지 않았다.
+- 자동 캡처는 수행하지 않아 `CAPTURE_EVIDENCE_DEBT`로 유지한다. 최종 상태는 `BETA_003_COMPLETE`, 다음은 선승인된 `BETA-004`다.

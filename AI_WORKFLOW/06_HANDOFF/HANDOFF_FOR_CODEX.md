@@ -8,7 +8,9 @@
 - 낮 활동 결과는 Carrot2/Wheat3/Ore2/Fish2이며 기존 Raw 판매가 합계는 120G다. 당일 중복은 차단되고 다음날 다시 열린다. player HUD가 활동 방향·완료·가방 수량을 설명한다.
 - WORLD grid/placement/generator/navigation 개발 surface는 기본 숨김이며 F10으로 함께 복구한다. Scene YAML은 수정하지 않았고 existing M70 gameplay/input/save authority를 그대로 사용한다.
 - 증거: `Logs/BETA002_D3D11_Validation_Final2.log`, `Logs/BETA002_Regression_BETA001.log`, `Logs/BETA002_Regression_WORLD010.log`, `Logs/BETA002_Regression_GatheringFishing.log`, `Logs/BETA002_Regression_MiningShop_Retry.log` PASS; blocking Console 0, new crash 0.
-- 현재 유일한 활성 티켓은 `BETA-003 Crafting and Production Expansion`. 기존 recipe/Workbench/CraftingService를 낮 활동 자원과 실제 판매 상품으로 연결한다.
+- `BETA-003 Crafting and Production Expansion` 완료: generated WorldSandbox에 기존 B05/B06/B07 Basic/Kitchen/Forge를 연결하고 카드 2/3/2, 부족 거래 원자성, 실제 5개 제작, 품질·가격, 118G→203G, B01 28G 판매를 검증했다.
+- 증거: `Logs/BETA003_D3D11_Validation_ThirdApproved.log`, `Logs/BETA003_Regression_CraftingRecipeCard.log`, `Logs/BETA003_Regression_ProcessingChain.log`, `Logs/BETA003_Regression_BETA002.log` PASS; blocking Console 0, new crash 0.
+- 현재 유일한 활성 티켓은 선승인된 `BETA-004 Shop Readability and Merchandising`. 판매대 식별, 상점 공간, 진열/가격/재고 가독성과 기존 movable furniture 회귀만 다룬다.
 - Prototype_FirstDay Golden, WorldSandbox scene, MainGame, Prefab, Packages, ProjectSettings, Save schema v11은 승인 없는 변경 금지다.
 
 ## M70 및 Loop Policy 현재 상태 — 2026-08-11
