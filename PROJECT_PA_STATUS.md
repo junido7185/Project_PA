@@ -2178,3 +2178,12 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 원재료 기본가 합계 118G가 가공품 203G로 증가했고, 품질이 보존된 가공품 1개가 B01에서 실제 28G에 판매됐다.
 - BETA-003, CraftingRecipeCard, ProcessingChain, BETA-002 D3D11 검증이 PASS했다. blocking Console 0, 신규 crash 0, Runtime/Editor compile 오류 0이다.
 - Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 다음 활성 티켓은 `BETA-004 Shop Readability and Merchandising`이다.
+
+## 2026-08-12 — BETA-004 Shop Readability and Merchandising 완료
+
+- WorldSandbox의 실제 B01 4칸 판매대를 `밤 영업 구역 · 상품 판매대`로 명확히 식별하고, 각 슬롯에 빈 칸/상품명/수량/가격/품질/품절 후속 행동을 runtime-only로 표시한다.
+- 플레이 HUD가 실제 슬롯 재고와 가격을 요약하며, 가공품 진열 목표는 이동 가능한 실제 판매대 위치를 가리킨다.
+- Bread 1개, 품질 125%, 43G 상태와 가격 갱신을 확인했다. 판매대 `(1,1)` 이동과 270° 회전 뒤에도 표지·ShopSlot·재고·가격·고객 접근이 유지됐다.
+- 범위 밖 이동은 transform을 바꾸지 않고 거부됐고, 기존 v11 `shopFurniture` 투영에 stable ID와 pose가 보존됐다. 이동된 판매대에서 고객 구매와 수익 입금, `오늘 품절 · 다음 상품 진열` 안내까지 완료됐다.
+- BETA-004, BETA-003, WORLD-006B D3D11 검증 PASS. Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0. Scene/Prefab/Packages/ProjectSettings/Save schema 무변경이다.
+- 최종 상태 `BETA_004_COMPLETE`; 다음 활성 티켓은 `BETA-005 Customer Strategy and Feedback`이다.

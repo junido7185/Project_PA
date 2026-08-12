@@ -55,6 +55,8 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool StartPromptVisible => IsReady && _startPromptVisible;
     public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
     public string CurrentPlayerObjective => ResolvePlayerObjective();
+    public string ShopMerchandisingSummary =>
+        _adapter?.SalesDisplayReadability?.BuildSummary() ?? "판매대 상태 확인 중";
     public string LastAction => _lastAction;
     public WorldGameplayAdapterService Adapter => _adapter;
     public WorldGridService Grid => _grid;
@@ -488,7 +490,8 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
                         CountItem("Items/Item_IronBar") +
                         CountItem("Items/Item_Plank");
         return processed > 0
-            ? "오늘 낮 활동 완료 · 가공 상품을 P.A. 잡화점 판매대에 진열하세요."
+            ? "오늘 낮 활동 완료 · 가공 상품을 노란 상품 판매대에 진열하세요 · " +
+              TargetHint(_adapter.SalesDisplayTarget)
             : "오늘 낮 활동 완료 · 상품을 제작하거나 잡화점 판매대에 진열하세요.";
     }
 
@@ -650,12 +653,14 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     {
         float width = Mathf.Min(720f, Screen.width - 420f);
         float left = (Screen.width - width) * 0.5f;
-        GUILayout.BeginArea(new Rect(left, 18f, width, 152f), GUI.skin.box);
+        GUILayout.BeginArea(new Rect(left, 18f, width, 176f), GUI.skin.box);
         GUILayout.Label($"Day 1 · 첫 마을 동선   |   {CurrentPlayerObjective}");
         GUILayout.Space(4f);
         GUILayout.Label(_lastAction);
         GUILayout.Space(4f);
         GUILayout.Label(DaytimeActivitySummary());
+        GUILayout.Space(4f);
+        GUILayout.Label(ShopMerchandisingSummary);
         GUILayout.Space(4f);
         GUILayout.Label("WASD 이동 · 가까운 오브젝트 Space 상호작용 · F5 저장 · F9 불러오기 · Esc 메뉴");
         GUILayout.EndArea();

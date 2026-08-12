@@ -213,6 +213,17 @@
       "humanFollowUp": "Facility spacing and final recipe-card visual polish can be reviewed once during the M85 integrated playtest."
     },
     {
+      "id": "beta-004-shop-readability",
+      "executeMethod": "PA_Beta004ShopReadabilityValidator.RunBeta004ValidationBatch",
+      "sourceFile": "Assets/Scripts/World/WorldGameplayAdapterService.cs",
+      "purpose": "Validate B01 shop-zone identification, live slot stock/price/quality/sold-out presentation, movable-display hierarchy, v11 pose projection, and customer sale authority.",
+      "workflowTypes": ["gameplay-beta", "shop", "merchandising", "world-readability", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first display-label, stock, price, movement, save-projection, pathing, or sale assertion.",
+      "humanFollowUp": "Final world-space label size and stall composition can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

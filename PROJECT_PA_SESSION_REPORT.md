@@ -2831,3 +2831,13 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 
 - Scene/Prefab/Packages/ProjectSettings/Save schema 무변경. 자동 캡처는 수행하지 않아 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 상태 `BETA_003_COMPLETE`. 승인된 local commit 뒤 `BETA-004 Shop Readability and Merchandising`로 자동 전환한다.
+
+## 2026-08-12 — BETA-004 Shop Readability and Merchandising
+
+- 기존 B01 MarketStall의 4개 `ShopSlot`과 WORLD-006B 이동식 display root를 감사했다. 새 상점/가구 시스템 없이 같은 hierarchy를 읽는 `WorldSalesDisplayReadability`를 runtime-only로 추가했다.
+- 월드 표지는 밤 영업 구역과 Space 상호작용을 설명하고, 네 슬롯은 빈 칸 또는 실제 상품명·수량·표시가·품질을 표시한다. 판매 뒤에는 오늘 품절과 다음 진열 행동을 안내한다.
+- HUD도 실제 재고/가격 요약을 공유하고, 가공품 진열 objective는 현재 이동된 display root까지의 방향·거리를 사용한다.
+- 전용 D3D11 검증에서 Bread ×1, 43G, 품질 125%, 가격 갱신, `(1,1)`/270° 이동, 범위 밖 이동 거부, v11 pose projection, 이동 후 NpcController 구매와 수익, 품절 표시를 PASS했다.
+- BETA-003 회귀는 기존 5개 제작·품질·UI·28G 판매를, WORLD-006B 회귀는 판매대 이동/고객 경로/보호 동선/취소 롤백/저장 투영을 유지했다.
+- Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0. Scene/Prefab/Packages/ProjectSettings/Save schema는 변경하지 않았다. 자동 캡처는 재시도하지 않아 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 상태 `BETA_004_COMPLETE`; 승인된 local commit 뒤 선승인 `BETA-005 Customer Strategy and Feedback`를 활성화한다.

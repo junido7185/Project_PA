@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
@@ -72,6 +73,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     Hotbar _playerHotbar;
     DaytimeStockPrepPoint[] _daytimeActivityPoints = Array.Empty<DaytimeStockPrepPoint>();
     FarmPlotInteraction[] _farmPlots = Array.Empty<FarmPlotInteraction>();
+    WorldSalesDisplayReadability _salesDisplayReadability;
     Transform _salesDisplayRoot;
     Vector3 _salesDisplayBaseLocalPosition;
     Quaternion _salesDisplayBaseLocalRotation;
@@ -107,6 +109,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public Hotbar PlayerHotbar => _playerHotbar;
     public IReadOnlyList<DaytimeStockPrepPoint> DaytimeActivityPoints => _daytimeActivityPoints;
     public IReadOnlyList<FarmPlotInteraction> FarmPlots => _farmPlots;
+    public WorldSalesDisplayReadability SalesDisplayReadability => _salesDisplayReadability;
+    public Transform SalesDisplayTarget => _salesDisplayRoot;
     public bool DaytimeActivitiesBound => _playerInteraction != null && _playerHotbar != null &&
                                           _daytimeActivityPoints.Length >= 4 &&
                                           _farmPlots.Length >= FarmPlotInteraction.RuntimePlotCount;
@@ -311,6 +315,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             reason = "One or more existing gameplay authorities failed to activate.";
             return false;
         }
+
+        _salesDisplayReadability = _shopRoot.GetComponent<WorldSalesDisplayReadability>() ??
+                                   _shopRoot.AddComponent<WorldSalesDisplayReadability>();
+        if (!_salesDisplayReadability.Configure(_salesDisplayRoot, _shopSlots, out reason))
+            return false;
 
         if (!PositionProductionFacilities(out reason)) return false;
 
@@ -759,7 +768,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
         int normalized = WorldBuildingPlacementDefinition.NormalizeQuarterTurns(quarterTurns);
         ApplySalesDisplayPose(gridX, gridY, normalized);
-        _lastAction = $"Moved the functional B01 sales display to ({gridX},{gridY}) rot {normalized}.";
+        _salesDisplayReadability?.RefreshNow();
+        _lastAction = $"기능 판매대를 ({gridX},{gridY}) 위치로 옮기고 {normalized * 90}° 회전했습니다.";
         return true;
     }
 
@@ -1024,6 +1034,179 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         if (target == null) return;
         if (Application.isPlaying) Destroy(target);
         else DestroyImmediate(target);
+    }
+}
+
+// BETA-004 — player-facing, read-only presentation over the existing B01 ShopSlots.
+// Stock, price, purchase, movement and persistence remain owned by their existing authorities.
+[DisallowMultipleComponent]
+public sealed class WorldSalesDisplayReadability : MonoBehaviour
+{
+    const string PresentationRootName = "BETA004_SalesDisplayReadability";
+
+    readonly List<PrototypeWorldLabel> _slotLabels = new List<PrototypeWorldLabel>();
+    ShopSlot[] _slots = Array.Empty<ShopSlot>();
+    Transform _displayRoot;
+    Transform _presentationRoot;
+    PrototypeWorldLabel _headerLabel;
+    string _lastSignature = string.Empty;
+    float _nextRefresh;
+
+    public bool IsReady => _displayRoot != null && _headerLabel != null &&
+                           _slotLabels.Count == _slots.Length && _slots.Length > 0;
+    public Transform DisplayRoot => _displayRoot;
+    public Transform PresentationRoot => _presentationRoot;
+    public string HeaderText => _headerLabel != null ? _headerLabel.label : string.Empty;
+    public int SlotCount => _slots.Length;
+    public int StockedSlotCount => _slots.Count(slot => slot != null && !slot.IsEmpty);
+    public int EmptySlotCount => Mathf.Max(0, SlotCount - StockedSlotCount);
+    public int VisibleWorldLabelCount => (_headerLabel != null && _headerLabel.gameObject.activeInHierarchy ? 1 : 0) +
+                                         _slotLabels.Count(label => label != null && label.gameObject.activeInHierarchy);
+
+    public bool Configure(Transform displayRoot, IReadOnlyList<ShopSlot> slots, out string reason)
+    {
+        reason = string.Empty;
+        if (displayRoot == null || slots == null || slots.Count == 0 ||
+            slots.Any(slot => slot == null || slot.transform.parent != displayRoot))
+        {
+            reason = "B01 sales display readability requires one shared functional ShopSlot root.";
+            return false;
+        }
+
+        _displayRoot = displayRoot;
+        _slots = slots.OrderBy(slot => slot.name, StringComparer.Ordinal).ToArray();
+        EnsurePresentationObjects();
+        RefreshNow();
+        return IsReady;
+    }
+
+    void Update()
+    {
+        if (!IsReady || Time.unscaledTime < _nextRefresh) return;
+        _nextRefresh = Time.unscaledTime + 0.15f;
+        string signature = BuildSignature();
+        if (!string.Equals(signature, _lastSignature, StringComparison.Ordinal)) RefreshNow();
+    }
+
+    public void RefreshNow()
+    {
+        if (_displayRoot == null || _slots.Length == 0) return;
+        EnsurePresentationObjects();
+        _headerLabel.Set($"밤 영업 구역 · 상품 판매대 {_slots.Length}칸\nSpace: 진열 / 가격 설정",
+            new Color(1f, 0.88f, 0.48f), 1.05f);
+
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            ShopSlot slot = _slots[i];
+            PrototypeWorldLabel label = _slotLabels[i];
+            label.transform.localPosition = slot.transform.localPosition + new Vector3(0f, 0.82f, 0f);
+            label.Set(BuildSlotStatus(slot), ResolveStatusColor(slot), 0.72f);
+        }
+
+        _lastSignature = BuildSignature();
+    }
+
+    public string BuildSummary()
+    {
+        if (!IsReady) return "판매대 상태 확인 중";
+        if (StockedSlotCount == 0) return $"판매대 0/{SlotCount}칸 · 빈 칸에서 Space로 상품 진열";
+
+        string[] stocked = _slots.Where(slot => slot != null && !slot.IsEmpty)
+            .Take(2)
+            .Select(slot => $"{slot.currentItem.data.itemName} {slot.EffectiveDisplayPrice}G")
+            .ToArray();
+        string remainder = StockedSlotCount > stocked.Length ? $" 외 {StockedSlotCount - stocked.Length}칸" : string.Empty;
+        return $"판매대 {StockedSlotCount}/{SlotCount}칸 · {string.Join(" · ", stocked)}{remainder}";
+    }
+
+    public string GetSlotStatus(int index)
+    {
+        return index >= 0 && index < _slots.Length ? BuildSlotStatus(_slots[index]) : string.Empty;
+    }
+
+    public Transform GetSlotLabelTransform(int index)
+    {
+        return index >= 0 && index < _slotLabels.Count && _slotLabels[index] != null
+            ? _slotLabels[index].transform
+            : null;
+    }
+
+    void EnsurePresentationObjects()
+    {
+        if (_presentationRoot == null)
+        {
+            GameObject root = new GameObject(PresentationRootName)
+            {
+                hideFlags = HideFlags.DontSave
+            };
+            root.transform.SetParent(_displayRoot, false);
+            _presentationRoot = root.transform;
+        }
+
+        if (_headerLabel == null)
+        {
+            _headerLabel = CreateLabel("SalesDisplay_Header", _presentationRoot);
+            Vector3 center = _slots.Aggregate(Vector3.zero,
+                (sum, slot) => sum + slot.transform.localPosition) / _slots.Length;
+            _headerLabel.transform.localPosition = center + new Vector3(0f, 1.75f, 0.15f);
+        }
+
+        while (_slotLabels.Count < _slots.Length)
+            _slotLabels.Add(CreateLabel($"SalesDisplay_SlotStatus_{_slotLabels.Count + 1}", _presentationRoot));
+    }
+
+    static PrototypeWorldLabel CreateLabel(string objectName, Transform parent)
+    {
+        var labelObject = new GameObject(objectName)
+        {
+            hideFlags = HideFlags.DontSave
+        };
+        labelObject.transform.SetParent(parent, false);
+        PrototypeWorldLabel label = labelObject.AddComponent<PrototypeWorldLabel>();
+        TextMeshPro text = labelObject.GetComponent<TextMeshPro>();
+        if (text != null)
+        {
+            text.fontStyle = FontStyles.Bold;
+            text.sortingOrder = 24;
+        }
+        return label;
+    }
+
+    static string BuildSlotStatus(ShopSlot slot)
+    {
+        if (slot == null) return "사용 불가";
+        if (slot.IsEmpty)
+            return slot.IsSoldOutToday ? "오늘 품절\n다음 상품 진열" : "빈 칸\nSpace로 상품 진열";
+
+        ItemInstance item = slot.currentItem;
+        int qualityPercent = Mathf.RoundToInt(Mathf.Max(0f, item.quality) * 100f);
+        return $"{item.data.itemName} ×{item.count}\n{slot.EffectiveDisplayPrice}G · 품질 {qualityPercent}%";
+    }
+
+    static Color ResolveStatusColor(ShopSlot slot)
+    {
+        if (slot == null) return Color.gray;
+        if (slot.IsSoldOutToday) return new Color(1f, 0.58f, 0.52f);
+        if (slot.IsEmpty) return new Color(0.88f, 0.84f, 0.72f);
+        return slot.currentItem.data.category switch
+        {
+            ItemCategory.Raw => new Color(0.63f, 0.88f, 0.48f),
+            ItemCategory.Processed => new Color(1f, 0.72f, 0.44f),
+            ItemCategory.Utility => new Color(0.86f, 0.68f, 0.46f),
+            ItemCategory.Luxury => new Color(0.82f, 0.74f, 1f),
+            _ => new Color(1f, 0.90f, 0.64f)
+        };
+    }
+
+    string BuildSignature()
+    {
+        return string.Join("|", _slots.Select(slot =>
+        {
+            if (slot == null) return "missing";
+            if (slot.IsEmpty) return slot.IsSoldOutToday ? "sold-out" : "empty";
+            return $"{slot.currentItem.instanceId}:{slot.currentItem.count}:" +
+                   $"{slot.currentItem.quality:F3}:{slot.EffectiveDisplayPrice}";
+        }));
     }
 }
 
@@ -2231,6 +2414,300 @@ public static class PA_Beta003CraftingProductionValidator
     {
         if (!condition) throw new InvalidOperationException(message);
         Debug.Log($"[BETA-003] PASS {message}");
+    }
+}
+
+public static class PA_Beta004ShopReadabilityValidator
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.BETA004.Active";
+    const string FailedKey = "PA.BETA004.Failed";
+    const string ConsoleErrorKey = "PA.BETA004.ConsoleErrors";
+    const string FrameKey = "PA.BETA004.Frames";
+    const string StageKey = "PA.BETA004.Stage";
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+    static WorldSalesDisplayReadability _readability;
+    static ShopSlot _saleSlot;
+    static int _moneyBefore;
+    static float _stageStarted;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        Subscribe();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/Beta/BETA-004/Validate Shop Readability")]
+    public static void RunBeta004Validation() => RunInternal();
+
+    public static void RunBeta004ValidationBatch() => RunInternal();
+
+    static void RunInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(FrameKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            Subscribe();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            Require(UnityEngine.Object.FindObjectsByType<WorldSalesDisplayReadability>(
+                    FindObjectsSortMode.None).Length == 0,
+                "sales-display readability remains runtime-only and does not alter scene YAML");
+
+            BuildingData market = Resources.Load<BuildingData>("Buildings/Building_B01_MarketStall");
+            ShopSlot[] authoredSlots = market != null && market.prefab != null
+                ? market.prefab.GetComponentsInChildren<ShopSlot>(true)
+                : Array.Empty<ShopSlot>();
+            Require(market != null && market.prefab != null &&
+                    market.prefab.GetComponentInChildren<Shop>(true) != null &&
+                    authoredSlots.Length == 4,
+                "existing B01 prefab remains the four-slot shop authority");
+            Require(WorldPersistenceMigration.AdditiveWorldSaveVersion == 11,
+                "save schema remains unchanged at additive world version 11");
+            Debug.Log("[BETA-004] EDIT_MODE_PASS b01Slots=4 runtimeOnly=true saveSchema=v11");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void Subscribe()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SetStage(0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            Finish();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(FrameKey, 0) + 1;
+        SessionState.SetInt(FrameKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+
+        try
+        {
+            ResolveRuntime();
+            if ((_alpha == null || !_alpha.IsReady || _readability == null || !_readability.IsReady) &&
+                frames < 900) return;
+
+            if (stage == 0)
+            {
+                Require(_alpha != null && _alpha.IsReady && _adapter != null && _adapter.IsReady,
+                    "playable WorldSandbox and existing gameplay adapter reach Ready");
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(_readability != null && _readability.IsReady &&
+                        _readability.DisplayRoot == _adapter.SalesDisplayTarget &&
+                        _readability.PresentationRoot.parent == _adapter.SalesDisplayTarget,
+                    "readability presentation follows the same movable B01 ShopSlot root");
+                Require(_readability.SlotCount == 4 && _readability.EmptySlotCount == 4 &&
+                        _readability.VisibleWorldLabelCount == 5,
+                    "four empty functional slots expose one header and four visible state labels");
+                Require(_readability.HeaderText.Contains("밤 영업 구역") &&
+                        _readability.HeaderText.Contains("상품 판매대") &&
+                        _readability.HeaderText.Contains("Space"),
+                    "the shop boundary, display role and interaction are explicit in world space");
+                Require(Enumerable.Range(0, 4).All(index =>
+                        _readability.GetSlotStatus(index).Contains("빈 칸") &&
+                        _readability.GetSlotStatus(index).Contains("상품 진열")) &&
+                        _alpha.ShopMerchandisingSummary.Contains("0/4칸"),
+                    "empty stock state is readable in both world labels and player HUD");
+
+                Item bread = Resources.Load<Item>("Items/Item_BreadLoaf");
+                Require(bread != null && _adapter.PlayerInventory.AddInstance(new ItemInstance(bread, 1)
+                        { quality = 1.25f }),
+                    "an existing processed ItemInstance enters Inventory with quality metadata");
+                Require(_adapter.TryStockCraftedProduct(out _saleSlot, out string stockReason) &&
+                        _saleSlot != null && !_saleSlot.IsEmpty,
+                    $"ShopSlot.Interact stocks the real B01 display ({stockReason})");
+                _saleSlot.displayPrice = 37;
+                _saleSlot.RefreshDisplay();
+                _readability.RefreshNow();
+                int slotIndex = Array.IndexOf(_adapter.RuntimeShopSlots.ToArray(), _saleSlot);
+                string stockStatus = _readability.GetSlotStatus(slotIndex);
+                Require(stockStatus.Contains(bread.itemName) && stockStatus.Contains("×1") &&
+                        stockStatus.Contains("37G") && stockStatus.Contains("품질 125%") &&
+                        _alpha.ShopMerchandisingSummary.Contains(bread.itemName) &&
+                        _alpha.ShopMerchandisingSummary.Contains("37G"),
+                    "stocked item name, count, price and quality remain readable");
+                Require(_saleSlot.GetInteractPrompt().Contains(bread.itemName) &&
+                        _saleSlot.GetInteractPrompt().Contains("37G"),
+                    "existing Space interaction prompt still exposes item and price authority");
+
+                _saleSlot.displayPrice = 43;
+                _saleSlot.RefreshDisplay();
+                _readability.RefreshNow();
+                Require(_readability.GetSlotStatus(slotIndex).Contains("43G") &&
+                        _alpha.ShopMerchandisingSummary.Contains("43G"),
+                    "player price changes refresh world and HUD merchandising state");
+
+                Transform displayRoot = _adapter.SalesDisplayTarget;
+                Vector3 displayBefore = displayRoot.position;
+                Transform slotLabel = _readability.GetSlotLabelTransform(slotIndex);
+                Require(_alpha.TryMoveSalesDisplay(1, 1, 3, out string moveReason) &&
+                        _adapter.SalesDisplayGrid == new Vector2Int(1, 1) &&
+                        _adapter.SalesDisplayQuarterTurns == 3 &&
+                        Vector3.Distance(displayBefore, displayRoot.position) > 0.1f,
+                    $"the same functional display moves and rotates inside its bounded zone ({moveReason})");
+                Require(slotLabel != null && slotLabel.parent == _readability.PresentationRoot &&
+                        _readability.PresentationRoot.parent == displayRoot &&
+                        _saleSlot.transform.parent == displayRoot && !_saleSlot.IsEmpty &&
+                        _saleSlot.EffectiveDisplayPrice == 43,
+                    "labels, ShopSlot hierarchy, stock and price all follow the moved display");
+
+                Vector3 acceptedPosition = displayRoot.position;
+                Quaternion acceptedRotation = displayRoot.rotation;
+                Require(!_alpha.TryMoveSalesDisplay(2, 1, 0, out string rejectedReason) &&
+                        !string.IsNullOrWhiteSpace(rejectedReason) &&
+                        Vector3.Distance(acceptedPosition, displayRoot.position) < 0.001f &&
+                        Quaternion.Angle(acceptedRotation, displayRoot.rotation) < 0.01f,
+                    "out-of-zone furniture movement is rejected atomically");
+
+                WorldStateSaveData state = _adapter.CaptureWorldState();
+                WorldShopFurnitureSaveData furniture = state?.shopFurniture?.SingleOrDefault();
+                Require(furniture != null &&
+                        furniture.instanceId == WorldGameplayAdapterService.SalesDisplayInstanceId &&
+                        furniture.definitionId == WorldGameplayAdapterService.SalesDisplayDefinitionId &&
+                        furniture.gridX == 1 && furniture.gridY == 1 &&
+                        furniture.rotationQuarterTurns == 3,
+                    "existing v11 projection captures the readable display pose without a schema change");
+
+                _saleSlot.displayPrice = 1;
+                _saleSlot.RefreshDisplay();
+                _readability.RefreshNow();
+                _moneyBefore = EconomyService.Instance.Money;
+                Require(_adapter.TryOpenShopForNight(2, out string openReason),
+                    $"existing day/night gate opens the readable shop ({openReason})");
+                Require(_adapter.TryBeginCustomerVisit(_saleSlot, out string customerReason),
+                    $"existing NpcController paths to the moved functional display ({customerReason})");
+                _stageStarted = Time.realtimeSinceStartup;
+                SetStage(1);
+                return;
+            }
+
+            if (stage == 1)
+            {
+                if (!_adapter.CustomerPurchaseCompleted)
+                {
+                    if (_adapter.State == WorldGameplayAdapterState.Failed ||
+                        Time.realtimeSinceStartup - _stageStarted >= 28f)
+                        throw new InvalidOperationException(
+                            $"customer purchase did not complete: {_adapter.LastFailure}");
+                    return;
+                }
+
+                _readability.RefreshNow();
+                int slotIndex = Array.IndexOf(_adapter.RuntimeShopSlots.ToArray(), _saleSlot);
+                Require(_saleSlot.IsEmpty && EconomyService.Instance.Money == _moneyBefore + 1,
+                    "customer purchase clears stock and deposits the displayed price");
+                Require(_readability.GetSlotStatus(slotIndex).Contains("오늘 품절") &&
+                        _readability.GetSlotStatus(slotIndex).Contains("다음 상품 진열") &&
+                        _alpha.ShopMerchandisingSummary.Contains("0/4칸"),
+                    "post-sale sold-out state and next stocking action are immediately readable");
+                Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                    "blocking runtime Console Error/Exception/Assert count is 0");
+                Require(!SceneManager.GetActiveScene().isDirty,
+                    "BETA-004 remains runtime-only and leaves WorldSandbox scene clean");
+                Debug.Log("[BETA-004] PLAY_MODE_PASS slots=4 labels=5 stock=true price=true " +
+                          "quality=true move=true saveProjection=v11 customerSale=true console=0");
+                EditorApplication.update -= ValidateRuntime;
+                EditorApplication.ExitPlaymode();
+            }
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+        _readability = _adapter?.SalesDisplayReadability;
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(FrameKey, 0);
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false) ||
+            (type != LogType.Error && type != LogType.Exception && type != LogType.Assert)) return;
+        SessionState.SetInt(ConsoleErrorKey, SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[BETA-004] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else Finish();
+    }
+
+    static void Finish()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int errors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(FrameKey);
+        SessionState.EraseInt(StageKey);
+        Debug.Log(failed
+            ? $"[BETA-004] FINISHED_WITH_ERRORS consoleErrors={errors}"
+            : "[BETA-004] FINISHED_PASS readability=true merchandising=true " +
+              "movableFurniture=true customerSale=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[BETA-004] PASS {message}");
     }
 }
 #endif

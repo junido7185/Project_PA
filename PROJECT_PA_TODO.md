@@ -7,7 +7,7 @@ Status: `IN_PROGRESS`; branch `milestone/gameplay-beta-85`; approved through `BE
 - [x] BETA-001 — Player Onboarding and World Readability: Day 1 start prompt, first objective route, functional landmarks, player-facing HUD, default-hidden development surfaces, D3D11/M70/Golden regressions.
 - [x] BETA-002 — Daytime Activity Completion: generated-island Gathering/Farming/Mining/Fishing, Space interaction, Inventory, 120G Raw value, daily reset.
 - [ ] BETA-003 — Crafting and Production Expansion: connect actual daytime resources to meaningful recipes, workbench UI/state, processed sale value.
-- [ ] BETA-004 — Shop Readability and Merchandising.
+- [x] BETA-004 — Shop Readability and Merchandising.
 - [ ] BETA-005 — Customer Strategy and Feedback.
 - [ ] BETA-006 — Phone Hiring and Feed Completion.
 - [ ] BETA-007 — Village Response and NPC Integration.
@@ -1689,3 +1689,14 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] 최종 상태 `BETA_003_COMPLETE`.
 - [ ] 비차단: M85 통합 플레이테스트에서 시설 간격·카드 미감 확인 (`CAPTURE_EVIDENCE_DEBT`).
 - [ ] 다음 단일 티켓: `BETA-004 Shop Readability and Merchandising`.
+
+## BETA-004 Shop Readability and Merchandising
+
+- [x] 실제 B01 4칸 판매대와 밤 영업 구역을 월드 표지로 식별.
+- [x] 빈 칸/상품명/수량/가격/품질/오늘 품절 상태를 실제 `ShopSlot`에서 표시.
+- [x] 플레이 HUD 재고·가격 요약과 이동된 판매대 방향 안내.
+- [x] 판매대 이동·270° 회전 뒤 표지/ShopSlot/재고/가격/고객 접근 유지.
+- [x] 범위 밖 이동 원자 거부와 기존 v11 pose projection 유지.
+- [x] BETA-004, BETA-003, WORLD-006B D3D11 PASS; blocking Console 0, 신규 crash 0.
+- [ ] 비차단: M85 통합 플레이테스트에서 월드 라벨 크기·밀도 최종 확인 (`CAPTURE_EVIDENCE_DEBT`).
+- [ ] 다음 단일 티켓: `BETA-005 Customer Strategy and Feedback`.

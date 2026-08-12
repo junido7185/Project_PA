@@ -688,3 +688,13 @@ Append-only log for guarded automation and dry-run loop work.
 - `BETA003_Regression_CraftingRecipeCard.log`, `BETA003_Regression_ProcessingChain.log` and `BETA003_Regression_BETA002.log` passed the required Basic/Wood-to-Plank, processing chain and daytime-resource-to-Inventory regressions.
 - Runtime/Editor compile passed with zero errors and pre-existing CS8785/CS0414 warnings only. No new crash or Scene/Prefab/Packages/ProjectSettings/Save schema change occurred.
 - Final state: `BETA_003_COMPLETE`. Create the approved local ticket commit and activate preapproved `BETA-004 Shop Readability and Merchandising`.
+
+## 2026-08-12 — BETA-004 Shop Readability and Merchandising
+
+- Kept the existing B01 `Shop`/four `ShopSlot` hierarchy, movable-display pose and v11 furniture projection as the only authorities; no parallel inventory, pricing, shop or placement system was added.
+- Added a runtime-only read model attached to the same movable display root. One shop-zone header identifies `밤 영업 구역 · 상품 판매대` and four slot labels expose empty, item/count/price/quality and sold-out/next-stocking states.
+- Added the same live merchandising summary to the player HUD and pointed the processed-product objective at the actual movable display target.
+- `Logs/BETA004_D3D11_Validation_Final.log` passed B01=4, labels=5, empty/stocked/sold-out states, Bread 1 at 43G/125%, price refresh, bounded move/270-degree rotation, atomic rejection, v11 pose projection, moved-display customer sale and Console 0.
+- `Logs/BETA004_Regression_BETA003.log` preserved five recipes, quality/UI and the 28G processed sale. `Logs/BETA004_Regression_WORLD006B.log` preserved movable furniture, customer route, protected route, exact cancel rollback and save projection.
+- Runtime/Editor compile passed with zero errors. No new crash or Scene/Prefab/Packages/ProjectSettings/Save schema change occurred. Capture remains `CAPTURE_EVIDENCE_DEBT` for the M85 integrated playtest.
+- Final state: `BETA_004_COMPLETE`. Create the approved local ticket commit and activate preapproved `BETA-005 Customer Strategy and Feedback`.

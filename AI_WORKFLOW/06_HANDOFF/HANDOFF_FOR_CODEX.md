@@ -10,7 +10,9 @@
 - 증거: `Logs/BETA002_D3D11_Validation_Final2.log`, `Logs/BETA002_Regression_BETA001.log`, `Logs/BETA002_Regression_WORLD010.log`, `Logs/BETA002_Regression_GatheringFishing.log`, `Logs/BETA002_Regression_MiningShop_Retry.log` PASS; blocking Console 0, new crash 0.
 - `BETA-003 Crafting and Production Expansion` 완료: generated WorldSandbox에 기존 B05/B06/B07 Basic/Kitchen/Forge를 연결하고 카드 2/3/2, 부족 거래 원자성, 실제 5개 제작, 품질·가격, 118G→203G, B01 28G 판매를 검증했다.
 - 증거: `Logs/BETA003_D3D11_Validation_ThirdApproved.log`, `Logs/BETA003_Regression_CraftingRecipeCard.log`, `Logs/BETA003_Regression_ProcessingChain.log`, `Logs/BETA003_Regression_BETA002.log` PASS; blocking Console 0, new crash 0.
-- 현재 유일한 활성 티켓은 선승인된 `BETA-004 Shop Readability and Merchandising`. 판매대 식별, 상점 공간, 진열/가격/재고 가독성과 기존 movable furniture 회귀만 다룬다.
+- `BETA-004 Shop Readability and Merchandising` 완료: 실제 B01에 밤 영업/판매대 표지와 4개 슬롯의 빈 칸·상품·수량·가격·품질·품절 상태, HUD 요약을 추가했다. 이동/270° 회전, v11 pose, 고객 구매를 유지한다.
+- 증거: `Logs/BETA004_D3D11_Validation_Final.log`, `Logs/BETA004_Regression_BETA003.log`, `Logs/BETA004_Regression_WORLD006B.log` PASS; blocking Console 0, new crash 0.
+- 현재 유일한 활성 티켓은 선승인된 `BETA-005 Customer Strategy and Feedback`. 기존 고객 성향, `PurchaseEvaluator`, 구매/거절 피드백과 수요 신호를 WorldSandbox 밤 영업에서 읽기 쉽게 연결하는 범위만 다룬다.
 - Prototype_FirstDay Golden, WorldSandbox scene, MainGame, Prefab, Packages, ProjectSettings, Save schema v11은 승인 없는 변경 금지다.
 
 ## M70 및 Loop Policy 현재 상태 — 2026-08-11

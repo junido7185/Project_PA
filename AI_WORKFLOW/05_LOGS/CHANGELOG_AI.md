@@ -1060,3 +1060,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 품질이 보존된 가공품을 실제 B01에 진열하고 기존 밤 영업/판매 권위로 28G를 판매했다. `Logs/BETA003_D3D11_Validation_ThirdApproved.log`에서 Console 0과 WorldSandbox clean을 확인했다.
 - CraftingRecipeCard, ProcessingChain, BETA-002 회귀가 D3D11에서 PASS했다. Runtime/Editor compile 오류 0, 신규 crash 0이며 Scene/Prefab/Packages/ProjectSettings/Save schema는 변경하지 않았다.
 - 자동 캡처는 수행하지 않아 `CAPTURE_EVIDENCE_DEBT`로 유지한다. 최종 상태는 `BETA_003_COMPLETE`, 다음은 선승인된 `BETA-004`다.
+
+## 2026-08-12 — Codex — BETA-004 Shop Readability and Merchandising (DONE)
+
+- 기존 B01의 `Shop`·4개 `ShopSlot`·이동식 display root를 그대로 두고, 같은 root 아래 runtime-only 읽기 전용 가독성 계층을 연결했다.
+- `밤 영업 구역 · 상품 판매대 4칸` 표지와 슬롯별 빈 칸/상품명/수량/표시가/품질/오늘 품절 안내를 제공한다. 플레이 HUD에도 실제 재고와 가격 요약을 표시한다.
+- 판매대를 옮기고 회전해도 표지, 슬롯, 재고, 가격이 함께 이동하며 범위 밖 이동은 기존 원자적 거부를 유지한다. v11 save projection과 고객 접근·구매 권위도 바꾸지 않았다.
+- `BETA004_D3D11_Validation_Final.log`, BETA-003 제작/판매 회귀, WORLD-006B 가구 이동 회귀가 모두 D3D11 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이다.
+- Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 다음 활성 티켓은 선승인된 `BETA-005`다.
