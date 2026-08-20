@@ -227,10 +227,13 @@ public class DayNightShopLoopController : MonoBehaviour
             if (kv.Value >= CurrentDay)
                 data.dayPrepCollectedActivities.Add(kv.Key);
         }
+
+        data.shopOpenedDay = PlayerHasOpenedShopToday ? CurrentDay : -1;
     }
 
     // SaveManager 가 호출 — 저장된 날과 현재 날이 같을 때만 당일 채집 완료 상태를 복원한다.
-    public void RestoreSavedState(int collectedDay, List<string> collectedActivities)
+    public void RestoreSavedState(int collectedDay, List<string> collectedActivities,
+        int openedShopDay = -1)
     {
         _prepCollectionDays.Clear();
 
@@ -243,6 +246,12 @@ public class DayNightShopLoopController : MonoBehaviour
             }
         }
 
+        // GameClock.ForceSet intentionally does not emit gameplay events. Rebuild
+        // the phase explicitly before restoring today's open-sign transaction.
+        RefreshState(force: true);
+        _playerOpenedShopToday = openedShopDay == CurrentDay &&
+                                 _phase == PADayNightPhase.ShopOpen;
+        _openedShopDay = _playerOpenedShopToday ? CurrentDay : -1;
         RefreshPrepPoints();
         RefreshUI();
     }

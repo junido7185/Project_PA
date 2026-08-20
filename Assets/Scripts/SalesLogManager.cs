@@ -24,6 +24,7 @@ public class SalesLogManager : MonoBehaviour
     // 판매 권한은 RecordSale에 그대로 두고, 오디오/UI 같은 표현 계층만 완료 결과를 관찰한다.
     // 구독자 하나가 실패해도 이미 성립한 거래와 다른 구독자의 피드백을 막지 않는다.
     public static event Action<SaleRecord> OnSaleRecorded;
+    public static event Action OnHistoryRestored;
 
     [Tooltip("최대 보관 건수. 초과 시 가장 오래된 항목부터 삭제.")]
     public int maxRecords = 100;
@@ -112,6 +113,96 @@ public class SalesLogManager : MonoBehaviour
         return result;
     }
 
+    public void WriteSaveFields(SaveData data)
+    {
+        if (data == null) return;
+
+        data.salesLogRecords ??= new List<SaleRecord>();
+        data.salesLogRecords.Clear();
+        foreach (SaleRecord record in _records)
+        {
+            if (record == null) continue;
+            data.salesLogRecords.Add(CloneRecord(record));
+        }
+
+        data.salesDecisionDays ??= new List<SalesDecisionDaySaveData>();
+        data.salesDecisionDays.Clear();
+        var days = new HashSet<int>(_purchasesByDay.Keys);
+        days.UnionWith(_rejectionsByDay.Keys);
+        var orderedDays = new List<int>(days);
+        orderedDays.Sort();
+        foreach (int day in orderedDays)
+        {
+            _purchasesByDay.TryGetValue(day, out int purchases);
+            _rejectionsByDay.TryGetValue(day, out int rejections);
+            data.salesDecisionDays.Add(new SalesDecisionDaySaveData
+            {
+                gameDay = Mathf.Max(1, day),
+                purchases = Mathf.Max(0, purchases),
+                rejections = Mathf.Max(0, rejections)
+            });
+        }
+    }
+
+    public void RestoreSavedState(List<SaleRecord> records,
+        List<SalesDecisionDaySaveData> decisionDays)
+    {
+        _records.Clear();
+        _purchasesByDay.Clear();
+        _rejectionsByDay.Clear();
+
+        if (records != null)
+        {
+            foreach (SaleRecord record in records)
+            {
+                if (record == null || string.IsNullOrWhiteSpace(record.itemName) ||
+                    record.price < 0) continue;
+                _records.Add(CloneRecord(record));
+            }
+        }
+        while (_records.Count > Mathf.Max(1, maxRecords))
+            _records.RemoveAt(0);
+
+        if (decisionDays != null)
+        {
+            foreach (SalesDecisionDaySaveData day in decisionDays)
+            {
+                if (day == null) continue;
+                int safeDay = Mathf.Max(1, day.gameDay);
+                _purchasesByDay[safeDay] = Mathf.Max(0, day.purchases);
+                _rejectionsByDay[safeDay] = Mathf.Max(0, day.rejections);
+            }
+        }
+
+        // Old additive v11 saves have no daily summary list. Derive purchases
+        // from restored records so Feed and next-day advice remain useful.
+        foreach (SaleRecord record in _records)
+        {
+            int safeDay = Mathf.Max(1, record.gameDay);
+            if (_purchasesByDay.ContainsKey(safeDay)) continue;
+            int count = 0;
+            foreach (SaleRecord candidate in _records)
+                if (candidate != null && Mathf.Max(1, candidate.gameDay) == safeDay) count++;
+            _purchasesByDay[safeDay] = count;
+        }
+
+        NotifyHistoryRestored();
+    }
+
+    static SaleRecord CloneRecord(SaleRecord source)
+    {
+        return new SaleRecord
+        {
+            itemName = source.itemName ?? string.Empty,
+            category = source.category ?? string.Empty,
+            price = Mathf.Max(0, source.price),
+            quality = Mathf.Max(0f, source.quality),
+            buyerName = source.buyerName ?? string.Empty,
+            gameDay = Mathf.Max(1, source.gameDay),
+            gameHour = Mathf.Clamp(source.gameHour, 0, 23)
+        };
+    }
+
     void LogDailyStats(int gameDay, string latest)
     {
         DailyDecisionStats stats = GetDailyDecisionStats(gameDay);
@@ -128,6 +219,24 @@ public class SalesLogManager : MonoBehaviour
             try
             {
                 ((Action<SaleRecord>)callback)(record);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+    }
+
+    static void NotifyHistoryRestored()
+    {
+        Action handlers = OnHistoryRestored;
+        if (handlers == null) return;
+
+        foreach (Delegate callback in handlers.GetInvocationList())
+        {
+            try
+            {
+                ((Action)callback)();
             }
             catch (Exception exception)
             {

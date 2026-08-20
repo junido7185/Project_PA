@@ -189,6 +189,7 @@ public class FeedUI : MonoBehaviour
     {
         if (_subscribed) return;
         SalesLogManager.OnSaleRecorded += OnSaleRecorded;
+        SalesLogManager.OnHistoryRestored += OnHistoryRestored;
         _subscribed = true;
     }
 
@@ -196,10 +197,12 @@ public class FeedUI : MonoBehaviour
     {
         if (!_subscribed) return;
         SalesLogManager.OnSaleRecorded -= OnSaleRecorded;
+        SalesLogManager.OnHistoryRestored -= OnHistoryRestored;
         _subscribed = false;
     }
 
     void OnSaleRecorded(SaleRecord _) => Refresh();
+    void OnHistoryRestored() => Refresh();
 
     void BuildEmptyState(Transform parent, string message)
     {

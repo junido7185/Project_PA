@@ -216,8 +216,8 @@ public static class PA_MiningShopLoopValidator
         Require(File.Exists(saveFile), "isolated mining savegame.json was written");
         var savedData = JsonUtility.FromJson<SaveData>(File.ReadAllText(saveFile));
         Require(savedData != null &&
-                savedData.version == WorldPersistenceMigration.AdditiveWorldSaveVersion,
-            $"mining save uses current schema v{WorldPersistenceMigration.AdditiveWorldSaveVersion}");
+                savedData.version == SaveManager.CurrentSaveVersion,
+            $"mining save uses current gameplay schema v{SaveManager.CurrentSaveVersion}");
         Require(savedData.dayPrepCollectedDay == 2
             && savedData.dayPrepCollectedActivities.Contains("quarry-mining"),
             "save JSON contains quarry-mining completion");

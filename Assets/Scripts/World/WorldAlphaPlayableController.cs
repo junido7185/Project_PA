@@ -397,6 +397,64 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         return GameClock.Instance != null && GameClock.Instance.CurrentDay == 1;
     }
 
+    public void WriteSaveFields(SaveData data)
+    {
+        if (data == null) return;
+        data.worldAlphaStarted = HasStartedBeta;
+        data.worldAlphaMoved = HasMoved;
+        data.worldAlphaReachedShop = HasReachedShop;
+        data.worldAlphaReachedWorkbench = HasReachedWorkbench;
+    }
+
+    public bool RestoreSavedSession(bool started, bool moved, bool reachedShop,
+        bool reachedWorkbench)
+    {
+        if (!IsReady || _adapter?.PlayerRoot == null)
+            return false;
+
+        if (started && !_adapter.BeginPlayableWeek(out string reason))
+        {
+            _lastAction = $"저장된 플레이 시간을 재개하지 못했습니다 · {reason}";
+            return false;
+        }
+
+        HasStartedBeta = started;
+        _startPromptVisible = !started;
+        _movementOrigin = _adapter.PlayerRoot.transform.position;
+        HasMoved = started && moved;
+        HasReachedShop = started && reachedShop;
+        HasReachedWorkbench = started && reachedWorkbench;
+
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        HasGathered = started && loop != null &&
+                      (loop.IsDailyActivityCompleted("forest-forage") ||
+                       loop.IsDailyActivityCompleted(FarmPlotInteraction.DailyHarvestActivityId) ||
+                       loop.IsDailyActivityCompleted("quarry-mining") ||
+                       loop.IsDailyActivityCompleted("shore-forage"));
+        HasCrafted = started && ProcessedItemCount() > 0;
+        HasStockedProduct = started && _adapter.RuntimeShopSlots.Any(
+            slot => slot != null && !slot.IsEmpty);
+        HasOpenedShop = started && loop != null && loop.PlayerHasOpenedShopToday;
+        HasCustomerPurchase = started && SalesLogManager.Instance != null &&
+                              SalesLogManager.Instance.GetRecent(1).Count > 0;
+        HasRevenue = started && EconomyService.Instance != null &&
+                     EconomyService.Instance.CumulativeRevenue > 0;
+
+        WorldPersistenceService persistence = GetComponent<WorldPersistenceService>();
+        HasTerraformed = started && persistence != null &&
+                         persistence.CurrentSparseDeltaCount > 0;
+        HasPlacedBuilding = started && _buildings != null &&
+                            _buildings.TryGetPlacement(
+                                WorldBuildingPlacementService.PrototypeInstanceId, out _);
+        HasMovedSalesDisplay = started && _adapter.SalesDisplayGrid != Vector2Int.zero;
+        HasSaved = started;
+        HasRestored = started;
+        _lastAction = started
+            ? "저장한 섬 생활을 복원했습니다. 현재 일차의 목표부터 계속 진행하세요."
+            : "새 섬 생활 저장을 불러왔습니다. 시작할 준비가 되었습니다.";
+        return true;
+    }
+
     public void SetDevelopmentOverlayVisible(bool visible)
     {
         _developmentOverlayVisible = visible;

@@ -2898,3 +2898,10 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - producer delivery는 Day 2~7의 `B` 명시 구매로 바꿨으며 실제 비용 차감과 실패 재시도를 보존한다. Day 7 완료는 1,700G, 유료 고용 1명 이상, 판매에서 나온 village response를 모두 요구한다.
 - `BETA008_D3D11_Correction.log`는 Day 1 일반 관광객 구매, Day 1~4 actual settlement/day transition, Day 2~5 delivery, Day 5 paid Farmer hire까지 증명했다. validator의 duplicate-item stocking 때문에 Day 5가 989/1,050G에서 종료됐고, distinct high-value item selection으로 정적 보정했다.
 - 최종 correction은 Runtime/Editor compile 오류 0이며 세 번째 D3D11은 승인 범위를 넘어 실행하지 않았다. Day 6~7/Week 1 completion은 명시적 validation debt다. 최종 상태 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`; push 없음.
+
+## 2026-08-21 — BETA-009 Persistence and Recovery validation-debt checkpoint
+
+- SaveManager 중심으로 additive v12 gameplay envelope를 구현했다. 판매/Feed, exact village 인과, 농작물, B09 storage, player/hotbar/shop-open/WorldAlpha, load transaction과 transient quiesce를 기존 시스템에 연결했다.
+- procedural world payload는 v11, 기존 LegacyFixed migration 의미는 유지한다. Scene/Prefab/Packages/ProjectSettings는 변경하지 않았다.
+- Runtime/Editor compile 오류 0. 첫 D3D11은 validator CS0165, 두 번째는 save 전 invalid B01 좌표에서 종료됐고 native crash는 없다. 좌표를 `(1,0)`으로 고친 최종 소스는 compile PASS다.
+- restart/load/continue/repeated-load는 아직 runtime 미검증이므로 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`다. 로컬 checkpoint 후 BETA-010에서 이 검증부터 이어 간다.

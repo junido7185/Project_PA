@@ -78,6 +78,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     DayNightShopLoopController _dayLoop;
     SaveManager _saveManager;
     NpcController _customer;
+    Coroutine _customerVisitRoutine;
     ShopSlot _customerTargetSlot;
     PlayerInteraction _playerInteraction;
     Hotbar _playerHotbar;
@@ -1298,7 +1299,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _customerStartedAt = Time.realtimeSinceStartup;
         _customerVisitSequence++;
         State = WorldGameplayAdapterState.CustomerMoving;
-        StartCoroutine(BeginCustomerVisitNextFrame());
+        _customerVisitRoutine = StartCoroutine(BeginCustomerVisitNextFrame());
         _lastCustomerOutcome = $"방문 중 · {customerName} · {preference}";
         _lastAction = _lastCustomerOutcome;
         return true;
@@ -1330,7 +1331,10 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     IEnumerator BeginCustomerVisitNextFrame()
     {
         yield return null;
-        if (_customer == null || !_customer.TryBeginShoppingVisitAt(_shop.transform))
+        _customerVisitRoutine = null;
+        if (_customer == null)
+            yield break;
+        if (!_customer.TryBeginShoppingVisitAt(_shop.transform))
         {
             Fail("NpcController rejected the generated B01 shop destination.");
             yield break;
@@ -1344,6 +1348,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
     public void StopCustomer()
     {
+        if (_customerVisitRoutine != null)
+        {
+            StopCoroutine(_customerVisitRoutine);
+            _customerVisitRoutine = null;
+        }
         if (_customerRoot != null) ReleaseRuntimeObject(_customerRoot);
         _customerRoot = null;
         _customer = null;
@@ -1352,6 +1361,12 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             State == WorldGameplayAdapterState.CustomerPurchased ||
             State == WorldGameplayAdapterState.CustomerDeclined)
             State = WorldGameplayAdapterState.Ready;
+    }
+
+    public void PrepareForStateRestore()
+    {
+        StopCustomer();
+        _lastFailure = string.Empty;
     }
 
     void BindRuntimeObjectsToSeed(long seed)

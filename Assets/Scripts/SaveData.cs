@@ -11,9 +11,19 @@ public class SaveData
     // 플레이어 정보
     public int money;
     public Vector3 playerPosition;
+    public Quaternion playerRotation = Quaternion.identity;
+    public bool hasPlayerRotation = false;
     public string playerName = "하늘";
     public string selectedMapId = "green_bay";
     public int firstDayPrototypeStage = 0;
+
+    // BETA-009 recovery fields are additive in the v12 gameplay envelope. The
+    // procedural-world payload remains v11 and retains its established meaning.
+    public int m85RecoveryRevision = 0;
+    public bool worldAlphaStarted = false;
+    public bool worldAlphaMoved = false;
+    public bool worldAlphaReachedShop = false;
+    public bool worldAlphaReachedWorkbench = false;
 
     // 티어 시스템
     public int currentTier = 0;
@@ -43,6 +53,7 @@ public class SaveData
     // 인벤토리 · 핫바 (SlotSaveData.count == 0 이면 빈 칸)
     public List<SlotSaveData> inventorySlots = new List<SlotSaveData>();
     public List<SlotSaveData> hotbarSlots    = new List<SlotSaveData>();
+    public int selectedHotbarIndex = 0;
 
     // ShopSlot display state. Added in v5 so a saved playable-day demo restores stocked shelves.
     public List<ShopSlotSaveData> shopSlots = new List<ShopSlotSaveData>();
@@ -51,6 +62,13 @@ public class SaveData
     // reset on save/load (DayNightShopLoopController._prepCollectionDays).
     public int dayPrepCollectedDay = 0;
     public List<string> dayPrepCollectedActivities = new List<string>();
+    public int shopOpenedDay = -1;
+
+    // Feed and daily purchase/rejection summaries. Restoring this history never
+    // replays a transaction or sale event; it only restores the read model.
+    public List<SaleRecord> salesLogRecords = new List<SaleRecord>();
+    public List<SalesDecisionDaySaveData> salesDecisionDays = new List<SalesDecisionDaySaveData>();
+    public List<FarmPlotSaveData> farmPlots = new List<FarmPlotSaveData>();
 
     // Village culture visual state. Added in v9 (Task 057) so the core differentiator —
     // "오늘 판 물건이 다음날 마을을 바꾼다" — survives save/load.
@@ -61,6 +79,12 @@ public class SaveData
     public bool villageCultureHasActiveChange = false;
     public string villageCultureActiveCategory = "";
     public bool villageCultureHintShown = false;
+    public string villageCulturePendingItemName = "";
+    public string villageCulturePendingBuyerName = "";
+    public int villageCultureActiveSaleDay = 0;
+    public int villageCultureActiveResponseDay = 0;
+    public string villageCultureActiveItemName = "";
+    public string villageCultureActiveBuyerName = "";
 
     // Zone-aware shop furniture customization. Added in v10.
     public bool placementStarterGranted = false;
@@ -111,6 +135,7 @@ public class WorldPlacedBuildingSaveData
     public int anchorX;
     public int anchorZ;
     public int rotationQuarterTurns;
+    public List<PlaceableStoredItemSaveData> storedItems = new List<PlaceableStoredItemSaveData>();
 }
 
 [System.Serializable]
@@ -165,6 +190,23 @@ public class HiredNpcRecord
     public string consumerFsmState;
     public string producerFsmState;
     public string specialistFsmState;
+}
+
+[System.Serializable]
+public class SalesDecisionDaySaveData
+{
+    public int gameDay;
+    public int purchases;
+    public int rejections;
+}
+
+[System.Serializable]
+public class FarmPlotSaveData
+{
+    public string plotId;
+    public bool planted;
+    public int currentStageIndex;
+    public float secondsUntilNextStage;
 }
 
 // 인벤토리/핫바 한 칸을 직렬화한 DTO.

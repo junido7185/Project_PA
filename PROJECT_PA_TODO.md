@@ -1725,3 +1725,12 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] Runtime/Editor compile, BETA-006, BETA-005, VillageChangeSignal, Golden FinalDemoRoute PASS; blocking Console 0, 신규 crash 0.
 - [ ] 비차단: 자동 Game View 캡처는 `CAPTURE_EVIDENCE_DEBT`로 M85 통합 플레이테스트에 유지.
 - [ ] 다음 단일 티켓: `BETA-007 Village Response and NPC Integration`.
+
+## BETA-009 Persistence and Recovery — IMPLEMENTED WITH VALIDATION DEBT
+
+- [x] additive gameplay envelope v12와 기존 procedural world payload v11/LegacyFixed 호환 유지.
+- [x] SalesLog/Feed, village exact context, farm crops, B09 storage, player pose/hotbar/shop-open/WorldAlpha resume 저장.
+- [x] outdoor placeable 보존 merge, load-boundary transient 정리, hiring repeated-load 중복 완화.
+- [x] Runtime/Editor compile 오류 0, diff/JSON 검사 PASS, native crash 0.
+- [ ] 실제 save→재시작→load→continue→동일 save 반복 load 검증: validator가 save 전 invalid B01 fixture 좌표에서 중단되어 BETA-010으로 이관.
+- [ ] 다음 단일 티켓: `BETA-010 Full Playable Beta Integration`.

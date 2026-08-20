@@ -210,6 +210,16 @@ public sealed class WorldPersistenceService : MonoBehaviour
                 reason = $"Validated building restore failed: {result.Failure}.";
                 return false;
             }
+
+
+            if (_buildings.TryGetPlacement(building.instanceId,
+                    out WorldPlacedBuildingRuntime restoredBuilding))
+            {
+                RestoreStorage(restoredBuilding.GameObject != null
+                        ? restoredBuilding.GameObject.GetComponent<StorageBox>()
+                        : null,
+                    building.storedItems);
+            }
         }
 
         safePlayerPosition = ResolveRestoredSafePlayerPosition(state);
@@ -261,6 +271,13 @@ public sealed class WorldPersistenceService : MonoBehaviour
         {
             AddString(building.instanceId); AddString(building.buildingId);
             Add(building.anchorX); Add(building.anchorZ); Add(building.rotationQuarterTurns);
+            foreach (PlaceableStoredItemSaveData item in
+                     building.storedItems ?? new List<PlaceableStoredItemSaveData>())
+            {
+                if (item == null) continue;
+                Add(item.itemId); AddString(item.itemName); Add(item.count);
+                Add(BitConverter.SingleToInt32Bits(item.quality)); Add(item.currentPrice);
+            }
         }
         foreach (WorldShopFurnitureSaveData furniture in (state.shopFurniture ?? new List<WorldShopFurnitureSaveData>())
                      .Where(furniture => furniture != null).OrderBy(furniture => furniture.instanceId))
@@ -387,6 +404,13 @@ public sealed class WorldPersistenceService : MonoBehaviour
             record.buildingId != WorldBuildingPlacementService.StorageShedDefinition.StableId)
         {
             reason = "Unsupported or unstable building identity.";
+            return false;
+        }
+        if (record.storedItems != null &&
+            (record.storedItems.Count > 100 || record.storedItems.Any(item =>
+                item == null || item.count <= 0 || item.quality < 0f)))
+        {
+            reason = "Persisted building storage payload is invalid.";
             return false;
         }
         BuildingData data = Resources.Load<BuildingData>(
@@ -544,7 +568,10 @@ public sealed class WorldPersistenceService : MonoBehaviour
                 buildingId = placement.Definition.StableId,
                 anchorX = placement.Anchor.x,
                 anchorZ = placement.Anchor.y,
-                rotationQuarterTurns = placement.QuarterTurns
+                rotationQuarterTurns = placement.QuarterTurns,
+                storedItems = SerializeStorage(placement.GameObject != null
+                    ? placement.GameObject.GetComponent<StorageBox>()
+                    : null)
             });
         }
         return result;
@@ -720,6 +747,48 @@ public sealed class WorldPersistenceService : MonoBehaviour
             });
         }
         return result;
+    }
+
+    static List<PlaceableStoredItemSaveData> SerializeStorage(StorageBox storage)
+    {
+        var result = new List<PlaceableStoredItemSaveData>();
+        if (storage?.items == null) return result;
+        foreach (ItemInstance item in storage.items)
+        {
+            if (item?.data == null || item.count <= 0) continue;
+            result.Add(new PlaceableStoredItemSaveData
+            {
+                itemId = item.data.id,
+                itemName = item.data.itemName,
+                count = item.count,
+                quality = item.quality,
+                currentPrice = item.currentPrice
+            });
+        }
+        return result;
+    }
+
+    static void RestoreStorage(StorageBox storage,
+        IReadOnlyList<PlaceableStoredItemSaveData> saved)
+    {
+        if (storage == null) return;
+        storage.items.Clear();
+        if (saved == null) return;
+        foreach (PlaceableStoredItemSaveData record in saved)
+        {
+            if (record == null || record.count <= 0) continue;
+            Item item = ItemRegistry.Instance != null
+                ? ItemRegistry.Instance.Find(record.itemId, record.itemName)
+                : Resources.LoadAll<Item>("Items").FirstOrDefault(candidate => candidate != null &&
+                    ((record.itemId != 0 && candidate.id == record.itemId) ||
+                     (!string.IsNullOrEmpty(record.itemName) && candidate.itemName == record.itemName)));
+            if (item == null) continue;
+            storage.items.Add(new ItemInstance(item, record.count)
+            {
+                quality = record.quality,
+                currentPrice = record.currentPrice
+            });
+        }
     }
 }
 

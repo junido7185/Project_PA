@@ -105,6 +105,18 @@ public class CustomerArrivalController : MonoBehaviour
     public int ActiveTouristCount => CountActiveTourists();
     public int TouristsSpawnedThisOpening => _touristsSpawnedThisOpening;
 
+    public void PrepareForStateRestore()
+    {
+        RecallLateVisitors("Save restore");
+        DestroyAllTourists();
+        DisperseCustomers();
+        _wasOpen = false;
+        _invitedThisOpening = 0;
+        _touristsSpawnedThisOpening = 0;
+        _nextInviteAt = 0f;
+        _nextTouristInviteAt = 0f;
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -591,7 +603,11 @@ public class CustomerArrivalController : MonoBehaviour
     static void DestroyTourist(TouristVisit visit)
     {
         if (visit == null) return;
-        if (visit.root != null) Destroy(visit.root);
+        if (visit.root != null)
+        {
+            visit.root.SetActive(false);
+            Destroy(visit.root);
+        }
         if (visit.runtimeProfile != null) Destroy(visit.runtimeProfile);
     }
 

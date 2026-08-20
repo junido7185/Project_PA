@@ -73,7 +73,7 @@
     ],
     "sequenceStartTicket": "BETA-001",
     "initialNextTicket": "BETA-001",
-    "nextTicket": "BETA-009",
+    "nextTicket": "BETA-010",
     "preapprovedThrough": "BETA-010",
     "stopAtMilestone": "M85_GAMEPLAY_BETA_COMPLETE",
     "completionReached": false,
@@ -172,13 +172,13 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "BETA-008",
-  "status": "implemented_with_validation_debt",
-  "finalState": "BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT",
-  "goal": "Connect a fresh WorldSandbox session from Day 1 through Day 7 with achievable progressive objectives, meaningful earning and spending, and no gameplay dead-end.",
+  "ticketId": "BETA-009",
+  "status": "active",
+  "finalState": "BETA_009_ACTIVE",
+  "goal": "Persist and recover the complete WorldSandbox gameplay-beta state across game exit, restart and repeated load without duplication, while preserving Golden save compatibility.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
-    "commit": "4bf89f4",
+    "commit": "46dbea9",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
@@ -198,9 +198,9 @@
     "editor": "PASS: 0 errors (existing CS8785 and CS0414 warnings only)"
   },
   "validators": {
-    "status": "VALIDATION_DEBT: the correction run proved the ordinary Day 1 tourist, real sales, explicit deliveries, real day transitions and paid Day 5 hire, then stopped at the Day 5 revenue target because the fixture stocked duplicate products; the deterministic unique-product fixture correction compiles but was not rerun",
-    "firstRun": "Logs/BETA008_D3D11_Validation.log",
-    "correctionRun": "Logs/BETA008_D3D11_Correction.log",
+    "status": "NOT_RUN",
+    "firstRun": null,
+    "correctionRun": null,
     "nativeCrash": false,
     "additionalRunAllowed": false
   },
@@ -564,6 +564,48 @@
     "nextTicketStarted": false,
     "nextTicket": "BETA-009"
   },
+  "gameplayBetaPersistenceRecovery": {
+    "ticket": "BETA-009",
+    "state": "BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT",
+    "sceneScope": "WorldSandbox runtime first; Golden scene remains regression-only",
+    "gameplayEnvelopeSchema": 12,
+    "proceduralWorldPayloadSchema": 11,
+    "migration": "v11 to v12 is additive; v10 and older still become LegacyFixed before additive v12 defaults",
+    "implementedState": [
+      "player position, rotation and WorldAlpha resume",
+      "inventory, hotbar selection and ItemInstance metadata",
+      "economy, day, time and shop-open gate",
+      "shop slots, movable furniture, fixed storage and B09 storage contents",
+      "LongPlay sidecar restored after village and hiring authorities",
+      "hiring replace-restore with deferred duplicate deactivation",
+      "SalesLog records and daily purchase/rejection stats for Feed and village signals",
+      "exact village item, buyer and response-day context",
+      "farm plot crop stage and remaining growth time",
+      "load transaction guard and transient customer/activity/UI quiesce"
+    ],
+    "runtimeCompile": "PASS: 0 errors",
+    "editorCompile": "PASS: 0 errors",
+    "validationLogs": [
+      "Logs/BETA009_D3D11_Validation.log",
+      "Logs/BETA009_D3D11_Correction.log"
+    ],
+    "initialRun": "validator Editor compile failed before Play Mode because hireReason was not definitely assigned",
+    "correctionRunValidatedThrough": "D3D11, isolated repository, player-facing week start, Day 2 supply, player movement, sparse terraform and B09 storage ItemInstance",
+    "correctionRunFailure": "validator requested B01 display pose (1,-1), outside the existing bounded placement zone; no save was written and restart stages were not reached",
+    "postRunFixtureCorrection": "uses the already verified legal B01 pose (1,0); compile-only because both approved D3D11 runs were consumed",
+    "restartRestoreRuntimeReached": false,
+    "repeatLoadRuntimeReached": false,
+    "nativeCrash": false,
+    "newCrashArtifacts": 0,
+    "sceneSerializationChanged": false,
+    "prefabChanged": false,
+    "packagesChanged": false,
+    "projectSettingsChanged": false,
+    "saveSchemaChanged": true,
+    "commitCreated": true,
+    "nextTicketStarted": false,
+    "nextTicket": "BETA-010"
+  },
   "shopFurniture": {
     "authority": "existing ShopCustomizationController over GridService shop.interior",
     "cellSizeMeters": 2,
@@ -588,8 +630,9 @@
     "addedToBuildSettings": false
   },
   "save": {
-    "schema": 11,
-    "schemaChanged": false,
+    "schema": 12,
+    "proceduralWorldPayloadSchema": 11,
+    "schemaChanged": true,
     "legacyMode": "v10 and older migrate to LegacyFixed without automatic conversion",
     "proceduralBase": "worldSeed plus generationVersion",
     "terrainPersistence": "sparse modified height, ground, path and water cells",
@@ -607,22 +650,9 @@
     "reason": "Automatic Game View capture was not retried. Runtime object, bounds, interaction, restart and Console gates provide the bounded functional evidence; no manual capture is requested."
   },
   "changedPaths": [
-    "Assets/Scripts/CustomerArrivalController.cs",
-    "Assets/Scripts/LongPlayProgressionController.cs",
-    "Assets/Scripts/World/WorldAlphaPlayableController.cs",
-    "Assets/Scripts/World/WorldGameplayAdapterService.cs",
-    "Assets/Editor/PA_Beta008SevenDayProgressionValidator.cs",
-    "Assets/Editor/PA_Beta008SevenDayProgressionValidator.cs.meta",
-    "Automation/LoopEngineering/validator-registry.json",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
-    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
-    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
-    "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
-    "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
-    "PROJECT_PA_STATUS.md",
-    "PROJECT_PA_TODO.md",
-    "PROJECT_PA_SESSION_REPORT.md"
+    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md"
   ],
   "forbiddenWorkPerformed": false,
   "world001Completed": true,
@@ -659,10 +689,13 @@
   "beta008Started": true,
   "beta008Completed": false,
   "beta008CheckpointedWithValidationDebt": true,
+  "beta009Started": true,
+  "beta009Completed": false,
+  "beta009CheckpointedWithValidationDebt": true,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-11",
   "startedAt": "2026-08-20",
-  "stoppedAt": "2026-08-21",
-  "stopReason": "BETA-008 implementation checkpointed after the two approved D3D11 executions; final deterministic validator fixture correction is compile-only and Day 6-7 remain validation debt.",
-  "nextAction": "Create the approved local BETA-008 validation-debt checkpoint, then activate only BETA-009 Persistence and Recovery Pass and audit save/load continuity for the real WorldSandbox beta loop."
+  "stoppedAt": null,
+  "stopReason": null,
+  "nextAction": "Create the approved BETA-009 validation-debt checkpoint, activate BETA-010, then run the corrected persistence restart/repeated-load path first inside the full playable beta integration."
 }

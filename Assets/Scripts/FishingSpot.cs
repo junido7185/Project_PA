@@ -113,6 +113,11 @@ public class FishingSpot : MonoBehaviour, IInteractable
         _isFishing = false;
     }
 
+    public void PrepareForStateRestore()
+    {
+        CancelCast();
+    }
+
 #if UNITY_EDITOR
     // Editor smoke tests use the same completion path without waiting on wall-clock time.
     public bool CompleteCatchForValidation(GameObject interactor)

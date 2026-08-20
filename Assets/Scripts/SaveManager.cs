@@ -22,7 +22,10 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = WorldPersistenceMigration.AdditiveWorldSaveVersion;
+    public const int CurrentSaveVersion = 12;
+
+    bool _loadInProgress;
+    PlayerInputHandler _input;
 
     void Awake()
     {
@@ -41,16 +44,31 @@ public class SaveManager : MonoBehaviour
 
     void Start()
     {
-        if (PlayerInputHandler.Instance != null)
+        _input = PlayerInputHandler.Instance;
+        if (_input != null)
         {
-            PlayerInputHandler.Instance.OnSave += () => _ = SaveGameAsync();
-            PlayerInputHandler.Instance.OnLoad += () => _ = LoadGameAsync();
+            _input.OnSave += HandleSaveInput;
+            _input.OnLoad += HandleLoadInput;
         }
     }
+
+    void OnDestroy()
+    {
+        if (_input != null)
+        {
+            _input.OnSave -= HandleSaveInput;
+            _input.OnLoad -= HandleLoadInput;
+        }
+        if (instance == this) instance = null;
+    }
+
+    void HandleSaveInput() => _ = SaveGameAsync();
+    void HandleLoadInput() => _ = LoadGameAsync();
 
     public async System.Threading.Tasks.Task SaveGameAsync()
     {
         SaveData data = new SaveData();
+        data.m85RecoveryRevision = 1;
 
         // 1. 플레이어 정보
         data.money = EconomyService.Instance != null ? EconomyService.Instance.Money : 0;
@@ -71,7 +89,12 @@ public class SaveManager : MonoBehaviour
         }
 
         var playerGo = GameObject.FindGameObjectWithTag("Player");
-        if (playerGo != null) data.playerPosition = playerGo.transform.position;
+        if (playerGo != null)
+        {
+            data.playerPosition = playerGo.transform.position;
+            data.playerRotation = playerGo.transform.rotation;
+            data.hasPlayerRotation = true;
+        }
 
         var firstDay = FindFirstObjectByType<PlayableDayScenarioController>();
         if (firstDay != null)
@@ -80,6 +103,10 @@ public class SaveManager : MonoBehaviour
             data.selectedMapId = firstDay.SelectedMapId;
             data.firstDayPrototypeStage = firstDay.CurrentStageIndex;
         }
+
+        var worldAlpha = FindFirstObjectByType<WorldAlphaPlayableController>();
+        if (worldAlpha != null)
+            worldAlpha.WriteSaveFields(data);
 
         var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
         if (longPlay != null)
@@ -95,6 +122,11 @@ public class SaveManager : MonoBehaviour
             ?? FindFirstObjectByType<VillageCultureVisualController>();
         if (villageCulture != null)
             villageCulture.WriteSaveFields(data);
+
+        if (SalesLogManager.Instance != null)
+            SalesLogManager.Instance.WriteSaveFields(data);
+
+        FarmPlotInteraction.WriteAllSaveFields(data);
 
         // 3. 건물 정보 — 레지스트리가 가진 명시 목록을 직렬화한다.
         if (BuildingRegistry.Instance != null)
@@ -115,7 +147,11 @@ public class SaveManager : MonoBehaviour
             data.inventorySlots = SerializeSlots(Inventory.instance.slots);
 
             if (Inventory.instance.hotbar != null)
+            {
                 data.hotbarSlots = SerializeSlots(Inventory.instance.hotbar.slots);
+                data.selectedHotbarIndex = Mathf.Clamp(Inventory.instance.selectedHotbarIndex,
+                    0, Mathf.Max(0, Inventory.instance.hotbar.slots.Count - 1));
+            }
         }
 
         // 4-a. ShopSlot 진열 상태 — v5
@@ -173,6 +209,25 @@ public class SaveManager : MonoBehaviour
 
     public async System.Threading.Tasks.Task LoadGameAsync()
     {
+        if (_loadInProgress)
+        {
+            Debug.LogWarning("[SaveManager] A load operation is already in progress.");
+            return;
+        }
+
+        _loadInProgress = true;
+        try
+        {
+            await LoadGameInternalAsync();
+        }
+        finally
+        {
+            _loadInProgress = false;
+        }
+    }
+
+    async System.Threading.Tasks.Task LoadGameInternalAsync()
+    {
         string json = await _repository.LoadAsync(SaveKey);
         if (string.IsNullOrEmpty(json))
         {
@@ -203,6 +258,9 @@ public class SaveManager : MonoBehaviour
             Debug.Log($"💾 세이브 마이그레이션 완료: v{data.version}");
         }
 
+        NormalizeSaveData(data);
+        PrepareRuntimeForStateRestore();
+
         Vector3 restoredPlayerPosition = data.playerPosition;
         if (data.worldState != null &&
             data.worldState.worldMode == WorldPersistenceMigration.ProceduralMode)
@@ -218,7 +276,8 @@ public class SaveManager : MonoBehaviour
                 Debug.LogWarning($"[SaveManager] 절차 월드 저장을 적용하지 않았습니다: {worldReason}");
                 return;
             }
-            data.placeables = restoredFurniture;
+            data.placeables = MergeProceduralFurnitureWithPlaceables(
+                data.placeables, restoredFurniture);
         }
 
         // 1. 플레이어 복구 — 돈은 EconomyService 의 단일 경로로만 세팅한다.
@@ -247,14 +306,15 @@ public class SaveManager : MonoBehaviour
         if (firstDay != null)
             firstDay.RestoreSavedSession(data.playerName, data.selectedMapId, data.firstDayPrototypeStage);
 
-        var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
-        if (longPlay != null)
-            longPlay.RestoreSavedSession(data.longPlayLastSupplyDay, data.longPlayDayStartRevenue, data.longPlayDayStartMoney);
-
         // CDN/IL — 당일 채집 완료 상태 복원(저장된 날과 현재 날이 같을 때만 유지).
+        if (SalesLogManager.Instance != null)
+            SalesLogManager.Instance.RestoreSavedState(
+                data.salesLogRecords, data.salesDecisionDays);
+
         var dayLoop = DayNightShopLoopController.Instance ?? FindFirstObjectByType<DayNightShopLoopController>();
         if (dayLoop != null)
-            dayLoop.RestoreSavedState(data.dayPrepCollectedDay, data.dayPrepCollectedActivities);
+            dayLoop.RestoreSavedState(data.dayPrepCollectedDay,
+                data.dayPrepCollectedActivities, data.shopOpenedDay);
 
         // Task 057 — 마을 변화(대기/활성) 상태 복원. 핵심 차별점의 다음날 지속성.
         var villageCulture = VillageCultureVisualController.Instance
@@ -266,7 +326,13 @@ public class SaveManager : MonoBehaviour
                 data.villageCulturePendingCategory,
                 data.villageCultureHasActiveChange,
                 data.villageCultureActiveCategory,
-                data.villageCultureHintShown);
+                data.villageCultureHintShown,
+                data.villageCulturePendingItemName,
+                data.villageCulturePendingBuyerName,
+                data.villageCultureActiveSaleDay,
+                data.villageCultureActiveResponseDay,
+                data.villageCultureActiveItemName,
+                data.villageCultureActiveBuyerName);
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -274,6 +340,8 @@ public class SaveManager : MonoBehaviour
             CharacterController cc = player.GetComponent<CharacterController>();
             if (cc != null) cc.enabled = false;
             player.transform.position = restoredPlayerPosition;
+            if (data.hasPlayerRotation)
+                player.transform.rotation = data.playerRotation;
             if (cc != null) cc.enabled = true;
         }
 
@@ -328,12 +396,14 @@ public class SaveManager : MonoBehaviour
         // 5. 인벤토리 복구
         if (Inventory.instance != null)
         {
-            if (data.inventorySlots != null && data.inventorySlots.Count > 0)
-                DeserializeSlots(data.inventorySlots, Inventory.instance.slots);
+            DeserializeSlots(data.inventorySlots, Inventory.instance.slots);
 
-            if (Inventory.instance.hotbar != null
-                && data.hotbarSlots != null && data.hotbarSlots.Count > 0)
+            if (Inventory.instance.hotbar != null)
+            {
                 DeserializeSlots(data.hotbarSlots, Inventory.instance.hotbar.slots);
+                Inventory.instance.selectedHotbarIndex = Mathf.Clamp(data.selectedHotbarIndex,
+                    0, Mathf.Max(0, Inventory.instance.hotbar.slots.Count - 1));
+            }
 
             Inventory.instance.RefreshAllUI();
         }
@@ -358,8 +428,63 @@ public class SaveManager : MonoBehaviour
         DeserializeShopSlots(data.shopSlots);
 
         RestoreHiredNpcs(data.hiredNpcs);
+        FarmPlotInteraction.RestoreAllSavedState(data.farmPlots);
+
+        // Completion and player-facing recovery depend on restored hiring,
+        // village and world state, so restore these presentation sidecars last.
+        var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
+        if (longPlay != null)
+            longPlay.RestoreSavedSession(data.longPlayLastSupplyDay,
+                data.longPlayDayStartRevenue, data.longPlayDayStartMoney);
+
+        var worldAlpha = FindFirstObjectByType<WorldAlphaPlayableController>();
+        if (worldAlpha != null)
+        {
+            bool legacyWorldAlpha = data.m85RecoveryRevision <= 0 &&
+                                    HasLegacyWorldAlphaProgress(data);
+            bool started = data.worldAlphaStarted || legacyWorldAlpha;
+            if (!worldAlpha.RestoreSavedSession(started,
+                    data.worldAlphaMoved || legacyWorldAlpha,
+                    data.worldAlphaReachedShop || legacyWorldAlpha,
+                    data.worldAlphaReachedWorkbench || legacyWorldAlpha))
+            {
+                Debug.LogWarning("[SaveManager] WorldSandbox player-facing session state could not be restored.");
+            }
+        }
+
+        VillageChangeSignalController.Instance?.RefreshNow();
+        villageCulture?.RefreshNow();
 
         Debug.Log($"📂 로드 완료! (건물 {count}개, 인벤토리/핫바 복구)");
+    }
+
+    static bool HasLegacyWorldAlphaProgress(SaveData data)
+    {
+        if (data?.worldState == null ||
+            data.worldState.worldMode != WorldPersistenceMigration.ProceduralMode)
+            return false;
+
+        return data.gameDay > 1 || data.cumulativeRevenue > 0 ||
+               (data.inventorySlots != null && data.inventorySlots.Any(slot =>
+                   slot != null && slot.count > 0)) ||
+               (data.hotbarSlots != null && data.hotbarSlots.Any(slot =>
+                   slot != null && slot.count > 0)) ||
+               (data.shopSlots != null && data.shopSlots.Any(slot =>
+                   slot != null && slot.occupied)) ||
+               (data.hiredNpcs != null && data.hiredNpcs.Count > 0);
+    }
+
+    static void PrepareRuntimeForStateRestore()
+    {
+        (WorldGameplayAdapterService.Instance ??
+            FindFirstObjectByType<WorldGameplayAdapterService>())?.PrepareForStateRestore();
+        CustomerArrivalController.Instance?.PrepareForStateRestore();
+        foreach (FishingSpot spot in FindObjectsByType<FishingSpot>(FindObjectsSortMode.None))
+            spot?.PrepareForStateRestore();
+        foreach (MiningSpot spot in FindObjectsByType<MiningSpot>(FindObjectsSortMode.None))
+            spot?.PrepareForStateRestore();
+        FindFirstObjectByType<LongPlayProgressionController>()?.PrepareForStateRestore();
+        FindFirstObjectByType<SmartphoneUI>()?.Close();
     }
 
     // Product-entry UI reads only save presence before offering Continue.
@@ -502,7 +627,83 @@ public class SaveManager : MonoBehaviour
             Debug.Log("[SaveManager] Migration v10->v11: additive world state added as LegacyFixed.");
         }
 
+        // v11 -> v12: additive gameplay recovery envelope. The embedded
+        // procedural-world payload remains v11 and no existing field changes meaning.
+        if (data.version < CurrentSaveVersion)
+        {
+            data.m85RecoveryRevision = 0;
+            data.hasPlayerRotation = false;
+            data.selectedHotbarIndex = 0;
+            data.shopOpenedDay = -1;
+            data.salesLogRecords ??= new List<SaleRecord>();
+            data.salesDecisionDays ??= new List<SalesDecisionDaySaveData>();
+            data.farmPlots ??= new List<FarmPlotSaveData>();
+            data.version = CurrentSaveVersion;
+            Debug.Log("[SaveManager] Migration v11->v12: additive gameplay recovery fields added.");
+        }
+
         return data;
+    }
+
+    static void NormalizeSaveData(SaveData data)
+    {
+        if (data == null) return;
+
+        data.playerName ??= string.Empty;
+        data.selectedMapId ??= string.Empty;
+        data.friendshipData ??= new List<FriendshipRecord>();
+        data.hiredNpcs ??= new List<HiredNpcRecord>();
+        data.buildings ??= new List<BuildingSaveData>();
+        data.inventorySlots ??= new List<SlotSaveData>();
+        data.hotbarSlots ??= new List<SlotSaveData>();
+        data.shopSlots ??= new List<ShopSlotSaveData>();
+        data.dayPrepCollectedActivities ??= new List<string>();
+        data.salesLogRecords ??= new List<SaleRecord>();
+        data.salesDecisionDays ??= new List<SalesDecisionDaySaveData>();
+        data.farmPlots ??= new List<FarmPlotSaveData>();
+        data.placeables ??= new List<PlaceableSaveData>();
+
+        data.villageCulturePendingCategory ??= string.Empty;
+        data.villageCultureActiveCategory ??= string.Empty;
+        data.villageCulturePendingItemName ??= string.Empty;
+        data.villageCulturePendingBuyerName ??= string.Empty;
+        data.villageCultureActiveItemName ??= string.Empty;
+        data.villageCultureActiveBuyerName ??= string.Empty;
+
+        data.worldState ??= WorldPersistenceMigration.CreateLegacyFixed();
+        data.worldState.worldMode ??= WorldPersistenceMigration.LegacyFixedMode;
+        data.worldState.modifiedCells ??= new List<WorldModifiedCellSaveData>();
+        data.worldState.placedBuildings ??= new List<WorldPlacedBuildingSaveData>();
+        data.worldState.shopFurniture ??= new List<WorldShopFurnitureSaveData>();
+        data.worldState.resourceStates ??= new List<WorldResourceStateSaveData>();
+
+        foreach (WorldPlacedBuildingSaveData building in data.worldState.placedBuildings)
+            if (building != null) building.storedItems ??= new List<PlaceableStoredItemSaveData>();
+        foreach (WorldShopFurnitureSaveData furniture in data.worldState.shopFurniture)
+            if (furniture != null) furniture.storedItems ??= new List<PlaceableStoredItemSaveData>();
+        foreach (PlaceableSaveData placeable in data.placeables)
+            if (placeable != null) placeable.storedItems ??= new List<PlaceableStoredItemSaveData>();
+    }
+
+    static List<PlaceableSaveData> MergeProceduralFurnitureWithPlaceables(
+        IReadOnlyList<PlaceableSaveData> original,
+        IReadOnlyList<PlaceableSaveData> restoredFurniture)
+    {
+        var merged = new List<PlaceableSaveData>();
+        if (original != null)
+        {
+            foreach (PlaceableSaveData record in original)
+            {
+                if (record == null ||
+                    record.zoneId == ShopCustomizationController.ShopInteriorZoneId)
+                    continue;
+                merged.Add(record);
+            }
+        }
+
+        if (restoredFurniture != null)
+            merged.AddRange(restoredFurniture.Where(record => record != null));
+        return merged;
     }
 
     void RestoreHiredNpcs(List<HiredNpcRecord> hiredNpcs)
@@ -737,9 +938,16 @@ public class SaveManager : MonoBehaviour
 
     void DeserializeShopSlots(List<ShopSlotSaveData> saved)
     {
+        var slots = GetOrderedShopSlots();
+        foreach (ShopSlot slot in slots)
+        {
+            if (slot == null) continue;
+            slot.currentItem = null;
+            slot.displayPrice = 0;
+            slot.RefreshDisplay();
+        }
         if (saved == null || saved.Count == 0) return;
 
-        var slots = GetOrderedShopSlots();
         var byKey = new Dictionary<string, ShopSlot>();
         foreach (var slot in slots)
         {

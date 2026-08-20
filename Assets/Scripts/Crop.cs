@@ -12,7 +12,11 @@ public class Crop : MonoBehaviour
     [Min(1)] public int harvestCount = 3;
     
     private int currentStageIndex = 0;
+    private float secondsUntilNextStage;
+    private Coroutine growthRoutine;
     public bool isFullyGrown = false;
+    public int CurrentStageIndex => currentStageIndex;
+    public float SecondsUntilNextStage => isFullyGrown ? 0f : Mathf.Max(0f, secondsUntilNextStage);
     public int CurrentStageNumber => Mathf.Clamp(currentStageIndex + 1, 1, StageCount);
     public int StageCount => growthStages != null ? Mathf.Max(1, growthStages.Length) : 1;
 
@@ -23,6 +27,7 @@ public class Crop : MonoBehaviour
         timePerStage = Mathf.Max(0.1f, secondsPerStage);
         currentStageIndex = 0;
         isFullyGrown = false;
+        secondsUntilNextStage = timePerStage;
 
         if (!string.IsNullOrWhiteSpace(presentationResourcePath))
             ReplaceGrowthStagesWithResource(presentationResourcePath);
@@ -30,9 +35,8 @@ public class Crop : MonoBehaviour
 
     void Start()
     {
-        // 시작하면 성장 코루틴 발동!
         UpdateModel();
-        StartCoroutine(GrowRoutine());
+        StartGrowthRoutine();
     }
 
     IEnumerator GrowRoutine()
@@ -43,19 +47,47 @@ public class Crop : MonoBehaviour
             yield break;
         }
 
-        // 마지막 단계 전까지만 성장
         while (currentStageIndex < growthStages.Length - 1)
         {
-            yield return new WaitForSeconds(timePerStage);
+            if (secondsUntilNextStage <= 0f)
+                secondsUntilNextStage = Mathf.Max(0.1f, timePerStage);
+
+            while (secondsUntilNextStage > 0f)
+            {
+                secondsUntilNextStage -= Time.deltaTime;
+                yield return null;
+            }
             currentStageIndex++;
             UpdateModel();
         }
 
         isFullyGrown = true;
+        secondsUntilNextStage = 0f;
+        growthRoutine = null;
         Debug.Log("✨ 작물이 다 자랐습니다! 수확 가능!");
         
         // 다 자라면 태그를 바꿔서 수확 가능하게 만듦 (필요 시)
         // gameObject.tag = "Tree"; // 예: 나무처럼 캘 수 있게
+    }
+
+    void StartGrowthRoutine()
+    {
+        if (growthRoutine != null)
+            StopCoroutine(growthRoutine);
+        growthRoutine = isFullyGrown ? null : StartCoroutine(GrowRoutine());
+    }
+
+    public void RestoreGrowthState(int stageIndex, float remainingSeconds)
+    {
+        int lastStage = Mathf.Max(0, StageCount - 1);
+        currentStageIndex = Mathf.Clamp(stageIndex, 0, lastStage);
+        isFullyGrown = currentStageIndex >= lastStage;
+        secondsUntilNextStage = isFullyGrown
+            ? 0f
+            : Mathf.Clamp(remainingSeconds, 0.01f, Mathf.Max(0.1f, timePerStage));
+        UpdateModel();
+        if (isActiveAndEnabled)
+            StartGrowthRoutine();
     }
 
     void UpdateModel()

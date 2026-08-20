@@ -435,3 +435,12 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **증거:** `BETA006_D3D11_Validation`, BETA-005, VillageChangeSignal, Golden FinalDemoRoute PASS; compile 오류·blocking Console·신규 crash 0.
 - **보호:** Scene/Packages/ProjectSettings/Save schema/authority와 원본 C-02~C-09 FBX 무변경. 캡처는 비차단 `CAPTURE_EVIDENCE_DEBT`.
 - **다음:** 승인된 BETA-006 local commit 뒤 `BETA-007 Village Response and NPC Integration`을 자동 활성화한다. push하지 않는다.
+
+## 2026-08-21 — BETA-009 Persistence and Recovery checkpoint
+
+- **기준:** `milestone/gameplay-beta-85@46dbea9`; BETA-009는 `IMPLEMENTED_WITH_VALIDATION_DEBT`로 checkpoint한다.
+- **구현:** additive gameplay envelope v12, procedural world payload v11/LegacyFixed 보존. SalesLog/Feed, village exact context, crop, B09 storage, player/hotbar/shop-open/WorldAlpha와 load-boundary/repeated-load 보호를 기존 SaveManager에 연결했다.
+- **정적 결과:** Runtime/Editor compile 오류 0, diff/JSON PASS, Scene/Prefab/Packages/ProjectSettings 변경 0, native crash 0.
+- **D3D11 부채:** 첫 실행은 validator CS0165, 두 번째는 invalid B01 fixture `(1,-1)`로 save 전에 중단. `(1,0)` 교정은 compile PASS지만 실제 restart/reload는 미실행이다.
+- **최우선 다음 작업:** BETA-010의 첫 통합 검증에서 교정된 BETA-009 restart→restore→continue→same-save repeat-load 경로를 실행한다. 이후 BETA-008 Day 6~7와 BETA-007 resident response 부채를 같은 full-loop 계약에 통합한다.
+- **금지:** BETA-009 COMPLETE 주장, 세 번째 단독 실행, push, Scene/Prefab/Packages/ProjectSettings 변경.

@@ -218,12 +218,21 @@ public class VillageCultureVisualController : MonoBehaviour
         data.villageCultureHasActiveChange = _hasActiveCategory;
         data.villageCultureActiveCategory = _hasActiveCategory ? _activeCategory.ToString() : "";
         data.villageCultureHintShown = _hintShownForActiveChange;
+        data.villageCulturePendingItemName = _hasPendingChange ? _pendingItemName : "";
+        data.villageCulturePendingBuyerName = _hasPendingChange ? _pendingBuyerName : "";
+        data.villageCultureActiveSaleDay = _hasActiveCategory ? _activeSaleDay : 0;
+        data.villageCultureActiveResponseDay = _hasActiveCategory ? _activeResponseDay : 0;
+        data.villageCultureActiveItemName = _hasActiveCategory ? _activeItemName : "";
+        data.villageCultureActiveBuyerName = _hasActiveCategory ? _activeBuyerName : "";
     }
 
     // Task 057 — SaveManager 가 호출: 저장된 대기/활성 변화 상태를 복원한다.
     // 활성 변화는 즉시 시각을 켜고, 힌트는 저장된 표시 여부를 존중해 재표시하지 않는다.
     public void RestoreSavedState(bool hasPending, int pendingSaleDay, string pendingCategory,
-        bool hasActive, string activeCategory, bool hintShown)
+        bool hasActive, string activeCategory, bool hintShown,
+        string pendingItemName = "", string pendingBuyerName = "",
+        int activeSaleDay = 0, int activeResponseDay = 0,
+        string activeItemName = "", string activeBuyerName = "")
     {
         EnsureVisual();
         EnsureHint();
@@ -235,8 +244,8 @@ public class VillageCultureVisualController : MonoBehaviour
             _pendingCategory = pending;
             _pendingSaleDay = Mathf.Max(1, pendingSaleDay);
         }
-        _pendingItemName = string.Empty;
-        _pendingBuyerName = string.Empty;
+        _pendingItemName = _hasPendingChange ? pendingItemName ?? string.Empty : string.Empty;
+        _pendingBuyerName = _hasPendingChange ? pendingBuyerName ?? string.Empty : string.Empty;
 
         _hintShownForActiveChange = hintShown;
 
@@ -244,10 +253,11 @@ public class VillageCultureVisualController : MonoBehaviour
         {
             _activeCategory = active;
             _hasActiveCategory = true;
-            _activeSaleDay = Mathf.Max(1, pendingSaleDay);
-            _activeResponseDay = CurrentDay();
-            _activeItemName = string.Empty;
-            _activeBuyerName = string.Empty;
+            _activeSaleDay = Mathf.Max(1, activeSaleDay > 0 ? activeSaleDay : pendingSaleDay);
+            _activeResponseDay = Mathf.Max(_activeSaleDay + 1,
+                activeResponseDay > 0 ? activeResponseDay : CurrentDay());
+            _activeItemName = activeItemName ?? string.Empty;
+            _activeBuyerName = activeBuyerName ?? string.Empty;
             SetVisualActive(true);
         }
         else
@@ -255,6 +265,17 @@ public class VillageCultureVisualController : MonoBehaviour
             _hasActiveCategory = false;
             SetVisualActive(false);
         }
+
+        // Restored Feed records are historical read models, not new transactions.
+        // Mark them observed so the polling fallback cannot schedule them again.
+        _seenSaleHashes.Clear();
+        if (SalesLogManager.Instance != null)
+        {
+            foreach (SaleRecord record in SalesLogManager.Instance.GetRecent(
+                         Mathf.Max(1, maxRecentSales)))
+                if (record != null) _seenSaleHashes.Add(BuildRecordHash(record));
+        }
+        ReanchorVisualRoots();
 
         Debug.Log($"🏘️ [VillageCulture] 저장 상태 복원: pending={_hasPendingChange}({(_hasPendingChange ? _pendingCategory.ToString() : "-")}@day{_pendingSaleDay}), active={_hasActiveCategory}({(_hasActiveCategory ? _activeCategory.ToString() : "-")})");
     }

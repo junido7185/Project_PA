@@ -219,8 +219,8 @@ public static class PA_SaveRoundTripValidator
         string saveFile = Path.Combine(output, "savegame.json");
         Require(File.Exists(saveFile), "isolated savegame.json was written");
         var savedData = JsonUtility.FromJson<SaveData>(File.ReadAllText(saveFile));
-        Require(savedData != null && savedData.version == 11,
-            "saved JSON is additive schema v11");
+        Require(savedData != null && savedData.version == SaveManager.CurrentSaveVersion,
+            $"saved JSON uses gameplay schema v{SaveManager.CurrentSaveVersion}");
         Require(savedData.worldState != null &&
                 savedData.worldState.worldMode == WorldPersistenceMigration.LegacyFixedMode &&
                 savedData.worldState.modifiedCells.Count == 0 &&

@@ -9,13 +9,22 @@
 
 ## 현재 작업
 
-`BETA-008 Day 1–7 Progression` — 구현은 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`로 체크포인트 준비가 끝났으며, 아직 BETA-009 구현은 시작하지 않았다.
+`BETA-009 Persistence and Recovery Pass` — BETA-008 validation-debt checkpoint `46dbea9` 뒤 M85 선승인 sequence로 자동 활성화된 유일한 티켓.
 
-- Baseline: `milestone/gameplay-beta-85@4bf89f4`; 활성화 전 working tree clean.
-- 목표: fresh WorldSandbox에서 Day 1부터 Day 7까지 dead-end 없이 진행하며 제작·상품·고객·상점 성장·채용·마을 반응이 점진적인 목표와 보상으로 이어지게 한다.
-- 필수 상태: 기존 `GameClock`, `DayNightShopLoopController`, `PlayableDayScenarioController`, `LongPlayProgressionController`, `TierService`, `EconomyService`, `HiringService`, `VillageCultureVisualController`와 실제 gameplay authority를 재사용한다.
-- 보존: `Prototype_FirstDay.unity` Golden, M70 WorldSandbox, BETA-001~007 구현/checkpoint, 기존 경제·인벤토리·제작·판매·채용·시간·Tier·Save 권위, Save schema v11.
-- 금지: 새 progression manager/quest database, 자동으로 플레이어 행동 수행, 가짜 일차·돈·판매·채용 상태, 장기 캠페인의 정적 계약을 실플레이 완료로 과장, Scene/Prefab/Packages/ProjectSettings/Save schema를 기본 해결책으로 사용, push/rebase/reset/clean.
-- 구현 결과: New Game이 실제 clock을 시작하고 B01 간판을 runtime 상점에 결속한다. 고용 전에도 승인된 주민 wrapper를 읽기 전용 외형 원천으로 쓰는 관광객이 실제 구매 경로를 밟으며, Day 2~7 납품은 `B` 명시 구매·실제 비용 차감·실패 재시도를 사용한다. HUD와 Day 7 gate는 누적 매출·고용·마을 반응을 실제 권위에서 읽는다.
-- 검증 결과: 두 번째 D3D11에서 Day 1 일반 관광객, Day 1~4 실제 판매/정산/다음날, Day 2~5 명시 납품과 Day 5 실제 Farmer 고용까지 PASS했다. fixture가 같은 고가 상품을 네 번 골라 Day 5 누적 매출 989/1050G에서 멈춘 뒤, 네 종류 고가 상품을 선택하도록 보정했고 Runtime/Editor compile 오류 0을 확인했다.
-- 중단 상태: 승인된 두 D3D11 실행을 모두 사용했으므로 세 번째 실행은 하지 않는다. Day 6~7과 Week 1 완료는 미도달 검증 부채이며, PASS/COMPLETE로 기록하지 않는다. local checkpoint 뒤 선승인 `BETA-009 Persistence and Recovery Pass`만 활성화한다.
+- Baseline: `milestone/gameplay-beta-85@46dbea9`; 활성화 전 working tree clean.
+- 목표: 실제 WorldSandbox beta 상태를 저장하고 게임 종료·재실행 뒤 복원하여 같은 저장에서 정상 플레이를 이어 가며, 반복 load에도 runtime 객체가 중복되지 않게 한다.
+- 필수 상태: world seed/delta/building/player, Inventory/Hotbar/ItemInstance, Economy, GameClock, shop/furniture, LongPlay progression, Hiring, Feed, village response와 M85 신규 상태를 기존 `SaveManager`·v11 권위에 연결한다.
+- 보존: 기존 Golden save 회귀, v10 이하 `LegacyFixed` migration, BETA-001~008 구현/checkpoint, crash-safe repository 경계, Scene/Prefab/Packages/ProjectSettings.
+- 허용: 기존 schema 안의 additive field, 기본값, backward-compatible serialization, null-safe restore, 중복 생성 방지.
+- 금지: 기존 필드 의미 변경, destructive migration, 저장 데이터 삭제, 호환성 중단, 병렬 save path/manager, push/rebase/reset/clean.
+- 현재 단계: SaveManager capture/restore 순서와 각 M85 시스템의 실제 write/restore seam을 감사하고, 종료→재실행→load→계속 플레이 및 같은 저장 반복 load의 누락·중복 위험을 확정한다.
+- 검증 예산: BETA-009 최초 D3D11 1회와 결정적 비충돌 결함의 최소 교정 뒤 1회까지 선승인. 반드시 D3D11이며 native crash 발생 시 즉시 중단한다.
+
+## 체크포인트 결과
+
+- 상태: `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`.
+- 구현: additive gameplay save envelope v12를 도입하되 procedural world payload와 `LegacyFixed` 의미는 v11로 유지했다. Sales/Feed, exact village response, 농작물, B09 저장물, shop-open, hotbar 선택, player pose/온보딩과 load-boundary 정리를 기존 권위에 연결했다.
+- 정적 검증: Runtime/Editor compile 오류 0, `git diff --check` PASS, JSON parse PASS, native crash 0.
+- D3D11: 첫 실행은 validator 지역변수 compile 오류, 보정 실행은 저장 직전 잘못된 B01 이동 좌표 `(1,-1)`에서 중단됐다. 좌표를 기존 유효 계약 `(1,0)`으로 수정한 최종 소스는 compile PASS지만 세 번째 실행은 하지 않았다.
+- 미검증: 실제 save → Editor Play 종료 → 재진입 → load → 계속 플레이 → 동일 save 재로드 중복 방지. BETA-010 통합 검증에서 가장 먼저 이어 간다.
+- 보호: Scene/Prefab/Packages/ProjectSettings 변경 없음, push 없음.

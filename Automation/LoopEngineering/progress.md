@@ -792,3 +792,18 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/BETA008_D3D11_Validation.log`는 관광객의 first-frame FSM lifecycle 문제를 드러냈고, 보정 실행 `Logs/BETA008_D3D11_Correction.log`는 일반 Day 1 관광객 구매, Day 1~4 실제 판매/정산/날짜 증가, Day 2~5 명시 납품, Day 5 실제 Farmer 고용까지 PASS했다.
 - 두 번째 실행은 validator가 같은 GrilledFish를 네 슬롯에 반복 선택해 누적 매출 989/1,050G가 된 fixture 결함에서 멈췄다. 네 종류의 서로 다른 최고가 상품을 고르도록 최소 보정했고 Runtime/Editor compile 오류 0, diff/JSON 검사를 통과했다.
 - 승인된 실행 2회를 모두 사용했으므로 추가 D3D11은 하지 않는다. Day 6~7, Week 1 completion, 최종 fixture correction은 runtime 미검증이다. 상태는 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`; Scene/Prefab/Packages/ProjectSettings/Save schema/native crash 변경 0이다.
+
+## 2026-08-21 — BETA-009 Persistence and Recovery Pass activated
+
+- BETA-008의 승인된 16개 경로를 validation-debt가 명시된 local checkpoint `46dbea9`로 보존했고 push하지 않았다. 전환 시 working tree는 clean이다.
+- M85 선승인 sequence의 다음 단일 티켓을 `BETA_009_ACTIVE`로 활성화했다.
+- 기존 SaveManager/v11 안에서 world/player/inventory/hotbar/money/day/time/shop/furniture/progression/hiring/feed/village/M85 상태의 capture·restart·restore 순서와 repeated-load 중복 위험을 먼저 감사한다. destructive migration, 새 save path, Scene/Prefab/Packages/ProjectSettings 변경은 기본 해결책으로 사용하지 않는다.
+
+## 2026-08-21 — BETA-009 Persistence and Recovery validation-debt checkpoint
+
+- 기존 SaveManager를 additive gameplay envelope v12로 확장했다. procedural world payload는 v11, v10 이하 `LegacyFixed` 의미는 그대로이며 destructive migration이나 병렬 save path는 만들지 않았다.
+- SalesLog/Feed와 일별 구매·거절, exact village item/buyer/day, player pose·hotbar·shop-open·WorldAlpha resume, farm crop, B09 storage, outdoor placeable merge와 load-boundary quiesce를 replace-style restore에 연결했다. 고용 NPC는 반복 load 전 비활성화해 deferred Destroy 중복도 막는다.
+- Runtime/Editor compile 오류 0, `git diff --check`와 JSON parse PASS다. Scene/Prefab/Packages/ProjectSettings 변경과 native crash는 0이다.
+- `Logs/BETA009_D3D11_Validation.log`는 validator의 초기화되지 않은 `hireReason` compile 오류에서 종료됐다. 최소 교정한 `Logs/BETA009_D3D11_Correction.log`는 fresh WorldSandbox, D3D11, Day 2 authority, 납품, player move, sparse terraform, B09와 저장물까지 PASS한 뒤 B01 이동 fixture `(1,-1)`가 허용 구역 밖이라 save 전에 종료됐다.
+- B01 좌표를 기존 유효 계약 `(1,0)`으로 고친 최종 source는 compile PASS다. 승인된 두 실행을 모두 사용해 세 번째 D3D11은 하지 않았다. 실제 restart/load/continue/repeated-load assertion은 미도달이며 BETA-010 최초 통합 검증으로 이관한다.
+- 최종 상태 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`; 로컬 checkpoint 뒤 선승인 `BETA-010 Full Playable Beta Integration`을 자동 활성화한다.

@@ -1119,3 +1119,10 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - LongPlay/HUD는 누적 매출·납품·고용·마을 반응 상태를 표시하며 Week 1 완료를 1,700G+유료 고용+earned village response로 gate한다.
 - 첫 D3D11에서 tourist FSM lifecycle을 수정했고, 보정 D3D11은 Day 1~4 실제 판매/정산/날짜 증가, Day 2~5 납품, Day 5 Farmer 고용까지 PASS했다. duplicate-item fixture가 Day 5 989/1,050G에서 멈춰 distinct high-value selection을 compile-only로 보정했다.
 - Runtime/Editor compile 오류 0, native crash와 Scene/Prefab/Packages/ProjectSettings/Save schema 변경 0. Day 6~7/Week 1 completion은 미검증이므로 상태는 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`; 세 번째 D3D11과 push는 하지 않는다.
+
+## 2026-08-21 — Codex — BETA-009 Persistence and Recovery (VALIDATION DEBT CHECKPOINT)
+
+- SaveManager의 기존 경로를 backward-compatible gameplay envelope v12로 확장하고 procedural world payload v11과 기존 `LegacyFixed` 의미를 유지했다.
+- 판매/Feed, 마을 인과 정보, 농작물, B09 storage, player/hotbar/shop-open/온보딩과 load-boundary 정리를 capture·replace restore에 연결했다. outdoor placeable과 반복 고용 복원도 중복 없이 보존한다.
+- Runtime/Editor compile과 정적 diff/JSON 검사는 PASS했다. 두 D3D11은 validator compile 오류와 invalid B01 fixture 좌표 때문에 save 이전에 종료됐고, 최종 좌표 수정은 compile-only다.
+- 상태는 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`; restart/repeated-load 실증은 BETA-010에 승계한다. Scene/Prefab/Packages/ProjectSettings 변경과 push는 없다.

@@ -995,6 +995,7 @@ public class ShopCustomizationController : MonoBehaviour
                 fixedPlacement.recovered = record.recovered;
                 fixedPlacement.gameObject.SetActive(!record.recovered && fixedPlacement.originalActive);
                 if (!record.recovered) RestorePlacementTransformAndOccupancy(fixedPlacement, record, false);
+                RestoreStorage(fixedPlacement.gameObject, record.storedItems);
                 continue;
             }
 

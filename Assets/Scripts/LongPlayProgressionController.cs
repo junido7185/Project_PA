@@ -411,6 +411,11 @@ public class LongPlayProgressionController : MonoBehaviour
             _completionCanvas.gameObject.SetActive(false);
     }
 
+    public void PrepareForStateRestore()
+    {
+        HideWeekOneCompletion();
+    }
+
     void RestoreCompletionState()
     {
         _weekCompletionOpen = false;

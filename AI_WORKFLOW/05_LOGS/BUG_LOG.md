@@ -683,3 +683,11 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 정적 보정: 선택한 `Item`을 `HashSet<Item>`에 기록해 서로 다른 sellable 상품만 네 슬롯에 진열한다. assertion, 매출 목표, 실제 `EconomyService`/`ShopSlot`/`HiringService` 권위는 완화하지 않았다.
 - 사후 결과: 최종 source의 Runtime/Editor compile 오류 0, JSON/diff 검사 PASS, native crash 0. Scene/Prefab/Packages/ProjectSettings/SaveData/SaveManager 변경은 없다.
 - 판정: 승인된 D3D11 두 실행을 모두 사용해 세 번째 실행은 하지 않는다. 최종 fixture correction과 Day 6~7/Week 1 completion은 미검증으로 남기고 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT` checkpoint로 보존한다.
+
+## [VALIDATION_DEBT] 2026-08-21 — BETA-009 persistence validator pre-save fixture failures
+
+- 첫 실행: `Logs/BETA009_D3D11_Validation.log`는 신규 validator의 `hireReason` 지역변수가 초기화되지 않은 CS0165로 Editor compile 전에 종료됐다. production 코드나 save data에는 접근하지 않았다.
+- 보정 실행: 초기화만 고친 `Logs/BETA009_D3D11_Correction.log`는 D3D11 fresh-session 구성, Day 2, 명시 납품, player 이동, sparse terraform, B09와 ItemInstance 저장물까지 통과했다. 이후 B01을 `(1,-1)`로 옮기는 fixture가 bounded placement zone을 벗어나 save 전에 종료됐다.
+- 원인: 기존 B01 배치 계약에서 검증된 유효 좌표는 `(1,0)`인데 validator가 잘못된 좌표를 요청했다. 실제 저장·복원 코드 실패나 데이터 손상 증거가 아니다.
+- 정적 교정: assertion이나 production 권위를 완화하지 않고 좌표만 `(1,0)`으로 수정했다. 최종 Runtime/Editor compile 오류 0, native crash 0이다.
+- 판정: 승인된 두 D3D11 실행을 모두 사용했으므로 세 번째 실행은 하지 않는다. save/restart/load/continue/repeated-load 단계는 미검증이며 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`로 보존해 BETA-010의 첫 통합 검증에서 재개한다.

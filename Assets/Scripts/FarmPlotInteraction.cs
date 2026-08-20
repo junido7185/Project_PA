@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [RequireComponent(typeof(Farmland), typeof(Collider))]
@@ -21,6 +23,75 @@ public class FarmPlotInteraction : MonoBehaviour, IInteractable
 
     public Farmland Land => _land != null ? _land : (_land = GetComponent<Farmland>());
     public Crop CurrentCrop => Land != null ? Land.CurrentCrop : null;
+
+    public FarmPlotSaveData CaptureSaveState()
+    {
+        Crop crop = CurrentCrop;
+        return new FarmPlotSaveData
+        {
+            plotId = plotId,
+            planted = crop != null,
+            currentStageIndex = crop != null ? crop.CurrentStageIndex : 0,
+            secondsUntilNextStage = crop != null ? crop.SecondsUntilNextStage : 0f
+        };
+    }
+
+    public bool RestoreSaveState(FarmPlotSaveData state)
+    {
+        if (Land == null) return false;
+        Land.ClearLandAndDestroyCrop();
+        if (state == null || !state.planted)
+        {
+            RefreshLabel();
+            return true;
+        }
+
+        Item seed = ResolveSeed();
+        Item harvest = Resources.Load<Item>(harvestResourcePath);
+        GameObject cropPrefab = seed != null ? seed.cropPrefab : null;
+        if (harvest == null || cropPrefab == null || cropPrefab.GetComponent<Crop>() == null ||
+            !Land.Plant(cropPrefab))
+        {
+            Debug.LogWarning($"[FarmPlot] Could not restore planted state for {plotId}.");
+            return false;
+        }
+
+        Crop crop = CurrentCrop;
+        crop.Configure(harvest, harvestCount, growthSecondsPerStage,
+            "PA_DemoProps/Prop_Wheat");
+        crop.RestoreGrowthState(state.currentStageIndex, state.secondsUntilNextStage);
+        RefreshLabel();
+        return true;
+    }
+
+    public static void WriteAllSaveFields(SaveData data)
+    {
+        if (data == null) return;
+        data.farmPlots = FindObjectsByType<FarmPlotInteraction>(FindObjectsSortMode.None)
+            .Where(plot => plot != null && !string.IsNullOrWhiteSpace(plot.plotId))
+            .OrderBy(plot => plot.plotId)
+            .Select(plot => plot.CaptureSaveState())
+            .ToList();
+    }
+
+    public static void RestoreAllSavedState(IReadOnlyList<FarmPlotSaveData> saved)
+    {
+        var byId = new Dictionary<string, FarmPlotSaveData>();
+        if (saved != null)
+        {
+            foreach (FarmPlotSaveData record in saved)
+                if (record != null && !string.IsNullOrWhiteSpace(record.plotId))
+                    byId[record.plotId] = record;
+        }
+
+        foreach (FarmPlotInteraction plot in
+                 FindObjectsByType<FarmPlotInteraction>(FindObjectsSortMode.None))
+        {
+            if (plot == null) continue;
+            byId.TryGetValue(plot.plotId, out FarmPlotSaveData record);
+            plot.RestoreSaveState(record);
+        }
+    }
 
     void Awake()
     {

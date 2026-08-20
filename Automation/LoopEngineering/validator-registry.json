@@ -268,6 +268,17 @@
       "humanFollowUp": "Week-one pacing and economic feel can be reviewed once during the M85 integrated playtest."
     },
     {
+      "id": "beta-009-persistence-recovery",
+      "executeMethod": "PA_Beta009PersistenceRecoveryValidator.RunBeta009ValidationBatch",
+      "sourceFile": "Assets/Editor/PA_Beta009PersistenceRecoveryValidator.cs",
+      "purpose": "Validate WorldSandbox save, process restart, recovery, continued play, and same-save repeat load without duplicate world, NPC, inventory, Feed, farm, or village state.",
+      "workflowTypes": ["gameplay-beta", "save-load", "persistence", "restart", "recovery", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 240,
+      "onFailure": "Stop after the approved correction run and inspect the first serialization, restart, continuation, or duplicate-state assertion.",
+      "humanFollowUp": "Manual F5/F9 feel can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

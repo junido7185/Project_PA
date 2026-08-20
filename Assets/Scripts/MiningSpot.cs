@@ -155,6 +155,11 @@ public class MiningSpot : MonoBehaviour, IInteractable
         ResetPickaxeVisual();
     }
 
+    public void PrepareForStateRestore()
+    {
+        CancelMining();
+    }
+
 #if UNITY_EDITOR
     // 에디터 스모크는 벽시계 대기 없이 동일한 완료 경로를 호출한다.
     public bool CompleteMiningForValidation(GameObject interactor)

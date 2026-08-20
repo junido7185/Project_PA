@@ -2237,3 +2237,11 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 첫 D3D11은 관광객 FSM이 creation frame의 `NpcController.Start`에 덮이는 lifecycle 결함을 찾았다. 두 번째 D3D11은 이를 보정한 뒤 일반 Day 1 관광객 구매, Day 1~4 판매·정산·실제 날짜 증가, Day 2~5 납품, Day 5 Farmer 유료 고용까지 PASS했다.
 - 두 번째 실행은 validator가 같은 GrilledFish를 네 슬롯에 반복 진열해 Day 5 누적 매출이 989/1,050G에 머문 fixture 결함에서 종료됐다. 서로 다른 네 최고가 상품을 고르도록 보정했고 Runtime/Editor compile 오류 0을 다시 확인했다.
 - 승인된 두 실행을 모두 사용해 추가 D3D11은 하지 않았다. Day 6~7과 Week 1 completion은 미검증이며 상태는 PASS/COMPLETE가 아닌 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`다. Scene/Prefab/Packages/ProjectSettings/Save schema/native crash 변경은 0이다.
+
+## 2026-08-21 — BETA-009 Persistence and Recovery IMPLEMENTED WITH VALIDATION DEBT
+
+- gameplay save envelope를 v12로 additive 확장했다. procedural world payload v11과 v10 이하 `LegacyFixed` 의미는 유지한다.
+- world/player/inventory/hotbar/economy/day/time/shop/furniture/progression/hiring/Feed/village와 M85 신규 상태의 capture·restore 누락을 보완했다. 농작물, B09 내용물, 판매 이력과 exact village response, load 중 transient 정리와 반복 load 중복 방지도 포함한다.
+- Runtime/Editor compile 오류 0, 정적 검사 PASS, Scene/Prefab/Packages/ProjectSettings 변경과 native crash 0이다.
+- 승인된 두 D3D11은 validator-local compile 오류와 invalid B01 fixture 좌표에서 save 전에 중단됐다. 좌표 교정본은 compile PASS지만 restart/repeated-load는 미검증이다.
+- 상태는 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`; 다음 활성 티켓은 `BETA-010 Full Playable Beta Integration`이다.
