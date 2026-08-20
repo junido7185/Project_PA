@@ -9,22 +9,22 @@
 
 ## 현재 작업
 
-`BETA-009 Persistence and Recovery Pass` — BETA-008 validation-debt checkpoint `46dbea9` 뒤 M85 선승인 sequence로 자동 활성화된 유일한 티켓.
+`BETA-010 Full Playable Beta Integration` — BETA-009 validation-debt checkpoint `6168d05` 뒤 M85 선승인 sequence로 자동 활성화된 유일한 티켓.
 
-- Baseline: `milestone/gameplay-beta-85@46dbea9`; 활성화 전 working tree clean.
-- 목표: 실제 WorldSandbox beta 상태를 저장하고 게임 종료·재실행 뒤 복원하여 같은 저장에서 정상 플레이를 이어 가며, 반복 load에도 runtime 객체가 중복되지 않게 한다.
-- 필수 상태: world seed/delta/building/player, Inventory/Hotbar/ItemInstance, Economy, GameClock, shop/furniture, LongPlay progression, Hiring, Feed, village response와 M85 신규 상태를 기존 `SaveManager`·v11 권위에 연결한다.
-- 보존: 기존 Golden save 회귀, v10 이하 `LegacyFixed` migration, BETA-001~008 구현/checkpoint, crash-safe repository 경계, Scene/Prefab/Packages/ProjectSettings.
-- 허용: 기존 schema 안의 additive field, 기본값, backward-compatible serialization, null-safe restore, 중복 생성 방지.
-- 금지: 기존 필드 의미 변경, destructive migration, 저장 데이터 삭제, 호환성 중단, 병렬 save path/manager, push/rebase/reset/clean.
-- 현재 단계: SaveManager capture/restore 순서와 각 M85 시스템의 실제 write/restore seam을 감사하고, 종료→재실행→load→계속 플레이 및 같은 저장 반복 load의 누락·중복 위험을 확정한다.
-- 검증 예산: BETA-009 최초 D3D11 1회와 결정적 비충돌 결함의 최소 교정 뒤 1회까지 선승인. 반드시 D3D11이며 native crash 발생 시 즉시 중단한다.
+- Baseline: `milestone/gameplay-beta-85@6168d05`; 활성화 전 working tree clean.
+- 목표: WorldSandbox에서 새 게임→온보딩→낮 활동→제작·가공→진열·가격→개점→고객 반응·구매/거절→정산→다음날 반응→Day 1~7→채용·Feed→저장→재시작→복원→계속 플레이를 하나의 실제 beta 경로로 연결한다.
+- 첫 검증 우선순위: 교정된 BETA-009 save→Play 종료→재진입→load→continue→same-save repeat-load 경로를 실제 D3D11에서 먼저 증명한다.
+- 통합 부채: BETA-007 실제 hire→판매→Day 2→주민 대화, BETA-008 Day 6~7/Week 1 completion을 같은 full-loop 계약에서 재검증한다.
+- 기존 권위: ItemInstance, Inventory, CraftingService, EconomyService, Shop/ShopSlot, PurchaseEvaluator, NpcController, HiringService, SaveManager, WorldGrid를 우회하지 않는다.
+- 보호: Prototype_FirstDay Golden, MainGame, Scene/Prefab/Packages/ProjectSettings, procedural world payload v11과 additive gameplay envelope v12 호환.
+- 금지: assertion 약화, 강제 PASS, validator 전용 production 우회, D3D12, push/rebase/reset/clean, 별도 병렬 gameplay/save manager.
+- 검증 예산: BETA-010 최초 D3D11 통합 1회와 결정적 비충돌 결함 최소 교정 뒤 1회. native crash, 데이터 손상, Golden/M70 핵심 회귀면 즉시 중단한다.
+- 완료 조건: 기능 assertion·compile·Console/crash·Golden 회귀가 실제로 통과하고 30~45분 플레이 경로에 진행 차단이 없을 때만 `M85_GAMEPLAY_BETA_COMPLETE`로 기록한다.
 
-## 체크포인트 결과
+## 현재 중단 지점
 
-- 상태: `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`.
-- 구현: additive gameplay save envelope v12를 도입하되 procedural world payload와 `LegacyFixed` 의미는 v11로 유지했다. Sales/Feed, exact village response, 농작물, B09 저장물, shop-open, hotbar 선택, player pose/온보딩과 load-boundary 정리를 기존 권위에 연결했다.
-- 정적 검증: Runtime/Editor compile 오류 0, `git diff --check` PASS, JSON parse PASS, native crash 0.
-- D3D11: 첫 실행은 validator 지역변수 compile 오류, 보정 실행은 저장 직전 잘못된 B01 이동 좌표 `(1,-1)`에서 중단됐다. 좌표를 기존 유효 계약 `(1,0)`으로 수정한 최종 소스는 compile PASS지만 세 번째 실행은 하지 않았다.
-- 미검증: 실제 save → Editor Play 종료 → 재진입 → load → 계속 플레이 → 동일 save 재로드 중복 방지. BETA-010 통합 검증에서 가장 먼저 이어 간다.
-- 보호: Scene/Prefab/Packages/ProjectSettings 변경 없음, push 없음.
+- 상태: `HARD_BLOCKER_BETA_010_PLAYER_FACING_RESTORE`.
+- `Logs/BETA010_PersistenceRestart_Initial.log`는 save·Editor Play 종료·재진입·load 뒤 world checksum과 B09 contents까지 복원했지만 player facing assertion에서 실패했다.
+- SaveManager가 모든 restore consumer 뒤에 pose를 다시 적용하도록 보정했으나 `Logs/BETA010_PersistenceRestart_Correction.log`도 같은 cell `(64,61)`은 복원하면서 facing만 정확히 `137°` 소실했다.
+- 승인된 최초/교정 D3D11 두 실행을 모두 사용했다. 동일 원인 세 번째 실행, 추가 추측 수정, assertion 완화는 금지한다.
+- 미도달: 복원 후 계속 판매, same-save repeat load, BETA-007/008 debt, full-loop/Golden regression, `M85_GAMEPLAY_BETA_COMPLETE`.

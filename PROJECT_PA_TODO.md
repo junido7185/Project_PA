@@ -1734,3 +1734,12 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] Runtime/Editor compile 오류 0, diff/JSON 검사 PASS, native crash 0.
 - [ ] 실제 save→재시작→load→continue→동일 save 반복 load 검증: validator가 save 전 invalid B01 fixture 좌표에서 중단되어 BETA-010으로 이관.
 - [ ] 다음 단일 티켓: `BETA-010 Full Playable Beta Integration`.
+
+## BETA-010 Full Playable Beta Integration — BLOCKED
+
+- [x] 실제 v12 save, Play 종료·재진입, world checksum/B09/player cell 복원.
+- [x] Runtime/Editor compile 오류 0, native crash/save corruption/금지 경로 변경 0.
+- [ ] player facing 137° 복원: 다음 frame identity 덮어쓰기 원인 계측 및 authoritative PlayerRoot/PlayerController 동기화 필요.
+- [ ] 복원 후 continue sale와 same-save repeated load.
+- [ ] BETA-007 실제 주민 반응, BETA-008 Day 6~7/Week 1, Golden/M70 full regression.
+- [ ] `M85_GAMEPLAY_BETA_COMPLETE` — 현재 미달성.

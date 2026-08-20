@@ -2905,3 +2905,10 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - procedural world payload는 v11, 기존 LegacyFixed migration 의미는 유지한다. Scene/Prefab/Packages/ProjectSettings는 변경하지 않았다.
 - Runtime/Editor compile 오류 0. 첫 D3D11은 validator CS0165, 두 번째는 save 전 invalid B01 좌표에서 종료됐고 native crash는 없다. 좌표를 `(1,0)`으로 고친 최종 소스는 compile PASS다.
 - restart/load/continue/repeated-load는 아직 runtime 미검증이므로 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`다. 로컬 checkpoint 후 BETA-010에서 이 검증부터 이어 간다.
+
+## 2026-08-21 — BETA-010 persistence integration blocked checkpoint
+
+- BETA-009 교정 fixture로 실제 v12 save와 Unity Play restart/load를 수행했다. 판매/Feed/village pending을 포함한 JSON, world checksum, B09 ItemInstance와 player cell 복원은 PASS했다.
+- 최초 실행은 player facing에서 멈췄고, 모든 restore consumer 뒤 pose를 재적용한 교정 실행도 같은 cell에서 137° facing만 소실됐다.
+- 두 실행 모두 D3D11, native crash 0, save corruption 0이다. Runtime/Editor compile 오류 0이며 Scene/Prefab/Packages/ProjectSettings는 변경하지 않았다.
+- 같은 원인 반복 실패로 추가 실행과 추측 수정을 중단한다. 상태 `HARD_BLOCKER_BETA_010_PLAYER_FACING_RESTORE`; M85는 미완료다.

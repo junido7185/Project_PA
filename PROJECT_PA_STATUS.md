@@ -2245,3 +2245,10 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Runtime/Editor compile 오류 0, 정적 검사 PASS, Scene/Prefab/Packages/ProjectSettings 변경과 native crash 0이다.
 - 승인된 두 D3D11은 validator-local compile 오류와 invalid B01 fixture 좌표에서 save 전에 중단됐다. 좌표 교정본은 compile PASS지만 restart/repeated-load는 미검증이다.
 - 상태는 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`; 다음 활성 티켓은 `BETA-010 Full Playable Beta Integration`이다.
+
+## 2026-08-21 — BETA-010 Full Integration BLOCKED
+
+- 실제 v12 save→Editor Play restart→load에서 world checksum, B09 storage, player cell은 복원됐다.
+- 저장 JSON의 137° player quaternion은 존재하지만 runtime PlayerRoot는 load 다음 frame에 identity로 돌아간다. 최종 pose 재적용 뒤 교정 실행도 `facingError=137`로 반복 실패했다.
+- 두 승인 실행을 모두 사용했으며 같은 원인 세 번째 시도는 금지다. continue/repeated-load, Day 6~7, resident response와 Golden/M70 통합 회귀는 미검증이다.
+- 최종 상태 `HARD_BLOCKER_BETA_010_PLAYER_FACING_RESTORE`; `M85_GAMEPLAY_BETA_COMPLETE`가 아니다.

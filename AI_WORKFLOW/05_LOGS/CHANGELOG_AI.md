@@ -1126,3 +1126,10 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 판매/Feed, 마을 인과 정보, 농작물, B09 storage, player/hotbar/shop-open/온보딩과 load-boundary 정리를 capture·replace restore에 연결했다. outdoor placeable과 반복 고용 복원도 중복 없이 보존한다.
 - Runtime/Editor compile과 정적 diff/JSON 검사는 PASS했다. 두 D3D11은 validator compile 오류와 invalid B01 fixture 좌표 때문에 save 이전에 종료됐고, 최종 좌표 수정은 compile-only다.
 - 상태는 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`; restart/repeated-load 실증은 BETA-010에 승계한다. Scene/Prefab/Packages/ProjectSettings 변경과 push는 없다.
+
+## 2026-08-21 — Codex — BETA-010 Full Integration (BLOCKED CHECKPOINT)
+
+- BETA-009의 실제 v12 save→Play 종료→재진입→load를 처음으로 실행해 world checksum, B09 storage와 player cell 복원까지 증명했다.
+- player facing의 최종 재적용을 추가했지만 최초/교정 D3D11 모두 저장된 137° facing이 identity로 소실되는 같은 production 결함에서 중단됐다.
+- Runtime/Editor compile 오류와 native crash/save corruption/금지 경로 변경은 0이다. 복원 후 continue/repeated load 및 full Day 1–7 integration은 미도달이다.
+- 상태는 `HARD_BLOCKER_BETA_010_PLAYER_FACING_RESTORE`; M85 완료를 선언하거나 push하지 않는다.

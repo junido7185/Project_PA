@@ -807,3 +807,17 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/BETA009_D3D11_Validation.log`는 validator의 초기화되지 않은 `hireReason` compile 오류에서 종료됐다. 최소 교정한 `Logs/BETA009_D3D11_Correction.log`는 fresh WorldSandbox, D3D11, Day 2 authority, 납품, player move, sparse terraform, B09와 저장물까지 PASS한 뒤 B01 이동 fixture `(1,-1)`가 허용 구역 밖이라 save 전에 종료됐다.
 - B01 좌표를 기존 유효 계약 `(1,0)`으로 고친 최종 source는 compile PASS다. 승인된 두 실행을 모두 사용해 세 번째 D3D11은 하지 않았다. 실제 restart/load/continue/repeated-load assertion은 미도달이며 BETA-010 최초 통합 검증으로 이관한다.
 - 최종 상태 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`; 로컬 checkpoint 뒤 선승인 `BETA-010 Full Playable Beta Integration`을 자동 활성화한다.
+
+## 2026-08-21 — BETA-010 Full Playable Beta Integration activated
+
+- BETA-009의 32개 승인 경로를 validation-debt가 명시된 local checkpoint `6168d05`로 보존했고 push하지 않았다. 전환 시 working tree는 clean이다.
+- M85 선승인 sequence의 마지막 단일 티켓을 `BETA_010_ACTIVE`로 활성화했다.
+- 교정된 BETA-009 restart/repeated-load를 첫 통합 검증으로 실행하고, 이어 BETA-007 주민 반응과 BETA-008 Day 6~7/Week 1 debt를 실제 새 게임→저장 복원 전체 흐름에서 결합한다. `M85_GAMEPLAY_BETA_COMPLETE`는 full-loop와 Golden/M70 회귀가 통과하기 전 선언하지 않는다.
+
+## 2026-08-21 — BETA-010 player-facing restore hard blocker
+
+- 최초 통합 D3D11은 fresh fixture, 실제 판매/Feed/village pending, v12 save, Play 종료·재진입, world checksum과 B09 ItemInstance 복원까지 PASS했다. restart player cell도 저장 cell `(64,61)`과 일치했지만 저장된 137° facing이 identity로 돌아가 실패했다.
+- SaveManager가 world/furniture/hiring/WorldAlpha 후처리 뒤 projected position과 rotation을 최종 재적용하도록 최소 수정하고 validator 진단을 강화했다. Runtime/Editor compile 오류 0이다.
+- 교정 D3D11도 동일 cell 복원 뒤 `facingError=137`로 같은 assertion에서 반복 실패했다. native crash와 save corruption은 없고 Scene/Prefab/Packages/ProjectSettings 변경도 없다.
+- 같은 원인 두 번 실패 규칙에 따라 추가 실행·추측 수정·assertion 완화를 중단한다. 복원 후 계속 판매, repeated load, BETA-007/008 통합, Golden/M70 회귀는 미도달이다.
+- 상태는 `HARD_BLOCKER_BETA_010_PLAYER_FACING_RESTORE`; `BETA_010_COMPLETE`와 `M85_GAMEPLAY_BETA_COMPLETE`는 선언하지 않는다.

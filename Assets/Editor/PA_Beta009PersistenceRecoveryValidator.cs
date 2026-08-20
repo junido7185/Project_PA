@@ -375,13 +375,17 @@ public static class PA_Beta009PersistenceRecoveryValidator
                 storage.items[0].currentPrice == 31,
             $"{label} restores B09 storage ItemInstance metadata without duplication");
 
-        Require(_alpha.Grid.WorldToCell(_adapter.PlayerRoot.transform.position,
-                    out Vector2Int playerCell) &&
-                _alpha.Grid.WorldToCell(saved.playerPosition, out Vector2Int savedCell) &&
-                playerCell == savedCell &&
-                Quaternion.Angle(_adapter.PlayerRoot.transform.rotation,
-                    saved.playerRotation) < 0.5f,
-            $"{label} restores the player cell and facing");
+        bool currentCellReadable = _alpha.Grid.WorldToCell(
+            _adapter.PlayerRoot.transform.position, out Vector2Int playerCell);
+        bool savedCellReadable = _alpha.Grid.WorldToCell(
+            saved.playerPosition, out Vector2Int savedCell);
+        float facingError = Quaternion.Angle(
+            _adapter.PlayerRoot.transform.rotation, saved.playerRotation);
+        Require(currentCellReadable && savedCellReadable &&
+                playerCell == savedCell && facingError < 0.5f,
+            $"{label} restores the player cell and facing " +
+            $"(currentReadable={currentCellReadable}, savedReadable={savedCellReadable}, " +
+            $"currentCell={playerCell}, savedCell={savedCell}, facingError={facingError:0.###})");
 
         InventorySlot oreSlot = Inventory.instance.slots.FirstOrDefault(slot =>
             slot != null && !slot.IsEmpty && slot.item.itemName == "Ore" &&

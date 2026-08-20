@@ -334,16 +334,7 @@ public class SaveManager : MonoBehaviour
                 data.villageCultureActiveItemName,
                 data.villageCultureActiveBuyerName);
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            CharacterController cc = player.GetComponent<CharacterController>();
-            if (cc != null) cc.enabled = false;
-            player.transform.position = restoredPlayerPosition;
-            if (data.hasPlayerRotation)
-                player.transform.rotation = data.playerRotation;
-            if (cc != null) cc.enabled = true;
-        }
+        ApplyPlayerPose(restoredPlayerPosition, data);
 
         // 3-a. 감사 시스템 복구
         if (AuditService.Instance != null)
@@ -452,10 +443,28 @@ public class SaveManager : MonoBehaviour
             }
         }
 
+        // World/furniture/hiring/presentation restore can synchronously rebind runtime roots.
+        // The saved player pose is the final authority, so apply it after every restore consumer.
+        ApplyPlayerPose(restoredPlayerPosition, data);
+
         VillageChangeSignalController.Instance?.RefreshNow();
         villageCulture?.RefreshNow();
 
         Debug.Log($"📂 로드 완료! (건물 {count}개, 인벤토리/핫바 복구)");
+    }
+
+    static void ApplyPlayerPose(Vector3 restoredPlayerPosition, SaveData data)
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null) return;
+
+        CharacterController controller = player.GetComponent<CharacterController>();
+        if (controller != null) controller.enabled = false;
+        player.transform.position = restoredPlayerPosition;
+        if (data != null && data.hasPlayerRotation)
+            player.transform.rotation = data.playerRotation;
+        if (controller != null) controller.enabled = true;
+        Physics.SyncTransforms();
     }
 
     static bool HasLegacyWorldAlphaProgress(SaveData data)

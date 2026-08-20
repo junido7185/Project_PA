@@ -444,3 +444,12 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **D3D11 부채:** 첫 실행은 validator CS0165, 두 번째는 invalid B01 fixture `(1,-1)`로 save 전에 중단. `(1,0)` 교정은 compile PASS지만 실제 restart/reload는 미실행이다.
 - **최우선 다음 작업:** BETA-010의 첫 통합 검증에서 교정된 BETA-009 restart→restore→continue→same-save repeat-load 경로를 실행한다. 이후 BETA-008 Day 6~7와 BETA-007 resident response 부채를 같은 full-loop 계약에 통합한다.
 - **금지:** BETA-009 COMPLETE 주장, 세 번째 단독 실행, push, Scene/Prefab/Packages/ProjectSettings 변경.
+
+## 2026-08-21 — BETA-010 player-facing restore blocker
+
+- **기준:** `milestone/gameplay-beta-85@6168d05`; BETA-010 activation docs와 player pose 재적용/validator 진단이 dirty다.
+- **통과:** D3D11 fresh fixture, 판매/Feed/village pending, v12 save, Play restart, exact world checksum, B09 storage, player cell `(64,61)`.
+- **반복 실패:** 저장 quaternion은 137°지만 최초와 교정 실행 모두 runtime facing이 identity라 `facingError=137`. 교정은 모든 restore consumer 뒤 pose를 재적용했으나 해결되지 않았다.
+- **중단:** 두 실행을 모두 사용했다. 세 번째 Unity 실행, assertion 완화, 추가 추측 수정 금지. `M85_GAMEPLAY_BETA_COMPLETE` 선언 금지.
+- **다음 최소 조사:** load 직후 adapter `PlayerRoot`, `FindGameObjectWithTag("Player")`, Player-tag 객체 수와 `PlayerController` 내부 `_smoothMoveDir/_currentSpeed`를 frame별로 계측한다. 그 증거로 단일 authoritative `RestorePose`를 정한 뒤 별도 승인된 실행에서 continue/repeat-load까지 이어 간다.
+- **미검증:** BETA-009 continue/repeated load, BETA-007 hire→sale→Day2→dialogue, BETA-008 Day6–7/Week1, Golden/M70 full regression.

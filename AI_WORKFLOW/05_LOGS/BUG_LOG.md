@@ -691,3 +691,12 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 원인: 기존 B01 배치 계약에서 검증된 유효 좌표는 `(1,0)`인데 validator가 잘못된 좌표를 요청했다. 실제 저장·복원 코드 실패나 데이터 손상 증거가 아니다.
 - 정적 교정: assertion이나 production 권위를 완화하지 않고 좌표만 `(1,0)`으로 수정했다. 최종 Runtime/Editor compile 오류 0, native crash 0이다.
 - 판정: 승인된 두 D3D11 실행을 모두 사용했으므로 세 번째 실행은 하지 않는다. save/restart/load/continue/repeated-load 단계는 미검증이며 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`로 보존해 BETA-010의 첫 통합 검증에서 재개한다.
+
+## [HARD_BLOCKER] 2026-08-21 — BETA-010 saved player facing is lost after restart load
+
+- 최초 실행: `Logs/BETA010_PersistenceRestart_Initial.log`는 실제 v12 save와 Editor Play restart를 완료했다. world checksum, B09 storage는 복원됐고 player는 저장 cell에 있었지만 facing assertion이 실패했다.
+- 최소 보정: SaveManager가 world/furniture/hiring/WorldAlpha restore 뒤 saved safe position과 rotation을 다시 적용하도록 했다. validator는 actual/saved cell과 facing error를 기록하도록 강화했다.
+- 교정 실행: `Logs/BETA010_PersistenceRestart_Correction.log`도 `currentCell=(64,61)`, `savedCell=(64,61)`, `facingError=137`로 동일 실패했다. 저장 JSON의 quaternion은 137°를 정확히 보유한다.
+- 영향: restart/load는 작동하지만 저장 방향이 다음 frame에 소실된다. 복원 후 계속 플레이와 repeated-load stage, BETA-010 full loop 및 Golden regression은 실행되지 않았다.
+- 안전: Runtime/Editor compile 오류 0, native crash 0, save corruption 0, Scene/Prefab/Packages/ProjectSettings 변경 0. assertion 삭제·완화·강제 PASS 없음.
+- 중단: 동일 원인 두 번 실패와 승인 실행 소진으로 세 번째 D3D11 및 추가 추측 수정을 금지한다. 다음 최소 조치는 실제 adapter `PlayerRoot`와 tagged player identity, `PlayerController`의 internal facing state를 같은 프레임에서 계측한 뒤 authoritative restore API 하나로 동기화하는 것이다.
