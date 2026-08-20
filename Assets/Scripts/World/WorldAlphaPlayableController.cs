@@ -54,9 +54,20 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool DevelopmentOverlayVisible => _developmentOverlayVisible;
     public bool StartPromptVisible => IsReady && _startPromptVisible;
     public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
+    public Rect PlayerFacingHudScreenRect
+    {
+        get
+        {
+            float width = Mathf.Min(720f, Screen.width - 420f);
+            float left = (Screen.width - width) * 0.5f;
+            return new Rect(left, 18f, width, 202f);
+        }
+    }
     public string CurrentPlayerObjective => ResolvePlayerObjective();
     public string ShopMerchandisingSummary =>
         _adapter?.SalesDisplayReadability?.BuildSummary() ?? "판매대 상태 확인 중";
+    public string CustomerStrategySummary =>
+        _adapter?.CustomerStrategySummary ?? "손님 성향 확인 중";
     public string LastAction => _lastAction;
     public WorldGameplayAdapterService Adapter => _adapter;
     public WorldGridService Grid => _grid;
@@ -651,9 +662,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
 
     void DrawPlayerFacingHud()
     {
-        float width = Mathf.Min(720f, Screen.width - 420f);
-        float left = (Screen.width - width) * 0.5f;
-        GUILayout.BeginArea(new Rect(left, 18f, width, 176f), GUI.skin.box);
+        GUILayout.BeginArea(PlayerFacingHudScreenRect, GUI.skin.box);
         GUILayout.Label($"Day 1 · 첫 마을 동선   |   {CurrentPlayerObjective}");
         GUILayout.Space(4f);
         GUILayout.Label(_lastAction);
@@ -661,6 +670,8 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         GUILayout.Label(DaytimeActivitySummary());
         GUILayout.Space(4f);
         GUILayout.Label(ShopMerchandisingSummary);
+        GUILayout.Space(4f);
+        GUILayout.Label(CustomerStrategySummary);
         GUILayout.Space(4f);
         GUILayout.Label("WASD 이동 · 가까운 오브젝트 Space 상호작용 · F5 저장 · F9 불러오기 · Esc 메뉴");
         GUILayout.EndArea();

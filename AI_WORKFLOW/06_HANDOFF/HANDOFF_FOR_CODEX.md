@@ -12,7 +12,9 @@
 - 증거: `Logs/BETA003_D3D11_Validation_ThirdApproved.log`, `Logs/BETA003_Regression_CraftingRecipeCard.log`, `Logs/BETA003_Regression_ProcessingChain.log`, `Logs/BETA003_Regression_BETA002.log` PASS; blocking Console 0, new crash 0.
 - `BETA-004 Shop Readability and Merchandising` 완료: 실제 B01에 밤 영업/판매대 표지와 4개 슬롯의 빈 칸·상품·수량·가격·품질·품절 상태, HUD 요약을 추가했다. 이동/270° 회전, v11 pose, 고객 구매를 유지한다.
 - 증거: `Logs/BETA004_D3D11_Validation_Final.log`, `Logs/BETA004_Regression_BETA003.log`, `Logs/BETA004_Regression_WORLD006B.log` PASS; blocking Console 0, new crash 0.
-- 현재 유일한 활성 티켓은 선승인된 `BETA-005 Customer Strategy and Feedback`. 기존 고객 성향, `PurchaseEvaluator`, 구매/거절 피드백과 수요 신호를 WorldSandbox 밤 영업에서 읽기 쉽게 연결하는 범위만 다룬다.
+- `BETA-005 Customer Strategy and Feedback` 완료: 실제 Miner/Tailor profile, 방문 직후 current customer와 player HUD 성향·screen bounds, Miner 250G 보류와 Tailor 1G 구매를 검증했다. 재고·경제·SalesLog·feedback·demand 권위는 기존 시스템을 그대로 사용한다.
+- 증거: `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`, `Logs/BETA005_Regression_BETA004_Licensed.log`, `Logs/BETA005_Regression_CustomerPresentation_Licensed.log`, `Logs/BETA005_Regression_CustomerArrival_Licensed.log`가 D3D11 PASS했다. Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0이다.
+- 현재 전환 대상은 선승인된 `BETA-006 Phone Hiring and Feed Completion`이다. BETA-005 로컬 커밋 직후 기존 `HiringService`, 휴대폰 Hiring/Feed, SalesLog/village signal 연결을 먼저 감사하고 유일한 활성 티켓으로 진행한다.
 - Prototype_FirstDay Golden, WorldSandbox scene, MainGame, Prefab, Packages, ProjectSettings, Save schema v11은 승인 없는 변경 금지다.
 
 ## M70 및 Loop Policy 현재 상태 — 2026-08-11
@@ -409,3 +411,10 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **증거:** `WORLD008_Validation_Final.log`(logical 8,755 cells, local 12ms, generated 57ms, 16 sectors, Console 0), WORLD-007/005/006, InteriorCustomer, FinalDemoRoute 회귀 PASS.
 - **부채:** InteriorCustomer pass 뒤 late-visitor teardown NavMesh 진단, 캡처 evidence. Scene/Prefab/Packages/ProjectSettings는 무변경이고 신규 crash는 0이다.
 - **다음 활성 ticket:** WORLD-008 local commit 뒤 승인된 `WORLD-009 Existing Gameplay World Adapter`만 시작한다. 기존 Inventory/Crafting/Shop/Gathering/DayNight/NPC 권위를 복제하지 말고 adapter로 연결한다.
+
+## 2026-08-20 — BETA-005 동기 증거 수정 완료, Unity license 차단
+
+- branch/HEAD는 `milestone/gameplay-beta-85@9d2a81e`; dirty/staged/untracked는 승인된 BETA-005 13/0/0이다. 예상 밖 변경과 Scene/Prefab/Packages/ProjectSettings/Save schema 변경은 없다.
+- `WorldAlphaPlayableController`의 실제 HUD rect를 단일 read-only 계약으로 만들고, BETA-005 validator가 `BeginNewGame()` 뒤 각 `TryBeginCustomerVisit` 성공 직후 profile·visit·고객 활성·라이브 HUD text·screen bounds를 동기 검사하도록 수정했다. 숨은 개발 Canvas 값도 로그하되 가시성 권위에는 포함하지 않는다.
+- Runtime/Editor compile은 오류 0, 기존 CS8785/CS0414만 유지된다. `Logs/BETA005_D3D11_Validation_SynchronousPreference.log`는 Unity license 부재로 return code 198이며 `[BETA-005]`/graphics 초기화 0건이다.
+- Unity 프로세스와 새 crash는 0이다. 유효한 Unity Editor license를 복구한 뒤 현재 변경을 보존하여 동일 validator에서 재개한다. 그 전에는 commit이나 BETA-006을 시작하지 않는다.

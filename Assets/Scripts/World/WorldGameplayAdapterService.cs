@@ -21,7 +21,8 @@ public enum WorldGameplayAdapterState
     Ready = 1,
     CustomerMoving = 2,
     CustomerPurchased = 3,
-    Failed = 4
+    Failed = 4,
+    CustomerDeclined = 5
 }
 
 // WORLD-009 — reversible WorldSandbox-only seam between the generated world and
@@ -41,6 +42,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     const string KitchenBuildingResource = "Buildings/Building_B06_KitchenStation";
     const string ForgeBuildingResource = "Buildings/Building_B07_BlacksmithForge";
     const string PlankRecipeResource = "Recipes/Recipe_Plank";
+    const string MinerProfileResource = "NPCs/Profile_Miner";
+    const string TailorProfileResource = "NPCs/Profile_Tailor";
     const string ResourceActivityPrefix = "world-resource:";
     const float CustomerTimeoutSeconds = 24f;
     public const string SalesDisplayDefinitionId = "world.b01.sales-display";
@@ -81,17 +84,22 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     int _salesDisplayGridY;
     int _salesDisplayQuarterTurns;
     int _moneyBeforeCustomer;
+    int _purchasesBeforeCustomer;
+    int _rejectionsBeforeCustomer;
+    int _customerVisitSequence;
     float _customerStartedAt;
     long _boundSeed = long.MinValue;
     string _lastAction = "World gameplay adapter is bootstrapping.";
     string _lastFailure = string.Empty;
+    string _lastCustomerOutcome = "밤 영업을 열면 실제 주민 성향과 구매 반응을 확인할 수 있습니다.";
 
     public static WorldGameplayAdapterService Instance { get; private set; }
     public WorldGameplayAdapterState State { get; private set; } =
         WorldGameplayAdapterState.Bootstrapping;
     public bool IsReady => State == WorldGameplayAdapterState.Ready ||
                            State == WorldGameplayAdapterState.CustomerMoving ||
-                           State == WorldGameplayAdapterState.CustomerPurchased;
+                           State == WorldGameplayAdapterState.CustomerPurchased ||
+                           State == WorldGameplayAdapterState.CustomerDeclined;
     public string LastAction => _lastAction;
     public string LastFailure => _lastFailure;
     public long BoundSeed => _boundSeed;
@@ -122,6 +130,23 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _salesDisplayGridX, _salesDisplayGridY);
     public int SalesDisplayQuarterTurns => _salesDisplayQuarterTurns;
     public bool CustomerPurchaseCompleted => State == WorldGameplayAdapterState.CustomerPurchased;
+    public bool CustomerDecisionCompleted => CustomerPurchaseCompleted ||
+                                             State == WorldGameplayAdapterState.CustomerDeclined;
+    public bool CustomerDeclined => State == WorldGameplayAdapterState.CustomerDeclined;
+    public string CustomerStrategySummary
+    {
+        get
+        {
+            if (State == WorldGameplayAdapterState.CustomerMoving && _customer?.profile != null)
+            {
+                return $"방문 중 · {_customer.profile.npcName} · " +
+                       $"{CustomerPreferencePresentationController.DescribePreference(_customer.profile)} · " +
+                       "상품 종류와 가격을 판단하고 있습니다.";
+            }
+
+            return _lastCustomerOutcome;
+        }
+    }
     public int ConsumedResourceCount => CaptureWorldState()?.resourceStates?
         .Count(state => state != null && state.consumed) ?? 0;
 
@@ -179,7 +204,23 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             _economy != null && _economy.Money > _moneyBeforeCustomer)
         {
             State = WorldGameplayAdapterState.CustomerPurchased;
-            _lastAction = $"Customer purchase completed through NpcController and ShopSlot (+{_economy.Money - _moneyBeforeCustomer}G).";
+            string name = ResolveCustomerName();
+            _lastCustomerOutcome = $"구매 · {name} · +{_economy.Money - _moneyBeforeCustomer}G · " +
+                                   "손님 반응과 수요 신호를 다음 진열에 활용하세요.";
+            _lastAction = _lastCustomerOutcome;
+            return;
+        }
+
+
+        SalesLogManager.DailyDecisionStats decisions = CurrentCustomerDayStats();
+        if (decisions.rejections > _rejectionsBeforeCustomer &&
+            decisions.purchases == _purchasesBeforeCustomer)
+        {
+            string name = ResolveCustomerName();
+            State = WorldGameplayAdapterState.CustomerDeclined;
+            _lastCustomerOutcome = $"보류 · {name} · 상품은 유지됨 · " +
+                                   "가격을 낮추거나 다른 종류의 상품을 준비해 보세요.";
+            _lastAction = _lastCustomerOutcome;
             return;
         }
 
@@ -813,36 +854,86 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _customerRoot.transform.SetParent(_runtimeRoot.transform, false);
         _customerRoot.transform.position = startHit.position;
         var agent = _customerRoot.AddComponent<NavMeshAgent>();
-        agent.speed = 12f;
+        agent.speed = 7.5f;
         agent.acceleration = 40f;
         agent.angularSpeed = 720f;
         agent.stoppingDistance = 0.25f;
         _customer = _customerRoot.AddComponent<NpcController>();
-        _customer.randomSeed = 9009;
+        _customer.profile = LoadCustomerProfile(_customerVisitSequence);
+        if (_customer.profile == null)
+        {
+            ReleaseRuntimeObject(_customerRoot);
+            _customerRoot = null;
+            _customer = null;
+            reason = "Existing Miner/Tailor NpcProfile resources are unavailable.";
+            return false;
+        }
+        _customer.randomSeed = 9009 + _customerVisitSequence;
         _customer.idleTickInterval = 999f;
-        _customer.browseDurationAtSlot = 0.05f;
+        _customer.browseDurationAtSlot = 0.65f;
         _customer.maxSlotsPerVisit = 1;
         _customer.shopArriveDistance = 1.5f;
         _customer.slotArriveDistance = 0.55f;
         _customerRoot.SetActive(true);
-        agent.speed = 12f;
+        agent.speed = 7.5f;
         agent.acceleration = 40f;
-        AddRuntimeLabel(_customerRoot.transform, "손님", new Color(1f, 0.72f, 0.8f));
+        string customerName = ResolveCustomerName();
+        string preference = CustomerPreferencePresentationController.DescribePreference(
+            _customer.profile);
+        AddRuntimeLabel(_customerRoot.transform,
+            $"{customerName} · {preference}\n가격과 상품 종류를 보고 결정",
+            new Color(1f, 0.72f, 0.8f));
 
         _customerTargetSlot = targetSlot;
         _moneyBeforeCustomer = _economy != null ? _economy.Money : 0;
+        SalesLogManager.DailyDecisionStats decisions = CurrentCustomerDayStats();
+        _purchasesBeforeCustomer = decisions.purchases;
+        _rejectionsBeforeCustomer = decisions.rejections;
         _customerStartedAt = Time.realtimeSinceStartup;
+        _customerVisitSequence++;
         State = WorldGameplayAdapterState.CustomerMoving;
         StartCoroutine(BeginCustomerVisitNextFrame());
-        _lastAction = "Existing NpcController is walking from Start to the B01 shop destination.";
+        _lastCustomerOutcome = $"방문 중 · {customerName} · {preference}";
+        _lastAction = _lastCustomerOutcome;
         return true;
+    }
+
+    static NpcProfile LoadCustomerProfile(int visitSequence)
+    {
+        string resource = visitSequence % 2 == 0
+            ? MinerProfileResource
+            : TailorProfileResource;
+        return Resources.Load<NpcProfile>(resource);
+    }
+
+    SalesLogManager.DailyDecisionStats CurrentCustomerDayStats()
+    {
+        int day = _clock != null ? _clock.CurrentDay : 1;
+        return SalesLogManager.Instance != null
+            ? SalesLogManager.Instance.GetDailyDecisionStats(day)
+            : default;
+    }
+
+    string ResolveCustomerName()
+    {
+        return _customer?.profile != null && !string.IsNullOrWhiteSpace(_customer.profile.npcName)
+            ? _customer.profile.npcName
+            : "손님";
     }
 
     IEnumerator BeginCustomerVisitNextFrame()
     {
         yield return null;
         if (_customer == null || !_customer.TryBeginShoppingVisitAt(_shop.transform))
+        {
             Fail("NpcController rejected the generated B01 shop destination.");
+            yield break;
+        }
+
+        // The existing preference panel only lists non-idle customers. Refresh on
+        // the first real FSM frame so a short WorldSandbox visit is readable before
+        // the panel's normal periodic refresh runs.
+        CustomerPreferencePresentationController.Instance?.RefreshNow();
     }
 
     public void StopCustomer()
@@ -852,7 +943,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _customer = null;
         _customerTargetSlot = null;
         if (State == WorldGameplayAdapterState.CustomerMoving ||
-            State == WorldGameplayAdapterState.CustomerPurchased)
+            State == WorldGameplayAdapterState.CustomerPurchased ||
+            State == WorldGameplayAdapterState.CustomerDeclined)
             State = WorldGameplayAdapterState.Ready;
     }
 
@@ -2708,6 +2800,467 @@ public static class PA_Beta004ShopReadabilityValidator
     {
         if (!condition) throw new InvalidOperationException(message);
         Debug.Log($"[BETA-004] PASS {message}");
+    }
+}
+
+public static class PA_Beta005CustomerStrategyValidator
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.BETA005.Active";
+    const string FailedKey = "PA.BETA005.Failed";
+    const string ConsoleErrorKey = "PA.BETA005.ConsoleErrors";
+    const string FrameKey = "PA.BETA005.Frames";
+    const string StageKey = "PA.BETA005.Stage";
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+    static CustomerPreferencePresentationController _preference;
+    static PurchaseFeedbackPresentationController _feedback;
+    static CustomerDemandInsightController _demand;
+    static ShopSlot _saleSlot;
+    static NpcProfile _miner;
+    static NpcProfile _tailor;
+    static int _moneyBefore;
+    static int _purchasesBefore;
+    static int _rejectionsBefore;
+    static float _stageStarted;
+    static bool _minerPreferenceObserved;
+    static bool _tailorPreferenceObserved;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        Subscribe();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/Beta/BETA-005/Validate Customer Strategy and Feedback")]
+    public static void RunBeta005Validation() => RunInternal();
+
+    public static void RunBeta005ValidationBatch() => RunInternal();
+
+    static void RunInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(FrameKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            _minerPreferenceObserved = false;
+            _tailorPreferenceObserved = false;
+            Subscribe();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void Subscribe()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SetStage(0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            Finish();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(FrameKey, 0) + 1;
+        SessionState.SetInt(FrameKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+        // Only runtime bootstrap needs the initial frame cushion. Customer stages
+        // must observe from their first update because the real NpcController can
+        // walk, browse and decide before four editor updates have elapsed.
+        if (stage == 0 && frames < 4) return;
+
+        try
+        {
+            ResolveRuntime();
+            if (_adapter == null || !_adapter.IsReady || _alpha == null || !_alpha.IsReady ||
+                _preference == null || _feedback == null || _demand == null)
+            {
+                if (frames > 300)
+                    throw new TimeoutException("WorldSandbox customer presentation authorities did not initialize.");
+                return;
+            }
+
+            if (stage == 0)
+            {
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(_alpha.BeginNewGame() && _alpha.PlayerFacingHudVisible,
+                    "the real player session exposes the player-facing WorldSandbox HUD");
+                _miner = Resources.Load<NpcProfile>("NPCs/Profile_Miner");
+                _tailor = Resources.Load<NpcProfile>("NPCs/Profile_Tailor");
+                Require(_miner != null && _tailor != null &&
+                        _miner.priceSensitivity >= 1.25f && _tailor.priceSensitivity <= 0.75f,
+                    "existing Miner and Tailor profiles provide honest contrasting price sensitivity");
+                Require(CustomerPreferencePresentationController.DescribePreference(_miner)
+                            .Contains("가격에 민감") &&
+                        CustomerPreferencePresentationController.DescribePreference(_tailor)
+                            .Contains("가격에 관대"),
+                    "existing profile traits produce distinct player-facing strategy hints");
+
+                _saleSlot = _adapter.RuntimeShopSlots.First();
+                ValidateCategoryResponse(_saleSlot, _miner);
+
+                foreach (ShopSlot slot in _adapter.RuntimeShopSlots)
+                {
+                    slot.currentItem = null;
+                    slot.displayPrice = 0;
+                    slot.RefreshDisplay();
+                }
+                StockPlank(_saleSlot, 250);
+                _moneyBefore = EconomyService.Instance.Money;
+                SalesLogManager.DailyDecisionStats before =
+                    SalesLogManager.Instance.GetDailyDecisionStats(2);
+                _purchasesBefore = before.purchases;
+                _rejectionsBefore = before.rejections;
+                Require(_adapter.TryOpenShopForNight(2, out string openReason),
+                    $"existing night-shop gate opens ({openReason})");
+                Require(_adapter.TryBeginCustomerVisit(_saleSlot, out string customerReason) &&
+                        _adapter.RuntimeCustomer.profile == _miner,
+                    $"first visit uses the existing price-sensitive Miner profile ({customerReason})");
+                ObserveLivePreferenceImmediately(_miner, ref _minerPreferenceObserved);
+                Require(_minerPreferenceObserved,
+                    "the live player HUD exposes the Miner preference before the real visit can end");
+                Require(_adapter.CustomerStrategySummary.Contains("Miner_01") &&
+                        _adapter.CustomerStrategySummary.Contains("가격에 민감") &&
+                        HasCustomerLabel("Miner_01", "가격에 민감"),
+                    "world label and player HUD explain the active customer's real strategy");
+                _stageStarted = Time.realtimeSinceStartup;
+                SetStage(1);
+                return;
+            }
+
+            if (stage == 1)
+            {
+                ObservePreference(_miner, ref _minerPreferenceObserved);
+                if (!_adapter.CustomerDecisionCompleted)
+                {
+                    if (_adapter.State == WorldGameplayAdapterState.Failed ||
+                        Time.realtimeSinceStartup - _stageStarted >= 28f)
+                        throw new InvalidOperationException(
+                            $"price-sensitive rejection did not complete: {_adapter.LastFailure}");
+                    return;
+                }
+
+                SalesLogManager.DailyDecisionStats afterReject =
+                    SalesLogManager.Instance.GetDailyDecisionStats(2);
+                Require(_adapter.CustomerDeclined && _minerPreferenceObserved,
+                    "the visible Miner preference remains readable during the actual visit");
+                Require(!_saleSlot.IsEmpty && _saleSlot.currentItem.count == 1 &&
+                        _saleSlot.displayPrice == 250 && EconomyService.Instance.Money == _moneyBefore,
+                    "an unaffordable rejection preserves stock and money without a transaction");
+                Require(afterReject.rejections == _rejectionsBefore + 1 &&
+                        afterReject.purchases == _purchasesBefore,
+                    "existing SalesLogManager records one real rejection and no purchase");
+                string rejectDemandSummary = _demand.GetTopCategorySummary();
+                Debug.Log("[BETA-005] REJECTION_SURFACES " +
+                          $"feedbackLast=\"{EvidenceText(_feedback.LastReactionLine)}\" " +
+                          $"feedbackCurrent=\"{EvidenceText(_feedback.CurrentFeedbackText)}\" " +
+                          $"demandTop=\"{EvidenceText(rejectDemandSummary)}\" " +
+                          $"demandCurrent=\"{EvidenceText(_demand.CurrentInsightText)}\" " +
+                          $"hud=\"{EvidenceText(_alpha.CustomerStrategySummary)}\"");
+                Require(_feedback.LastReactionLine.Contains("Miner_01") &&
+                        _feedback.CurrentFeedbackText.Contains("Miner_01"),
+                    "existing purchase feedback identifies the rejecting Miner");
+                Require(rejectDemandSummary.Contains("Processed: 0/1 bought"),
+                    "the existing demand authority records the Processed rejection");
+                Require(_alpha.CustomerStrategySummary.Contains("보류"),
+                    "the player-facing WorldSandbox HUD explains the rejection outcome");
+
+                _adapter.StopCustomer();
+                StockPlank(_saleSlot, 1);
+                Require(_adapter.TryBeginCustomerVisit(_saleSlot, out string customerReason) &&
+                        _adapter.RuntimeCustomer.profile == _tailor,
+                    $"second visit uses the existing price-tolerant Tailor profile ({customerReason})");
+                ObserveLivePreferenceImmediately(_tailor, ref _tailorPreferenceObserved);
+                Require(_tailorPreferenceObserved,
+                    "the live player HUD exposes the Tailor preference before the real visit can end");
+                Require(_adapter.CustomerStrategySummary.Contains("Tailor_01") &&
+                        _adapter.CustomerStrategySummary.Contains("가격에 관대"),
+                    "the next customer's contrasting strategy is visible before evaluation");
+                _stageStarted = Time.realtimeSinceStartup;
+                SetStage(2);
+                return;
+            }
+
+            if (stage == 2)
+            {
+                ObservePreference(_tailor, ref _tailorPreferenceObserved);
+                if (!_adapter.CustomerDecisionCompleted)
+                {
+                    if (_adapter.State == WorldGameplayAdapterState.Failed ||
+                        Time.realtimeSinceStartup - _stageStarted >= 28f)
+                        throw new InvalidOperationException(
+                            $"price-tolerant purchase did not complete: {_adapter.LastFailure}");
+                    return;
+                }
+
+                SalesLogManager.DailyDecisionStats afterBuy =
+                    SalesLogManager.Instance.GetDailyDecisionStats(2);
+                Require(_adapter.CustomerPurchaseCompleted && _tailorPreferenceObserved,
+                    "the visible Tailor preference remains readable during the actual visit");
+                Require(_saleSlot.IsEmpty && EconomyService.Instance.Money == _moneyBefore + 1,
+                    "the affordable strategy completes the existing ShopSlot and Economy transaction");
+                Require(afterBuy.rejections == _rejectionsBefore + 1 &&
+                        afterBuy.purchases == _purchasesBefore + 1 &&
+                        afterBuy.evaluations == _purchasesBefore + _rejectionsBefore + 2,
+                    "the same shop session records one rejection and one purchase");
+                Require(_feedback.LastReactionLine.Contains("Tailor_01") &&
+                        _feedback.CurrentFeedbackText.Contains("Miner_01") &&
+                        _feedback.CurrentFeedbackText.Contains("Tailor_01") &&
+                        _demand.GetTopCategorySummary().Contains("1/2 bought") &&
+                        _alpha.CustomerStrategySummary.Contains("구매") &&
+                        _alpha.CustomerStrategySummary.Contains("+1G"),
+                    "existing feedback and demand surfaces turn both decisions into next-stock strategy");
+                Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                    "blocking runtime Console Error/Exception/Assert count is 0");
+                Require(!SceneManager.GetActiveScene().isDirty,
+                    "BETA-005 remains runtime-only and leaves WorldSandbox scene clean");
+                Debug.Log("[BETA-005] PLAY_MODE_PASS profiles=Miner+Tailor reject=true " +
+                          "purchase=true stockAtomic=true money=1G preference=true " +
+                          "feedback=true demand=true console=0");
+                EditorApplication.update -= ValidateRuntime;
+                EditorApplication.ExitPlaymode();
+            }
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+        _preference = CustomerPreferencePresentationController.Instance ??
+                      UnityEngine.Object.FindFirstObjectByType<CustomerPreferencePresentationController>();
+        _feedback = PurchaseFeedbackPresentationController.Instance ??
+                    UnityEngine.Object.FindFirstObjectByType<PurchaseFeedbackPresentationController>();
+        _demand = CustomerDemandInsightController.Instance ??
+                  UnityEngine.Object.FindFirstObjectByType<CustomerDemandInsightController>();
+    }
+
+    static void StockPlank(ShopSlot slot, int price)
+    {
+        Item plank = Resources.Load<Item>("Items/Item_Plank");
+        if (slot == null || plank == null)
+            throw new InvalidOperationException("Existing Plank or B01 ShopSlot is unavailable.");
+        slot.currentItem = new ItemInstance(plank, 1) { quality = 1f, currentPrice = plank.basePrice };
+        slot.displayPrice = price;
+        slot.RefreshDisplay();
+    }
+
+    static void ValidateCategoryResponse(ShopSlot slot, NpcProfile profile)
+    {
+        Item plank = Resources.Load<Item>("Items/Item_Plank");
+        Item clothes = Resources.Load<Item>("Items/Item_13_Clothes");
+        if (slot == null || plank == null || clothes == null)
+            throw new InvalidOperationException(
+                "Existing Processed and Luxury category fixtures are unavailable.");
+
+        slot.currentItem = new ItemInstance(plank, 1);
+        slot.displayPrice = plank.basePrice;
+        PurchaseEvaluator.Result processed = PurchaseEvaluator.Evaluate(
+            profile, slot, new System.Random(505));
+        slot.currentItem = new ItemInstance(clothes, 1);
+        slot.displayPrice = clothes.basePrice;
+        PurchaseEvaluator.Result luxury = PurchaseEvaluator.Evaluate(
+            profile, slot, new System.Random(505));
+
+        Require(Mathf.Abs(processed.probability - luxury.probability) > 0.001f,
+            "the existing PurchaseEvaluator responds differently to Processed and Luxury categories");
+    }
+
+    static void ObservePreference(NpcProfile profile, ref bool observed)
+    {
+        if (observed || _adapter?.RuntimeCustomer == null ||
+            _adapter.RuntimeCustomer.currentState == NpcController.State.Idle) return;
+        _preference.RefreshNow();
+        observed = _preference.CurrentPreferenceText.Contains(profile.npcName) &&
+                   _preference.CurrentPreferenceText.Contains(
+                       CustomerPreferencePresentationController.DescribePreference(profile));
+    }
+
+    // The BETA player surface is the WorldSandbox IMGUI HUD. The older
+    // CustomerPreferenceCanvas is intentionally a development overlay, so it is
+    // logged for diagnosis but never used as the player-visibility authority.
+    static void ObserveLivePreferenceImmediately(NpcProfile profile, ref bool observed)
+    {
+        NpcController customer = _adapter?.RuntimeCustomer;
+        GameObject customerObject = customer != null ? customer.gameObject : null;
+        string expectedPreference =
+            CustomerPreferencePresentationController.DescribePreference(profile);
+        string playerText = _alpha?.CustomerStrategySummary ?? string.Empty;
+        Rect hudBounds = _alpha != null ? _alpha.PlayerFacingHudScreenRect : default;
+        Rect screenBounds = new Rect(0f, 0f, Screen.width, Screen.height);
+
+        bool identityMatches = customer != null && customer.profile == profile;
+        bool visitActive = _adapter != null &&
+                           _adapter.State == WorldGameplayAdapterState.CustomerMoving;
+        bool customerActiveSelf = customerObject != null && customerObject.activeSelf;
+        bool customerActiveInHierarchy = customerObject != null && customerObject.activeInHierarchy;
+        bool textMatches = profile != null &&
+                           playerText.Contains(profile.npcName) &&
+                           playerText.Contains(expectedPreference);
+        bool hudVisible = _alpha != null && _alpha.PlayerFacingHudVisible;
+        bool hudHasBounds = hudBounds.width > 0f && hudBounds.height > 0f;
+        bool hudOnScreen = hudHasBounds && screenBounds.Overlaps(hudBounds, true);
+
+        TMP_Text legacyText = _preference != null ? _preference.preferenceText : null;
+        Canvas legacyCanvas = legacyText != null ? legacyText.canvas : null;
+        GameObject legacyUiObject = legacyText != null ? legacyText.gameObject : null;
+        CanvasGroup legacyGroup = legacyCanvas != null
+            ? legacyCanvas.GetComponent<CanvasGroup>()
+            : null;
+        RectTransform legacyRect = legacyText != null ? legacyText.rectTransform : null;
+        bool legacyRectOnScreen = IsRectTransformOnScreen(legacyRect, legacyCanvas);
+        Camera mainCamera = Camera.main;
+
+        observed = identityMatches && visitActive && customerActiveSelf &&
+                   customerActiveInHierarchy && hudVisible && textMatches && hudOnScreen;
+
+        Debug.Log(
+            $"[BETA-005] LIVE_PREFERENCE_SAMPLE " +
+            $"profile={profile?.npcName ?? "null"} identityMatches={identityMatches} " +
+            $"adapterState={_adapter?.State.ToString() ?? "null"} visitActive={visitActive} " +
+            $"npcState={customer?.currentState.ToString() ?? "null"} " +
+            $"customerActiveSelf={customerActiveSelf} " +
+            $"customerActiveInHierarchy={customerActiveInHierarchy} " +
+            $"playerHudVisible={hudVisible} playerText=\"{EvidenceText(playerText)}\" " +
+            $"hudScreenBounds={FormatRect(hudBounds)} screenVisible={hudOnScreen} " +
+            $"visibilityBasis=ScreenSpaceIMGUI camera={mainCamera?.name ?? "none-required"} " +
+            $"legacyUiActiveSelf={legacyUiObject != null && legacyUiObject.activeSelf} " +
+            $"legacyUiActiveInHierarchy={legacyUiObject != null && legacyUiObject.activeInHierarchy} " +
+            $"legacyCanvasEnabled={legacyCanvas != null && legacyCanvas.enabled} " +
+            $"legacyCanvasGroupAlpha={(legacyGroup != null ? legacyGroup.alpha : 1f):0.###} " +
+            $"legacyPreferenceText=\"{EvidenceText(legacyText != null ? legacyText.text : string.Empty)}\" " +
+            $"legacyRectBounds={FormatRect(legacyRect != null ? legacyRect.rect : default)} " +
+            $"legacyScreenVisible={legacyRectOnScreen} observed={observed}");
+    }
+
+    static bool IsRectTransformOnScreen(RectTransform rect, Canvas canvas)
+    {
+        if (rect == null || canvas == null || !canvas.enabled) return false;
+        CanvasGroup group = canvas.GetComponent<CanvasGroup>();
+        if (group != null && group.alpha <= 0.001f) return false;
+
+        Vector3[] corners = new Vector3[4];
+        rect.GetWorldCorners(corners);
+        Camera camera = canvas.renderMode == RenderMode.ScreenSpaceOverlay
+            ? null
+            : canvas.worldCamera;
+        Vector2 min = RectTransformUtility.WorldToScreenPoint(camera, corners[0]);
+        Vector2 max = min;
+        for (int i = 1; i < corners.Length; i++)
+        {
+            Vector2 point = RectTransformUtility.WorldToScreenPoint(camera, corners[i]);
+            min = Vector2.Min(min, point);
+            max = Vector2.Max(max, point);
+        }
+
+        return new Rect(min, max - min).Overlaps(
+            new Rect(0f, 0f, Screen.width, Screen.height), true);
+    }
+
+    static string EvidenceText(string value)
+    {
+        return (value ?? string.Empty).Replace("\r", string.Empty).Replace("\n", " / ");
+    }
+
+    static string FormatRect(Rect value)
+    {
+        return $"({value.x:0.#},{value.y:0.#},{value.width:0.#},{value.height:0.#})";
+    }
+
+    static bool HasCustomerLabel(string name, string preference)
+    {
+        return _adapter?.RuntimeCustomer != null &&
+               _adapter.RuntimeCustomer.GetComponentsInChildren<PrototypeWorldLabel>(true)
+                   .Any(label => label != null && label.label.Contains(name) &&
+                                 label.label.Contains(preference));
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(FrameKey, 0);
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false) ||
+            (type != LogType.Error && type != LogType.Exception && type != LogType.Assert)) return;
+        SessionState.SetInt(ConsoleErrorKey, SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[BETA-005] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else Finish();
+    }
+
+    static void Finish()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int errors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(FrameKey);
+        SessionState.EraseInt(StageKey);
+        Debug.Log(failed
+            ? $"[BETA-005] FINISHED_WITH_ERRORS consoleErrors={errors}"
+            : "[BETA-005] FINISHED_PASS customerStrategy=true reject=true " +
+              "purchase=true feedback=true demand=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[BETA-005] PASS {message}");
     }
 }
 #endif

@@ -638,3 +638,30 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 중단: 프로젝트 규칙의 동일 원인 2회 실패 후 세 번째 시도 금지에 따라 이 세션에서는 추가 Unity 실행을 하지 않는다.
 - 권장 다음 조치: 새 세션에서 Forge를 한 번 연 뒤 최소 한 프레임을 기다리고 카드 수를 검사하도록 validator stage를 분리한다. 프로덕션 UI 로직을 변경할 필요는 없다. 그 후 BETA-003 D3D11 통합 검증을 1회 수행하고, 통과할 때만 회귀·문서·로컬 티켓 커밋으로 진행한다.
 - 사람 승인 및 해결: 2026-08-12 사람이 stage 최소 수정과 세 번째 격리 D3D11 실행을 명시적으로 승인했다. Kitchen·Forge·Basic 각 컨텍스트를 연 뒤 다음 validator stage/frame에서 검사하도록 분리했다. `Logs/BETA003_D3D11_Validation_ThirdApproved.log`에서 카드 수 3/2/2, 재료 부족 무차감·무지급, 5개 실제 제작, 품질·가격, B01 진열·판매와 Console 0이 PASS했다. 네 번째 재시도는 필요하지 않았다.
+
+## [HARD_BLOCKER] 2026-08-12 — BETA-005 짧은 고객 방문의 성향 패널 관찰 프레임 누락
+
+- 증상: `Logs/BETA005_D3D11_Validation.log`와 `Logs/BETA005_D3D11_Validation_Final.log`가 모두 Miner/Tailor 실데이터, D3D11, 고가 Miner 방문 시작과 월드/HUD 성향 표시를 PASS한 뒤 `the visible Miner preference remains readable during the actual visit` assertion에서 중단됐다.
+- 확인된 실제 경로: 두 실행 모두 `Miner_01`이 Plank 250G를 `PurchaseEvaluator`로 평가해 `p=0.00`, PASS(보류) 결정을 냈고 `SalesLogManager`가 Day 2 보류 1건을 기록했다. native crash, Scene/Prefab/Packages/ProjectSettings/Save schema 변경은 없다.
+- 원인: validator가 stage 전환마다 처음 3번의 Editor update를 일괄 건너뛴다. WorldSandbox의 짧은 고객 이동·평가가 그 사이 완료되어, 실제로 갱신된 `CustomerPreferencePresentationController`를 validator가 non-idle 프레임에 샘플링하지 못했다. 고객 속도/구경 시간과 FSM 시작 직후 명시 refresh 보정 후에도 같은 validator 관찰 assertion이 반복됐다.
+- 영향: BETA-005의 두 번째 Tailor 저가 구매와 최종 구매/거절 통합 assertion에는 도달하지 못했다. 구현은 미커밋 상태로 보존하며 BETA-006은 시작하지 않는다.
+- 중단: 동일 원인 2회 실패 규칙에 따라 세 번째 BETA-005 D3D11 실행과 추가 validator 수정은 금지한다. BETA-005는 `BETA_005_HARD_BLOCKER`다.
+- 최소 후속 조치: 사람 승인 후 validator의 전역 `frames < 4` 대기를 초기 부트 stage에만 적용하거나 stage 1/2에서는 첫 update부터 `ObservePreference`를 실행하도록 순서만 고친 뒤 D3D11을 1회 실행한다. assertion 삭제·경고화·하드코딩·프로덕션 권위 변경은 하지 않는다.
+- 승인 실행 결과(2026-08-13): 전역 frame skip을 bootstrap stage 0에만 제한하고 승인된 추가 D3D11 1회를 실행했다. 카테고리 반응을 포함한 stage 0 assertion과 실제 Miner 250G 보류/SalesLog 기록은 PASS했지만, 첫 stage 1 Editor callback 전에 실제 방문이 완료되어 동일 가시성 assertion이 세 번째로 실패했다.
+- 현재 판정: `HARD_BLOCKER_BETA_005_VALIDATION`. 승인된 실행 횟수를 모두 소비했으므로 네 번째 실행과 추가 수정을 하지 않는다. 다음 최소 후보는 `TryBeginCustomerVisit` 직후 같은 stage에서 실제 live preference UI를 동기 표본화하는 것으로, 새 사람 승인 대상이다.
+
+## [HARD_BLOCKER] 2026-08-20 — BETA-005 승인 실행 전 Unity Editor 라이선스 부재
+
+- 증상: `Logs/BETA005_D3D11_Validation_SynchronousPreference.log`에서 Unity 6000.3.2f1이 `No valid Unity Editor license found`를 기록하고 return code 198로 종료했다.
+- 범위: project load, GfxDevice/D3D11 초기화, `PA_Beta005CustomerStrategyValidator` executeMethod, Play Mode가 모두 시작되지 않았다. 로그의 `[BETA-005]`와 graphics 초기화 표식은 각각 0건이다.
+- 사전 결과: 동기 live-HUD 표본 수정은 Runtime/Editor `dotnet build` 오류 0이다. 기존 CS8785/CS0414 경고 외 새 컴파일 문제는 없다.
+- 영향: 기능 assertion 결과가 아니므로 BETA-005 PASS나 승인된 validation-debt 판정을 만들 수 없다. 새 crash, Scene/Prefab/Packages/ProjectSettings/Save schema 변경도 없다.
+- 중단: 동일 Unity 실행을 자동 재시도하지 않는다. 사용자가 Unity Hub/Editor에서 유효한 라이선스를 복구한 뒤 보존된 13개 경로와 현재 validator에서 재개한다.
+
+## [RESOLVED] 2026-08-20 — BETA-005 라이선스 및 live preference 증거 차단 해소
+
+- 라이선스 해결: Unity Hub/Licensing Client가 Personal activation `statusCode=200`, `LicenseUpdate Added`, EULA `Agreed`를 기록했다. 이전 return code 198 실행은 project load 전 환경 실패였으므로 기능 시도 횟수로 소비하지 않았다.
+- 증거 해결: 기본 플레이에서 alpha 0인 개발 `CustomerPreferenceCanvas` 대신 `BeginNewGame()` 이후 실제 WorldSandbox player HUD와 현재 runtime customer를 방문 생성 성공 직후 같은 stage에서 표본화했다. 고객 활성, profile 문구, HUD screen bounds를 실제로 확인하고 숨겨진 Canvas는 진단값으로만 남겼다.
+- 결과: `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`가 Miner 보류와 Tailor 구매, 재고·경제·SalesLog·feedback·demand·HUD assertion 및 Console 0으로 `FINISHED_PASS`했다.
+- 회귀: BETA-004, CustomerPresentation, CustomerArrival 검증도 모두 D3D11 PASS했다. 새 crash와 Scene/Prefab/Packages/ProjectSettings/Save schema content 변경은 없다.
+- 최종 판정: 두 기존 blocker는 종료하고 `BETA_005_COMPLETE`로 기록한다. 자동 캡처만 비차단 `CAPTURE_EVIDENCE_DEBT`로 유지한다.

@@ -2187,3 +2187,30 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - 범위 밖 이동은 transform을 바꾸지 않고 거부됐고, 기존 v11 `shopFurniture` 투영에 stable ID와 pose가 보존됐다. 이동된 판매대에서 고객 구매와 수익 입금, `오늘 품절 · 다음 상품 진열` 안내까지 완료됐다.
 - BETA-004, BETA-003, WORLD-006B D3D11 검증 PASS. Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0. Scene/Prefab/Packages/ProjectSettings/Save schema 무변경이다.
 - 최종 상태 `BETA_004_COMPLETE`; 다음 활성 티켓은 `BETA-005 Customer Strategy and Feedback`이다.
+
+## 2026-08-12 — BETA-005 Customer Strategy and Feedback (HARD BLOCKER)
+
+- WorldSandbox 고객의 `NpcProfile` null과 거절 timeout 결손을 확인했다. 기존 Miner/Tailor profile 교대 배정, 실제 성향/결과 월드 라벨·HUD, 정상 거절 완료를 미커밋 구현했으며 기존 NPC/구매/경제/수요 권위는 보존했다.
+- Runtime/Editor compile 오류 0. 두 D3D11 실행 모두 Miner 250G `p=0.00` 평가와 Day 2 보류 1건 기록까지 진행했지만 validator stage frame skip 때문에 같은 preference-panel 관찰 assertion이 반복 실패했다.
+- 판정: `BETA_005_HARD_BLOCKER`. 세 번째 실행과 추가 수정, commit, BETA-006 시작은 중단했다. Scene/Prefab/Packages/ProjectSettings/Save schema/native crash 변경은 0이다.
+
+## 2026-08-13 — BETA-005 승인 재검증 결과
+
+- Runtime/Editor compile은 오류 0이다. 기존 CS8785/CS0414 경고만 유지됐다.
+- 승인된 `Logs/BETA005_D3D11_Validation_ApprovedResume.log`는 D3D11, Miner/Tailor 성향 대비, Processed/Luxury 평가 차이, 실제 Miner 방문과 250G 보류·SalesLog 기록을 PASS했다.
+- bootstrap frame skip 수정 뒤에도 첫 stage 1 Editor 관찰 전에 짧은 방문이 끝나 동일한 preference-panel assertion이 다시 실패했다. 새 crash와 금지 경로 변경은 0이다.
+- 판정은 `HARD_BLOCKER_BETA_005_VALIDATION`. 승인된 추가 실행을 소비했으며 BETA-005 commit과 BETA-006 시작은 하지 않았다.
+
+## 2026-08-20 — BETA-005 동기 live-HUD 증거 / Unity license blocker
+
+- 기존 13개 BETA-005 변경을 보존하고, 실제 WorldSandbox 플레이 HUD를 `BeginNewGame()`으로 활성화한 뒤 Miner/Tailor 방문 성공 직후 같은 stage에서 현재 profile·visit 상태·고객 활성·라이브 성향 문구·HUD screen bounds를 검사하도록 최소 수정했다.
+- 숨겨진 `CustomerPreferenceCanvas`는 개발 오버레이임을 유지한다. Canvas 활성·enabled·CanvasGroup alpha·text·RectTransform은 진단값으로 기록하되 플레이어 가시성 PASS 근거로 사용하지 않는다.
+- Runtime/Editor compile 오류 0. 승인된 D3D11 launch는 Unity Editor license 부재로 project load 전 return code 198이어서 validator, Play Mode, graphics 초기화는 수행되지 않았다.
+- 새 crash와 금지 경로 변경은 0이다. 현재 상태 `HARD_BLOCKER_BETA_005_UNITY_LICENSE`; local commit과 BETA-006은 시작하지 않았다.
+
+## 2026-08-20 — BETA-005 Customer Strategy and Feedback 완료
+
+- Unity Personal 라이선스 복구 뒤 실제 WorldSandbox player session에서 Miner/Tailor 성향과 방문 고객 활성, player HUD 문구·screen bounds를 방문 생성 직후 동기 검증했다. 숨겨진 개발 Canvas는 진단 전용으로 유지했다.
+- Miner는 Plank 250G를 보류했고 재고·돈은 그대로이며 SalesLog 보류 1건이 남았다. Tailor는 저가 상품을 구매해 1G가 입금됐다. 실제 feedback, demand 통계, HUD가 이 차이를 설명한다.
+- 주 BETA-005 D3D11 validator, BETA-004, CustomerPresentation, CustomerArrival 회귀가 모두 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이다.
+- Scene/Prefab/Packages/ProjectSettings/Save schema content는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`이며 다음 활성 티켓은 선승인된 `BETA-006 Phone Hiring and Feed Completion`이다.

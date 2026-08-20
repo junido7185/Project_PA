@@ -698,3 +698,52 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/BETA004_Regression_BETA003.log` preserved five recipes, quality/UI and the 28G processed sale. `Logs/BETA004_Regression_WORLD006B.log` preserved movable furniture, customer route, protected route, exact cancel rollback and save projection.
 - Runtime/Editor compile passed with zero errors. No new crash or Scene/Prefab/Packages/ProjectSettings/Save schema change occurred. Capture remains `CAPTURE_EVIDENCE_DEBT` for the M85 integrated playtest.
 - Final state: `BETA_004_COMPLETE`. Create the approved local ticket commit and activate preapproved `BETA-005 Customer Strategy and Feedback`.
+
+## 2026-08-12 — BETA-005 Customer Strategy and Feedback — HARD BLOCKER
+
+- Baseline: branch `milestone/gameplay-beta-85`, commit `9d2a81e`. BETA-004 작업과 clean baseline을 보존했다.
+- WorldSandbox runtime 고객이 profile null 평균형이던 결손을 확인했다. 기존 `Resources/NPCs/Profile_Miner`와 `Profile_Tailor`를 방문 순서대로 배정하고, 실제 성향/구매/피드백/수요/판매 통계 권위를 그대로 연결했다.
+- 기존 adapter가 구매만 완료로 보던 문제를 보정해 실제 SalesLog 거절도 정상 방문 완료로 처리하며 재고/돈은 유지한다. HUD와 고객 월드 라벨은 실제 profile 성향과 구매/보류 결과를 표시한다.
+- Runtime/Editor compile 오류 0. D3D11 두 실행 모두 Miner 250G 평가와 Day 2 보류 기록까지 진행했지만 validator의 공통 frame skip이 non-idle preference-panel 관찰 구간을 놓쳐 같은 assertion이 반복 실패했다.
+- 동일 원인 2회 실패 규칙에 따라 세 번째 실행, 추가 수정, commit, BETA-006 시작을 중단했다. native crash와 금지 경로 변경은 0이다. 상태: `BETA_005_HARD_BLOCKER`.
+
+## 2026-08-13 — BETA-005 human-approved resume
+
+- 사람이 BETA-005 stage 1/2 관찰 순서 최소 수정과 추가 D3D11 실행 1회를 명시적으로 승인했다. 통과 뒤 BETA-006~010 자동 진행도 2026-08-14 09:00 KST까지 승인됐다.
+- 시작 상태는 `milestone/gameplay-beta-85@9d2a81e`, staged 0, 승인된 BETA-005 미커밋 경로 13개, Unity 프로세스 0, 신규 crash 0으로 이전 중단점과 일치한다.
+- 실제 원인은 stage마다 frame counter를 reset한 뒤 validator 전체가 3 update를 건너뛴 것이었다. 실제 Miner는 그 사이 이동·평가·거절을 완료해 production 동작과 SalesLog는 정상인데 non-idle preference panel 표본만 놓쳤다.
+- 수정 범위는 bootstrap stage 0만 초기 frame 대기를 유지하고 stage 1/2는 첫 update부터 실제 UI를 관찰하는 orchestration 변경이다. assertion과 PurchaseEvaluator 권위는 유지한다.
+
+## 2026-08-13 — BETA-005 approved additional validation — HARD BLOCKER
+
+- Runtime/Editor compile은 각각 오류 0으로 PASS했다. 기존 CS8785 및 Editor CS0414 경고만 유지됐다.
+- `Logs/BETA005_D3D11_Validation_ApprovedResume.log`에서 D3D11, Miner/Tailor 실 profile 대비, 플레이어용 성향 힌트, 기존 `PurchaseEvaluator`의 Processed/Luxury 카테고리 반응, 밤 영업 gate, Miner 방문 시작과 월드/HUD 전략 표시는 PASS했다.
+- 실제 Miner는 Plank 250G를 `p=0.00`으로 보류했고 Day 2 SalesLog에 보류 1건이 기록됐다. 그러나 첫 stage 1 Editor callback 전에 짧은 실제 방문이 완료되어 `the visible Miner preference remains readable during the actual visit`가 같은 지점에서 다시 실패했다.
+- 승인된 추가 실행 1회는 소비됐다. native crash와 Scene/Prefab/Packages/ProjectSettings/Save schema 변경은 없고, 자동 캡처와 회귀 검사는 주 validator PASS 전제에 도달하지 않아 수행하지 않았다.
+- 최종 상태는 `HARD_BLOCKER_BETA_005_VALIDATION`이다. 네 번째 실행, 추가 validator 약화, commit, BETA-006 시작 없이 중단한다.
+
+## 2026-08-20 — BETA-005 synchronous live-evidence approval
+
+- 사람이 기존 13개 BETA-005 변경 보존, `TryBeginCustomerVisit` 성공 직후 실제 플레이어용 WorldSandbox HUD 동기 표본, 격리 D3D11 실행 1회와 PASS 또는 명시적 `BETA005_LIVE_PREFERENCE_EVIDENCE_DEBT` 처리, 이후 BETA-006~010 자동 진행을 승인했다.
+- 이전 `HARD_BLOCKER_BETA_005_VALIDATION`은 해제했고 티켓을 `BETA_005_ACTIVE`로 재개했다. 기존 세 번의 실패 로그와 변경은 삭제하거나 재생성하지 않는다.
+- `CustomerPreferenceCanvas`는 기본 player mode에서 숨겨지는 개발 오버레이이며, 실제 BETA 플레이어 표면은 `BeginNewGame()` 이후의 WorldSandbox 상단 HUD이다. 새 검증은 그 라이브 getter, 현재 customer/profile, 화면 경계와 활성 상태를 같은 stage에서 읽고, 숨겨진 Canvas 상태도 진단값으로 별도 기록한다.
+
+## 2026-08-20 — BETA-005 Unity license launch blocker
+
+- 동기 표본 수정 뒤 Runtime/Editor `dotnet build`는 오류 0으로 PASS했다. 기존 CS8785/CS0414 경고만 유지됐다.
+- 승인된 실행은 `Logs/BETA005_D3D11_Validation_SynchronousPreference.log`에 명령행을 남겼지만 Unity Licensing이 유효한 Editor 라이선스를 찾지 못해 return code 198로 종료했다. `[BETA-005]` 0건, graphics/D3D11 초기화 0건으로 project load·executeMethod·Play Mode·validator는 시작되지 않았다.
+- 같은 실행을 자동 재시도하지 않았다. Unity 프로세스 0, crash report 3개로 기존과 동일하고, dirty/staged/untracked는 승인된 13/0/0을 유지한다.
+- 상태는 `HARD_BLOCKER_BETA_005_UNITY_LICENSE`다. 사용자가 Unity Hub/Editor 라이선스를 복구한 뒤 현재 컴파일된 validator 지점에서 재개해야 하며 BETA-006과 local commit은 시작하지 않는다.
+
+## 2026-08-20 — Unity Personal license recovered; BETA-005 resumed
+
+- Unity Hub와 Licensing Client가 재실행됐고 token/license 파일이 23:18 KST에 갱신됐다. Hub/Client 로그는 Unity Personal activation `statusCode=200`, `LicenseUpdate Added`, Personal EULA `Agreed`를 기록했다.
+- 이전 return code 198 launch는 project load·graphics·executeMethod 이전에 끝났으므로 승인된 기능 validation은 미소비 상태로 정합했다. 기존 13개 변경을 보존하고 `BETA_005_ACTIVE`에서 compile과 실제 D3D11 validator를 재개한다.
+
+## 2026-08-20 — BETA-005 Customer Strategy and Feedback COMPLETE
+
+- `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`가 실제 player session, Miner/Tailor profile 대비, current customer 활성, live HUD 문구·화면 경계, Miner 보류와 Tailor 구매를 D3D11에서 PASS했다.
+- Miner 보류는 재고·돈을 바꾸지 않고 SalesLog에 정확히 1건 남았다. 기존 feedback은 Miner를, 실제 demand summary는 `Processed: 0/1 bought`를, player HUD는 `보류`를 설명했다. Tailor 구매는 1G를 입금했다.
+- Day 3 이전 잠금 안내인 demand-insight 표시 문자열을 고객 식별 근거로 묶었던 validator를 실제 feedback/demand/HUD 권위의 직접 assertion으로 분리했다. assertion 삭제·경고화·production 우회는 없다.
+- BETA-004 movable shop/readability, CustomerPresentation, CustomerArrival 회귀가 모두 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0, Scene/Prefab/Packages/ProjectSettings/Save schema content diff 0이다.
+- 자동 캡처는 `CAPTURE_EVIDENCE_DEBT`다. 최종 상태 `BETA_005_COMPLETE`; 승인된 local ticket commit 뒤 선승인 `BETA-006 Phone Hiring and Feed Completion`을 활성화한다.

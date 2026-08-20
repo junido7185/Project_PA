@@ -224,6 +224,17 @@
       "humanFollowUp": "Final world-space label size and stall composition can be reviewed once during the M85 integrated playtest."
     },
     {
+      "id": "beta-005-customer-strategy",
+      "executeMethod": "PA_Beta005CustomerStrategyValidator.RunBeta005ValidationBatch",
+      "sourceFile": "Assets/Scripts/World/WorldGameplayAdapterService.cs",
+      "purpose": "Validate real Miner/Tailor profile strategy hints, actual high-price rejection without transaction, affordable purchase, feedback, demand signals, and sales decision stats in WorldSandbox.",
+      "workflowTypes": ["gameplay-beta", "npc", "customer-strategy", "shop-feedback", "economy", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first profile assignment, customer path, purchase/reject transaction, feedback, demand, or sales-stat assertion.",
+      "humanFollowUp": "Customer label density and final night-shop pacing can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

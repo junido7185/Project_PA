@@ -3,11 +3,11 @@
     "id": "M85",
     "policyGoalId": "M85_GAMEPLAY_BETA",
     "name": "GAMEPLAY BETA",
-    "status": "in_progress",
+    "status": "active",
     "completionTarget": "M85_GAMEPLAY_BETA_COMPLETE",
     "branch": "milestone/gameplay-beta-85",
     "checkpointCommit": "b176bdcac8d140ffa53e8b907ef7da3576a44a70",
-    "completedTicketCommits": 4,
+    "completedTicketCommits": 5,
     "commitLimit": 10
   },
   "worldArchitectureApproval": {
@@ -73,7 +73,7 @@
     ],
     "sequenceStartTicket": "BETA-001",
     "initialNextTicket": "BETA-001",
-    "nextTicket": "BETA-005",
+    "nextTicket": "BETA-006",
     "preapprovedThrough": "BETA-010",
     "stopAtMilestone": "M85_GAMEPLAY_BETA_COMPLETE",
     "completionReached": false,
@@ -97,6 +97,49 @@
     "activeTicket": "BETA-003",
     "status": "consumed_pass",
     "validationLog": "Logs/BETA003_D3D11_Validation_ThirdApproved.log"
+  },
+  "beta005ResumeApproval": {
+    "approvedOn": "2026-08-13",
+    "humanApproved": true,
+    "operationWindowEndsKst": "2026-08-14T09:00:00+09:00",
+    "scope": [
+      "minimal BETA-005 validator stage 1/2 observation ordering fix",
+      "one additional isolated D3D11 BETA-005 execution",
+      "automatic BETA-006 through BETA-010 continuation after BETA-005 passes"
+    ],
+    "releasedBlockers": [
+      "BETA-005 validator stage 1/2 observation ordering approval required",
+      "one additional BETA-005 D3D11 execution approval required"
+    ],
+    "additionalValidationAttempts": 1,
+    "additionalAttemptConsumed": false,
+    "activeTicket": "BETA-005",
+    "status": "consumed_fail",
+    "validationLog": "Logs/BETA005_D3D11_Validation_ApprovedResume.log",
+    "failure": "the visible Miner preference remains readable during the actual visit"
+  },
+  "beta005SynchronousEvidenceApproval": {
+    "approvedOn": "2026-08-20",
+    "humanApproved": true,
+    "scope": [
+      "preserve the existing 13 BETA-005 dirty paths",
+      "sample the actual player-facing live preference HUD synchronously after TryBeginCustomerVisit succeeds",
+      "one isolated D3D11 BETA-005 validation execution",
+      "record completion or BETA005_LIVE_PREFERENCE_EVIDENCE_DEBT without weakening gameplay assertions",
+      "automatic BETA-006 through BETA-010 continuation"
+    ],
+    "releasedBlockers": [
+      "HARD_BLOCKER_BETA_005_VALIDATION",
+      "additional synchronous BETA-005 D3D11 execution approval required"
+    ],
+    "additionalValidationAttempts": 1,
+    "additionalAttemptConsumed": true,
+    "activeTicket": "BETA-005",
+    "status": "consumed_pass",
+    "validationLog": "Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log",
+    "validationDebtContinuationAllowed": true,
+    "localTicketCommitAllowed": true,
+    "pushAllowed": false
   },
   "loopPolicyMaintenance": {
     "ticketId": "LOOP-POLICY-002",
@@ -129,18 +172,18 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "BETA-004",
+  "ticketId": "BETA-005",
   "status": "completed",
-  "finalState": "BETA_004_COMPLETE",
-  "goal": "Make the existing movable B01 sales display, shop boundary, stock, price, quality and sold-out state readable without duplicating shop or furniture authority.",
+  "finalState": "BETA_005_COMPLETE",
+  "goal": "Connect existing customer profiles, purchase/reject feedback and demand signals to readable WorldSandbox night-shop strategy without replacing gameplay authorities.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
-    "commit": "2709323c1372f57c9b5bf87d4481367547365282",
+    "commit": "9d2a81e",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 12,
+    "dirtyPathCountAtStop": 13,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
@@ -155,22 +198,23 @@
     "editor": "PASS: dotnet Assembly-CSharp-Editor; 0 errors; pre-existing CS8785 and PA_ErrorTracker CS0414 warnings only"
   },
   "validators": {
-    "beta004Log": "Logs/BETA004_D3D11_Validation_Final.log",
-    "beta003RegressionLog": "Logs/BETA004_Regression_BETA003.log",
-    "world006BRegressionLog": "Logs/BETA004_Regression_WORLD006B.log",
+    "beta005Log": "Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log",
+    "beta004RegressionLog": "Logs/BETA005_Regression_BETA004_Licensed.log",
+    "customerPresentationRegressionLog": "Logs/BETA005_Regression_CustomerPresentation_Licensed.log",
+    "customerArrivalRegressionLog": "Logs/BETA005_Regression_CustomerArrival_Licensed.log",
     "passed": [
       "Unity D3D11 Runtime and Editor compile",
-      "existing B01 remains the single four-ShopSlot authority",
-      "one shop-zone header plus four live slot labels identify the night shop and stocking interaction",
-      "empty, stocked and sold-out states remain visible",
-      "Bread item name, count, 43G price and 125 percent quality appear in world and HUD summaries",
-      "price changes refresh the merchandising presentation",
-      "the functional display, labels and ShopSlots move and rotate together",
-      "out-of-zone display movement is rejected atomically",
-      "existing v11 world-state projection captures display grid and rotation",
-      "NpcController reaches the moved display and purchase deposits the displayed price",
-      "BETA-003 five-recipe crafting, quality, UI and 28G sale regression",
-      "WORLD-006B movement, 270-degree rotation, route, rollback and save projection regression",
+      "actual player-session HUD is enabled while development overlays remain hidden",
+      "Miner and Tailor retain distinct profile and category response",
+      "Miner live profile, customer activation, HUD text and on-screen bounds are sampled synchronously",
+      "Miner rejection preserves stock and money and creates exactly one SalesLog rejection",
+      "actual feedback, demand authority and player HUD explain the rejection",
+      "Tailor live profile and HUD evidence are sampled synchronously",
+      "Tailor purchases the affordable product and deposits 1G",
+      "one rejection and one purchase produce readable strategy feedback",
+      "BETA-004 shop readability and movable-display sale regression",
+      "Customer Presentation regression",
+      "Customer Arrival regression",
       "blocking Console Error/Exception/Assert 0"
     ]
   },
@@ -384,6 +428,48 @@
     "saveSchemaChanged": false,
     "nextTicket": "BETA-005"
   },
+  "gameplayBetaCustomerStrategy": {
+    "ticket": "BETA-005",
+    "state": "BETA_005_COMPLETE",
+    "sceneScope": "WorldSandbox runtime only",
+    "implemented": [
+      "existing Miner and Tailor NpcProfile assignment",
+      "real preference world label and player HUD summary",
+      "purchase and rejection adapter completion states",
+      "existing PurchaseEvaluator, feedback, demand and SalesLog authority reuse"
+    ],
+    "runtimeCompile": "PASS: 0 errors",
+    "editorCompile": "PASS: 0 errors",
+    "validationLogs": [
+      "Logs/BETA005_D3D11_Validation.log",
+      "Logs/BETA005_D3D11_Validation_Final.log",
+      "Logs/BETA005_D3D11_Validation_ApprovedResume.log",
+      "Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed.log",
+      "Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log",
+      "Logs/BETA005_Regression_BETA004_Licensed.log",
+      "Logs/BETA005_Regression_CustomerPresentation_Licensed.log",
+      "Logs/BETA005_Regression_CustomerArrival_Licensed.log"
+    ],
+    "repeatedFailure": "resolved by synchronously sampling the actual WorldSandbox player HUD and current customer at successful visit creation instead of the hidden development Canvas",
+    "attemptsWithSameFailure": 3,
+    "thirdAttemptAllowed": false,
+    "approvedAdditionalAttemptConsumed": true,
+    "synchronousEvidenceAttemptApproved": true,
+    "synchronousEvidenceAttemptConsumed": true,
+    "synchronousEvidenceValidationStarted": true,
+    "synchronousEvidenceLaunchFailure": "Unity licensing terminated before project load, graphics initialization, executeMethod, or Play Mode with return code 198",
+    "synchronousEvidenceValidationLog": "Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log",
+    "unityLicenseRecoveredAt": "2026-08-20T23:18:08+09:00",
+    "unityLicenseRecoveryEvidence": "Unity Personal activation statusCode 200, LicenseUpdate Added, EULA Agreed",
+    "nativeCrash": false,
+    "forbiddenPathsChanged": false,
+    "consoleBlockingErrors": 0,
+    "newCrashArtifacts": 0,
+    "capture": "CAPTURE_EVIDENCE_DEBT",
+    "commitCreated": true,
+    "nextTicketStarted": false,
+    "nextTicket": "BETA-006"
+  },
   "shopFurniture": {
     "authority": "existing ShopCustomizationController over GridService shop.interior",
     "cellSizeMeters": 2,
@@ -433,6 +519,7 @@
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
     "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
     "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
     "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
     "PROJECT_PA_STATUS.md",
@@ -465,9 +552,11 @@
   "beta003Completed": true,
   "beta004Started": true,
   "beta004Completed": true,
+  "beta005Started": true,
+  "beta005Completed": true,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-11",
-  "stoppedAt": "2026-08-12",
-  "stopReason": "BETA-004 passed the final D3D11 shop-readability validation plus BETA-003 and WORLD-006B regressions with blocking Console 0 and no new crash.",
-  "nextAction": "Create the approved BETA-004 local ticket commit, then continue automatically with preapproved BETA-005 Customer Strategy and Feedback."
+  "stoppedAt": "2026-08-20",
+  "stopReason": "BETA-005 completed; preapproved continuation advances to BETA-006 after the approved local ticket commit.",
+  "nextAction": "Create the approved BETA-005 local ticket commit, then activate BETA-006 and audit the existing HiringService and phone Hiring/Feed surfaces before modifying code."
 }

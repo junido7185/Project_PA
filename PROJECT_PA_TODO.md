@@ -6,10 +6,10 @@ Status: `IN_PROGRESS`; branch `milestone/gameplay-beta-85`; approved through `BE
 
 - [x] BETA-001 — Player Onboarding and World Readability: Day 1 start prompt, first objective route, functional landmarks, player-facing HUD, default-hidden development surfaces, D3D11/M70/Golden regressions.
 - [x] BETA-002 — Daytime Activity Completion: generated-island Gathering/Farming/Mining/Fishing, Space interaction, Inventory, 120G Raw value, daily reset.
-- [ ] BETA-003 — Crafting and Production Expansion: connect actual daytime resources to meaningful recipes, workbench UI/state, processed sale value.
+- [x] BETA-003 — Crafting and Production Expansion: connected daytime resources to 5 processed products, visible facility cards, preserved quality/value and real B01 sale.
 - [x] BETA-004 — Shop Readability and Merchandising.
-- [ ] BETA-005 — Customer Strategy and Feedback.
-- [ ] BETA-006 — Phone Hiring and Feed Completion.
+- [x] BETA-005 — Customer Strategy and Feedback: actual Miner/Tailor preferences, synchronous player-HUD evidence, reject/purchase feedback and demand signals; D3D11/regressions PASS.
+- [ ] BETA-006 — Phone Hiring and Feed Completion (next preapproved ticket).
 - [ ] BETA-007 — Village Response and NPC Integration.
 - [ ] BETA-008 — 7-Day Progression.
 - [ ] BETA-009 — Persistence and Recovery Pass.
@@ -1700,3 +1700,16 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] BETA-004, BETA-003, WORLD-006B D3D11 PASS; blocking Console 0, 신규 crash 0.
 - [ ] 비차단: M85 통합 플레이테스트에서 월드 라벨 크기·밀도 최종 확인 (`CAPTURE_EVIDENCE_DEBT`).
 - [ ] 다음 단일 티켓: `BETA-005 Customer Strategy and Feedback`.
+
+## BETA-005 Customer Strategy and Feedback — COMPLETE
+
+- [x] 기존 Miner/Tailor profile, 월드/HUD 성향 힌트, 실제 구매/보류 feedback 연결.
+- [x] 기존 `PurchaseEvaluator`의 profile 민감도와 Processed/Luxury 카테고리 반응 확인.
+- [x] 실제 player HUD와 숨겨진 개발 Canvas 계약을 구분하고 동기 live-HUD 표본 최소 수정.
+- [x] Runtime/Editor compile 오류 0; 기존 CS8785/CS0414만 유지.
+- [x] Unity Personal 라이선스 복구 확인: activation 200, LicenseUpdate Added, EULA Agreed.
+- [x] Miner live HUD/profile/화면 경계와 250G 보류, Tailor live HUD/profile과 1G 구매 검증.
+- [x] 보류 시 재고·돈 무변경, SalesLog 보류 1건, 실제 feedback/demand/HUD 설명 검증.
+- [x] BETA-004, CustomerPresentation, CustomerArrival 회귀와 blocking Console 0, 신규 crash 0.
+- [ ] 비차단: 자동 캡처 미생성은 `CAPTURE_EVIDENCE_DEBT`로 M85 통합 플레이테스트에 유지.
+- [ ] 다음 단일 티켓: `BETA-006 Phone Hiring and Feed Completion`.

@@ -1068,3 +1068,30 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 판매대를 옮기고 회전해도 표지, 슬롯, 재고, 가격이 함께 이동하며 범위 밖 이동은 기존 원자적 거부를 유지한다. v11 save projection과 고객 접근·구매 권위도 바꾸지 않았다.
 - `BETA004_D3D11_Validation_Final.log`, BETA-003 제작/판매 회귀, WORLD-006B 가구 이동 회귀가 모두 D3D11 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이다.
 - Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 다음 활성 티켓은 선승인된 `BETA-005`다.
+
+## 2026-08-12 — BETA-005 Customer Strategy and Feedback (HARD BLOCKER)
+
+- WorldSandbox 런타임 고객에 기존 Miner/Tailor `NpcProfile`을 번갈아 연결하고 실제 성향을 고객 월드 라벨과 플레이어 HUD에 표시했다. 기존 구매/경제/피드백/수요 권위는 유지했다.
+- 구매뿐 아니라 실제 거절도 adapter의 정상 방문 완료로 인식해 재고/돈 유지와 다음 가격 전략을 설명한다.
+- Runtime/Editor compile 오류 0. D3D11 두 실행에서 Miner 250G 보류와 SalesLog 기록은 실제 수행됐지만 validator가 짧은 non-idle 성향 패널 프레임을 놓치는 같은 assertion으로 반복 실패했다.
+- 동일 원인 2회 실패 규칙에 따라 세 번째 실행과 추가 수정, commit, BETA-006 전환을 중단했다. 상태는 `BETA_005_HARD_BLOCKER`다.
+
+## 2026-08-13 — BETA-005 승인 재개 결과 (HARD BLOCKER)
+
+- 사람 승인 범위로 validator의 초기 frame 대기를 bootstrap에만 제한하고 기존 `PurchaseEvaluator`가 Processed/Luxury 카테고리에 다르게 반응하는 assertion을 추가했다.
+- Runtime/Editor compile 오류 0. 승인된 추가 D3D11 실행은 profile/힌트/카테고리/Miner 방문·보류 통계를 PASS했지만 같은 live preference 가시성 assertion에서 실패했다.
+- 추가 실행은 소비됐고 native crash와 금지 경로 변경은 없다. `HARD_BLOCKER_BETA_005_VALIDATION`으로 중단했으며 commit과 BETA-006은 시작하지 않았다.
+
+## 2026-08-20 — BETA-005 동기 live-HUD 증거 수정 및 환경 차단
+
+- 실제 플레이어 노출 표면을 숨겨진 `CustomerPreferenceCanvas`가 아닌 `BeginNewGame()` 이후 WorldSandbox HUD로 확정했다. HUD가 사용하는 정확한 screen rect를 읽기 전용으로 노출하고 실제 draw와 validator가 같은 값을 사용한다.
+- Miner/Tailor 방문 생성 성공 직후 같은 stage에서 실제 profile, adapter 방문 상태, 고객 activeSelf/activeInHierarchy, 라이브 HUD 문구와 화면 교차를 검사한다. 개발 Canvas의 Canvas.enabled, CanvasGroup alpha, text, RectTransform도 진단 로그로 기록하지만 PASS 권위로 사용하지 않는다.
+- Runtime/Editor compile 오류 0. 승인된 Unity 실행은 유효한 Editor license 부재로 project load 전 return code 198이어서 validator는 실행되지 않았다. 상태는 `HARD_BLOCKER_BETA_005_UNITY_LICENSE`; commit과 BETA-006 전환은 하지 않았다.
+
+## 2026-08-20 — Codex — BETA-005 Customer Strategy and Feedback (DONE)
+
+- Unity Personal 라이선스 복구 뒤 실제 player session을 시작하고, Miner/Tailor 방문 생성과 같은 stage에서 현재 customer/profile, 활성 상태, 실제 HUD 문구와 screen bounds를 검증했다. alpha 0 개발 Canvas는 PASS 근거에서 제외하고 진단값으로 보존했다.
+- 실제 Miner는 Plank 250G를 보류해 재고·돈이 유지되고 SalesLog에 보류 1건이 남았다. Tailor는 저가 상품을 구매해 1G를 입금했다. 기존 feedback, demand authority와 player HUD가 결과를 설명한다.
+- 첫 licensed run에서 Day 3 잠금 상태인 `CustomerDemandInsightController` 문자열을 고객 식별 근거로 잘못 묶은 validator assertion을 발견했다. assertion을 삭제하거나 경고화하지 않고 실제 feedback, `GetTopCategorySummary()` 수요 통계, HUD 보류 문구로 분리해 권위를 직접 검증했다.
+- 주 D3D11 validator와 BETA-004, CustomerPresentation, CustomerArrival 회귀가 모두 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이며 Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다.
+- 자동 캡처는 재시도하지 않아 `CAPTURE_EVIDENCE_DEBT`로 유지한다. 최종 상태는 `BETA_005_COMPLETE`; 승인된 로컬 커밋 뒤 `BETA-006`으로 자동 전환한다.
