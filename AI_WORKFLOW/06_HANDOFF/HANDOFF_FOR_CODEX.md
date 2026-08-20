@@ -14,7 +14,8 @@
 - 증거: `Logs/BETA004_D3D11_Validation_Final.log`, `Logs/BETA004_Regression_BETA003.log`, `Logs/BETA004_Regression_WORLD006B.log` PASS; blocking Console 0, new crash 0.
 - `BETA-005 Customer Strategy and Feedback` 완료: 실제 Miner/Tailor profile, 방문 직후 current customer와 player HUD 성향·screen bounds, Miner 250G 보류와 Tailor 1G 구매를 검증했다. 재고·경제·SalesLog·feedback·demand 권위는 기존 시스템을 그대로 사용한다.
 - 증거: `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`, `Logs/BETA005_Regression_BETA004_Licensed.log`, `Logs/BETA005_Regression_CustomerPresentation_Licensed.log`, `Logs/BETA005_Regression_CustomerArrival_Licensed.log`가 D3D11 PASS했다. Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0이다.
-- 현재 전환 대상은 선승인된 `BETA-006 Phone Hiring and Feed Completion`이다. BETA-005 로컬 커밋 직후 기존 `HiringService`, 휴대폰 Hiring/Feed, SalesLog/village signal 연결을 먼저 감사하고 유일한 활성 티켓으로 진행한다.
+- `BETA-006 Phone Hiring and Feed Completion` 완료: WorldSandbox P 휴대폰, 후보 8명과 실제 비용/상태, 역할별 C-02~C-09 wrapper 고용, 판매 전 empty Feed와 실제 판매/마을 변화 Feed, Audit/Settings를 검증했다.
+- 현재 전환 대상은 선승인된 `BETA-007 Village Response and NPC Integration`이다. BETA-006 로컬 커밋 직후 기존 VillageChangeSignal/VillageCulture/NPC schedule·role·facility 연결을 먼저 감사하고 유일한 활성 티켓으로 진행한다.
 - Prototype_FirstDay Golden, WorldSandbox scene, MainGame, Prefab, Packages, ProjectSettings, Save schema v11은 승인 없는 변경 금지다.
 
 ## M70 및 Loop Policy 현재 상태 — 2026-08-11
@@ -418,3 +419,13 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - `WorldAlphaPlayableController`의 실제 HUD rect를 단일 read-only 계약으로 만들고, BETA-005 validator가 `BeginNewGame()` 뒤 각 `TryBeginCustomerVisit` 성공 직후 profile·visit·고객 활성·라이브 HUD text·screen bounds를 동기 검사하도록 수정했다. 숨은 개발 Canvas 값도 로그하되 가시성 권위에는 포함하지 않는다.
 - Runtime/Editor compile은 오류 0, 기존 CS8785/CS0414만 유지된다. `Logs/BETA005_D3D11_Validation_SynchronousPreference.log`는 Unity license 부재로 return code 198이며 `[BETA-005]`/graphics 초기화 0건이다.
 - Unity 프로세스와 새 crash는 0이다. 유효한 Unity Editor license를 복구한 뒤 현재 변경을 보존하여 동일 validator에서 재개한다. 그 전에는 commit이나 BETA-006을 시작하지 않는다.
+
+## 2026-08-21 — BETA-006 Phone Hiring and Feed Completion — COMPLETE
+
+- **기준:** `milestone/gameplay-beta-85@0c9131b`; WorldSandbox runtime first, Prototype Golden regression-only.
+- **휴대폰:** existing SmartphoneUI가 없을 때만 runtime Phone/EventSystem을 구성한다. P 진입, 4개 탭, on-screen bounds와 닫기/홈 이동을 검증했다.
+- **채용:** 8개 후보 카드가 역할·비용·잔액·잠금/고용 상태를 보인다. C-02~C-09 원본 SkinnedMesh를 보존한 역할별 wrapper와 실제 HiringService 결제·스폰·중복 차단을 사용한다.
+- **피드:** clear Mask 결함을 수정하고 실제 판매 전 empty state, 판매 후 item/price/buyer/time/category/quality/village direction 실시간 갱신을 연결했다.
+- **증거:** `BETA006_D3D11_Validation`, BETA-005, VillageChangeSignal, Golden FinalDemoRoute PASS; compile 오류·blocking Console·신규 crash 0.
+- **보호:** Scene/Packages/ProjectSettings/Save schema/authority와 원본 C-02~C-09 FBX 무변경. 캡처는 비차단 `CAPTURE_EVIDENCE_DEBT`.
+- **다음:** 승인된 BETA-006 local commit 뒤 `BETA-007 Village Response and NPC Integration`을 자동 활성화한다. push하지 않는다.

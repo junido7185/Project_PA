@@ -4,7 +4,10 @@ using System.Reflection;
 using System;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
+using TMPro;
 using Object = UnityEngine.Object;
 
 // Project P.A. scene wiring safety net.
@@ -22,6 +25,7 @@ public static class PA_RuntimeSceneBinder
         EnsureNavMeshForNpcAgents();
         EnsureCoreServices(services);
         EnsureUiServices(uiRoot);
+        EnsureSmartphoneShell(uiRoot);
         EnsureSmartphoneApps();
         EnsureNpcRuntimeHooks();
         EnsurePlayerRuntimeHooks();
@@ -96,6 +100,171 @@ public static class PA_RuntimeSceneBinder
         EnsurePanelApp<HiringUI>("HiringPanel");
         EnsurePanelApp<FeedUI>("FeedPanel");
         EnsurePanelApp<SettingsUI>("SettingsPanel");
+    }
+
+    // WorldSandbox is intentionally scene-light.  The Golden/Main scenes keep
+    // their authored phone hierarchy; only scenes without a SmartphoneUI get
+    // this compact runtime shell so the same P-key and four app components are
+    // available to an actual player without serializing a second scene copy.
+    static void EnsureSmartphoneShell(GameObject uiRoot)
+    {
+        EnsureEventSystem();
+        if (FindSceneComponent<SmartphoneUI>() != null) return;
+
+        var phone = AddUiChild(uiRoot.transform, "SmartphoneContainer", typeof(Image));
+        var phoneRect = (RectTransform)phone.transform;
+        phoneRect.anchorMin = Vector2.zero;
+        phoneRect.anchorMax = Vector2.zero;
+        phoneRect.pivot = Vector2.zero;
+        phoneRect.sizeDelta = new Vector2(420f, 720f);
+        phoneRect.anchoredPosition = new Vector2(40f, -640f);
+        phone.GetComponent<Image>().color = new Color(0.88f, 0.34f, 0.34f, 0.99f);
+
+        var screen = AddUiChild(phone.transform, "PhoneScreen", typeof(Image));
+        Stretch((RectTransform)screen.transform, 16f);
+        screen.GetComponent<Image>().color = new Color(0.12f, 0.14f, 0.2f, 1f);
+
+        AddText(screen.transform, "StatusBar", "PROJECT P.A.  ·  PHONE", 17f,
+            new Vector2(0f, 1f), new Vector2(1f, 1f),
+            new Vector2(16f, -42f), new Vector2(-52f, -8f),
+            TextAlignmentOptions.MidlineLeft, new Color(0.98f, 0.92f, 0.78f));
+
+        Button closeButton = AddButton(screen.transform, "CloseButton", "×",
+            new Vector2(1f, 1f), new Vector2(1f, 1f),
+            new Vector2(-46f, -42f), new Vector2(-8f, -8f),
+            new Color(0.35f, 0.38f, 0.48f), 24f);
+
+        var content = AddUiChild(screen.transform, "ContentArea");
+        var contentRect = (RectTransform)content.transform;
+        contentRect.anchorMin = Vector2.zero;
+        contentRect.anchorMax = Vector2.one;
+        contentRect.offsetMin = new Vector2(12f, 42f);
+        contentRect.offsetMax = new Vector2(-12f, -52f);
+
+        var home = AddUiChild(content.transform, "HomeScreen", typeof(GridLayoutGroup));
+        Stretch((RectTransform)home.transform);
+        var grid = home.GetComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(166f, 178f);
+        grid.spacing = new Vector2(18f, 24f);
+        grid.padding = new RectOffset(18, 18, 34, 24);
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 2;
+        grid.childAlignment = TextAnchor.UpperCenter;
+
+        string[] panelNames = { "AuditPanel", "HiringPanel", "FeedPanel", "SettingsPanel" };
+        string[] labels = { "감사", "채용", "피드", "설정" };
+        Color[] colors =
+        {
+            new Color(0.28f, 0.66f, 0.88f), new Color(0.94f, 0.57f, 0.31f),
+            new Color(0.48f, 0.72f, 0.48f), new Color(0.56f, 0.54f, 0.76f)
+        };
+        var panels = new GameObject[panelNames.Length];
+        var buttons = new Button[panelNames.Length];
+
+        for (int i = 0; i < panelNames.Length; i++)
+        {
+            var tile = AddUiChild(home.transform, panelNames[i] + "_Tile", typeof(Image), typeof(Button));
+            tile.GetComponent<Image>().color = colors[i];
+            var layout = tile.AddComponent<LayoutElement>();
+            layout.preferredWidth = 166f;
+            layout.preferredHeight = 178f;
+            AddText(tile.transform, "Label", labels[i], 30f,
+                Vector2.zero, Vector2.one, new Vector2(8f, 8f), new Vector2(-8f, -8f),
+                TextAlignmentOptions.Center, Color.white, FontStyles.Bold);
+            buttons[i] = tile.GetComponent<Button>();
+
+            var panel = AddUiChild(content.transform, panelNames[i], typeof(Image));
+            Stretch((RectTransform)panel.transform);
+            panel.GetComponent<Image>().color = new Color(0.95f, 0.92f, 0.86f, 1f);
+
+            Button backButton = AddButton(panel.transform, "BackButton", "← 홈",
+                new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(8f, -44f), new Vector2(92f, -8f),
+                new Color(0.22f, 0.24f, 0.3f), 16f);
+            AddText(panel.transform, "PanelTitle", labels[i], 22f,
+                new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(104f, -44f), new Vector2(-12f, -8f),
+                TextAlignmentOptions.MidlineLeft, new Color(0.16f, 0.17f, 0.21f), FontStyles.Bold);
+
+            backButton.onClick.AddListener(() => SmartphoneUI.instance?.ReturnToHome());
+            panel.SetActive(false);
+            panels[i] = panel;
+        }
+
+        AddText(screen.transform, "CloseHint", "P / ESC 닫기", 14f,
+            new Vector2(0f, 0f), new Vector2(1f, 0f),
+            new Vector2(12f, 8f), new Vector2(-12f, 36f),
+            TextAlignmentOptions.Center, new Color(0.82f, 0.84f, 0.9f));
+
+        SmartphoneUI smartphone = phone.AddComponent<SmartphoneUI>();
+        smartphone.root = phoneRect;
+        smartphone.hoverTrigger = phoneRect;
+        smartphone.homeScreen = home;
+        smartphone.tabPanels = panels;
+        smartphone.tabButtons = buttons;
+        smartphone.hiddenPos = new Vector2(40f, -640f);
+        smartphone.peekPos = new Vector2(40f, -570f);
+        smartphone.transitionTime = 0.25f;
+        closeButton.onClick.AddListener(smartphone.Close);
+    }
+
+    static void EnsureEventSystem()
+    {
+        if (FindSceneComponent<EventSystem>() != null) return;
+        new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+    }
+
+    static GameObject AddUiChild(Transform parent, string name, params Type[] extraComponents)
+    {
+        var components = new List<Type> { typeof(RectTransform) };
+        if (extraComponents != null) components.AddRange(extraComponents);
+        var go = new GameObject(name, components.ToArray());
+        go.transform.SetParent(parent, false);
+        return go;
+    }
+
+    static TextMeshProUGUI AddText(Transform parent, string name, string value, float fontSize,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax,
+        TextAlignmentOptions alignment, Color color, FontStyles fontStyle = FontStyles.Normal)
+    {
+        var go = AddUiChild(parent, name, typeof(TextMeshProUGUI));
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
+        var text = go.GetComponent<TextMeshProUGUI>();
+        text.text = value;
+        text.fontSize = fontSize;
+        text.fontStyle = fontStyle;
+        text.alignment = alignment;
+        text.color = color;
+        text.raycastTarget = false;
+        return text;
+    }
+
+    static Button AddButton(Transform parent, string name, string label,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax,
+        Color color, float fontSize)
+    {
+        var go = AddUiChild(parent, name, typeof(Image), typeof(Button));
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.offsetMin = offsetMin;
+        rect.offsetMax = offsetMax;
+        go.GetComponent<Image>().color = color;
+        AddText(go.transform, "Text", label, fontSize, Vector2.zero, Vector2.one,
+            Vector2.zero, Vector2.zero, TextAlignmentOptions.Center, Color.white, FontStyles.Bold);
+        return go.GetComponent<Button>();
+    }
+
+    static void Stretch(RectTransform rect, float inset = 0f)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = new Vector2(inset, inset);
+        rect.offsetMax = new Vector2(-inset, -inset);
     }
 
     static void EnsureNpcRuntimeHooks()
@@ -307,10 +476,10 @@ public static class PA_RuntimeSceneBinder
     {
         GameObject panel = FindSceneGameObject(panelName);
         if (panel == null) return;
-        if (panel.GetComponentInChildren<T>(true) != null) return;
 
         Transform placeholder = panel.transform.Find("Placeholder");
         if (placeholder != null) placeholder.gameObject.SetActive(false);
+        if (panel.GetComponentInChildren<T>(true) != null) return;
 
         GameObject content = FindChild(panel.transform, "RuntimeContent");
         if (content == null)

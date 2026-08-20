@@ -2214,3 +2214,11 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Miner는 Plank 250G를 보류했고 재고·돈은 그대로이며 SalesLog 보류 1건이 남았다. Tailor는 저가 상품을 구매해 1G가 입금됐다. 실제 feedback, demand 통계, HUD가 이 차이를 설명한다.
 - 주 BETA-005 D3D11 validator, BETA-004, CustomerPresentation, CustomerArrival 회귀가 모두 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이다.
 - Scene/Prefab/Packages/ProjectSettings/Save schema content는 변경하지 않았다. 캡처는 `CAPTURE_EVIDENCE_DEBT`이며 다음 활성 티켓은 선승인된 `BETA-006 Phone Hiring and Feed Completion`이다.
+
+## 2026-08-21 — BETA-006 Phone Hiring and Feed Completion 완료
+
+- WorldSandbox의 P 휴대폰 진입과 4개 앱을 runtime으로 연결했다. 기존 phone이 있는 Golden/Main은 재사용하고 새 hierarchy를 중복 생성하지 않는다.
+- 8개 후보는 역할·실제 비용·잔액·잠금/부족/고용 상태를 보인다. C-02~C-09 원본을 참조하는 역할별 주민 wrapper로 실제 비용 차감, 스폰, roster 증가, 중복 차단을 완료했다.
+- alpha 0 UI Mask 때문에 숨겨졌던 Hiring/Feed 카드를 복구했다. Feed는 첫 판매 전 명확한 빈 상태, 실제 판매 뒤 상품·가격·구매자·시각·category·quality·마을 변화 방향을 즉시 표시한다.
+- D3D11 BETA-006과 BETA-005/VillageChangeSignal/Golden FinalDemoRoute 회귀 PASS. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이다.
+- 기존 Scene, Packages, ProjectSettings, Save schema/authority, C-02~C-09 FBX는 무변경이다. 최종 상태 `BETA_006_COMPLETE`; 다음은 선승인 `BETA-007 Village Response and NPC Integration`이다.

@@ -228,3 +228,13 @@
 - 상호작용/피드백: 로컬 `-Z` 물리 앞면에서 0.65m 떨어진 `PA_KitchenInteractionAnchor`를 런타임에 명시하고, 기존 제작 거래가 성공해 결과 아이템이 가방에 들어간 뒤에만 원본 B06 모델 자체가 0.72초 동안 최대 3.5% pulse한다. 원시 오브젝트·무작위 도구·가짜 기능은 추가하지 않았다.
 - 원본 보존: `B06_KitchenStation.fbx`, `.fbm/Color.jpg`, 래퍼 프리팹, BuildingData, 설계도, 재질, 메인 씬은 변경하지 않았다. Blender는 메시/UV/노멀 손상 증거와 안전 캡처 판정이 없어 사용하지 않았다.
 - 검증: Runtime 오류 0(기존 CS8785 경고 1), Editor 오류 0(기존 CS8785/CS0414 경고 2), B05 보존·B06 축소 전용 물리·anchor·성공 후 pulse·Tier/2×2/출처 정책 계약 30/30 PASS. 반복 네이티브 충돌의 사람 판단 게이트 때문에 실제 전면, 통로, collider 체감, pulse, 동일 게임 카메라 Before/After는 확인하지 못해 `PARTIAL`이다.
+
+## 2026-08-21 — BETA-006 주민 채용 wrapper 최종화 기록
+
+- 대상/출처: 기존 `Assets/Models/Characters/C-02`~`C-09` 계열 주민 SkinnedMesh. 원본 FBX·Avatar·텍스처·meta는 수정하지 않았다.
+- 결정: **2(Unity 설정만 수정) + 5(기존 모델 기반 재구성)**. 새 외형을 만들지 않고 `Assets/Resources/Residents/Resident_*.prefab` 8개를 역할별 runtime wrapper로 생성했다.
+- 역할 매핑: Farmer=C-02, Lumberjack=C-03, Miner=C-04, Fisher=C-05, Chef=C-06, Blacksmith=C-07, Tailor=C-08, Carpenter=C-09. 각 wrapper는 기존 NpcController와 정확한 Producer/Specialist controller, schedule/dialogue, NavMeshAgent, collider, presentation normalizer를 사용한다.
+- 생성 방식: `Assets/Editor/PA_HiringResidentTemplateBuilder.cs`가 원본 SkinnedMesh를 중첩 참조하고 후보 `spawnPrefab`을 재현 가능하게 연결한다. 원본을 덮어쓰거나 메시/UV/노멀/재질을 임의 변경하지 않는다.
+- 사용 위치/역할: WorldSandbox runtime 휴대폰 채용의 실제 spawn source. 기존 Golden/Main의 resident와 scene hierarchy는 변경하지 않는다.
+- 검증: builder `prefabs=8 linked=8 originalsUntouched=true`; D3D11에서 후보 8명, exact-role SkinnedMesh template, 실제 비용 차감, active spawn, roster와 중복 방지가 PASS했다.
+- 라이선스/사용자 확인: 기존 C-series 출처/라이선스 항목을 상속하며 새 외부 에셋은 없다. 외형 교체나 게임 전체 스타일 변경이 아니므로 추가 사용자 확인은 필요하지 않다.

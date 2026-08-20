@@ -235,6 +235,17 @@
       "humanFollowUp": "Customer label density and final night-shop pacing can be reviewed once during the M85 integrated playtest."
     },
     {
+      "id": "beta-006-phone-hiring-feed",
+      "executeMethod": "PA_Beta006PhoneHiringFeedValidator.RunBeta006ValidationBatch",
+      "sourceFile": "Assets/Scripts/World/WorldGameplayAdapterService.cs",
+      "purpose": "Validate the WorldSandbox P-key Phone, eight role-exact hiring cards, exact-cost UI hire, pre-sale Feed empty state, live ShopSlot sale card, village direction, Audit, and Settings.",
+      "workflowTypes": ["gameplay-beta", "phone", "hiring", "feed", "village-signal", "economy", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Build BETA-006 resident templates first.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first phone shell, candidate card, role template, cost transaction, Feed, village, Audit, or Settings assertion.",
+      "humanFollowUp": "Phone motion, final card spacing, and candidate pacing can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

@@ -1095,3 +1095,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - 첫 licensed run에서 Day 3 잠금 상태인 `CustomerDemandInsightController` 문자열을 고객 식별 근거로 잘못 묶은 validator assertion을 발견했다. assertion을 삭제하거나 경고화하지 않고 실제 feedback, `GetTopCategorySummary()` 수요 통계, HUD 보류 문구로 분리해 권위를 직접 검증했다.
 - 주 D3D11 validator와 BETA-004, CustomerPresentation, CustomerArrival 회귀가 모두 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이며 Scene/Prefab/Packages/ProjectSettings/Save schema는 무변경이다.
 - 자동 캡처는 재시도하지 않아 `CAPTURE_EVIDENCE_DEBT`로 유지한다. 최종 상태는 `BETA_005_COMPLETE`; 승인된 로컬 커밋 뒤 `BETA-006`으로 자동 전환한다.
+
+## 2026-08-21 — Codex — BETA-006 Phone Hiring and Feed Completion (DONE)
+
+- WorldSandbox에 기존 휴대폰이 없을 때만 runtime Phone과 Input System EventSystem을 구성했다. Golden/Main의 기존 SmartphoneUI는 건드리지 않는다.
+- Hiring 후보 8명을 항상 보이는 카드로 만들고 역할·실제 비용·잔액·부족/고용/중복 상태와 roster를 표시했다. 기존 C-02~C-09 SkinnedMesh를 보존하는 역할별 wrapper 8개를 Editor builder로 만들고 실제 `HiringService` 결제·스폰에 연결했다.
+- Hiring/Feed가 비어 보인 직접 원인인 alpha 0 Mask graphic을 정합했다. Feed는 판매 전 empty state와 실제 `ShopSlot` 판매 후 item/price/buyer/time/category/quality/village direction을 즉시 표시한다.
+- `BETA006_D3D11_Validation`, BETA-005, VillageChangeSignal, Golden FinalDemoRoute가 PASS했다. Runtime/Editor compile 오류·blocking Console·신규 crash는 0이다.
+- 기존 Scene, Packages, ProjectSettings, Save schema/authority와 원본 C-02~C-09 FBX는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태 `BETA_006_COMPLETE`다.

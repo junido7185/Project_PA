@@ -9,14 +9,14 @@
 
 ## 현재 작업
 
-`BETA-005 Customer Strategy and Feedback` — 완료. 승인된 로컬 티켓 커밋 생성 직후 선승인된 `BETA-006`으로 전환한다.
+`BETA-006 Phone Hiring and Feed Completion` — 구현·D3D11 검증·회귀 완료, 승인된 로컬 ticket commit 직전의 유일한 티켓.
 
-- Baseline: BETA-004 로컬 커밋 직후 `milestone/gameplay-beta-85`
-- 목표: 기존 고객 성향·구매 평가·수요 신호·피드백 권위를 WorldSandbox 밤 영업에 읽기 쉽게 연결해 가격과 상품 선택의 전략을 플레이어가 이해하게 한다.
-- 보존: `Prototype_FirstDay.unity` Golden, M70 월드/저장 권위, Save schema v11, 기존 gameplay authority.
-- 금지: Scene/Prefab/Packages/ProjectSettings/Save schema 변경, PurchaseEvaluator/NpcController/CustomerDemandInsight 권위 재작성, push/rebase/reset/clean.
-- 전환 근거: `BETA-004` D3D11 전용 검사와 BETA-003/WORLD-006B 회귀가 모두 PASS; blocking Console 0, 신규 crash 0.
-- 현재 상태: `BETA_005_COMPLETE`. Unity Personal 라이선스 복구 뒤 Runtime/Editor compile, 주 D3D11 validator와 3개 관련 회귀가 모두 통과했다.
-- 확인 결과: 실제 플레이 HUD는 `BeginNewGame()` 뒤 활성화되는 WorldSandbox IMGUI 표면이며, 기존 `CustomerPreferenceCanvas`는 alpha 0인 개발 오버레이다. 검증은 방문 시작 직후 현재 profile·adapter state·고객 활성·HUD text·screen bounds를 읽고 숨은 Canvas 값을 진단 로그로 남긴다.
-- 완료 증거: `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`, `Logs/BETA005_Regression_BETA004_Licensed.log`, `Logs/BETA005_Regression_CustomerPresentation_Licensed.log`, `Logs/BETA005_Regression_CustomerArrival_Licensed.log`; blocking Console 0, 신규 crash 0, 금지 경로 content diff 0.
-- 전환 경계: 현재 13개 승인 경로만 로컬 커밋하고 push하지 않는다. 이후 정확한 커밋 해시를 기준으로 `BETA-006 Phone Hiring and Feed Completion`을 유일한 활성 티켓으로 기록한다.
+- Baseline: `milestone/gameplay-beta-85@0c9131b2f7256aa8ccb9b458b0fee2db5a4371c9`; 시작 working tree clean.
+- 목표: 기존 `HiringService`와 후보 데이터를 실제 휴대폰 채용 루프로 노출하고, Feed가 판매 전 honest empty state와 판매 후 실제 판매·마을 변화 데이터를 보여 주게 한다.
+- 필수 상태: 후보 목록, 역할, 실제 비용, 잔액/티어/중복 가능 여부, 채용 전·후, 실제 결과; Feed empty/sales/village link; Audit와 Settings 정상 유지.
+- 보존: `Prototype_FirstDay.unity` Golden, WorldSandbox/M70, 기존 Hiring/Economy/Tier/SalesLog/Village/Save 권위, Save schema v11.
+- 금지: Scene/Prefab/Packages/ProjectSettings/Save schema 변경을 기본 해결책으로 사용, 새 채용/피드 manager 생성, HiringService/EconomyService 재작성, 가짜 후보·판매·마을 데이터, push/rebase/reset/clean.
+- 완료 결과: WorldSandbox runtime 휴대폰 4개 앱, 후보 8명, 비용/잔액/잠금/고용 후 roster, 실제 고용과 C-02~C-09 기반 역할별 주민 스폰, 판매 전 빈 Feed와 실제 판매 후 마을 변화 Feed를 연결했다.
+- 검증: Runtime/Editor compile 오류 0. `BETA006_D3D11_Validation`, BETA-005, VillageChangeSignal, Golden FinalDemoRoute D3D11 회귀 PASS, blocking Console 0, 신규 crash 0.
+- 보호 결과: 기존 Scene, Packages, ProjectSettings, Save schema/authority, 원본 C-02~C-09 FBX는 무변경이다. 새 주민 prefab은 원본을 중첩 참조하는 재현 가능한 wrapper다.
+- 다음 단계: BETA-006 범위만 로컬 commit하고 push하지 않은 뒤 선승인 `BETA-007 Village Response and NPC Integration`을 자동 활성화한다.

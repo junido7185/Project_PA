@@ -54,6 +54,8 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool DevelopmentOverlayVisible => _developmentOverlayVisible;
     public bool StartPromptVisible => IsReady && _startPromptVisible;
     public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
+    public string PlayerControlHint =>
+        "WASD 이동 · Space 상호작용 · P 휴대폰(채용/피드) · F5 저장 · F9 불러오기 · Esc 메뉴";
     public Rect PlayerFacingHudScreenRect
     {
         get
@@ -673,7 +675,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         GUILayout.Space(4f);
         GUILayout.Label(CustomerStrategySummary);
         GUILayout.Space(4f);
-        GUILayout.Label("WASD 이동 · 가까운 오브젝트 Space 상호작용 · F5 저장 · F9 불러오기 · Esc 메뉴");
+        GUILayout.Label(PlayerControlHint);
         GUILayout.EndArea();
     }
 

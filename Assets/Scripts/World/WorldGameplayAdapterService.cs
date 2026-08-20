@@ -12,7 +12,9 @@ using UnityEngine.SceneManagement;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
+using UnityEngine.UI;
 #endif
 
 public enum WorldGameplayAdapterState
@@ -3261,6 +3263,487 @@ public static class PA_Beta005CustomerStrategyValidator
     {
         if (!condition) throw new InvalidOperationException(message);
         Debug.Log($"[BETA-005] PASS {message}");
+    }
+}
+
+public static class PA_Beta006PhoneHiringFeedValidator
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.BETA006.Active";
+    const string FailedKey = "PA.BETA006.Failed";
+    const string ConsoleErrorKey = "PA.BETA006.ConsoleErrors";
+    const string FrameKey = "PA.BETA006.Frames";
+    const string StageKey = "PA.BETA006.Stage";
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+    static SmartphoneUI _phone;
+    static HiringUI _hiringUi;
+    static FeedUI _feedUi;
+    static NpcCandidateData _candidate;
+    static int _moneyBeforeHire;
+    static int _hiredBefore;
+    static int _moneyBeforeSale;
+    static int _expectedSalePrice;
+    static string _saleItemName;
+    static float _stageStarted;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        Subscribe();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/Beta/BETA-006/Validate Phone Hiring and Feed")]
+    public static void RunBeta006Validation() => RunInternal();
+
+    public static void RunBeta006ValidationBatch() => RunInternal();
+
+    static void RunInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(FrameKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            Subscribe();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception exception)
+        {
+            Fail(exception);
+        }
+    }
+
+    static void Subscribe()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SetStage(0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            Finish();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(FrameKey, 0) + 1;
+        SessionState.SetInt(FrameKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+        if (stage == 0 && frames < 5) return;
+
+        try
+        {
+            ResolveRuntime();
+            if (_alpha == null || !_alpha.IsReady || _adapter == null || !_adapter.IsReady ||
+                _phone == null || HiringService.Instance == null || EconomyService.Instance == null)
+            {
+                if (frames > 360)
+                    throw new TimeoutException("WorldSandbox phone/hiring authorities did not initialize.");
+                return;
+            }
+
+            if (stage == 0)
+            {
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(_alpha.BeginNewGame() && _alpha.PlayerFacingHudVisible &&
+                        _alpha.PlayerControlHint.Contains("P") &&
+                        _alpha.PlayerControlHint.Contains("휴대폰"),
+                    "the real player session explains the P-key Phone entry point");
+                Require(EventSystem.current != null &&
+                        EventSystem.current.GetComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>() != null,
+                    "WorldSandbox has a clickable Input System EventSystem");
+                Require(_phone.tabPanels != null && _phone.tabPanels.Length == 4 &&
+                        _phone.tabButtons != null && _phone.tabButtons.Length == 4,
+                    "the runtime Phone exposes Audit, Hiring, Feed and Settings tabs");
+
+                _phone.Toggle();
+                Require(_phone.IsOpen,
+                    "the same public toggle subscribed to P opens the Phone");
+                _stageStarted = Time.realtimeSinceStartup;
+                SetStage(1);
+                return;
+            }
+
+            if (stage == 1)
+            {
+                if (Time.realtimeSinceStartup - _stageStarted < 0.4f) return;
+                Canvas.ForceUpdateCanvases();
+                Require(IsRectOnScreen(_phone.root) &&
+                        _phone.root.rect.width > 0f && _phone.root.rect.height > 0f,
+                    "the opened Phone has non-zero bounds inside the Game view");
+
+                _phone.SelectTab(2);
+                ResolveRuntime();
+                Require(_feedUi != null && _phone.CurrentTabIndex == 2 &&
+                        IsOnlyPanelActive(2),
+                    "the real Feed tab opens exclusively");
+                _feedUi.Refresh();
+                Require(_feedUi.HasVisibleEmptyState && _feedUi.VisibleSaleCardCount == 0 &&
+                        ContainsVisibleText(_feedUi.gameObject, "아직 판매 기록"),
+                    "Feed presents an honest pre-sale empty state");
+
+                _phone.SelectTab(1);
+                ResolveRuntime();
+                SetStage(2);
+                return;
+            }
+
+            if (stage == 2)
+            {
+                Require(_hiringUi != null && _phone.CurrentTabIndex == 1 &&
+                        IsOnlyPanelActive(1),
+                    "the real Hiring tab opens exclusively");
+
+                HiringService hiring = HiringService.Instance;
+                List<NpcCandidateData> candidates = hiring.availableCandidates
+                    .Where(value => value != null)
+                    .OrderBy(value => value.requiredTier)
+                    .ThenBy(value => value.hireCost)
+                    .ThenBy(value => value.name)
+                    .ToList();
+                _hiringUi.Refresh();
+                Canvas.ForceUpdateCanvases();
+                Require(candidates.Count == 8 && _hiringUi.VisibleCardCount == candidates.Count,
+                    "all eight authoritative candidates have visible cards");
+                Require(candidates.All(HasRealRoleTemplate),
+                    "every candidate uses an existing C-02..C-09 SkinnedMesh role template");
+                Require(HiringMaskIsVisible() && candidates.All(CandidateCardHasContentAndBounds),
+                    "candidate cards expose name, role, cost and non-zero masked layout bounds");
+
+                _candidate = candidates.First();
+                EconomyService.Instance.ForceSet(0, "BETA-006 insufficient-funds fixture");
+                _hiringUi.Refresh();
+                Require(_candidate != null &&
+                        !hiring.CanHire(_candidate, out string insufficientReason) &&
+                        insufficientReason.Contains("부족") &&
+                        TryGetCandidateButton(_candidate, out Button blockedButton) &&
+                        !blockedButton.interactable &&
+                        EconomyService.Instance.Money == 0 && hiring.HiredCount == 0,
+                    "insufficient funds keep the card visible and block spending/hiring");
+
+                Require(EconomyService.Instance.Deposit(_candidate.hireCost + 125,
+                        "BETA-006 earned hiring funds fixture"),
+                    "funds enter through the existing EconomyService authority");
+                _hiringUi.Refresh();
+                _moneyBeforeHire = EconomyService.Instance.Money;
+                _hiredBefore = hiring.HiredCount;
+                bool hasHireButton = TryGetCandidateButton(_candidate, out Button hireButton);
+                Require(hiring.CanHire(_candidate, out string readyReason) &&
+                        string.IsNullOrEmpty(readyReason) &&
+                        hasHireButton &&
+                        hireButton.interactable,
+                    "an affordable candidate exposes an actionable real Hire button");
+                hireButton.onClick.Invoke();
+                SetStage(3);
+                return;
+            }
+
+            if (stage == 3)
+            {
+                HiringService hiring = HiringService.Instance;
+                HiringService.HiredNpcRuntimeRecord hired = hiring.GetHiredRuntimeRecords()
+                    .FirstOrDefault(record => record.Candidate == _candidate);
+                GameObject instance = hired.Instance;
+                Require(hiring.HiredCount == _hiredBefore + 1 && hiring.IsHired(_candidate) &&
+                        EconomyService.Instance.Money == _moneyBeforeHire - _candidate.hireCost,
+                    "UI hiring spends the exact candidate cost and increments the real roster once");
+                Require(instance != null && instance.activeInHierarchy &&
+                        instance.GetComponent<NpcController>()?.profile == _candidate.profile &&
+                        instance.GetComponentInChildren<SkinnedMeshRenderer>(true) != null &&
+                        HasExpectedRuntimeRole(instance, _candidate.specialty),
+                    "the hired resident keeps the candidate identity, SkinnedMesh and exact role controller");
+                Require(!hiring.CanHire(_candidate, out string duplicateReason) &&
+                        duplicateReason.Contains("이미") &&
+                        TryGetCandidateButton(_candidate, out Button hiredButton) &&
+                        !hiredButton.interactable &&
+                        ContainsVisibleText(hiredButton.gameObject, "고용됨") &&
+                        _hiringUi.CurrentStatusText.Contains("고용 1/8") &&
+                        _hiringUi.CurrentFeedbackText.Contains("고용 완료"),
+                    "the after-hire card, roster and feedback prevent duplicate hiring visibly");
+
+                _phone.SelectTab(2);
+                ResolveRuntime();
+                Require(_feedUi != null && _feedUi.HasVisibleEmptyState,
+                    "Feed remains empty before the first actual ShopSlot sale");
+                ShopSlot slot = _adapter.RuntimeShopSlots.FirstOrDefault();
+                Item plank = Resources.Load<Item>("Items/Item_Plank");
+                Require(slot != null && plank != null, "existing ShopSlot and Plank sale data are available");
+                _saleItemName = plank.itemName;
+                slot.currentItem = new ItemInstance(plank, 1) { quality = 1.25f, currentPrice = plank.basePrice };
+                _expectedSalePrice = Mathf.Max(1, plank.basePrice);
+                slot.displayPrice = _expectedSalePrice;
+                slot.RefreshDisplay();
+                _moneyBeforeSale = EconomyService.Instance.Money;
+                Require(slot.TryPurchaseByNpc(_candidate.ResolveDisplayName(), out int paid) &&
+                        paid == _expectedSalePrice,
+                    "an actual ShopSlot transaction records the first Feed sale");
+                SetStage(4);
+                return;
+            }
+
+            if (stage == 4)
+            {
+                Canvas.ForceUpdateCanvases();
+                Require(EconomyService.Instance.Money == _moneyBeforeSale + _expectedSalePrice &&
+                        _feedUi.VisibleSaleCardCount == 1 && !_feedUi.HasVisibleEmptyState,
+                    "the open Feed refreshes immediately after the successful sale");
+                GameObject feedCard = FindActiveDescendant(_feedUi.transform, "FeedCard");
+                string feedText = CollectText(feedCard);
+                Require(feedCard != null && ((RectTransform)feedCard.transform).rect.height > 0f &&
+                        feedText.Contains(_saleItemName) && feedText.Contains($"{_expectedSalePrice:N0} G") &&
+                        feedText.Contains(_candidate.ResolveDisplayName()) && feedText.Contains("Day") &&
+                        feedText.Contains("가공품") && feedText.Contains("마을 방향") &&
+                        _feedUi.CurrentVillageSummary.Contains("Processed"),
+                    "the Feed card shows real item, price, buyer, time, category and village direction");
+
+                _phone.SelectTab(0);
+                AuditResultUI auditUi = UnityEngine.Object.FindFirstObjectByType<AuditResultUI>();
+                auditUi?.Refresh();
+                Require(auditUi != null && IsOnlyPanelActive(0) &&
+                        AuditService.Instance != null && AuditService.Instance.CurrentHiredCount == 1 &&
+                        auditUi.auditRequirementsText != null &&
+                        auditUi.auditRequirementsText.text.Contains("고용") &&
+                        auditUi.auditRequirementsText.text.Contains("1/") &&
+                        auditUi.facilityDirectionText != null &&
+                        auditUi.facilityDirectionText.text.Contains("가공"),
+                    "Audit preserves hired-roster and sale-driven facility direction feedback");
+
+                _phone.SelectTab(3);
+                SettingsUI settings = UnityEngine.Object.FindFirstObjectByType<SettingsUI>();
+                Require(settings != null && IsOnlyPanelActive(3) &&
+                        settings.bgmSlider != null && settings.sfxSlider != null &&
+                        settings.GetComponentsInChildren<Button>(true).Length >= 2,
+                    "Settings preserves BGM, SFX, Save and Load controls");
+
+                _phone.ReturnToHome();
+                Require(_phone.homeScreen != null && _phone.homeScreen.activeInHierarchy &&
+                        !_phone.tabPanels.Any(panel => panel != null && panel.activeSelf),
+                    "Phone returns to a populated home menu without empty tabs");
+                _phone.Close();
+                Require(!_phone.IsOpen, "Phone closes through its player-facing navigation");
+                Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                    "blocking runtime Console Error/Exception/Assert count is 0");
+                Require(!SceneManager.GetActiveScene().isDirty,
+                    "BETA-006 remains runtime-only and leaves WorldSandbox scene clean");
+                Debug.Log("[BETA-006] PLAY_MODE_PASS phone=true candidates=8 hire=true " +
+                          "exactCost=true roles=true feedEmpty=true saleFeed=true village=true " +
+                          "audit=true settings=true console=0");
+                EditorApplication.update -= ValidateRuntime;
+                EditorApplication.ExitPlaymode();
+            }
+        }
+        catch (Exception exception)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(exception);
+        }
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+        _phone = SmartphoneUI.instance ?? UnityEngine.Object.FindFirstObjectByType<SmartphoneUI>();
+        _hiringUi = UnityEngine.Object.FindFirstObjectByType<HiringUI>();
+        _feedUi = UnityEngine.Object.FindFirstObjectByType<FeedUI>();
+    }
+
+    static bool HasRealRoleTemplate(NpcCandidateData candidate)
+    {
+        if (candidate == null || candidate.spawnPrefab == null ||
+            candidate.spawnPrefab.GetComponent<NpcController>() == null ||
+            candidate.spawnPrefab.GetComponentInChildren<SkinnedMeshRenderer>(true) == null)
+            return false;
+        return HasExpectedRuntimeRole(candidate.spawnPrefab, candidate.specialty);
+    }
+
+    static bool HasExpectedRuntimeRole(GameObject resident, NpcSpecialty specialty)
+    {
+        if (resident == null) return false;
+        if (NpcSpecialtyMapping.IsCraftingSpecialty(specialty))
+        {
+            SpecialistNpcController specialist = resident.GetComponent<SpecialistNpcController>();
+            return specialist != null && specialist.specialty == specialty;
+        }
+
+        ProducerNpcController producer = resident.GetComponent<ProducerNpcController>();
+        return producer != null && producer.specialty == specialty;
+    }
+
+    static bool CandidateCardHasContentAndBounds(NpcCandidateData candidate)
+    {
+        if (!_hiringUi.TryGetCandidateCard(candidate, out GameObject card) ||
+            card == null || !card.activeInHierarchy) return false;
+        RectTransform rect = card.transform as RectTransform;
+        string text = CollectText(card);
+        return rect != null && rect.rect.width > 0f && rect.rect.height > 0f &&
+               text.Contains(candidate.ResolveDisplayName()) &&
+               text.Contains(candidate.hireCost.ToString("N0")) &&
+               text.Contains(ResolveRoleLabel(candidate.specialty));
+    }
+
+    static bool HiringMaskIsVisible()
+    {
+        if (_hiringUi?.scrollRect?.viewport == null) return false;
+        Image image = _hiringUi.scrollRect.viewport.GetComponent<Image>();
+        Mask mask = _hiringUi.scrollRect.viewport.GetComponent<Mask>();
+        return image != null && image.color.a > 0.9f && mask != null &&
+               !mask.showMaskGraphic && _hiringUi.scrollRect.viewport.rect.width > 0f &&
+               _hiringUi.scrollRect.viewport.rect.height > 0f;
+    }
+
+    static bool TryGetCandidateButton(NpcCandidateData candidate, out Button button)
+    {
+        button = null;
+        if (_hiringUi == null || !_hiringUi.TryGetCandidateCard(candidate, out GameObject card))
+            return false;
+        button = card.GetComponentInChildren<Button>(true);
+        return button != null;
+    }
+
+    static bool IsOnlyPanelActive(int index)
+    {
+        if (_phone?.tabPanels == null || index < 0 || index >= _phone.tabPanels.Length) return false;
+        for (int i = 0; i < _phone.tabPanels.Length; i++)
+        {
+            GameObject panel = _phone.tabPanels[i];
+            if (panel == null || panel.activeSelf != (i == index)) return false;
+        }
+        return true;
+    }
+
+    static bool IsRectOnScreen(RectTransform rect)
+    {
+        if (rect == null || !rect.gameObject.activeInHierarchy) return false;
+        Vector3[] corners = new Vector3[4];
+        rect.GetWorldCorners(corners);
+        Vector2 min = corners[0];
+        Vector2 max = corners[0];
+        for (int i = 1; i < corners.Length; i++)
+        {
+            min = Vector2.Min(min, corners[i]);
+            max = Vector2.Max(max, corners[i]);
+        }
+        return new Rect(min, max - min).Overlaps(
+            new Rect(0f, 0f, Screen.width, Screen.height), true);
+    }
+
+    static bool ContainsVisibleText(GameObject root, string value)
+    {
+        if (root == null || string.IsNullOrEmpty(value)) return false;
+        return root.GetComponentsInChildren<TMP_Text>(true)
+            .Any(text => text != null && text.gameObject.activeInHierarchy &&
+                         text.enabled && text.text.Contains(value));
+    }
+
+    static string CollectText(GameObject root)
+    {
+        if (root == null) return string.Empty;
+        return string.Join(" | ", root.GetComponentsInChildren<TMP_Text>(true)
+            .Where(text => text != null && text.gameObject.activeInHierarchy && text.enabled)
+            .Select(text => text.text));
+    }
+
+    static GameObject FindActiveDescendant(Transform root, string objectName)
+    {
+        if (root == null) return null;
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+            if (child != null && child.name == objectName && child.gameObject.activeInHierarchy)
+                return child.gameObject;
+        return null;
+    }
+
+    static string ResolveRoleLabel(NpcSpecialty specialty)
+    {
+        return specialty switch
+        {
+            NpcSpecialty.Farmer => "농부",
+            NpcSpecialty.Miner => "광부",
+            NpcSpecialty.Lumberjack => "벌목꾼",
+            NpcSpecialty.Fisher => "어부",
+            NpcSpecialty.Chef => "요리사",
+            NpcSpecialty.Blacksmith => "대장장이",
+            NpcSpecialty.Tailor => "재단사",
+            NpcSpecialty.Carpenter => "목수",
+            _ => "주민"
+        };
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(FrameKey, 0);
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false) ||
+            (type != LogType.Error && type != LogType.Exception && type != LogType.Assert)) return;
+        SessionState.SetInt(ConsoleErrorKey, SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception exception)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[BETA-006] FAIL {exception.Message}\n{exception}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else Finish();
+    }
+
+    static void Finish()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int errors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(FrameKey);
+        SessionState.EraseInt(StageKey);
+        Debug.Log(failed
+            ? $"[BETA-006] FINISHED_WITH_ERRORS consoleErrors={errors}"
+            : "[BETA-006] FINISHED_PASS phone=true hire=true feed=true village=true " +
+              "audit=true settings=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[BETA-006] PASS {message}");
     }
 }
 #endif

@@ -2872,3 +2872,12 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - 첫 licensed run은 Day 3 전 잠금 안내인 demand-insight 표시 문자열에 customer name을 요구한 grouped validator assertion에서 멈췄다. 이를 실제 feedback·demand authority·HUD의 직접 assertion으로 분리했으며 검증 범위 축소나 production 변경은 없다.
 - 수정 후 `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`와 BETA-004, CustomerPresentation, CustomerArrival 회귀가 모두 PASS했다. blocking Console 0, 신규 crash 0, 금지 경로 content diff 0이다.
 - 최종 상태 `BETA_005_COMPLETE`. 자동 캡처만 `CAPTURE_EVIDENCE_DEBT`로 유지하고 승인된 local commit 뒤 `BETA-006`으로 진행한다.
+
+## 2026-08-21 — BETA-006 Phone Hiring and Feed Completion 완료
+
+- 기존 구조 감사에서 WorldSandbox에 phone shell/EventSystem/role-exact spawn source가 없고, Hiring/Feed의 clear Mask가 카드 stencil을 지우는 원인을 확인했다.
+- 기존 앱이 없을 때만 runtime Phone을 생성하고, 후보 8명의 C-02~C-09 기반 역할별 wrapper를 재현 가능한 Editor builder로 만들었다. 원본 FBX는 보존하고 후보의 명시 `spawnPrefab`만 연결했다.
+- 실제 Hiring button으로 잔액 부족 무차감, 충분한 잔액의 정확한 비용 차감, role-exact active 주민 스폰, roster와 중복 차단을 검증했다.
+- 실제 `ShopSlot` 판매가 열린 Feed를 즉시 갱신하고 item/price/buyer/time/category/quality/village direction을 표시했다. Audit와 Settings도 같은 Phone에서 정상 동작했다.
+- `Logs/BETA006_D3D11_Validation.log`와 BETA-005, VillageChangeSignal, Golden FinalDemoRoute 회귀가 PASS했다. compile 오류·blocking Console·신규 crash는 0이며 금지 경로 diff도 0이다.
+- 최종 상태 `BETA_006_COMPLETE`. 승인된 local commit 후 push 없이 `BETA-007`을 자동 활성화한다.

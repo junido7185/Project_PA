@@ -747,3 +747,18 @@ Append-only log for guarded automation and dry-run loop work.
 - Day 3 이전 잠금 안내인 demand-insight 표시 문자열을 고객 식별 근거로 묶었던 validator를 실제 feedback/demand/HUD 권위의 직접 assertion으로 분리했다. assertion 삭제·경고화·production 우회는 없다.
 - BETA-004 movable shop/readability, CustomerPresentation, CustomerArrival 회귀가 모두 PASS했다. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0, Scene/Prefab/Packages/ProjectSettings/Save schema content diff 0이다.
 - 자동 캡처는 `CAPTURE_EVIDENCE_DEBT`다. 최종 상태 `BETA_005_COMPLETE`; 승인된 local ticket commit 뒤 선승인 `BETA-006 Phone Hiring and Feed Completion`을 활성화한다.
+
+## 2026-08-20 — BETA-006 Phone Hiring and Feed Completion activated
+
+- BETA-005의 승인된 13개 경로를 `0c9131b2f7256aa8ccb9b458b0fee2db5a4371c9`로 로컬 커밋했고 push하지 않았다. 전환 시 working tree는 clean이다.
+- M85 선승인 sequence의 다음 단일 티켓을 `BETA_006_ACTIVE`로 활성화했다.
+- 먼저 기존 `HiringService`·후보 ScriptableObject·SmartphoneUI Hiring/Feed·SalesLog·마을 변화 read model·관련 validator를 감사한다. 새 manager, Scene/Prefab/Packages/ProjectSettings/Save schema 변경 없이 최소 player-facing 연결을 찾는다.
+
+## 2026-08-20 — BETA-006 Phone Hiring and Feed Completion COMPLETE
+
+- WorldSandbox에 기존 휴대폰 hierarchy가 없을 때만 생성되는 runtime shell과 Input System EventSystem을 추가했다. Golden/Main의 기존 휴대폰은 그대로 재사용한다.
+- Hiring은 8개 후보를 항상 표시하고 역할·실제 비용·잔액·부족/고용 상태·roster를 보여 준다. C-02~C-09 원본을 보존한 역할별 wrapper prefab 8개를 Editor builder로 재현하고 후보 `spawnPrefab`에 연결해 실제 `HiringService` 결제·스폰·중복 방지를 통과했다.
+- Hiring/Feed 카드가 사라지던 원인은 alpha 0 Mask graphic이었다. 불투명 stencil mask로 정합하고 Feed에 판매 전 빈 상태, 실제 `ShopSlot` 판매 즉시 갱신, 상품·가격·구매자·시간·category·quality·마을 변화 방향을 연결했다.
+- `Logs/BETA006_D3D11_Validation.log`가 phone/candidates=8/hire/exact cost/role spawn/feed sale/village/Audit/Settings/console=0을 PASS했다. BETA-005, VillageChangeSignal, Golden FinalDemoRoute 회귀도 PASS했다.
+- Runtime/Editor compile 오류 0, 신규 crash 0. 기존 Scene, Packages, ProjectSettings, Save schema/authority와 C-02~C-09 FBX는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
+- 최종 상태 `BETA_006_COMPLETE`; 승인된 local ticket commit 뒤 선승인 `BETA-007 Village Response and NPC Integration`을 활성화한다.

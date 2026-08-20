@@ -9,8 +9,8 @@ Status: `IN_PROGRESS`; branch `milestone/gameplay-beta-85`; approved through `BE
 - [x] BETA-003 — Crafting and Production Expansion: connected daytime resources to 5 processed products, visible facility cards, preserved quality/value and real B01 sale.
 - [x] BETA-004 — Shop Readability and Merchandising.
 - [x] BETA-005 — Customer Strategy and Feedback: actual Miner/Tailor preferences, synchronous player-HUD evidence, reject/purchase feedback and demand signals; D3D11/regressions PASS.
-- [ ] BETA-006 — Phone Hiring and Feed Completion (next preapproved ticket).
-- [ ] BETA-007 — Village Response and NPC Integration.
+- [x] BETA-006 — Phone Hiring and Feed Completion: runtime Phone, 8 visible candidates, exact-cost role hire, live sales/village Feed, Audit/Settings; D3D11/regressions PASS.
+- [ ] BETA-007 — Village Response and NPC Integration (next preapproved ticket).
 - [ ] BETA-008 — 7-Day Progression.
 - [ ] BETA-009 — Persistence and Recovery Pass.
 - [ ] BETA-010 — M85 Full Playable Beta Integration.
@@ -1713,3 +1713,15 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [x] BETA-004, CustomerPresentation, CustomerArrival 회귀와 blocking Console 0, 신규 crash 0.
 - [ ] 비차단: 자동 캡처 미생성은 `CAPTURE_EVIDENCE_DEBT`로 M85 통합 플레이테스트에 유지.
 - [ ] 다음 단일 티켓: `BETA-006 Phone Hiring and Feed Completion`.
+
+## BETA-006 Phone Hiring and Feed Completion — COMPLETE
+
+- [x] WorldSandbox에서 `P`로 열리는 화면 내 runtime Phone과 Input System EventSystem, Audit/Hiring/Feed/Settings 4개 탭.
+- [x] 권위 후보 8명 카드에 이름·역할·실제 비용·잔액·부족/고용/중복 상태와 roster 표시.
+- [x] C-02~C-09 원본을 보존하는 역할별 wrapper prefab 8개와 후보 `spawnPrefab` 연결.
+- [x] 실제 Hiring button이 `EconomyService`에서 정확한 비용을 차감하고 동일 역할 주민을 한 번만 스폰.
+- [x] Hiring/Feed alpha 0 mask 결함 수정, 판매 전 empty state와 실제 `ShopSlot` 판매 즉시 Feed 갱신.
+- [x] Feed에 상품·가격·구매자·시간·category·quality·마을 변화 방향 표시, Audit/Settings 보존.
+- [x] Runtime/Editor compile, BETA-006, BETA-005, VillageChangeSignal, Golden FinalDemoRoute PASS; blocking Console 0, 신규 crash 0.
+- [ ] 비차단: 자동 Game View 캡처는 `CAPTURE_EVIDENCE_DEBT`로 M85 통합 플레이테스트에 유지.
+- [ ] 다음 단일 티켓: `BETA-007 Village Response and NPC Integration`.
