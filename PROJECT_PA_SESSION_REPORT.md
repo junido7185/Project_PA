@@ -2881,3 +2881,12 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - 실제 `ShopSlot` 판매가 열린 Feed를 즉시 갱신하고 item/price/buyer/time/category/quality/village direction을 표시했다. Audit와 Settings도 같은 Phone에서 정상 동작했다.
 - `Logs/BETA006_D3D11_Validation.log`와 BETA-005, VillageChangeSignal, Golden FinalDemoRoute 회귀가 PASS했다. compile 오류·blocking Console·신규 crash는 0이며 금지 경로 diff도 0이다.
 - 최종 상태 `BETA_006_COMPLETE`. 승인된 local commit 후 push 없이 `BETA-007`을 자동 활성화한다.
+
+## 2026-08-21 — BETA-007 Village Response and NPC Integration validation-debt checkpoint
+
+- 기존 SalesLog/VillageCulture/GameClock/Hiring/NPC role 권위를 감사하고, 정확한 판매 상품·판매일을 pending/next-day response에 보존하는 구현과 WorldSandbox 역할/시설 결속을 추가했다.
+- 기존 B05/B06/B07에 B08 runtime-only Sewing facility를 더해 Tailor까지 역할 anchor를 확보했다. 주민 spawn/home/work/drop-off는 generated anchors 또는 기존 활동/시설 transform을 사용하며 고정 world 좌표를 추가하지 않았다.
+- NpcDialogue는 기존 specialist request 우선권 뒤에 관련 상품의 다음날 반응을 실제 DialogueUI로 1회 표시한다. WorldAlpha HUD는 실제 날짜와 판매→다음날 변화 요약을 보인다.
+- 첫/보정 D3D11은 native crash 없이 HUD/B08/bootstrap까지 진행했지만 resident spawn anchor readiness에서 종료되어 실제 hire·판매·Day 2·대화는 미검증이다.
+- invalid anchor 보존 위험을 런타임 lifecycle에서 수정했다. obstacle/NavMesh 안정화 뒤 anchor를 만들고 현재 navigation revision의 유효 지점만 채용 서비스에 전달한다. 실제 상품의 ProductionData/RecipeData로 역할·시설·안내도 일치시켰고 seed rebind 실패를 숨기지 않는다.
+- 보정 후 Runtime/Editor compile 오류 0. 추가 Unity 실행 없이 상태를 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT`로 checkpoint한다. Scene/Prefab/Packages/ProjectSettings/Save schema/native crash 변경은 0이다.

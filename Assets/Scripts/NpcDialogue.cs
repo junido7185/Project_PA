@@ -40,6 +40,10 @@ public class NpcDialogue : MonoBehaviour, IInteractable
     private string _lastLine;
     private string _seenRequestId;
     private int _seenRequestDay = -1;
+    private int _lastVillageResponseDay = -1;
+
+    public string LastLine => _lastLine ?? string.Empty;
+    public int LastVillageResponseDay => _lastVillageResponseDay;
 
     // 런타임 NpcController 캐시 (결정론 RNG 시드 재사용)
     private NpcController _cachedController;
@@ -97,6 +101,15 @@ public class NpcDialogue : MonoBehaviour, IInteractable
             return;
         }
 
+        // The existing resident request remains authoritative and is evaluated
+        // first. Residents without an active request can explain the exact sale
+        // that changed their role area on the following day.
+        if (TryShowVillageResponse())
+        {
+            GrantDailyDialoguePoints();
+            return;
+        }
+
         SpeakTopic(DialogueTopic.Greeting);
         GrantDailyDialoguePoints();
     }
@@ -116,6 +129,12 @@ public class NpcDialogue : MonoBehaviour, IInteractable
                 return $"[{name}] {itemName} {request.OwnedCount}/{request.RequiredCount}";
             return $"[{name}] 요청 확인 · {itemName} {request.OwnedCount}/{request.RequiredCount}";
         }
+
+        int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        if (_lastVillageResponseDay != day &&
+            VillageCultureVisualController.Instance != null &&
+            VillageCultureVisualController.Instance.TryBuildResidentResponse(gameObject, out _))
+            return $"[{name}] 어제 판매로 달라진 마을 이야기";
 
         return $"[{name}] {interactPrompt}";
     }
@@ -276,6 +295,20 @@ public class NpcDialogue : MonoBehaviour, IInteractable
     {
         if (!string.IsNullOrEmpty(friendshipId) && FriendshipService.Instance != null)
             FriendshipService.Instance.AddDialoguePoints(friendshipId);
+    }
+
+    private bool TryShowVillageResponse()
+    {
+        int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        if (_lastVillageResponseDay == day || VillageCultureVisualController.Instance == null ||
+            !VillageCultureVisualController.Instance.TryBuildResidentResponse(gameObject,
+                out string response))
+            return false;
+
+        _lastVillageResponseDay = day;
+        _lastLine = response;
+        ShowLine(response, DialogueTopic.Economy);
+        return true;
     }
 
     private void MarkRequestSeen(string activityId)

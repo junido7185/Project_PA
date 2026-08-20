@@ -2222,3 +2222,10 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - alpha 0 UI Mask 때문에 숨겨졌던 Hiring/Feed 카드를 복구했다. Feed는 첫 판매 전 명확한 빈 상태, 실제 판매 뒤 상품·가격·구매자·시각·category·quality·마을 변화 방향을 즉시 표시한다.
 - D3D11 BETA-006과 BETA-005/VillageChangeSignal/Golden FinalDemoRoute 회귀 PASS. Runtime/Editor compile 오류 0, blocking Console 0, 신규 crash 0이다.
 - 기존 Scene, Packages, ProjectSettings, Save schema/authority, C-02~C-09 FBX는 무변경이다. 최종 상태 `BETA_006_COMPLETE`; 다음은 선승인 `BETA-007 Village Response and NPC Integration`이다.
+
+## 2026-08-21 — BETA-007 주민·마을 반응 VALIDATION DEBT CHECKPOINT
+
+- 판매 상품/판매일을 다음날 마을 비주얼·HUD·관련 주민 대화에 연결하고 8개 채용 역할을 생성 활동 지점과 B05~B08에 결속했다.
+- Runtime/Editor compile은 오류 0이다. 두 D3D11 실행 모두 crash 없이 WorldSandbox를 구성했지만 resident spawn anchor가 NavMesh ready 상태가 되지 않아 실제 판매 단계 전에 중단됐다.
+- 추가 실행 없이 obstacle/NavMesh 안정화 뒤 유효 anchor만 채용 서비스에 전달하도록 정적으로 보정하고, 판매 상품의 실제 생산 역할과 월드 시설도 일치시켰다. Scene/Prefab/Packages/ProjectSettings/Save schema 변경은 0이다.
+- 세 번째 실행은 승인 범위를 초과하므로 하지 않는다. PASS가 아닌 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` local checkpoint로 보존하며 실제 hire→판매→Day 2→DialogueUI는 미검증이다.

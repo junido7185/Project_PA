@@ -62,7 +62,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         {
             float width = Mathf.Min(720f, Screen.width - 420f);
             float left = (Screen.width - width) * 0.5f;
-            return new Rect(left, 18f, width, 202f);
+            return new Rect(left, 18f, width, 232f);
         }
     }
     public string CurrentPlayerObjective => ResolvePlayerObjective();
@@ -70,6 +70,9 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         _adapter?.SalesDisplayReadability?.BuildSummary() ?? "판매대 상태 확인 중";
     public string CustomerStrategySummary =>
         _adapter?.CustomerStrategySummary ?? "손님 성향 확인 중";
+    public string VillageResponseSummary =>
+        VillageCultureVisualController.Instance?.PlayerFacingSummary ??
+        "마을 반응 · 판매 기록을 기다리는 중";
     public string LastAction => _lastAction;
     public WorldGameplayAdapterService Adapter => _adapter;
     public WorldGridService Grid => _grid;
@@ -665,7 +668,8 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     void DrawPlayerFacingHud()
     {
         GUILayout.BeginArea(PlayerFacingHudScreenRect, GUI.skin.box);
-        GUILayout.Label($"Day 1 · 첫 마을 동선   |   {CurrentPlayerObjective}");
+        int currentDay = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        GUILayout.Label($"Day {currentDay} · 섬 생활 동선   |   {CurrentPlayerObjective}");
         GUILayout.Space(4f);
         GUILayout.Label(_lastAction);
         GUILayout.Space(4f);
@@ -674,6 +678,8 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         GUILayout.Label(ShopMerchandisingSummary);
         GUILayout.Space(4f);
         GUILayout.Label(CustomerStrategySummary);
+        GUILayout.Space(4f);
+        GUILayout.Label(VillageResponseSummary);
         GUILayout.Space(4f);
         GUILayout.Label(PlayerControlHint);
         GUILayout.EndArea();

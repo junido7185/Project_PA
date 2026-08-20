@@ -5,8 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // First village-culture visual response.
-// This is a read-only observer over sales records: it never changes price,
-// purchase probability, inventory, money, NPC behavior, or save data.
+// This observer never changes price, purchase probability, inventory or money.
+// It owns only the approved next-day presentation snapshot and exposes that
+// snapshot to existing resident dialogue and WorldSandbox presentation surfaces.
 public class VillageCultureVisualController : MonoBehaviour
 {
     public const string ControllerName = "PA_VillageCultureVisualController";
@@ -50,8 +51,15 @@ public class VillageCultureVisualController : MonoBehaviour
     bool _hintShownForActiveChange;
     int _pendingSaleDay;
     int _hintDisplayCount;
+    int _activeSaleDay;
+    int _activeResponseDay;
     ItemCategory _pendingCategory;
     ItemCategory _activeCategory;
+    string _pendingItemName = string.Empty;
+    string _pendingBuyerName = string.Empty;
+    string _activeItemName = string.Empty;
+    string _activeBuyerName = string.Empty;
+    GameClock _subscribedClock;
 
     public GameObject VisualRoot => !_hasActiveCategory
         ? _visualRoot
@@ -77,6 +85,41 @@ public class VillageCultureVisualController : MonoBehaviour
     public bool HasActiveCategory => _hasActiveCategory;
     public ItemCategory ActiveCategory => _activeCategory;
     public string ActiveCategoryName => _hasActiveCategory ? _activeCategory.ToString() : "";
+    public string PendingItemName => _hasPendingChange ? _pendingItemName : string.Empty;
+    public string ActiveItemName => _hasActiveCategory ? _activeItemName : string.Empty;
+    public string ActiveBuyerName => _hasActiveCategory ? _activeBuyerName : string.Empty;
+    public int ActiveSaleDay => _hasActiveCategory ? _activeSaleDay : 0;
+    public int ActiveResponseDay => _hasActiveCategory ? _activeResponseDay : 0;
+    public Transform CurrentFacilityAnchor => ResolveGeneratedFacilityAnchor(
+        _hasActiveCategory ? _activeCategory : _hasPendingChange ? _pendingCategory : trackedCategory,
+        _hasActiveCategory ? _activeItemName : _hasPendingChange ? _pendingItemName : string.Empty);
+    public string PlayerFacingSummary
+    {
+        get
+        {
+            if (_hasActiveCategory)
+            {
+                string cause = string.IsNullOrWhiteSpace(_activeItemName)
+                    ? $"이전 {_activeCategory} 판매 기록"
+                    : $"Day {_activeSaleDay} {_activeItemName} 판매";
+                int responseDay = Mathf.Max(CurrentDay(), _activeResponseDay);
+                return $"마을 반응 · {cause} → Day {responseDay} " +
+                       $"{FacilityLabel(_activeCategory, _activeItemName)} 변화 · " +
+                       $"{ResidentRoleLabel(_activeCategory, _activeItemName)}에게 이야기해 보세요.";
+            }
+
+            if (_hasPendingChange)
+            {
+                string item = string.IsNullOrWhiteSpace(_pendingItemName)
+                    ? $"{_pendingCategory} 상품"
+                    : _pendingItemName;
+                return $"마을 반응 예고 · Day {_pendingSaleDay} {item} 판매 기록 → " +
+                       $"다음 날 {FacilityLabel(_pendingCategory, _pendingItemName)} 변화";
+            }
+
+            return "마을 반응 · 판매 기록이 다음 날 주민 생활과 시설 풍경을 바꿉니다.";
+        }
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -107,8 +150,15 @@ public class VillageCultureVisualController : MonoBehaviour
         SetVisualActive(false);
     }
 
+    void OnEnable()
+    {
+        SalesLogManager.OnSaleRecorded -= OnSaleRecorded;
+        SalesLogManager.OnSaleRecorded += OnSaleRecorded;
+    }
+
     void Start()
     {
+        EnsureClockSubscription();
         RefreshNow();
     }
 
@@ -126,14 +176,24 @@ public class VillageCultureVisualController : MonoBehaviour
 
     void OnDestroy()
     {
+        SalesLogManager.OnSaleRecorded -= OnSaleRecorded;
+        ReleaseClockSubscription();
         if (Instance == this)
             Instance = null;
     }
 
+    void OnDisable()
+    {
+        SalesLogManager.OnSaleRecorded -= OnSaleRecorded;
+        ReleaseClockSubscription();
+    }
+
     public void RefreshNow()
     {
+        EnsureClockSubscription();
         EnsureVisual();
         EnsureHint();
+        ReanchorVisualRoots();
         DetectNewTrackedSales();
 
         EvaluateForDayPreparation(CurrentDay(), IsDayPreparationPhase());
@@ -175,6 +235,8 @@ public class VillageCultureVisualController : MonoBehaviour
             _pendingCategory = pending;
             _pendingSaleDay = Mathf.Max(1, pendingSaleDay);
         }
+        _pendingItemName = string.Empty;
+        _pendingBuyerName = string.Empty;
 
         _hintShownForActiveChange = hintShown;
 
@@ -182,6 +244,10 @@ public class VillageCultureVisualController : MonoBehaviour
         {
             _activeCategory = active;
             _hasActiveCategory = true;
+            _activeSaleDay = Mathf.Max(1, pendingSaleDay);
+            _activeResponseDay = CurrentDay();
+            _activeItemName = string.Empty;
+            _activeBuyerName = string.Empty;
             SetVisualActive(true);
         }
         else
@@ -201,6 +267,12 @@ public class VillageCultureVisualController : MonoBehaviour
         _hintShownForActiveChange = false;
         _pendingSaleDay = 0;
         _hintDisplayCount = 0;
+        _activeSaleDay = 0;
+        _activeResponseDay = 0;
+        _pendingItemName = string.Empty;
+        _pendingBuyerName = string.Empty;
+        _activeItemName = string.Empty;
+        _activeBuyerName = string.Empty;
         SetVisualActive(false);
 
         if (_hintPanel != null)
@@ -214,9 +286,6 @@ public class VillageCultureVisualController : MonoBehaviour
 
         var records = SalesLogManager.Instance.GetRecent(Mathf.Max(1, maxRecentSales));
         bool selectedNewestTrackedSale = false;
-        ItemCategory newestCategory = trackedCategory;
-        int newestSaleDay = 0;
-
         foreach (var record in records)
         {
             if (record == null)
@@ -228,35 +297,14 @@ public class VillageCultureVisualController : MonoBehaviour
 
             _seenSaleHashes.Add(hash);
 
-            if (!Enum.TryParse(record.category, true, out ItemCategory category))
-                continue;
-
-            // VC-001A의 Processed 계약을 보존하면서 Raw/Utility/Luxury를 실제 변화로 확장한다.
-            // GetRecent은 최신순이므로 한 refresh 사이에 여러 판매가 들어오면 가장 최근
-            // 추적 카테고리 하나만 다음 날 대표 변화로 선택한다.
-            if (category != trackedCategory
-                && category != ItemCategory.Processed
-                && category != ItemCategory.Raw
-                && category != ItemCategory.Utility
-                && category != ItemCategory.Luxury)
+            if (!TryParseTrackedCategory(record, out ItemCategory category))
                 continue;
 
             if (selectedNewestTrackedSale)
                 continue;
 
-            newestCategory = category;
-            newestSaleDay = Mathf.Max(1, record.gameDay);
+            CapturePendingSale(record, category);
             selectedNewestTrackedSale = true;
-        }
-
-        if (selectedNewestTrackedSale)
-        {
-            _pendingCategory = newestCategory;
-            _pendingSaleDay = newestSaleDay;
-            _hasPendingChange = true;
-            // 기존 활성 변화의 힌트 여부를 새 pending 변화가 이어받으면 두 번째
-            // 카테고리의 설명이 영원히 생략된다. 새 변화마다 딱 한 번 다시 허용한다.
-            _hintShownForActiveChange = false;
         }
     }
 
@@ -264,14 +312,82 @@ public class VillageCultureVisualController : MonoBehaviour
     {
         _activeCategory = category;
         _hasActiveCategory = true;
+        _activeSaleDay = Mathf.Max(1, _pendingSaleDay);
+        _activeResponseDay = CurrentDay();
+        _activeItemName = _pendingItemName;
+        _activeBuyerName = _pendingBuyerName;
         _hasPendingChange = false;
         SetVisualActive(true);
+        ReanchorVisualRoots();
 
         if (!_hintShownForActiveChange)
         {
             _hintShownForActiveChange = true;
             ShowHint(category);
         }
+    }
+
+    void OnSaleRecorded(SaleRecord record)
+    {
+        if (record == null)
+            return;
+
+        int hash = BuildRecordHash(record);
+        if (!_seenSaleHashes.Add(hash) || !TryParseTrackedCategory(record, out ItemCategory category))
+            return;
+
+        CapturePendingSale(record, category);
+        EvaluateForDayPreparation(CurrentDay(), IsDayPreparationPhase());
+    }
+
+    void CapturePendingSale(SaleRecord record, ItemCategory category)
+    {
+        _pendingCategory = category;
+        _pendingSaleDay = Mathf.Max(1, record.gameDay);
+        _pendingItemName = record.itemName ?? string.Empty;
+        _pendingBuyerName = record.buyerName ?? string.Empty;
+        _hasPendingChange = true;
+        _hintShownForActiveChange = false;
+    }
+
+    bool TryParseTrackedCategory(SaleRecord record, out ItemCategory category)
+    {
+        category = trackedCategory;
+        if (record == null || !Enum.TryParse(record.category, true, out category))
+            return false;
+
+        return category == trackedCategory
+               || category == ItemCategory.Processed
+               || category == ItemCategory.Raw
+               || category == ItemCategory.Utility
+               || category == ItemCategory.Luxury;
+    }
+
+    void EnsureClockSubscription()
+    {
+        GameClock current = GameClock.Instance;
+        if (_subscribedClock == current)
+            return;
+
+        ReleaseClockSubscription();
+        _subscribedClock = current;
+        if (_subscribedClock != null)
+            _subscribedClock.OnNewDay += OnNewDay;
+    }
+
+    void ReleaseClockSubscription()
+    {
+        if (_subscribedClock != null)
+            _subscribedClock.OnNewDay -= OnNewDay;
+        _subscribedClock = null;
+    }
+
+    void OnNewDay(int day)
+    {
+        // AdvanceToNextDayMorning is the authority for this event. Consume it
+        // synchronously so save/UI cannot race the old polling interval.
+        EvaluateForDayPreparation(day, true);
+        ReanchorVisualRoots();
     }
 
     void EnsureVisual()
@@ -489,6 +605,27 @@ public class VillageCultureVisualController : MonoBehaviour
         if (root == null)
             return;
 
+        ItemCategory category = CategoryForVisualRoot(root);
+        string itemName = _hasActiveCategory && category == _activeCategory
+            ? _activeItemName
+            : _hasPendingChange && category == _pendingCategory
+                ? _pendingItemName
+                : string.Empty;
+        Transform generatedAnchor = ResolveGeneratedFacilityAnchor(category, itemName);
+        if (generatedAnchor != null)
+        {
+            Vector3 right = generatedAnchor.right.sqrMagnitude > 0.001f
+                ? generatedAnchor.right
+                : Vector3.right;
+            Vector3 forward = generatedAnchor.forward.sqrMagnitude > 0.001f
+                ? generatedAnchor.forward
+                : Vector3.forward;
+            Vector3 target = generatedAnchor.position + right * 2.15f - forward * 0.35f;
+            root.transform.position = SnapNearGround(target, generatedAnchor.position.y);
+            root.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+            return;
+        }
+
         Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         if (shop != null)
         {
@@ -508,7 +645,35 @@ public class VillageCultureVisualController : MonoBehaviour
             return;
         }
 
-        root.transform.position = new Vector3(3f, 0f, -2f);
+        // WorldSandbox creates gameplay facilities after this presentation
+        // controller. Keep the inactive root neutral until RefreshNow can resolve
+        // a generated anchor instead of pinning content to a guessed world point.
+        root.transform.localPosition = Vector3.zero;
+        root.transform.localRotation = Quaternion.identity;
+    }
+
+    void ReanchorVisualRoots()
+    {
+        PlaceVisualRoot(_visualRoot);
+        PlaceVisualRoot(_rawVisualRoot);
+        PlaceVisualRoot(_utilityVisualRoot);
+        PlaceVisualRoot(_luxuryVisualRoot);
+    }
+
+    ItemCategory CategoryForVisualRoot(GameObject root)
+    {
+        if (root == _rawVisualRoot) return ItemCategory.Raw;
+        if (root == _utilityVisualRoot) return ItemCategory.Utility;
+        if (root == _luxuryVisualRoot) return ItemCategory.Luxury;
+        return ItemCategory.Processed;
+    }
+
+    static Transform ResolveGeneratedFacilityAnchor(ItemCategory category, string itemName)
+    {
+        WorldGameplayAdapterService adapter = WorldGameplayAdapterService.Instance;
+        return adapter != null && adapter.IsReady
+            ? adapter.GetVillageCultureAnchor(category, itemName)
+            : null;
     }
 
     Vector3 SnapNearGround(Vector3 target, float fallbackY)
@@ -666,19 +831,162 @@ public class VillageCultureVisualController : MonoBehaviour
 
     string BuildHintText(ItemCategory category)
     {
-        if (category == ItemCategory.Raw)
-            return "마을 변화: 원자재 판매 덕분에 생산자 보관·수거 지점이 생겼어요.";
+        string item = string.IsNullOrWhiteSpace(_activeItemName)
+            ? $"이전 {category} 판매 기록"
+            : $"Day {_activeSaleDay} {_activeItemName} 판매";
+        return $"마을 변화 · {item} → Day {_activeResponseDay} " +
+               $"{FacilityLabel(category, _activeItemName)} 변화. " +
+               $"{ResidentRoleLabel(category, _activeItemName)}에게 이야기를 들어보세요.";
+    }
 
-        if (category == ItemCategory.Processed)
-            return "마을 변화: 가공품 판매 덕분에 따뜻한 준비 작업 공간이 생겼어요.";
+    public bool TryBuildResidentResponse(GameObject resident, out string line)
+    {
+        line = string.Empty;
+        if (!_hasActiveCategory || resident == null || !TryResolveSpecialty(resident, out NpcSpecialty specialty))
+            return false;
 
-        if (category == ItemCategory.Utility)
-            return "마을 변화: 실용품 판매 덕분에 공구를 손보는 수리대가 생겼어요.";
+        bool exactItemKnown = !string.IsNullOrWhiteSpace(_activeItemName);
+        bool exactRoleMatch = exactItemKnown && ResidentProducesItem(resident, _activeItemName);
+        if (!exactRoleMatch && (exactItemKnown || !IsCategoryRelevantToSpecialty(_activeCategory, specialty)))
+            return false;
 
-        if (category == ItemCategory.Luxury)
-            return "마을 변화: 고급품 판매 덕분에 생활 공예를 소개하는 전시대가 생겼어요.";
+        string cause = exactItemKnown
+            ? $"어제 Day {_activeSaleDay}에 팔린 {_activeItemName}"
+            : $"이전 {_activeCategory} 판매 기록";
+        string role = SpecialtyLabel(specialty);
+        line = $"{cause} 덕분에 오늘 " +
+               $"{FacilityLabel(_activeCategory, _activeItemName)}가 달라졌어요. " +
+               $"{role} 일도 마을 풍경에 이어지고 있어요.";
+        return true;
+    }
 
-        return "마을 변화: 어제의 판매가 광장의 모습을 바꾸었어요.";
+    static bool TryResolveSpecialty(GameObject resident, out NpcSpecialty specialty)
+    {
+        ProducerNpcController producer = resident.GetComponent<ProducerNpcController>();
+        if (producer != null)
+        {
+            specialty = producer.specialty;
+            return specialty != NpcSpecialty.None;
+        }
+
+        SpecialistNpcController specialist = resident.GetComponent<SpecialistNpcController>();
+        if (specialist != null)
+        {
+            specialty = specialist.specialty;
+            return specialty != NpcSpecialty.None;
+        }
+
+        specialty = NpcSpecialty.None;
+        return false;
+    }
+
+    static bool ResidentProducesItem(GameObject resident, string itemName)
+    {
+        ProducerNpcController producer = resident.GetComponent<ProducerNpcController>();
+        if (producer?.productionData?.producedItem != null &&
+            string.Equals(producer.productionData.producedItem.itemName, itemName,
+                StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        SpecialistNpcController specialist = resident.GetComponent<SpecialistNpcController>();
+        if (specialist?.assignedRecipes == null)
+            return false;
+
+        foreach (RecipeData recipe in specialist.assignedRecipes)
+        {
+            if (recipe?.outputItem != null && string.Equals(recipe.outputItem.itemName, itemName,
+                    StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    static bool IsCategoryRelevantToSpecialty(ItemCategory category, NpcSpecialty specialty)
+    {
+        return category switch
+        {
+            ItemCategory.Raw => specialty == NpcSpecialty.Farmer ||
+                                specialty == NpcSpecialty.Miner ||
+                                specialty == NpcSpecialty.Lumberjack ||
+                                specialty == NpcSpecialty.Fisher,
+            ItemCategory.Processed => specialty == NpcSpecialty.Chef ||
+                                      specialty == NpcSpecialty.Carpenter,
+            ItemCategory.Utility => specialty == NpcSpecialty.Blacksmith ||
+                                    specialty == NpcSpecialty.Carpenter,
+            ItemCategory.Luxury => specialty == NpcSpecialty.Tailor ||
+                                   specialty == NpcSpecialty.Carpenter,
+            _ => false
+        };
+    }
+
+    static string FacilityLabel(ItemCategory category, string itemName = "")
+    {
+        if (TryResolveExactSpecialty(itemName, out NpcSpecialty specialty))
+        {
+            return specialty switch
+            {
+                NpcSpecialty.Farmer => "농장",
+                NpcSpecialty.Miner => "채석장",
+                NpcSpecialty.Lumberjack => "숲 작업지",
+                NpcSpecialty.Fisher => "연못 작업지",
+                NpcSpecialty.Chef => "B06 주방",
+                NpcSpecialty.Blacksmith => "B07 대장간",
+                NpcSpecialty.Tailor => "B08 재봉 작업대",
+                NpcSpecialty.Carpenter => "B05 목공 작업대",
+                _ => "광장"
+            };
+        }
+
+        return category switch
+        {
+            ItemCategory.Raw => "농장·생산자 수거 지점",
+            ItemCategory.Processed => "B05 가공 준비대",
+            ItemCategory.Utility => "B07 대장간 수리대",
+            ItemCategory.Luxury => "B08 생활 공예 전시대",
+            _ => "광장"
+        };
+    }
+
+    static string ResidentRoleLabel(ItemCategory category, string itemName = "")
+    {
+        if (TryResolveExactSpecialty(itemName, out NpcSpecialty specialty))
+            return SpecialtyLabel(specialty);
+
+        return category switch
+        {
+            ItemCategory.Raw => "생산 주민",
+            ItemCategory.Processed => "요리사·목수",
+            ItemCategory.Utility => "대장장이·목수",
+            ItemCategory.Luxury => "재봉사·목수",
+            _ => "주민"
+        };
+    }
+
+    static bool TryResolveExactSpecialty(string itemName, out NpcSpecialty specialty)
+    {
+        WorldGameplayAdapterService adapter = WorldGameplayAdapterService.Instance;
+        if (adapter != null && adapter.TryResolveVillageResponseSpecialty(itemName, out specialty))
+            return true;
+
+        specialty = NpcSpecialty.None;
+        return false;
+    }
+
+    static string SpecialtyLabel(NpcSpecialty specialty)
+    {
+        return specialty switch
+        {
+            NpcSpecialty.Farmer => "농부",
+            NpcSpecialty.Miner => "광부",
+            NpcSpecialty.Lumberjack => "벌목꾼",
+            NpcSpecialty.Fisher => "어부",
+            NpcSpecialty.Chef => "요리사",
+            NpcSpecialty.Blacksmith => "대장장이",
+            NpcSpecialty.Tailor => "재봉사",
+            NpcSpecialty.Carpenter => "목수",
+            _ => "주민"
+        };
     }
 
     void SetVisualActive(bool active)

@@ -246,6 +246,17 @@
       "humanFollowUp": "Phone motion, final card spacing, and candidate pacing can be reviewed once during the M85 integrated playtest."
     },
     {
+      "id": "beta-007-village-response",
+      "executeMethod": "PA_Beta007VillageResponseValidator.RunBeta007ValidationBatch",
+      "sourceFile": "Assets/Editor/PA_Beta007VillageResponseValidator.cs",
+      "purpose": "Validate a real WorldSandbox ShopSlot sale through the actual next-day transition into generated facility visuals, role-bound resident dialogue, and persistent player-facing causality.",
+      "workflowTypes": ["gameplay-beta", "village-response", "npc", "world-anchor", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Build BETA-006 resident templates first.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Stop and inspect the first sale snapshot, next-day transition, generated anchor, resident binding, dialogue, or HUD assertion.",
+      "humanFollowUp": "Resident pacing and final response-display composition can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

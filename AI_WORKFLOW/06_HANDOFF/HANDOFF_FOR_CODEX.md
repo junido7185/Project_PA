@@ -15,7 +15,10 @@
 - `BETA-005 Customer Strategy and Feedback` 완료: 실제 Miner/Tailor profile, 방문 직후 current customer와 player HUD 성향·screen bounds, Miner 250G 보류와 Tailor 1G 구매를 검증했다. 재고·경제·SalesLog·feedback·demand 권위는 기존 시스템을 그대로 사용한다.
 - 증거: `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`, `Logs/BETA005_Regression_BETA004_Licensed.log`, `Logs/BETA005_Regression_CustomerPresentation_Licensed.log`, `Logs/BETA005_Regression_CustomerArrival_Licensed.log`가 D3D11 PASS했다. Runtime/Editor 오류 0, blocking Console 0, 신규 crash 0이다.
 - `BETA-006 Phone Hiring and Feed Completion` 완료: WorldSandbox P 휴대폰, 후보 8명과 실제 비용/상태, 역할별 C-02~C-09 wrapper 고용, 판매 전 empty Feed와 실제 판매/마을 변화 Feed, Audit/Settings를 검증했다.
-- 현재 전환 대상은 선승인된 `BETA-007 Village Response and NPC Integration`이다. BETA-006 로컬 커밋 직후 기존 VillageChangeSignal/VillageCulture/NPC schedule·role·facility 연결을 먼저 감사하고 유일한 활성 티켓으로 진행한다.
+- `BETA-007 Village Response and NPC Integration`은 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` 체크포인트다. 판매 event exact snapshot, next-day 역할 시설 변화, B05~B08/runtime 활동 binding, NpcDialogue, WorldAlpha HUD와 전용 validator가 연결됐다.
+- Runtime/Editor 정적 compile은 오류 0이다. `Logs/BETA007_D3D11_Validation.log`와 `Logs/BETA007_D3D11_Correction.log`는 D3D11/HUD/B08/bootstrap까지 진행했지만 주민 anchor readiness에서 종료되어 실제 hire·판매·Day 2·대화 stage는 미검증이다. native crash 0이다.
+- 추가 Unity 실행 없이 anchor lifecycle을 정적으로 보정했다. 건물 obstacle/NavMesh 안정화 뒤 생성하고, invalid anchor 제거·navigation revision 추적·HiringService 유효 목록 동기화를 적용했다. 실제 상품은 resident prefab의 ProductionData/RecipeData로 역할과 시설을 해석한다.
+- 이 상태는 PASS나 `BETA_007_COMPLETE`가 아니다. 장기 Goal의 validation-debt 지속 정책에 따른 local checkpoint이며 세 번째 BETA-007 D3D11 실행은 새 승인 전 금지다. 다음 단일 티켓은 선승인 `BETA-008 7-Day Progression`이다.
 - Prototype_FirstDay Golden, WorldSandbox scene, MainGame, Prefab, Packages, ProjectSettings, Save schema v11은 승인 없는 변경 금지다.
 
 ## M70 및 Loop Policy 현재 상태 — 2026-08-11

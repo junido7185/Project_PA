@@ -762,3 +762,18 @@ Append-only log for guarded automation and dry-run loop work.
 - `Logs/BETA006_D3D11_Validation.log`가 phone/candidates=8/hire/exact cost/role spawn/feed sale/village/Audit/Settings/console=0을 PASS했다. BETA-005, VillageChangeSignal, Golden FinalDemoRoute 회귀도 PASS했다.
 - Runtime/Editor compile 오류 0, 신규 crash 0. 기존 Scene, Packages, ProjectSettings, Save schema/authority와 C-02~C-09 FBX는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`다.
 - 최종 상태 `BETA_006_COMPLETE`; 승인된 local ticket commit 뒤 선승인 `BETA-007 Village Response and NPC Integration`을 활성화한다.
+
+## 2026-08-21 — BETA-007 Village Response and NPC Integration activated
+
+- BETA-006의 승인된 43개 경로를 `1539923cc9a34659e7b43bf9a3c6b14073152efa`로 로컬 커밋했고 push하지 않았다. 전환 시 working tree는 clean이다.
+- M85 선승인 sequence의 다음 단일 티켓을 `BETA_007_ACTIVE`로 활성화했다.
+- 먼저 실제 SalesLog가 다음날 VillageChangeSignal/VillageCulture에 소비되는 경로, NPC 대화·행동·schedule 반응, 기존 역할/시설 anchor와 WorldSandbox player-facing 인과관계를 감사한다. 새 manager나 고정 좌표 묶음 없이 기존 권위를 연결한다.
+
+## 2026-08-21 — BETA-007 implemented with validation debt checkpoint
+
+- 기존 판매/마을 권위를 연결해 sale event가 상품명·판매일을 즉시 pending으로 보존하고 실제 다음날에 active visual/hint/HUD/관련 주민 대화로 이어지는 구현을 만들었다.
+- WorldSandbox 고용 spawn과 Farmer/Lumberjack/Miner/Fisher 역할을 생성 활동 지점에, Chef/Blacksmith/Tailor/Carpenter를 B06/B07/B08/B05에 연결했다. Scene/Prefab/Packages/ProjectSettings/Save schema는 변경하지 않았다.
+- Runtime/Editor 정적 compile은 오류 0이다. 첫 D3D11은 엄격한 resident spawn NavMesh assertion에서 실패했고 두 번째도 readiness timeout으로 거래 이전에 종료됐다. 두 실행은 실제 hired resident 실패를 증명하지 않지만 invalid anchor가 채용 rotation에 남는 production 위험을 드러냈다.
+- 추가 Unity 실행 없이 obstacle/rebuild 안정화 뒤 anchor 생성, invalid anchor 제거, navigation revision 추적, HiringService 재동기화를 정적으로 적용했다. 상품별 ProductionData/RecipeData를 기준으로 역할·시설·안내 불일치와 seed rebind 오류 은폐도 보정했다.
+- 보존 로그: `Logs/BETA007_D3D11_Validation.log`, `Logs/BETA007_D3D11_Correction.log`. native crash 0, 판매/다음날 assertion은 미실행이다.
+- 최종 상태 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT`. 세 번째 실행과 assertion 완화 없이 local checkpoint로 보존하고, 장기 Goal 정책에 따라 다음 선승인 티켓으로 계속한다.

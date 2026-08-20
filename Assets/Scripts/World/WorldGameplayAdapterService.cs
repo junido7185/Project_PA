@@ -43,6 +43,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     const string WorkbenchBuildingResource = "Buildings/Building_B05_Workbench";
     const string KitchenBuildingResource = "Buildings/Building_B06_KitchenStation";
     const string ForgeBuildingResource = "Buildings/Building_B07_BlacksmithForge";
+    const string SewingBuildingResource = "Buildings/Building_B08_SewingTable";
     const string PlankRecipeResource = "Recipes/Recipe_Plank";
     const string MinerProfileResource = "NPCs/Profile_Miner";
     const string TailorProfileResource = "NPCs/Profile_Tailor";
@@ -61,6 +62,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     GameObject _workbenchRoot;
     GameObject _kitchenRoot;
     GameObject _forgeRoot;
+    GameObject _sewingRoot;
     GameObject _customerRoot;
     Inventory _inventory;
     Shop _shop;
@@ -68,6 +70,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     Workbench _workbench;
     Workbench _kitchen;
     Workbench _forge;
+    Workbench _sewing;
     EconomyService _economy;
     GameClock _clock;
     DayNightShopLoopController _dayLoop;
@@ -80,6 +83,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     FarmPlotInteraction[] _farmPlots = Array.Empty<FarmPlotInteraction>();
     WorldSalesDisplayReadability _salesDisplayReadability;
     Transform _salesDisplayRoot;
+    GameObject _residentAnchorRoot;
+    readonly List<Transform> _residentSpawnAnchors = new List<Transform>();
+    HiringService _hiringService;
+    bool _residentAnchorsSettled;
+    int _residentAnchorNavigationRevision = -1;
     Vector3 _salesDisplayBaseLocalPosition;
     Quaternion _salesDisplayBaseLocalRotation;
     int _salesDisplayGridX;
@@ -113,6 +121,14 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public Workbench RuntimeWorkbench => _workbench;
     public Workbench RuntimeKitchen => _kitchen;
     public Workbench RuntimeForge => _forge;
+    public Workbench RuntimeSewing => _sewing;
+    public IReadOnlyList<Transform> ResidentSpawnAnchors => _residentSpawnAnchors;
+    public bool ResidentSpawnAnchorsReady => _residentAnchorsSettled &&
+                                              _residentSpawnAnchors.Count > 0 &&
+                                              _navigation != null &&
+                                              !_navigation.IsRebuilding &&
+                                              _residentAnchorNavigationRevision == _navigation.NavigationRevision &&
+                                              _residentSpawnAnchors.All(IsResidentAnchorOnNavMesh);
     public NpcController RuntimeCustomer => _customer;
     public SaveManager RuntimeSaveManager => _saveManager;
     public PlayerInteraction PlayerInteraction => _playerInteraction;
@@ -127,7 +143,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public bool ProductionFacilitiesBound =>
         _workbench != null && _workbench.workbenchType == WorkbenchType.BasicWorkbench &&
         _kitchen != null && _kitchen.workbenchType == WorkbenchType.Kitchen &&
-        _forge != null && _forge.workbenchType == WorkbenchType.Forge;
+        _forge != null && _forge.workbenchType == WorkbenchType.Forge &&
+        _sewing != null && _sewing.workbenchType == WorkbenchType.SewingTable;
     public Vector2Int SalesDisplayGrid => new Vector2Int(
         _salesDisplayGridX, _salesDisplayGridY);
     public int SalesDisplayQuarterTurns => _salesDisplayQuarterTurns;
@@ -185,8 +202,29 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             yield break;
         }
 
+        // Runtime building obstacles become active during InitializeRuntime. Give
+        // carving and any queued navigation rebuild a chance to settle before the
+        // resident spawn contract samples the generated Start neighbourhood.
+        int navigationWaitFrames = 0;
+        while (_navigation != null && _navigation.IsRebuilding && navigationWaitFrames++ < 120)
+            yield return null;
+        yield return null;
+        yield return null;
+        if (_navigation != null && _navigation.IsRebuilding)
+        {
+            Fail("Resident spawn anchors could not wait for the generated NavMesh rebuild.");
+            yield break;
+        }
+        if (!ConfigureResidentWorldBindings(out reason))
+        {
+            Fail(reason);
+            yield break;
+        }
+
         State = WorldGameplayAdapterState.Ready;
-        _lastAction = "Generated resources, B05/B06/B07 production, B01 sales, customer, economy and save are connected.";
+        VillageCultureVisualController.Instance?.RefreshNow();
+        _lastAction = "Generated resources, B05/B06/B07/B08 production, B01 sales, residents, economy and save are connected.";
+        Debug.Log("[BETA-007] RESIDENT_WORLD_READY roles=8 anchors=generated facilities=B05+B06+B07+B08");
         Debug.Log("[BETA-003] PRODUCTION_READY authorities=existing basic=B05 kitchen=B06 forge=B07");
         Debug.Log("[WORLD-009] RUNTIME_READY authorities=existing seed=9009 shop=B01 workbench=B05");
     }
@@ -194,6 +232,22 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     void Update()
     {
         if (!IsReady) return;
+
+        if (!ResidentSpawnAnchorsReady)
+        {
+            _residentAnchorsSettled = false;
+            if (_residentSpawnAnchors.Count == 0 ||
+                (_navigation != null &&
+                 _residentAnchorNavigationRevision != _navigation.NavigationRevision))
+            {
+                ConfigureResidentWorldBindings(out _);
+            }
+            else
+            {
+                SettleResidentSpawnAnchors();
+                SynchronizeHiringSpawnAnchors();
+            }
+        }
 
         if (_persistence != null && _persistence.IsProceduralActive &&
             _persistence.ActiveSeed != _boundSeed)
@@ -232,6 +286,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
     void OnDestroy()
     {
+        if (_hiringService != null)
+            _hiringService.OnHired -= OnResidentHired;
         if (Instance == this) Instance = null;
     }
 
@@ -268,6 +324,10 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     {
         reason = string.Empty;
         ReleaseRuntimeObject(_runtimeRoot);
+        _residentAnchorRoot = null;
+        _residentSpawnAnchors.Clear();
+        _residentAnchorsSettled = false;
+        _residentAnchorNavigationRevision = -1;
         _runtimeRoot = new GameObject(RuntimeRootName)
         {
             hideFlags = HideFlags.DontSave
@@ -320,6 +380,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         {
             return false;
         }
+        if (!TryInstantiateBuilding(SewingBuildingResource, "BETA007_Sewing_Runtime",
+                WorldGenerationAnchorKind.MeadowActivity, false, out _sewingRoot, out reason))
+        {
+            return false;
+        }
 
         if (!_generated.TryGetAnchor(WorldGenerationAnchorKind.Start, out WorldGenerationAnchor start) ||
             !_grid.CellToWorld(start.Coordinate, out Vector3 playerPosition))
@@ -344,6 +409,9 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             : null;
         _forge = _forgeRoot != null
             ? _forgeRoot.GetComponentInChildren<Workbench>(true)
+            : null;
+        _sewing = _sewingRoot != null
+            ? _sewingRoot.GetComponentInChildren<Workbench>(true)
             : null;
         _shopSlots = _shopRoot != null
             ? _shopRoot.GetComponentsInChildren<ShopSlot>(true)
@@ -373,6 +441,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         AddRuntimeLabel(_workbenchRoot.transform, "제작 작업대 · 상품 준비", new Color(0.72f, 1f, 0.72f));
         AddRuntimeLabel(_kitchenRoot.transform, "주방 가공대 · 식재료 요리", new Color(1f, 0.72f, 0.46f));
         AddRuntimeLabel(_forgeRoot.transform, "대장간 용광로 · 광석 가공", new Color(1f, 0.48f, 0.34f));
+        AddRuntimeLabel(_sewingRoot.transform, "재봉 작업대 · 생활 공예", new Color(0.95f, 0.64f, 0.92f));
         if (!ConfigurePlayerActivityInteraction(out reason) ||
             !BindDaytimeActivitiesToGeneratedWorld(out reason))
         {
@@ -394,6 +463,12 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
                 WorldGenerationAnchorKind.HighlandActivity, new Vector2Int(4, 3)))
         {
             reason = "The generated highland could not provide a safe B07 Forge cell.";
+            return false;
+        }
+        if (!TryPositionExistingRuntimeObjectAtOffset(_sewingRoot,
+                WorldGenerationAnchorKind.MeadowActivity, new Vector2Int(-6, -2)))
+        {
+            reason = "The generated meadow could not provide a safe B08 Sewing cell.";
             return false;
         }
         return true;
@@ -570,6 +645,275 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         if (string.IsNullOrWhiteSpace(activityId)) return null;
         return _daytimeActivityPoints.FirstOrDefault(point => point != null &&
             string.Equals(point.activityId, activityId, StringComparison.Ordinal));
+    }
+
+    public Transform GetVillageCultureAnchor(ItemCategory category, string itemName = "")
+    {
+        if (TryResolveVillageResponseSpecialty(itemName, out NpcSpecialty specialty))
+        {
+            Transform roleAnchor = GetResidentRoleAnchor(specialty);
+            if (roleAnchor != null)
+                return roleAnchor;
+        }
+
+        return category switch
+        {
+            ItemCategory.Raw => GetResidentRoleAnchor(NpcSpecialty.Farmer),
+            ItemCategory.Processed => _workbench != null ? _workbench.transform : null,
+            ItemCategory.Utility => _forge != null ? _forge.transform : null,
+            ItemCategory.Luxury => _sewing != null ? _sewing.transform : null,
+            _ => _shop != null ? _shop.transform : null
+        };
+    }
+
+    public bool TryResolveVillageResponseSpecialty(string itemName, out NpcSpecialty specialty)
+    {
+        specialty = NpcSpecialty.None;
+        if (string.IsNullOrWhiteSpace(itemName))
+            return false;
+
+        foreach (NpcCandidateData candidate in Resources.LoadAll<NpcCandidateData>("Candidates")
+                     .Where(candidate => candidate != null && candidate.spawnPrefab != null)
+                     .OrderBy(candidate => candidate.specialty))
+        {
+            ProducerNpcController producer =
+                candidate.spawnPrefab.GetComponentInChildren<ProducerNpcController>(true);
+            if (producer?.productionData?.producedItem != null &&
+                string.Equals(producer.productionData.producedItem.itemName, itemName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                specialty = candidate.specialty;
+                return true;
+            }
+
+            SpecialistNpcController specialist =
+                candidate.spawnPrefab.GetComponentInChildren<SpecialistNpcController>(true);
+            if (specialist?.assignedRecipes == null)
+                continue;
+            if (specialist.assignedRecipes.Any(recipe => recipe?.outputItem != null &&
+                    string.Equals(recipe.outputItem.itemName, itemName,
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                specialty = candidate.specialty;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public Transform GetResidentRoleAnchor(NpcSpecialty specialty)
+    {
+        return specialty switch
+        {
+            NpcSpecialty.Farmer => _farmPlots.FirstOrDefault(plot => plot != null)?.transform,
+            NpcSpecialty.Lumberjack => FindDaytimeActivity("forest-forage")?.transform,
+            NpcSpecialty.Miner => FindDaytimeActivity("quarry-mining")?.transform,
+            NpcSpecialty.Fisher => FindDaytimeActivity("shore-forage")?.transform,
+            NpcSpecialty.Chef => _kitchen != null ? _kitchen.transform : null,
+            NpcSpecialty.Blacksmith => _forge != null ? _forge.transform : null,
+            NpcSpecialty.Tailor => _sewing != null ? _sewing.transform : null,
+            NpcSpecialty.Carpenter => _workbench != null ? _workbench.transform : null,
+            _ => null
+        };
+    }
+
+    bool ConfigureResidentWorldBindings(out string reason)
+    {
+        reason = string.Empty;
+        _hiringService = HiringService.Instance ?? FindFirstObjectByType<HiringService>();
+        if (_hiringService == null)
+        {
+            reason = "The existing HiringService is unavailable for resident world binding.";
+            return false;
+        }
+
+        if (!CreateResidentSpawnAnchors(out reason))
+            return false;
+
+        SettleResidentSpawnAnchors();
+        if (!ResidentSpawnAnchorsReady)
+        {
+            reason = "Generated Start neighbourhood did not retain a valid resident NavMesh spawn.";
+            return false;
+        }
+
+        _hiringService.OnHired -= OnResidentHired;
+        _hiringService.OnHired += OnResidentHired;
+        SynchronizeHiringSpawnAnchors();
+
+        foreach (HiringService.HiredNpcRuntimeRecord record in _hiringService.GetHiredRuntimeRecords())
+            ConfigureHiredResident(record.Candidate, record.Instance);
+
+        return _residentSpawnAnchors.Count > 0;
+    }
+
+    bool CreateResidentSpawnAnchors(out string reason)
+    {
+        reason = string.Empty;
+        _residentSpawnAnchors.Clear();
+        _residentAnchorsSettled = false;
+        if (_residentAnchorRoot != null)
+            ReleaseRuntimeObject(_residentAnchorRoot);
+
+        _residentAnchorRoot = new GameObject("BETA007_ResidentSpawnAnchors")
+        {
+            hideFlags = HideFlags.DontSave
+        };
+        _residentAnchorRoot.transform.SetParent(_runtimeRoot.transform, false);
+
+        Vector2Int[] offsets =
+        {
+            Vector2Int.zero,
+            new Vector2Int(1, 0), new Vector2Int(-1, 0),
+            new Vector2Int(0, 1), new Vector2Int(0, -1),
+            new Vector2Int(3, 2), new Vector2Int(-3, 2),
+            new Vector2Int(3, -2), new Vector2Int(-3, -2)
+        };
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            if (!TryResolveAnchorCoordinate(WorldGenerationAnchorKind.Start, offsets[i],
+                    out Vector2Int coordinate) || !_grid.CellToWorld(coordinate, out Vector3 world) ||
+                !NavMesh.SamplePosition(world + Vector3.up * 0.25f, out NavMeshHit hit, 2.5f,
+                    NavMesh.AllAreas))
+                continue;
+
+            if (_residentSpawnAnchors.Any(anchor => anchor != null &&
+                    FlatDistance(anchor.position, hit.position) < 0.75f))
+                continue;
+
+            var anchorObject = new GameObject($"ResidentSpawn_{_residentSpawnAnchors.Count + 1}")
+            {
+                hideFlags = HideFlags.DontSave
+            };
+            anchorObject.transform.SetParent(_residentAnchorRoot.transform, false);
+            anchorObject.transform.position = hit.position;
+            Vector3 towardShop = _shop != null
+                ? _shop.transform.position - hit.position
+                : Vector3.forward;
+            towardShop.y = 0f;
+            if (towardShop.sqrMagnitude > 0.01f)
+                anchorObject.transform.rotation = Quaternion.LookRotation(towardShop.normalized, Vector3.up);
+            _residentSpawnAnchors.Add(anchorObject.transform);
+        }
+
+        if (_residentSpawnAnchors.Count == 0)
+        {
+            reason = "Generated Start anchor did not provide a resident NavMesh spawn.";
+            return false;
+        }
+        return true;
+    }
+
+    void SettleResidentSpawnAnchors()
+    {
+        if (_residentSpawnAnchors.Count == 0 || _navigation == null || _navigation.IsRebuilding)
+            return;
+
+        float settleRadius = _grid != null
+            ? Mathf.Max(3f, _grid.Definition.CellSize * 3f)
+            : 3f;
+        for (int i = _residentSpawnAnchors.Count - 1; i >= 0; i--)
+        {
+            Transform anchor = _residentSpawnAnchors[i];
+            if (anchor == null || !NavMesh.SamplePosition(anchor.position, out NavMeshHit hit,
+                    settleRadius, NavMesh.AllAreas))
+            {
+                if (anchor != null)
+                    ReleaseRuntimeObject(anchor.gameObject);
+                _residentSpawnAnchors.RemoveAt(i);
+                continue;
+            }
+            anchor.position = hit.position;
+        }
+
+        _residentAnchorNavigationRevision = _navigation.NavigationRevision;
+        _residentAnchorsSettled = _residentSpawnAnchors.Count > 0 &&
+                                  _residentSpawnAnchors.All(IsResidentAnchorOnNavMesh);
+    }
+
+    void SynchronizeHiringSpawnAnchors()
+    {
+        if (_hiringService == null)
+            return;
+
+        _hiringService.spawnPoint = null;
+        _hiringService.spawnPointRotation ??= new List<Transform>();
+        _hiringService.spawnPointRotation.Clear();
+        _hiringService.spawnPointRotation.AddRange(
+            _residentSpawnAnchors.Where(anchor => anchor != null && IsResidentAnchorOnNavMesh(anchor)));
+    }
+
+    static bool IsResidentAnchorOnNavMesh(Transform anchor)
+    {
+        if (anchor == null || !NavMesh.SamplePosition(anchor.position, out NavMeshHit hit,
+                0.75f, NavMesh.AllAreas))
+            return false;
+        return FlatDistance(anchor.position, hit.position) <= 0.75f;
+    }
+
+    void OnResidentHired(NpcCandidateData candidate, GameObject resident)
+    {
+        ConfigureHiredResident(candidate, resident);
+    }
+
+    void ConfigureHiredResident(NpcCandidateData candidate, GameObject resident)
+    {
+        if (candidate == null || resident == null)
+            return;
+
+        Transform roleAnchor = GetResidentRoleAnchor(candidate.specialty);
+        Transform home = ClosestResidentSpawn(resident.transform.position);
+        NavMeshAgent agent = resident.GetComponent<NavMeshAgent>();
+        if (agent != null && agent.isActiveAndEnabled && !agent.isOnNavMesh && home != null &&
+            NavMesh.SamplePosition(home.position, out NavMeshHit hit, 2f, agent.areaMask))
+            agent.Warp(hit.position);
+
+        ProducerNpcController producer = resident.GetComponent<ProducerNpcController>();
+        if (producer != null)
+        {
+            producer.workSpot = roleAnchor;
+            DaytimeStockPrepPoint dropOff = FindDaytimeActivity("producer-dropbox");
+            producer.dropOffPoint = dropOff != null
+                ? dropOff.transform
+                : _shop != null ? _shop.transform : null;
+        }
+
+        SpecialistNpcController specialist = resident.GetComponent<SpecialistNpcController>();
+        if (specialist != null)
+        {
+            WorkbenchType expected = NpcSpecialtyMapping.GetWorkbenchType(candidate.specialty);
+            specialist.targetWorkbench = expected switch
+            {
+                WorkbenchType.BasicWorkbench => _workbench,
+                WorkbenchType.Kitchen => _kitchen,
+                WorkbenchType.Forge => _forge,
+                WorkbenchType.SewingTable => _sewing,
+                _ => null
+            };
+        }
+
+        NpcScheduleController schedule = resident.GetComponent<NpcScheduleController>();
+        if (schedule != null)
+            schedule.homePoint = home;
+
+        Debug.Log($"[BETA-007] RESIDENT_BOUND name={candidate.ResolveDisplayName()} " +
+                  $"role={candidate.specialty} home={home?.name ?? "none"} " +
+                  $"work={roleAnchor?.name ?? "none"} navmesh={agent != null && agent.isOnNavMesh}");
+    }
+
+    Transform ClosestResidentSpawn(Vector3 position)
+    {
+        return _residentSpawnAnchors.Where(anchor => anchor != null)
+            .OrderBy(anchor => FlatDistance(anchor.position, position))
+            .FirstOrDefault();
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
     }
 
     bool TryResolveResourceCoordinate(WorldResourceKind kind,
@@ -959,11 +1303,24 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             WorldGenerationAnchorKind.MeadowActivity, new Vector2Int(6, -2));
         TryPositionExistingRuntimeObjectAtOffset(_forgeRoot,
             WorldGenerationAnchorKind.HighlandActivity, new Vector2Int(4, 3));
+        TryPositionExistingRuntimeObjectAtOffset(_sewingRoot,
+            WorldGenerationAnchorKind.MeadowActivity, new Vector2Int(-6, -2));
         if (_generated.TryGetAnchor(WorldGenerationAnchorKind.Start, out WorldGenerationAnchor start) &&
             _grid.CellToWorld(start.Coordinate, out Vector3 playerPosition) && _playerRoot != null)
         {
             _playerRoot.transform.position = playerPosition + Vector3.up * 0.05f;
         }
+        if (!BindDaytimeActivitiesToGeneratedWorld(out string activityReason))
+        {
+            Fail($"Restored world activity binding failed: {activityReason}");
+            return;
+        }
+        if (!ConfigureResidentWorldBindings(out string residentReason))
+        {
+            Fail($"Restored world resident binding failed: {residentReason}");
+            return;
+        }
+        VillageCultureVisualController.Instance?.RefreshNow();
         _boundSeed = seed;
         _lastAction = $"Existing gameplay anchors rebound to restored world seed {seed}.";
     }

@@ -1103,3 +1103,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - Hiring/Feed가 비어 보인 직접 원인인 alpha 0 Mask graphic을 정합했다. Feed는 판매 전 empty state와 실제 `ShopSlot` 판매 후 item/price/buyer/time/category/quality/village direction을 즉시 표시한다.
 - `BETA006_D3D11_Validation`, BETA-005, VillageChangeSignal, Golden FinalDemoRoute가 PASS했다. Runtime/Editor compile 오류·blocking Console·신규 crash는 0이다.
 - 기존 Scene, Packages, ProjectSettings, Save schema/authority와 원본 C-02~C-09 FBX는 무변경이다. 캡처는 `CAPTURE_EVIDENCE_DEBT`; 최종 상태 `BETA_006_COMPLETE`다.
+
+## 2026-08-21 — Codex — BETA-007 Village Response and NPC Integration (VALIDATION DEBT CHECKPOINT)
+
+- sale event exact snapshot, next-day visual/hint/HUD, role-matched NpcDialogue, generated role/facility binding과 B08 runtime facility를 구현했다.
+- 상품의 ProductionData/RecipeData로 실제 역할을 해석해 Fish/광석/빵/가구를 각각 맞는 활동·시설과 안내에 연결했다. runtime obstacle 안정화 뒤 유효 NavMesh anchor만 채용 spawn source로 전달하고 seed rebind 실패를 명시한다.
+- Runtime/Editor compile 오류 0. 승인된 두 D3D11 실행은 resident spawn anchor NavMesh readiness가 성립하지 않아 bootstrap에서 반복 중단됐고, 정적 lifecycle 보정 후 추가 실행은 하지 않았다.
+- 로그: `Logs/BETA007_D3D11_Validation.log`, `Logs/BETA007_D3D11_Correction.log`. native crash 0; Scene/Prefab/Packages/ProjectSettings/Save schema 변경 0.
+- 최종 판정은 PASS가 아닌 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT`. 실제 hire→판매→Day 2→대화와 회귀는 미검증으로 명시한 local checkpoint이며 push하지 않는다.

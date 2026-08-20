@@ -7,7 +7,7 @@
     "completionTarget": "M85_GAMEPLAY_BETA_COMPLETE",
     "branch": "milestone/gameplay-beta-85",
     "checkpointCommit": "b176bdcac8d140ffa53e8b907ef7da3576a44a70",
-    "completedTicketCommits": 5,
+    "completedTicketCommits": 6,
     "commitLimit": 10
   },
   "worldArchitectureApproval": {
@@ -73,7 +73,7 @@
     ],
     "sequenceStartTicket": "BETA-001",
     "initialNextTicket": "BETA-001",
-    "nextTicket": "BETA-007",
+    "nextTicket": "BETA-008",
     "preapprovedThrough": "BETA-010",
     "stopAtMilestone": "M85_GAMEPLAY_BETA_COMPLETE",
     "completionReached": false,
@@ -172,18 +172,18 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "BETA-006",
-  "status": "completed",
-  "finalState": "BETA_006_COMPLETE",
-  "goal": "Complete the existing P.A. Phone hiring and feed player loop with real candidates, costs, roles, results, sales and village-change data while preserving Audit and Settings.",
+  "ticketId": "BETA-007",
+  "status": "implemented_with_validation_debt",
+  "finalState": "BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT",
+  "goal": "Connect real sales to next-day village, resident and world responses through existing NPC roles, anchors and village signal authorities with a visible causal chain.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
-    "commit": "0c9131b",
+    "commit": "1539923",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 43,
+    "dirtyPathCountAtStop": 17,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
@@ -194,30 +194,15 @@
     "projectSettingsContentChanged": false
   },
   "builds": {
-    "runtime": "PASS: dotnet Assembly-CSharp; 0 errors; pre-existing intermittent CS8785 generator warning only",
-    "editor": "PASS: dotnet Assembly-CSharp-Editor; 0 errors; pre-existing CS8785 and PA_ErrorTracker CS0414 warnings only"
+    "runtime": "PASS: 0 errors (existing CS8785 warning only)",
+    "editor": "PASS: 0 errors (existing CS8785 and CS0414 warnings only)"
   },
   "validators": {
-    "beta006Log": "Logs/BETA006_D3D11_Validation.log",
-    "beta005RegressionLog": "Logs/BETA006_Regression_BETA005.log",
-    "villageSignalRegressionLog": "Logs/BETA006_Regression_VillageSignal.log",
-    "finalDemoRegressionLog": "Logs/BETA006_Regression_FinalDemo.log",
-    "passed": [
-      "Unity D3D11 Runtime and Editor compile",
-      "WorldSandbox player HUD explains the P-key Phone entry point",
-      "Input System EventSystem and on-screen Phone with four usable tabs",
-      "all eight authoritative candidates remain visible with role, cost and eligibility",
-      "insufficient funds block spending while keeping the candidate readable",
-      "actual UI hire spends the exact cost and spawns the role-exact resident once",
-      "after-hire roster and duplicate guard remain visible",
-      "Feed shows an honest empty state before sales",
-      "an actual ShopSlot sale refreshes Feed with item, price, buyer, time, category, quality and village direction",
-      "Audit and Settings regression",
-      "BETA-005 customer strategy regression",
-      "Village Change Signal regression",
-      "Golden Final Demo Route regression",
-      "blocking Console Error/Exception/Assert 0"
-    ]
+    "status": "VALIDATION_DEBT: two approved D3D11 runs stopped before transaction stages at resident anchor readiness; a production lifecycle correction was compiled afterward without a third Unity run",
+    "firstRun": "Logs/BETA007_D3D11_Validation.log",
+    "correctionRun": "Logs/BETA007_D3D11_Correction.log",
+    "nativeCrash": false,
+    "additionalRunAllowed": false
   },
   "worldGrid": {
     "widthCells": 16,
@@ -518,6 +503,37 @@
     "commitCreated": true,
     "nextTicket": "BETA-007"
   },
+  "gameplayBetaVillageResponse": {
+    "ticket": "BETA-007",
+    "state": "BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT",
+    "sceneScope": "WorldSandbox runtime first; Golden scene remains regression-only",
+    "existingAuthorities": [
+      "SalesLogManager",
+      "VillageChangeSignalController",
+      "VillageCultureVisualController",
+      "NpcController schedules and roles",
+      "existing WorldSandbox activity and facility anchors",
+      "GameClock and day-transition authorities"
+    ],
+    "requiredPlayerLoop": [
+      "real sale records a named category and product result",
+      "next-day transition consumes that recorded result",
+      "resident dialogue or behavior reacts meaningfully",
+      "world signal changes at an existing role or facility anchor",
+      "player-facing feedback explains sale to record to next-day response causality"
+    ],
+    "fixedCoordinateSprawlAllowed": false,
+    "sceneSerializationChanged": false,
+    "saveSchemaChanged": false,
+    "commitCreated": true,
+    "blockingStage": "VALIDATION_DEBT: pre-transaction resident spawn NavMesh readiness; post-run lifecycle correction is compile-only",
+    "failedRuns": [
+      "Logs/BETA007_D3D11_Validation.log",
+      "Logs/BETA007_D3D11_Correction.log"
+    ],
+    "nextTicketStarted": false,
+    "nextTicket": "BETA-008"
+  },
   "shopFurniture": {
     "authority": "existing ShopCustomizationController over GridService shop.interior",
     "cellSizeMeters": 2,
@@ -561,49 +577,9 @@
     "reason": "Automatic Game View capture was not retried. Runtime object, bounds, interaction, restart and Console gates provide the bounded functional evidence; no manual capture is requested."
   },
   "changedPaths": [
-    "Assets/Scripts/PA_RuntimeSceneBinder.cs",
-    "Assets/Scripts/UI/HiringUI.cs",
-    "Assets/Scripts/FeedUI.cs",
-    "Assets/Scripts/World/WorldAlphaPlayableController.cs",
-    "Assets/Scripts/World/WorldGameplayAdapterService.cs",
-    "Assets/Editor/PA_HiringResidentTemplateBuilder.cs",
-    "Assets/Editor/PA_HiringResidentTemplateBuilder.cs.meta",
-    "Assets/Resources/Candidates/Candidate_Blacksmith.asset",
-    "Assets/Resources/Candidates/Candidate_Carpenter.asset",
-    "Assets/Resources/Candidates/Candidate_Chef.asset",
-    "Assets/Resources/Candidates/Candidate_Farmer.asset",
-    "Assets/Resources/Candidates/Candidate_Fisher.asset",
-    "Assets/Resources/Candidates/Candidate_Lumberjack.asset",
-    "Assets/Resources/Candidates/Candidate_Miner.asset",
-    "Assets/Resources/Candidates/Candidate_Tailor.asset",
-    "Assets/Resources/Residents.meta",
-    "Assets/Resources/Residents/Resident_Blacksmith.prefab",
-    "Assets/Resources/Residents/Resident_Blacksmith.prefab.meta",
-    "Assets/Resources/Residents/Resident_Carpenter.prefab",
-    "Assets/Resources/Residents/Resident_Carpenter.prefab.meta",
-    "Assets/Resources/Residents/Resident_Chef.prefab",
-    "Assets/Resources/Residents/Resident_Chef.prefab.meta",
-    "Assets/Resources/Residents/Resident_Farmer.prefab",
-    "Assets/Resources/Residents/Resident_Farmer.prefab.meta",
-    "Assets/Resources/Residents/Resident_Fisher.prefab",
-    "Assets/Resources/Residents/Resident_Fisher.prefab.meta",
-    "Assets/Resources/Residents/Resident_Lumberjack.prefab",
-    "Assets/Resources/Residents/Resident_Lumberjack.prefab.meta",
-    "Assets/Resources/Residents/Resident_Miner.prefab",
-    "Assets/Resources/Residents/Resident_Miner.prefab.meta",
-    "Assets/Resources/Residents/Resident_Tailor.prefab",
-    "Assets/Resources/Residents/Resident_Tailor.prefab.meta",
-    "Automation/LoopEngineering/validator-registry.json",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
-    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
-    "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
-    "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
-    "PROJECT_PA_STATUS.md",
-    "PROJECT_PA_TODO.md",
-    "PROJECT_PA_SESSION_REPORT.md",
-    "Docs/07_개발일지.md",
-    "Docs/Codex/TRIPO_ASSET_AUDIT.md"
+    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md"
   ],
   "forbiddenWorkPerformed": false,
   "world001Completed": true,
@@ -634,10 +610,13 @@
   "beta005Completed": true,
   "beta006Started": true,
   "beta006Completed": true,
+  "beta007Started": true,
+  "beta007Completed": false,
+  "beta007CheckpointedWithValidationDebt": true,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-11",
   "startedAt": "2026-08-20",
-  "stoppedAt": "2026-08-20T23:59:00+09:00",
-  "stopReason": "BETA_006_COMPLETE",
-  "nextAction": "Create the approved BETA-006 local ticket commit without push, then activate preapproved BETA-007 Village Response and NPC Integration."
+  "stoppedAt": null,
+  "stopReason": null,
+  "nextAction": "Create the approved local BETA-007 validation-debt checkpoint without push, then activate BETA-008 as the only ticket and audit the existing seven-day progression authority."
 }

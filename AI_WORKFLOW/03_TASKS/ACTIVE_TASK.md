@@ -9,14 +9,14 @@
 
 ## 현재 작업
 
-`BETA-006 Phone Hiring and Feed Completion` — 구현·D3D11 검증·회귀 완료, 승인된 로컬 ticket commit 직전의 유일한 티켓.
+`BETA-007 Village Response and NPC Integration` — `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` 체크포인트 정리 중인 유일한 티켓.
 
-- Baseline: `milestone/gameplay-beta-85@0c9131b2f7256aa8ccb9b458b0fee2db5a4371c9`; 시작 working tree clean.
-- 목표: 기존 `HiringService`와 후보 데이터를 실제 휴대폰 채용 루프로 노출하고, Feed가 판매 전 honest empty state와 판매 후 실제 판매·마을 변화 데이터를 보여 주게 한다.
-- 필수 상태: 후보 목록, 역할, 실제 비용, 잔액/티어/중복 가능 여부, 채용 전·후, 실제 결과; Feed empty/sales/village link; Audit와 Settings 정상 유지.
-- 보존: `Prototype_FirstDay.unity` Golden, WorldSandbox/M70, 기존 Hiring/Economy/Tier/SalesLog/Village/Save 권위, Save schema v11.
-- 금지: Scene/Prefab/Packages/ProjectSettings/Save schema 변경을 기본 해결책으로 사용, 새 채용/피드 manager 생성, HiringService/EconomyService 재작성, 가짜 후보·판매·마을 데이터, push/rebase/reset/clean.
-- 완료 결과: WorldSandbox runtime 휴대폰 4개 앱, 후보 8명, 비용/잔액/잠금/고용 후 roster, 실제 고용과 C-02~C-09 기반 역할별 주민 스폰, 판매 전 빈 Feed와 실제 판매 후 마을 변화 Feed를 연결했다.
-- 검증: Runtime/Editor compile 오류 0. `BETA006_D3D11_Validation`, BETA-005, VillageChangeSignal, Golden FinalDemoRoute D3D11 회귀 PASS, blocking Console 0, 신규 crash 0.
-- 보호 결과: 기존 Scene, Packages, ProjectSettings, Save schema/authority, 원본 C-02~C-09 FBX는 무변경이다. 새 주민 prefab은 원본을 중첩 참조하는 재현 가능한 wrapper다.
-- 다음 단계: BETA-006 범위만 로컬 commit하고 push하지 않은 뒤 선승인 `BETA-007 Village Response and NPC Integration`을 자동 활성화한다.
+- Baseline: `milestone/gameplay-beta-85@1539923cc9a34659e7b43bf9a3c6b14073152efa`; 활성화 전 working tree clean.
+- 목표: 실제 판매 결과가 다음날 마을·주민·월드 반응으로 이어지고, 플레이어가 판매→기록→다음날 변화의 인과관계를 이해하게 한다.
+- 필수 상태: 기존 `SalesLogManager`, `VillageChangeSignalController`, `VillageCultureVisualController`, NPC schedule/role, WorldSandbox 역할·시설 anchor와 GameClock/day transition을 재사용한다.
+- 보존: `Prototype_FirstDay.unity` Golden, M70 WorldSandbox, 기존 NPC/판매/경제/마을/시간/Save 권위, Save schema v11.
+- 금지: 고정 좌표 남발, 새 마을/주민 manager, 가짜 판매 결과, 기존 NPC lifecycle 우회, Scene/Prefab/Packages/ProjectSettings/Save schema를 기본 해결책으로 사용, push/rebase/reset/clean.
+- 현재 단계: 판매→다음날 exact 상품 snapshot→역할별 시설 변화→주민 대화/HUD 연결 구현 완료. Runtime/Editor 정적 컴파일 오류 0. 두 D3D11 실행은 B08/HUD/bootstrap까지 통과했지만 주민 anchor 준비 단계에서 종료되어 실제 hire·판매·Day 2 assertion에는 도달하지 못했다.
+- 보존 로그: `Logs/BETA007_D3D11_Validation.log`, `Logs/BETA007_D3D11_Correction.log`.
+- 정적 후속 보정: runtime obstacle/NavMesh가 안정된 뒤 anchor를 구성하고, 현재 navigation revision에서 유효한 지점만 `HiringService.spawnPointRotation`에 동기화한다. 실제 상품의 ProductionData/RecipeData가 지정하는 역할·시설과 월드 변화 안내도 일치시켰다.
+- 체크포인트 규칙: 세 번째 Unity 실행과 assertion 완화는 하지 않는다. 명시된 장기 Goal의 validator-debt 지속 정책에 따라 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` local checkpoint까지만 만들고, push 없이 선승인된 `BETA-008`을 다음 단일 티켓으로 활성화한다.

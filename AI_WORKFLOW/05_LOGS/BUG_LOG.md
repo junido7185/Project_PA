@@ -665,3 +665,12 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 결과: `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`가 Miner 보류와 Tailor 구매, 재고·경제·SalesLog·feedback·demand·HUD assertion 및 Console 0으로 `FINISHED_PASS`했다.
 - 회귀: BETA-004, CustomerPresentation, CustomerArrival 검증도 모두 D3D11 PASS했다. 새 crash와 Scene/Prefab/Packages/ProjectSettings/Save schema content 변경은 없다.
 - 최종 판정: 두 기존 blocker는 종료하고 `BETA_005_COMPLETE`로 기록한다. 자동 캡처만 비차단 `CAPTURE_EVIDENCE_DEBT`로 유지한다.
+
+## [VALIDATION_DEBT] 2026-08-21 — BETA-007 generated resident spawn NavMesh readiness
+
+- 증상: `Logs/BETA007_D3D11_Validation.log`는 WorldSandbox/D3D11/HUD/B08를 PASS한 뒤 generated resident spawn anchor의 NavMesh assertion에서 중단됐다. 승인된 보정은 런타임 carving 뒤 anchor를 실제 NavMesh hit로 재투영하고 준비 상태를 기다리게 했지만 `Logs/BETA007_D3D11_Correction.log`도 `ResidentSpawnAnchorsReady` timeout으로 같은 bootstrap 단계에서 종료됐다.
+- 영향: 실제 Farmer hire, Wheat ShopSlot 판매, Day 2 전환, village visual, resident DialogueUI assertion에는 도달하지 못했다. 두 실행 모두 native crash 0이며 Scene/Prefab/Packages/ProjectSettings/SaveData/SaveManager 변경은 없다.
+- 원인 분류: 실제 고용 이전에 validator가 종료되어 hired resident 실패는 증명되지 않았다. 다만 생성 시 유효했던 네 anchor 중 하나만 나중에 투영 실패해도 invalid Transform을 영구 보존하고 전체 readiness를 false로 두는 production 위험이 확인됐다.
+- 정적 보정: runtime building obstacle과 NavMesh rebuild가 안정된 뒤 anchor를 만들고, current navigation revision에서 재투영되는 지점만 유지해 `HiringService.spawnPointRotation`에 다시 동기화한다. seed 재결속 실패도 성공으로 숨기지 않는다.
+- 사후 결과: Runtime/Editor 정적 compile 오류 0. 기존 CS8785/CS0414 경고만 유지된다. 두 허용 실행을 이미 사용했으므로 보정 후 세 번째 D3D11 실행은 하지 않았고 실제 hire→판매→Day 2→대화는 미검증으로 남긴다.
+- 판정: validator-only 사유를 HARD BLOCKER로 확대하지 않는 장기 Goal 정책에 따라 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` checkpoint로 보존한다. assertion 삭제·완화와 결과 하드코딩은 하지 않았다.
