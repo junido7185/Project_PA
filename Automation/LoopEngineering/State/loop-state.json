@@ -73,7 +73,7 @@
     ],
     "sequenceStartTicket": "BETA-001",
     "initialNextTicket": "BETA-001",
-    "nextTicket": "BETA-008",
+    "nextTicket": "BETA-009",
     "preapprovedThrough": "BETA-010",
     "stopAtMilestone": "M85_GAMEPLAY_BETA_COMPLETE",
     "completionReached": false,
@@ -172,18 +172,18 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "BETA-007",
+  "ticketId": "BETA-008",
   "status": "implemented_with_validation_debt",
-  "finalState": "BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT",
-  "goal": "Connect real sales to next-day village, resident and world responses through existing NPC roles, anchors and village signal authorities with a visible causal chain.",
+  "finalState": "BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT",
+  "goal": "Connect a fresh WorldSandbox session from Day 1 through Day 7 with achievable progressive objectives, meaningful earning and spending, and no gameplay dead-end.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
-    "commit": "1539923",
+    "commit": "4bf89f4",
     "backend": "D3D11",
     "unityVersion": "6000.3.2f1"
   },
   "integrity": {
-    "dirtyPathCountAtStop": 17,
+    "dirtyPathCountAtStop": 0,
     "newCrashArtifacts": 0,
     "worldSandboxSceneChanged": false,
     "prototypeFirstDayChanged": false,
@@ -198,9 +198,9 @@
     "editor": "PASS: 0 errors (existing CS8785 and CS0414 warnings only)"
   },
   "validators": {
-    "status": "VALIDATION_DEBT: two approved D3D11 runs stopped before transaction stages at resident anchor readiness; a production lifecycle correction was compiled afterward without a third Unity run",
-    "firstRun": "Logs/BETA007_D3D11_Validation.log",
-    "correctionRun": "Logs/BETA007_D3D11_Correction.log",
+    "status": "VALIDATION_DEBT: the correction run proved the ordinary Day 1 tourist, real sales, explicit deliveries, real day transitions and paid Day 5 hire, then stopped at the Day 5 revenue target because the fixture stocked duplicate products; the deterministic unique-product fixture correction compiles but was not rerun",
+    "firstRun": "Logs/BETA008_D3D11_Validation.log",
+    "correctionRun": "Logs/BETA008_D3D11_Correction.log",
     "nativeCrash": false,
     "additionalRunAllowed": false
   },
@@ -534,6 +534,36 @@
     "nextTicketStarted": false,
     "nextTicket": "BETA-008"
   },
+  "gameplayBetaSevenDayProgression": {
+    "ticket": "BETA-008",
+    "state": "BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT",
+    "sceneScope": "WorldSandbox runtime first; Golden scene remains regression-only",
+    "normalPlayerPath": [
+      "New Game starts the real GameClock instead of leaving the bootstrap clock frozen",
+      "the generated B01 shop sign is rebound to the actual runtime shop",
+      "a deterministic external tourist can shop before the player hires a resident",
+      "Day 2 through Day 7 producer deliveries require an explicit B purchase and use EconomyService",
+      "player HUD exposes the current plan, revenue target, delivery, hire and village-response requirements",
+      "Day 7 completion requires 1700 cumulative revenue, a paid hire and an earned village response"
+    ],
+    "validatedThrough": "Day 5 actual sales and paid Farmer hire; Day 5 target assertion stopped the correction run",
+    "fixtureCorrection": "stock four distinct highest-value sellable items instead of four copies of the same product",
+    "fixtureCorrectionCompile": "PASS",
+    "day6Day7RuntimeReached": false,
+    "weekCompletionRuntimeReached": false,
+    "sceneSerializationChanged": false,
+    "prefabChanged": false,
+    "saveSchemaChanged": false,
+    "packagesChanged": false,
+    "projectSettingsChanged": false,
+    "nativeCrash": false,
+    "validationLogs": [
+      "Logs/BETA008_D3D11_Validation.log",
+      "Logs/BETA008_D3D11_Correction.log"
+    ],
+    "nextTicketStarted": false,
+    "nextTicket": "BETA-009"
+  },
   "shopFurniture": {
     "authority": "existing ShopCustomizationController over GridService shop.interior",
     "cellSizeMeters": 2,
@@ -577,9 +607,22 @@
     "reason": "Automatic Game View capture was not retried. Runtime object, bounds, interaction, restart and Console gates provide the bounded functional evidence; no manual capture is requested."
   },
   "changedPaths": [
+    "Assets/Scripts/CustomerArrivalController.cs",
+    "Assets/Scripts/LongPlayProgressionController.cs",
+    "Assets/Scripts/World/WorldAlphaPlayableController.cs",
+    "Assets/Scripts/World/WorldGameplayAdapterService.cs",
+    "Assets/Editor/PA_Beta008SevenDayProgressionValidator.cs",
+    "Assets/Editor/PA_Beta008SevenDayProgressionValidator.cs.meta",
+    "Automation/LoopEngineering/validator-registry.json",
     "Automation/LoopEngineering/State/loop-state.json",
     "Automation/LoopEngineering/progress.md",
-    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md"
+    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "AI_WORKFLOW/05_LOGS/CHANGELOG_AI.md",
+    "AI_WORKFLOW/06_HANDOFF/HANDOFF_FOR_CODEX.md",
+    "PROJECT_PA_STATUS.md",
+    "PROJECT_PA_TODO.md",
+    "PROJECT_PA_SESSION_REPORT.md"
   ],
   "forbiddenWorkPerformed": false,
   "world001Completed": true,
@@ -613,10 +656,13 @@
   "beta007Started": true,
   "beta007Completed": false,
   "beta007CheckpointedWithValidationDebt": true,
+  "beta008Started": true,
+  "beta008Completed": false,
+  "beta008CheckpointedWithValidationDebt": true,
   "ticketCommitPendingHuman": false,
   "startedAt": "2026-08-11",
   "startedAt": "2026-08-20",
-  "stoppedAt": null,
-  "stopReason": null,
-  "nextAction": "Create the approved local BETA-007 validation-debt checkpoint without push, then activate BETA-008 as the only ticket and audit the existing seven-day progression authority."
+  "stoppedAt": "2026-08-21",
+  "stopReason": "BETA-008 implementation checkpointed after the two approved D3D11 executions; final deterministic validator fixture correction is compile-only and Day 6-7 remain validation debt.",
+  "nextAction": "Create the approved local BETA-008 validation-debt checkpoint, then activate only BETA-009 Persistence and Recovery Pass and audit save/load continuity for the real WorldSandbox beta loop."
 }

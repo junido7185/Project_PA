@@ -777,3 +777,18 @@ Append-only log for guarded automation and dry-run loop work.
 - 추가 Unity 실행 없이 obstacle/rebuild 안정화 뒤 anchor 생성, invalid anchor 제거, navigation revision 추적, HiringService 재동기화를 정적으로 적용했다. 상품별 ProductionData/RecipeData를 기준으로 역할·시설·안내 불일치와 seed rebind 오류 은폐도 보정했다.
 - 보존 로그: `Logs/BETA007_D3D11_Validation.log`, `Logs/BETA007_D3D11_Correction.log`. native crash 0, 판매/다음날 assertion은 미실행이다.
 - 최종 상태 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT`. 세 번째 실행과 assertion 완화 없이 local checkpoint로 보존하고, 장기 Goal 정책에 따라 다음 선승인 티켓으로 계속한다.
+
+## 2026-08-21 — BETA-008 Day 1–7 Progression activated
+
+- BETA-007의 17개 승인 경로를 validation-debt가 명시된 local checkpoint `4bf89f4`로 보존했고 push하지 않았다.
+- M85 선승인 sequence의 다음 단일 티켓을 `BETA_008_ACTIVE`로 활성화했다. 기준선 working tree는 clean이다.
+- 기존 Day 1~7 계획·체크리스트·Day 7 완주/저장 권위를 WorldSandbox의 BETA-001~007 실제 상태와 대조한다. 새 progression manager 없이 달성 불가능한 목표, 돈을 벌고 쓸 이유, day-transition dead-end만 최소 연결한다.
+
+## 2026-08-21 — BETA-008 implemented with validation debt checkpoint
+
+- New Game이 bootstrap에 묶여 있던 clock을 실제 속도로 시작하고, 기존 상점 간판을 generated B01 옆으로 재결속한다. 고용 주민이 없는 Day 1에는 승인된 주민 wrapper의 외형/profile을 관광객 원천으로 재사용하되 실제 `NpcController`·`PurchaseEvaluator`·`ShopSlot` 거래 권위는 우회하지 않는다.
+- Day 2~7 producer delivery는 자동 차감에서 `B` 명시 구매로 전환했다. 실제 `EconomyService.TrySpend`, Inventory preflight와 rollback을 사용하며 잔액/가방 부족 실패가 그날 기회를 소모하지 않는다.
+- HUD는 현재 일차·누적 매출 목표·납품·첫 고용·마을 반응을 보여 준다. Day 7 completion은 1,700G, 실제 고용 1명 이상, earned village response가 모두 있어야 열린다.
+- `Logs/BETA008_D3D11_Validation.log`는 관광객의 first-frame FSM lifecycle 문제를 드러냈고, 보정 실행 `Logs/BETA008_D3D11_Correction.log`는 일반 Day 1 관광객 구매, Day 1~4 실제 판매/정산/날짜 증가, Day 2~5 명시 납품, Day 5 실제 Farmer 고용까지 PASS했다.
+- 두 번째 실행은 validator가 같은 GrilledFish를 네 슬롯에 반복 선택해 누적 매출 989/1,050G가 된 fixture 결함에서 멈췄다. 네 종류의 서로 다른 최고가 상품을 고르도록 최소 보정했고 Runtime/Editor compile 오류 0, diff/JSON 검사를 통과했다.
+- 승인된 실행 2회를 모두 사용했으므로 추가 D3D11은 하지 않는다. Day 6~7, Week 1 completion, 최종 fixture correction은 runtime 미검증이다. 상태는 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`; Scene/Prefab/Packages/ProjectSettings/Save schema/native crash 변경 0이다.

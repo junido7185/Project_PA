@@ -11,7 +11,7 @@ Status: `IN_PROGRESS`; branch `milestone/gameplay-beta-85`; approved through `BE
 - [x] BETA-005 — Customer Strategy and Feedback: actual Miner/Tailor preferences, synchronous player-HUD evidence, reject/purchase feedback and demand signals; D3D11/regressions PASS.
 - [x] BETA-006 — Phone Hiring and Feed Completion: runtime Phone, 8 visible candidates, exact-cost role hire, live sales/village Feed, Audit/Settings; D3D11/regressions PASS.
 - [~] BETA-007 — Village Response and NPC Integration: `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` local checkpoint. 판매→Day 2→역할 시설→주민 대화/HUD 구현과 정적 compile은 완료했지만 두 D3D11 실행이 anchor readiness에서 종료되어 실제 거래 단계 미검증. 세 번째 실행은 새 승인 전 금지.
-- [ ] BETA-008 — 7-Day Progression.
+- [~] BETA-008 — 7-Day Progression: `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT` local checkpoint. 일반 Day 1 관광객, Day 1~4 실제 판매/정산/날짜 증가, Day 2~5 명시 납품, Day 5 유료 Farmer 고용까지 D3D11 증명. 최종 서로 다른 고가 상품 fixture correction은 compile-only이며 Day 6~7/Week 1 완료는 미검증.
 - [ ] BETA-009 — Persistence and Recovery Pass.
 - [ ] BETA-010 — M85 Full Playable Beta Integration.
 - [ ] M85 integrated human playtest once at milestone end; keep visual/capture/audio/B06/F10 polish in `M85_HUMAN_REVIEW_BACKLOG` unless it blocks comprehension.

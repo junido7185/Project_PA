@@ -109,6 +109,13 @@ public class LongPlayProgressionController : MonoBehaviour
     public string CurrentGoalText => objectiveText != null ? objectiveText.text : string.Empty;
     public bool IsWeekCompletionOpen => _weekCompletionOpen;
     public bool IsMilestoneCompletionOpen => _weekCompletionOpen;
+    public bool HasCurrentDaySupplyPlan => CurrentPlanHasSupply();
+    public bool CurrentDaySupplyPurchased => GameClock.Instance != null &&
+                                             _lastSupplyDay == GameClock.Instance.CurrentDay;
+    public bool CurrentDayGoalComplete => IsDayGoalComplete(
+        GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1);
+    public bool WeekOneCompletionRequirementsMet => HasWeekOneCompletionRequirements();
+    public string CurrentWeekOnePlayerSummary => BuildWeekOnePlayerSummary();
 
     void Awake()
     {
@@ -285,7 +292,12 @@ public class LongPlayProgressionController : MonoBehaviour
         CaptureDayBaselines();
 
         if (day >= 2 && day <= finalPlannedDay)
-            TryGrantDailySupply(day, forceSupply);
+        {
+            if (forceSupply)
+                TryGrantDailySupply(day, true, out _);
+            else
+                PrepareDailySupplyOffer(day);
+        }
 
         RefreshUI(force: true);
     }
@@ -309,7 +321,8 @@ public class LongPlayProgressionController : MonoBehaviour
         _dayStartMoney = Mathf.Max(0, dayStartMoney);
         _restoredFromSave = true;
         _weekCompletionAcknowledged = GameClock.Instance != null
-            && GameClock.Instance.CurrentDay > finalPlannedDay;
+            && GameClock.Instance.CurrentDay > finalPlannedDay
+            && HasWeekOneCompletionRequirements();
         _monthCompletionAcknowledged = GameClock.Instance != null
             && GameClock.Instance.CurrentDay > MonthOneFinalDay;
         _fullCampaignCompletionAcknowledged = false;
@@ -322,9 +335,10 @@ public class LongPlayProgressionController : MonoBehaviour
     bool ShouldShowWeekOneCompletion()
     {
         return GameClock.Instance != null
-            && GameClock.Instance.CurrentDay == finalPlannedDay
+            && GameClock.Instance.CurrentDay >= finalPlannedDay
             && DayNightShopLoopController.Instance != null
-            && DayNightShopLoopController.Instance.CurrentPhase == PADayNightPhase.Settlement;
+            && DayNightShopLoopController.Instance.CurrentPhase == PADayNightPhase.Settlement
+            && HasWeekOneCompletionRequirements();
     }
 
     bool ShouldShowMonthOneCompletion()
@@ -654,22 +668,219 @@ public class LongPlayProgressionController : MonoBehaviour
         data.longPlayDayStartMoney = _dayStartMoney;
     }
 
-    void TryGrantDailySupply(int day, bool force)
+    public bool TryPurchaseCurrentDaySupply(out string result)
     {
-        if (!enableDailyNpcSupply) return;
-        if (!force && _lastSupplyDay >= day) return;
+        int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        bool purchased = TryGrantDailySupply(day, false, out result);
+        RefreshUI(force: true);
+        return purchased;
+    }
+
+    bool CurrentPlanHasSupply()
+    {
+        int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        DayPlan plan = GetPlan(day);
+        return plan != null && plan.supplies != null && plan.supplies.Count > 0;
+    }
+
+    bool HasWeekOneCompletionRequirements()
+    {
+        DayPlan finalPlan = GetPlan(finalPlannedDay);
+        long target = finalPlan != null ? finalPlan.revenueTarget : 1700L;
+        long revenue = EconomyService.Instance != null
+            ? EconomyService.Instance.CumulativeRevenue
+            : 0L;
+        bool hired = HiringService.Instance != null && HiringService.Instance.HiredCount > 0;
+        VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+        bool villageResponse = culture != null &&
+                               (culture.HasActiveCategory || culture.HasPendingChange);
+        return revenue >= target && hired && villageResponse;
+    }
+
+    bool IsDayGoalComplete(int day)
+    {
+        DayPlan plan = GetPlan(day);
+        if (plan == null) return day > finalPlannedDay;
+
+        long revenue = EconomyService.Instance != null
+            ? EconomyService.Instance.CumulativeRevenue
+            : 0L;
+        if (revenue < plan.revenueTarget) return false;
+        if (day >= 2 && day <= finalPlannedDay && plan.supplies.Count > 0 &&
+            _lastSupplyDay < day)
+            return false;
+        if (day >= 5 && (HiringService.Instance == null || HiringService.Instance.HiredCount <= 0))
+            return false;
+        if (day >= finalPlannedDay)
+        {
+            VillageCultureVisualController culture = VillageCultureVisualController.Instance;
+            if (culture == null || (!culture.HasActiveCategory && !culture.HasPendingChange))
+                return false;
+        }
+        return true;
+    }
+
+    string BuildWeekOnePlayerSummary()
+    {
+        int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        DayPlan plan = GetPlan(Mathf.Clamp(day, 1, finalPlannedDay));
+        if (plan == null) return "주간 운영 목표를 준비 중입니다.";
+
+        long revenue = EconomyService.Instance != null
+            ? EconomyService.Instance.CumulativeRevenue
+            : 0L;
+        string revenueMark = revenue >= plan.revenueTarget ? "완료" : "진행";
+        string supply = string.Empty;
+        if (day >= 2 && day <= finalPlannedDay && plan.supplies.Count > 0)
+        {
+            if (_lastSupplyDay == day)
+                supply = " · 생산자 납품 구매 완료";
+            else if (TryCalculateSupplyCost(plan, out int cost, out _, out _))
+                supply = $" · B 납품 구매 {cost:N0}G";
+        }
+
+        string growth = day >= 5
+            ? HiringService.Instance != null && HiringService.Instance.HiredCount > 0
+                ? $" · 주민 {HiringService.Instance.HiredCount}명 고용"
+                : " · P 휴대폰에서 첫 주민 고용"
+            : string.Empty;
+        string village = day >= finalPlannedDay
+            ? VillageCultureVisualController.Instance != null &&
+              (VillageCultureVisualController.Instance.HasActiveCategory ||
+               VillageCultureVisualController.Instance.HasPendingChange)
+                ? " · 마을 반응 연결"
+                : " · 판매 후 다음 날 마을 반응 확인"
+            : string.Empty;
+        string complete = IsDayGoalComplete(day) ? " [오늘 목표 완료]" : string.Empty;
+
+        return $"Week 1 · Day {day}: {plan.title} · 누적 매출 " +
+               $"{revenue:N0}/{plan.revenueTarget:N0}G ({revenueMark}){supply}{growth}{village}{complete}";
+    }
+
+    void PrepareDailySupplyOffer(int day)
+    {
+        if (!enableDailyNpcSupply || _lastSupplyDay >= day) return;
+        DayPlan plan = GetPlan(day);
+        if (plan == null || plan.supplies == null || plan.supplies.Count == 0) return;
+
+        if (!TryCalculateSupplyCost(plan, out int totalCost, out string manifest,
+                out string failure))
+        {
+            _lastSupplyResult = $"Day {day}: producer delivery unavailable ({failure}).";
+            return;
+        }
+
+        _lastSupplyResult =
+            $"Day {day}: producer delivery ready - {manifest} / {totalCost}G. Press B to buy.";
+    }
+
+    bool TryGrantDailySupply(int day, bool force, out string result)
+    {
+        result = string.Empty;
+        if (!enableDailyNpcSupply)
+        {
+            result = "Producer delivery is disabled.";
+            return false;
+        }
+        if (!force && _lastSupplyDay >= day)
+        {
+            result = $"Day {day} producer delivery was already purchased.";
+            return false;
+        }
 
         DayPlan plan = GetPlan(day);
         if (plan == null || plan.supplies == null || plan.supplies.Count == 0)
         {
             _lastSupplyResult = $"Day {day}: no producer delivery plan registered.";
-            _lastSupplyDay = day;
-            return;
+            result = _lastSupplyResult;
+            return false;
+        }
+
+        if (Inventory.instance == null || EconomyService.Instance == null)
+        {
+            _lastSupplyResult = $"Day {day}: inventory or economy authority is unavailable.";
+            result = _lastSupplyResult;
+            return false;
+        }
+
+        if (!TryCalculateSupplyCost(plan, out int totalCost, out string manifest,
+                out string costFailure))
+        {
+            _lastSupplyResult = $"Day {day}: producer delivery unavailable ({costFailure}).";
+            result = _lastSupplyResult;
+            return false;
+        }
+
+        var entries = new List<(Item item, int count)>();
+        foreach (SupplyEntry supply in plan.supplies)
+        {
+            Item item = Resources.Load<Item>(supply.resourcePath);
+            int count = Mathf.Max(1, supply.count);
+            if (item == null || !Inventory.instance.CanAddItems(item, count))
+            {
+                _lastSupplyResult = item == null
+                    ? $"Day {day}: producer item is missing ({supply.resourcePath})."
+                    : $"Day {day}: delivery held because the bag needs room for {item.itemName} x{count}.";
+                result = _lastSupplyResult;
+                return false;
+            }
+            entries.Add((item, count));
+        }
+
+        if (!EconomyService.Instance.TrySpend(totalCost,
+                $"LongPlay producer buy-in Day {day}"))
+        {
+            _lastSupplyResult =
+                $"Day {day}: delivery held - need {totalCost}G for {manifest}. Earn money and press B again.";
+            result = _lastSupplyResult;
+            return false;
         }
 
         int deliveredUnits = 0;
-        int spent = 0;
-        int skipped = 0;
+        var added = new List<(Item item, int count)>();
+        foreach ((Item item, int count) in entries)
+        {
+            var instance = new ItemInstance(item, count)
+            {
+                quality = Mathf.Clamp(1f + 0.01f * day, 1f, 1.15f),
+                currentPrice = item.basePrice
+            };
+
+            if (!Inventory.instance.AddInstance(instance))
+            {
+                foreach ((Item rollbackItem, int rollbackCount) in added)
+                    Inventory.instance.RemoveItems(rollbackItem, rollbackCount);
+                EconomyService.Instance.TryModifyMoney(totalCost,
+                    $"LongPlay producer buy-in rollback Day {day}");
+                _lastSupplyResult = $"Day {day}: delivery rolled back because the bag changed.";
+                result = _lastSupplyResult;
+                return false;
+            }
+
+            added.Add((item, count));
+            deliveredUnits += count;
+        }
+
+        _lastSupplyDay = day;
+        _lastSupplyResult =
+            $"Day {day}: producer delivery {deliveredUnits} units / buy-in {totalCost}G / {manifest}";
+        result = _lastSupplyResult;
+        Debug.Log($"[LongPlay] {_lastSupplyResult}");
+        return true;
+    }
+
+    bool TryCalculateSupplyCost(DayPlan plan, out int totalCost, out string manifest,
+        out string failure)
+    {
+        totalCost = 0;
+        manifest = string.Empty;
+        failure = string.Empty;
+        if (plan == null || plan.supplies == null || plan.supplies.Count == 0)
+        {
+            failure = "no supply plan";
+            return false;
+        }
+
         var summary = new List<string>();
 
         foreach (var supply in plan.supplies)
@@ -680,58 +891,20 @@ public class LongPlayProgressionController : MonoBehaviour
             Item item = Resources.Load<Item>(supply.resourcePath);
             if (item == null)
             {
-                skipped++;
-                summary.Add($"missing:{supply.resourcePath}");
-                continue;
+                failure = $"missing item {supply.resourcePath}";
+                return false;
             }
 
             int count = Mathf.Max(1, supply.count);
             int unitPrice = Mathf.Max(1, Mathf.RoundToInt(item.basePrice * Mathf.Max(0.1f, plan.buyPriceMultiplier)));
-            int totalCost = unitPrice * count;
-
-            if (EconomyService.Instance != null
-                && !EconomyService.Instance.TrySpend(totalCost, $"LongPlay NPC buy-in Day {day}: {item.itemName} x{count}"))
-            {
-                skipped++;
-                summary.Add($"{item.itemName} held: low cash");
-                continue;
-            }
-
-            var instance = new ItemInstance(item, count)
-            {
-                quality = Mathf.Clamp(1f + 0.01f * day, 1f, 1.15f),
-                currentPrice = item.basePrice
-            };
-
-            bool added = Inventory.instance != null && Inventory.instance.AddInstance(instance);
-            if (!added)
-            {
-                if (EconomyService.Instance != null)
-                    EconomyService.Instance.TryModifyMoney(totalCost, $"LongPlay buy-in refund Day {day}: inventory full");
-
-                skipped++;
-                summary.Add($"{item.itemName} held: inventory full");
-                continue;
-            }
-
-            deliveredUnits += count;
-            spent += totalCost;
+            totalCost += unitPrice * count;
             summary.Add($"{item.itemName} x{count}");
         }
 
-        _lastSupplyDay = day;
-        if (deliveredUnits > 0)
-        {
-            _lastSupplyResult =
-                $"Day {day}: producer delivery {deliveredUnits} units / buy-in {spent}G / {string.Join(", ", summary)}";
-        }
-        else
-        {
-            _lastSupplyResult =
-                $"Day {day}: delivery blocked or held ({skipped}) / {string.Join(", ", summary)}";
-        }
-
-        Debug.Log($"[LongPlay] {_lastSupplyResult}");
+        manifest = string.Join(", ", summary);
+        if (summary.Count > 0) return true;
+        failure = "empty supply manifest";
+        return false;
     }
 
     void RefreshUI(bool force)
@@ -950,9 +1123,9 @@ public class LongPlayProgressionController : MonoBehaviour
         _plans.Add(new DayPlan
         {
             day = 1,
-            title = "First operation day",
-            objective = "Complete the first route: talk, stock, price, watch customer response, audit, and save.",
-            managementFocus = "Focus: understand the first visible reverse supply-chain loop.",
+            title = "첫 영업 준비",
+            objective = "채집·가공·진열을 마치고 첫 손님의 반응을 확인하세요.",
+            managementFocus = "핵심: 낮에 만든 상품이 밤의 매출과 다음 날 마을 반응으로 이어집니다.",
             revenueTarget = 150,
             buyPriceMultiplier = 0.55f
         });
@@ -960,9 +1133,9 @@ public class LongPlayProgressionController : MonoBehaviour
         _plans.Add(new DayPlan
         {
             day = 2,
-            title = "Producer intake",
-            objective = "Buy a small producer delivery and compare at least two stocked products.",
-            managementFocus = "Focus: move NPC-produced resources into the shop economy.",
+            title = "생산자 납품",
+            objective = "B로 작은 생산자 납품을 구매하고 두 종류 이상의 상품을 판매하세요.",
+            managementFocus = "핵심: 번 돈을 재고에 다시 투자해 상품 구성을 넓힙니다.",
             revenueTarget = 300,
             buyPriceMultiplier = 0.50f,
             supplies = new List<SupplyEntry>
@@ -975,9 +1148,9 @@ public class LongPlayProgressionController : MonoBehaviour
         _plans.Add(new DayPlan
         {
             day = 3,
-            title = "Price experiment",
-            objective = "Buy wood and ore, then compare fair, high, and low price reactions.",
-            managementFocus = "Focus: find the balance between conversion chance and margin.",
+            title = "가격 실험",
+            objective = "목재와 광석을 준비하고 적정가·고가·저가에 대한 손님 반응을 비교하세요.",
+            managementFocus = "핵심: 판매 확률과 이익 사이의 균형을 찾습니다.",
             revenueTarget = 520,
             buyPriceMultiplier = 0.52f,
             supplies = new List<SupplyEntry>
@@ -990,9 +1163,9 @@ public class LongPlayProgressionController : MonoBehaviour
         _plans.Add(new DayPlan
         {
             day = 4,
-            title = "Processing value check",
-            objective = "Compare raw resource sales with processed goods and decide which chain deserves investment.",
-            managementFocus = "Focus: move from raw sales toward a processing chain.",
+            title = "가공 가치 확인",
+            objective = "원물과 가공품의 판매 가치를 비교하고 투자할 생산 사슬을 고르세요.",
+            managementFocus = "핵심: 원물 판매에서 가공 중심 운영으로 확장합니다.",
             revenueTarget = 780,
             buyPriceMultiplier = 0.55f,
             supplies = new List<SupplyEntry>
@@ -1005,9 +1178,9 @@ public class LongPlayProgressionController : MonoBehaviour
         _plans.Add(new DayPlan
         {
             day = 5,
-            title = "First workforce support",
-            objective = "Open P.A. Phone > Hiring and recruit one producer or specialist for the village economy.",
-            managementFocus = "Focus: turn repeated manual preparation into a deliberate NPC support choice.",
+            title = "첫 주민 고용",
+            objective = "P.A. 휴대폰의 채용 화면에서 생산자 또는 전문가 한 명을 고용하세요.",
+            managementFocus = "핵심: 반복 준비 작업을 주민 역할과 연결합니다.",
             revenueTarget = 1050,
             buyPriceMultiplier = 0.57f,
             supplies = new List<SupplyEntry>
@@ -1020,9 +1193,9 @@ public class LongPlayProgressionController : MonoBehaviour
         _plans.Add(new DayPlan
         {
             day = 6,
-            title = "Operations pressure",
-            objective = "Compare missing inventory, slow movers, and high-value products to choose next supply priority.",
-            managementFocus = "Focus: manage inventory turnover and tier goals together.",
+            title = "운영 압박 대응",
+            objective = "부족 재고·느린 판매·고가 상품을 비교해 다음 공급 우선순위를 정하세요.",
+            managementFocus = "핵심: 재고 회전과 장기 상점 성장 목표를 함께 관리합니다.",
             revenueTarget = 1350,
             buyPriceMultiplier = 0.60f,
             supplies = new List<SupplyEntry>
@@ -1035,9 +1208,9 @@ public class LongPlayProgressionController : MonoBehaviour
         _plans.Add(new DayPlan
         {
             day = 7,
-            title = "Weekly audit preparation",
-            objective = "Review cumulative revenue, reputation, stock state, and what Week 2 expansion should unlock.",
-            managementFocus = "Focus: close Week 1 and prepare the next tier of management choices.",
+            title = "첫 주 결산",
+            objective = "누적 매출·고용 주민·재고·마을 반응을 확인하고 2주차 운영을 준비하세요.",
+            managementFocus = "핵심: 1,700G 주간 목표를 마치고 10,000G 잡화점 성장 목표를 향합니다.",
             revenueTarget = 1700,
             buyPriceMultiplier = 0.62f,
             supplies = new List<SupplyEntry>

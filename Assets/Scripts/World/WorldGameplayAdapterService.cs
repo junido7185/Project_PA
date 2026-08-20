@@ -38,6 +38,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public const string RuntimeRootName = "WorldGameplay_Runtime";
     public const string PlayerRootName = "WorldGameplay_Player_Runtime";
     public const string CustomerRootName = "WorldGameplay_Customer_Runtime";
+    public const float PlayableSecondsPerGameHour = 15f;
+    const float BootstrapHoldSecondsPerGameHour = 99999f;
 
     const string MarketBuildingResource = "Buildings/Building_B01_MarketStall";
     const string WorkbenchBuildingResource = "Buildings/Building_B05_Workbench";
@@ -83,6 +85,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     FarmPlotInteraction[] _farmPlots = Array.Empty<FarmPlotInteraction>();
     WorldSalesDisplayReadability _salesDisplayReadability;
     Transform _salesDisplayRoot;
+    Transform _shopSignTarget;
     GameObject _residentAnchorRoot;
     readonly List<Transform> _residentSpawnAnchors = new List<Transform>();
     HiringService _hiringService;
@@ -137,6 +140,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public IReadOnlyList<FarmPlotInteraction> FarmPlots => _farmPlots;
     public WorldSalesDisplayReadability SalesDisplayReadability => _salesDisplayReadability;
     public Transform SalesDisplayTarget => _salesDisplayRoot;
+    public Transform ShopSignTarget => _shopSignTarget;
     public bool DaytimeActivitiesBound => _playerInteraction != null && _playerHotbar != null &&
                                           _daytimeActivityPoints.Length >= 4 &&
                                           _farmPlots.Length >= FarmPlotInteraction.RuntimePlotCount;
@@ -350,7 +354,9 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             reason = "PA_RuntimeSceneBinder did not provide the existing gameplay authorities.";
             return false;
         }
-        _clock.secondsPerGameHour = 99999f;
+        // Keep the clock deterministic while runtime anchors are composed. The
+        // player-facing controller starts the real week clock after New Game.
+        _clock.secondsPerGameHour = BootstrapHoldSecondsPerGameHour;
         _dayLoop.keepDay1TutorialShopOpen = false;
 
         _playerRoot = new GameObject(PlayerRootName);
@@ -432,7 +438,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         if (!_salesDisplayReadability.Configure(_salesDisplayRoot, _shopSlots, out reason))
             return false;
 
-        if (!PositionProductionFacilities(out reason)) return false;
+        if (!PositionProductionFacilities(out reason) || !BindShopSignToRuntimeShop(out reason))
+            return false;
 
         _clock.ForceSet(9f, 1, "BETA-001 WorldSandbox fresh session");
         _dayLoop.SimulatePhaseForValidation(9f, 1);
@@ -447,6 +454,59 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         {
             return false;
         }
+        return true;
+    }
+
+    public bool BeginPlayableWeek(out string reason)
+    {
+        reason = string.Empty;
+        if (!IsReady || _clock == null || _dayLoop == null)
+        {
+            reason = "WorldSandbox clock authorities are not ready.";
+            return false;
+        }
+
+        _clock.secondsPerGameHour = PlayableSecondsPerGameHour;
+        _dayLoop.keepDay1TutorialShopOpen = false;
+        if (!BindShopSignToRuntimeShop(out reason)) return false;
+
+        _lastAction = $"Playable week clock started at {_clock.GetTimeString()} " +
+                      $"({PlayableSecondsPerGameHour:0} seconds per game hour).";
+        return true;
+    }
+
+    bool BindShopSignToRuntimeShop(out string reason)
+    {
+        reason = string.Empty;
+        if (_shopRoot == null)
+        {
+            reason = "The runtime B01 shop is unavailable for sign binding.";
+            return false;
+        }
+
+        ShopOpenSign sign = FindFirstObjectByType<ShopOpenSign>();
+        if (sign == null)
+        {
+            reason = "The existing shop-open sign was not created by the day/night authority.";
+            return false;
+        }
+
+        Vector3 desired = _shopRoot.transform.position +
+                          _shopRoot.transform.forward * 2.0f +
+                          _shopRoot.transform.right * 1.5f;
+        if (NavMesh.SamplePosition(desired, out NavMeshHit hit, 4f, NavMesh.AllAreas))
+            desired = hit.position;
+        else
+        {
+            Vector3 rayStart = desired + Vector3.up * 8f;
+            if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit ground, 24f,
+                    Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                desired = ground.point;
+        }
+
+        sign.transform.SetPositionAndRotation(desired + Vector3.up * 0.45f,
+            Quaternion.LookRotation(-_shopRoot.transform.forward, Vector3.up));
+        _shopSignTarget = sign.transform;
         return true;
     }
 
@@ -1305,6 +1365,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             WorldGenerationAnchorKind.HighlandActivity, new Vector2Int(4, 3));
         TryPositionExistingRuntimeObjectAtOffset(_sewingRoot,
             WorldGenerationAnchorKind.MeadowActivity, new Vector2Int(-6, -2));
+        if (!BindShopSignToRuntimeShop(out string signReason))
+        {
+            Fail($"Restored world shop-sign binding failed: {signReason}");
+            return;
+        }
         if (_generated.TryGetAnchor(WorldGenerationAnchorKind.Start, out WorldGenerationAnchor start) &&
             _grid.CellToWorld(start.Coordinate, out Vector3 playerPosition) && _playerRoot != null)
         {

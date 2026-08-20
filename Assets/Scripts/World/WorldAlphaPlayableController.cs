@@ -55,14 +55,14 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool StartPromptVisible => IsReady && _startPromptVisible;
     public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
     public string PlayerControlHint =>
-        "WASD 이동 · Space 상호작용 · P 휴대폰(채용/피드) · F5 저장 · F9 불러오기 · Esc 메뉴";
+        "WASD 이동 · Space 상호작용 · B 생산자 납품 구매 · P 휴대폰(채용/피드) · F5 저장 · F9 불러오기 · Esc 메뉴";
     public Rect PlayerFacingHudScreenRect
     {
         get
         {
             float width = Mathf.Min(720f, Screen.width - 420f);
             float left = (Screen.width - width) * 0.5f;
-            return new Rect(left, 18f, width, 232f);
+            return new Rect(left, 18f, width, 260f);
         }
     }
     public string CurrentPlayerObjective => ResolvePlayerObjective();
@@ -155,6 +155,17 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         {
             BeginNewGame();
         }
+        if (HasStartedBeta && !_developmentOverlayVisible &&
+            (SmartphoneUI.instance == null || !SmartphoneUI.instance.IsOpen) &&
+            Input.GetKeyDown(KeyCode.B))
+        {
+            LongPlayProgressionController progression = LongPlayProgressionController.Instance;
+            string result = "오늘 구매할 생산자 납품이 없습니다.";
+            if (progression != null && progression.TryPurchaseCurrentDaySupply(out result))
+                _lastAction = $"생산자 납품 구매 완료 · {result}";
+            else
+                _lastAction = result;
+        }
         if (!HasMoved && _adapter.PlayerRoot != null)
         {
             Vector3 delta = _adapter.PlayerRoot.transform.position - _movementOrigin;
@@ -163,6 +174,16 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         }
         RefreshPlayerFacingProgress();
         if (_adapter.CustomerPurchaseCompleted)
+        {
+            HasCustomerPurchase = true;
+            HasRevenue = EconomyService.Instance != null &&
+                         EconomyService.Instance.CumulativeRevenue > 0;
+        }
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (loop != null && loop.PlayerHasOpenedShopToday)
+            HasOpenedShop = true;
+        if (SalesLogManager.Instance != null && GameClock.Instance != null &&
+            SalesLogManager.Instance.GetDailyDecisionStats(GameClock.Instance.CurrentDay).purchases > 0)
         {
             HasCustomerPurchase = true;
             HasRevenue = EconomyService.Instance != null &&
@@ -361,6 +382,11 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool BeginNewGame()
     {
         if (!IsReady || _adapter?.PlayerRoot == null) return false;
+        if (!_adapter.BeginPlayableWeek(out string reason))
+        {
+            _lastAction = reason;
+            return false;
+        }
         HasStartedBeta = true;
         _startPromptVisible = false;
         _movementOrigin = _adapter.PlayerRoot.transform.position;
@@ -433,7 +459,26 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
             return $"노란 표지의 P.A. 잡화점을 찾으세요 · {TargetHint(_adapter?.RuntimeShop?.transform)}";
         if (!HasReachedWorkbench)
             return $"초록 표지의 제작 작업대를 찾으세요 · {TargetHint(_adapter?.RuntimeWorkbench?.transform)}";
-        return $"첫 동선 확인 완료 · 낮 자원: {ResolveDaytimeObjective()}";
+
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (loop == null) return ResolveDaytimeObjective();
+        if (loop.CurrentPhase == PADayNightPhase.ShopOpen)
+        {
+            if (!loop.PlayerHasOpenedShopToday)
+                return $"저녁 영업 시간입니다. 상점 간판에서 개점하세요 · {TargetHint(_adapter.ShopSignTarget)}";
+            if (_adapter.RuntimeShopSlots.All(slot => slot == null || slot.IsEmpty))
+                return $"영업 중이지만 판매대가 비었습니다. 상품을 진열하세요 · {TargetHint(_adapter.SalesDisplayTarget)}";
+            return "영업 중 · 손님의 가격·상품 반응을 확인하고 판매 기록을 휴대폰 Feed에서 검토하세요.";
+        }
+        if (loop.CurrentPhase == PADayNightPhase.Settlement)
+        {
+            LongPlayProgressionController progression = LongPlayProgressionController.Instance;
+            if (progression != null && GameClock.Instance != null &&
+                GameClock.Instance.CurrentDay >= 7 && !progression.WeekOneCompletionRequirementsMet)
+                return "주간 목표가 남았습니다. 다음 날에도 매출·고용·마을 반응을 보완한 뒤 정산하세요.";
+            return $"오늘 정산 시간입니다. 상점 간판에서 다음 날을 시작하세요 · {TargetHint(_adapter.ShopSignTarget)}";
+        }
+        return $"낮 준비 시간 · {ResolveDaytimeObjective()}";
     }
 
     string ResolveDaytimeObjective()
@@ -670,6 +715,10 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         GUILayout.BeginArea(PlayerFacingHudScreenRect, GUI.skin.box);
         int currentDay = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
         GUILayout.Label($"Day {currentDay} · 섬 생활 동선   |   {CurrentPlayerObjective}");
+        GUILayout.Space(4f);
+        GUILayout.Label(LongPlayProgressionController.Instance != null
+            ? LongPlayProgressionController.Instance.CurrentWeekOnePlayerSummary
+            : "Week 1 진행 목표를 준비 중입니다.");
         GUILayout.Space(4f);
         GUILayout.Label(_lastAction);
         GUILayout.Space(4f);

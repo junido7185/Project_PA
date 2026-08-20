@@ -1111,3 +1111,11 @@ AI 에이전트가 수행한 작업을 최신이 아래로 가도록 시간순(a
 - Runtime/Editor compile 오류 0. 승인된 두 D3D11 실행은 resident spawn anchor NavMesh readiness가 성립하지 않아 bootstrap에서 반복 중단됐고, 정적 lifecycle 보정 후 추가 실행은 하지 않았다.
 - 로그: `Logs/BETA007_D3D11_Validation.log`, `Logs/BETA007_D3D11_Correction.log`. native crash 0; Scene/Prefab/Packages/ProjectSettings/Save schema 변경 0.
 - 최종 판정은 PASS가 아닌 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT`. 실제 hire→판매→Day 2→대화와 회귀는 미검증으로 명시한 local checkpoint이며 push하지 않는다.
+
+## 2026-08-21 — Codex — BETA-008 Day 1–7 Progression (VALIDATION DEBT CHECKPOINT)
+
+- WorldSandbox New Game clock과 실제 B01 shop sign을 player loop에 연결하고, resident가 없는 Day 1에도 승인된 candidate wrapper를 외형 원천으로 쓰는 정상 관광객이 실제 NpcController/PurchaseEvaluator/ShopSlot 경로를 밟도록 했다.
+- Day 2~7 producer delivery를 자동 지급·차감에서 `B` 명시 구매로 바꿨다. 실제 EconomyService·Inventory preflight/rollback을 사용하고 실패는 그날 기회를 소모하지 않는다.
+- LongPlay/HUD는 누적 매출·납품·고용·마을 반응 상태를 표시하며 Week 1 완료를 1,700G+유료 고용+earned village response로 gate한다.
+- 첫 D3D11에서 tourist FSM lifecycle을 수정했고, 보정 D3D11은 Day 1~4 실제 판매/정산/날짜 증가, Day 2~5 납품, Day 5 Farmer 고용까지 PASS했다. duplicate-item fixture가 Day 5 989/1,050G에서 멈춰 distinct high-value selection을 compile-only로 보정했다.
+- Runtime/Editor compile 오류 0, native crash와 Scene/Prefab/Packages/ProjectSettings/Save schema 변경 0. Day 6~7/Week 1 completion은 미검증이므로 상태는 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`; 세 번째 D3D11과 push는 하지 않는다.

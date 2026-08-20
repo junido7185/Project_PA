@@ -674,3 +674,12 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 정적 보정: runtime building obstacle과 NavMesh rebuild가 안정된 뒤 anchor를 만들고, current navigation revision에서 재투영되는 지점만 유지해 `HiringService.spawnPointRotation`에 다시 동기화한다. seed 재결속 실패도 성공으로 숨기지 않는다.
 - 사후 결과: Runtime/Editor 정적 compile 오류 0. 기존 CS8785/CS0414 경고만 유지된다. 두 허용 실행을 이미 사용했으므로 보정 후 세 번째 D3D11 실행은 하지 않았고 실제 hire→판매→Day 2→대화는 미검증으로 남긴다.
 - 판정: validator-only 사유를 HARD BLOCKER로 확대하지 않는 장기 Goal 정책에 따라 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` checkpoint로 보존한다. assertion 삭제·완화와 결과 하드코딩은 하지 않았다.
+
+## [VALIDATION_DEBT] 2026-08-21 — BETA-008 Day 5 duplicate-item fixture revenue shortfall
+
+- 첫 실행: `Logs/BETA008_D3D11_Validation.log`는 runtime 관광객 생성 frame에 시작한 shopping FSM이 `NpcController.Start`의 Idle 초기화에 덮이는 실제 lifecycle 결함을 찾았다. 방문을 다음 frame에 시작하도록 production 경로를 수정했다.
+- 보정 실행: `Logs/BETA008_D3D11_Correction.log`는 일반 Day 1 관광객 구매, Day 1~4 실제 판매·정산·날짜 증가, Day 2~5 명시 납품과 Day 5 실제 Farmer 유료 고용까지 PASS했다. 이후 Day 5 누적 매출 989G가 목표 1,050G에 못 미쳐 종료됐다.
+- 원인: validator의 high-value stocking이 Inventory slot을 매번 다시 정렬하면서 같은 `GrilledFish` stack에서 네 개를 골랐다. 서로 다른 네 상품의 processed-value ceiling을 검증하려던 fixture 계약과 달랐으며, 실제 progression target이나 거래 권위 결함은 아니다.
+- 정적 보정: 선택한 `Item`을 `HashSet<Item>`에 기록해 서로 다른 sellable 상품만 네 슬롯에 진열한다. assertion, 매출 목표, 실제 `EconomyService`/`ShopSlot`/`HiringService` 권위는 완화하지 않았다.
+- 사후 결과: 최종 source의 Runtime/Editor compile 오류 0, JSON/diff 검사 PASS, native crash 0. Scene/Prefab/Packages/ProjectSettings/SaveData/SaveManager 변경은 없다.
+- 판정: 승인된 D3D11 두 실행을 모두 사용해 세 번째 실행은 하지 않는다. 최종 fixture correction과 Day 6~7/Week 1 completion은 미검증으로 남기고 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT` checkpoint로 보존한다.

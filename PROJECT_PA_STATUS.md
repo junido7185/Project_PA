@@ -2229,3 +2229,11 @@ Still required (human, After 스크린샷 기준 잔여 문제):
 - Runtime/Editor compile은 오류 0이다. 두 D3D11 실행 모두 crash 없이 WorldSandbox를 구성했지만 resident spawn anchor가 NavMesh ready 상태가 되지 않아 실제 판매 단계 전에 중단됐다.
 - 추가 실행 없이 obstacle/NavMesh 안정화 뒤 유효 anchor만 채용 서비스에 전달하도록 정적으로 보정하고, 판매 상품의 실제 생산 역할과 월드 시설도 일치시켰다. Scene/Prefab/Packages/ProjectSettings/Save schema 변경은 0이다.
 - 세 번째 실행은 승인 범위를 초과하므로 하지 않는다. PASS가 아닌 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` local checkpoint로 보존하며 실제 hire→판매→Day 2→DialogueUI는 미검증이다.
+
+## 2026-08-21 — BETA-008 Day 1–7 진행 IMPLEMENTED WITH VALIDATION DEBT
+
+- WorldSandbox New Game이 동결 bootstrap clock을 실제 속도로 시작하고, 기존 상점 간판은 generated B01의 플레이어 접근 위치로 재결속된다. 고용 전 첫 고객은 승인된 주민 wrapper를 외형/profile 원천으로만 재사용하며 실제 NPC·가격 평가·ShopSlot 거래 권위는 그대로 통과한다.
+- Day 2~7 납품은 자동 행동이 아니라 `B` 명시 구매이며 실제 돈 차감, 가방 preflight, 실패 재시도와 rollback을 사용한다. HUD와 Day 7 gate는 누적 매출 1,700G, 유료 고용, earned village response를 실제 서비스에서 읽는다.
+- 첫 D3D11은 관광객 FSM이 creation frame의 `NpcController.Start`에 덮이는 lifecycle 결함을 찾았다. 두 번째 D3D11은 이를 보정한 뒤 일반 Day 1 관광객 구매, Day 1~4 판매·정산·실제 날짜 증가, Day 2~5 납품, Day 5 Farmer 유료 고용까지 PASS했다.
+- 두 번째 실행은 validator가 같은 GrilledFish를 네 슬롯에 반복 진열해 Day 5 누적 매출이 989/1,050G에 머문 fixture 결함에서 종료됐다. 서로 다른 네 최고가 상품을 고르도록 보정했고 Runtime/Editor compile 오류 0을 다시 확인했다.
+- 승인된 두 실행을 모두 사용해 추가 D3D11은 하지 않았다. Day 6~7과 Week 1 completion은 미검증이며 상태는 PASS/COMPLETE가 아닌 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`다. Scene/Prefab/Packages/ProjectSettings/Save schema/native crash 변경은 0이다.

@@ -257,6 +257,17 @@
       "humanFollowUp": "Resident pacing and final response-display composition can be reviewed once during the M85 integrated playtest."
     },
     {
+      "id": "beta-008-seven-day-progression",
+      "executeMethod": "PA_Beta008SevenDayProgressionValidator.RunBeta008ValidationBatch",
+      "sourceFile": "Assets/Editor/PA_Beta008SevenDayProgressionValidator.cs",
+      "purpose": "Validate fresh WorldSandbox progression through real clock phases, explicit producer buy-ins, crafting, customer sales, settlement day advances, earned hiring, village response, and the Day 7 completion gate.",
+      "workflowTypes": ["gameplay-beta", "week-one", "day-night", "economy", "hiring", "village-response", "regression"],
+      "preconditions": ["Unity Editor must not already have Project_PA open for batchmode.", "Run with -force-d3d11 and without -nographics."],
+      "expectedRuntimeSeconds": 180,
+      "onFailure": "Stop and inspect the first real clock, supply purchase, crafting, customer sale, settlement, hiring, village, or completion assertion.",
+      "humanFollowUp": "Week-one pacing and economic feel can be reviewed once during the M85 integrated playtest."
+    },
+    {
       "id": "prototype-firstday-play-smoke",
       "executeMethod": "PA_VisualAccelerationBuilder.RunPrototypeFirstDayPlaySmokeTest",
       "sourceFile": "Assets/Editor/PA_VisualAccelerationBuilder.cs",

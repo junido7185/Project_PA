@@ -9,14 +9,13 @@
 
 ## 현재 작업
 
-`BETA-007 Village Response and NPC Integration` — `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` 체크포인트 정리 중인 유일한 티켓.
+`BETA-008 Day 1–7 Progression` — 구현은 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`로 체크포인트 준비가 끝났으며, 아직 BETA-009 구현은 시작하지 않았다.
 
-- Baseline: `milestone/gameplay-beta-85@1539923cc9a34659e7b43bf9a3c6b14073152efa`; 활성화 전 working tree clean.
-- 목표: 실제 판매 결과가 다음날 마을·주민·월드 반응으로 이어지고, 플레이어가 판매→기록→다음날 변화의 인과관계를 이해하게 한다.
-- 필수 상태: 기존 `SalesLogManager`, `VillageChangeSignalController`, `VillageCultureVisualController`, NPC schedule/role, WorldSandbox 역할·시설 anchor와 GameClock/day transition을 재사용한다.
-- 보존: `Prototype_FirstDay.unity` Golden, M70 WorldSandbox, 기존 NPC/판매/경제/마을/시간/Save 권위, Save schema v11.
-- 금지: 고정 좌표 남발, 새 마을/주민 manager, 가짜 판매 결과, 기존 NPC lifecycle 우회, Scene/Prefab/Packages/ProjectSettings/Save schema를 기본 해결책으로 사용, push/rebase/reset/clean.
-- 현재 단계: 판매→다음날 exact 상품 snapshot→역할별 시설 변화→주민 대화/HUD 연결 구현 완료. Runtime/Editor 정적 컴파일 오류 0. 두 D3D11 실행은 B08/HUD/bootstrap까지 통과했지만 주민 anchor 준비 단계에서 종료되어 실제 hire·판매·Day 2 assertion에는 도달하지 못했다.
-- 보존 로그: `Logs/BETA007_D3D11_Validation.log`, `Logs/BETA007_D3D11_Correction.log`.
-- 정적 후속 보정: runtime obstacle/NavMesh가 안정된 뒤 anchor를 구성하고, 현재 navigation revision에서 유효한 지점만 `HiringService.spawnPointRotation`에 동기화한다. 실제 상품의 ProductionData/RecipeData가 지정하는 역할·시설과 월드 변화 안내도 일치시켰다.
-- 체크포인트 규칙: 세 번째 Unity 실행과 assertion 완화는 하지 않는다. 명시된 장기 Goal의 validator-debt 지속 정책에 따라 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` local checkpoint까지만 만들고, push 없이 선승인된 `BETA-008`을 다음 단일 티켓으로 활성화한다.
+- Baseline: `milestone/gameplay-beta-85@4bf89f4`; 활성화 전 working tree clean.
+- 목표: fresh WorldSandbox에서 Day 1부터 Day 7까지 dead-end 없이 진행하며 제작·상품·고객·상점 성장·채용·마을 반응이 점진적인 목표와 보상으로 이어지게 한다.
+- 필수 상태: 기존 `GameClock`, `DayNightShopLoopController`, `PlayableDayScenarioController`, `LongPlayProgressionController`, `TierService`, `EconomyService`, `HiringService`, `VillageCultureVisualController`와 실제 gameplay authority를 재사용한다.
+- 보존: `Prototype_FirstDay.unity` Golden, M70 WorldSandbox, BETA-001~007 구현/checkpoint, 기존 경제·인벤토리·제작·판매·채용·시간·Tier·Save 권위, Save schema v11.
+- 금지: 새 progression manager/quest database, 자동으로 플레이어 행동 수행, 가짜 일차·돈·판매·채용 상태, 장기 캠페인의 정적 계약을 실플레이 완료로 과장, Scene/Prefab/Packages/ProjectSettings/Save schema를 기본 해결책으로 사용, push/rebase/reset/clean.
+- 구현 결과: New Game이 실제 clock을 시작하고 B01 간판을 runtime 상점에 결속한다. 고용 전에도 승인된 주민 wrapper를 읽기 전용 외형 원천으로 쓰는 관광객이 실제 구매 경로를 밟으며, Day 2~7 납품은 `B` 명시 구매·실제 비용 차감·실패 재시도를 사용한다. HUD와 Day 7 gate는 누적 매출·고용·마을 반응을 실제 권위에서 읽는다.
+- 검증 결과: 두 번째 D3D11에서 Day 1 일반 관광객, Day 1~4 실제 판매/정산/다음날, Day 2~5 명시 납품과 Day 5 실제 Farmer 고용까지 PASS했다. fixture가 같은 고가 상품을 네 번 골라 Day 5 누적 매출 989/1050G에서 멈춘 뒤, 네 종류 고가 상품을 선택하도록 보정했고 Runtime/Editor compile 오류 0을 확인했다.
+- 중단 상태: 승인된 두 D3D11 실행을 모두 사용했으므로 세 번째 실행은 하지 않는다. Day 6~7과 Week 1 완료는 미도달 검증 부채이며, PASS/COMPLETE로 기록하지 않는다. local checkpoint 뒤 선승인 `BETA-009 Persistence and Recovery Pass`만 활성화한다.

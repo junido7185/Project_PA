@@ -2890,3 +2890,11 @@ Next: return to implementation and connect Day 91 onward instead of spending ano
 - 첫/보정 D3D11은 native crash 없이 HUD/B08/bootstrap까지 진행했지만 resident spawn anchor readiness에서 종료되어 실제 hire·판매·Day 2·대화는 미검증이다.
 - invalid anchor 보존 위험을 런타임 lifecycle에서 수정했다. obstacle/NavMesh 안정화 뒤 anchor를 만들고 현재 navigation revision의 유효 지점만 채용 서비스에 전달한다. 실제 상품의 ProductionData/RecipeData로 역할·시설·안내도 일치시켰고 seed rebind 실패를 숨기지 않는다.
 - 보정 후 Runtime/Editor compile 오류 0. 추가 Unity 실행 없이 상태를 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT`로 checkpoint한다. Scene/Prefab/Packages/ProjectSettings/Save schema/native crash 변경은 0이다.
+
+## 2026-08-21 — BETA-008 Day 1–7 Progression validation-debt checkpoint
+
+- 기존 `GameClock`, day/night loop, Economy, Inventory, Crafting, Hiring, VillageCulture 권위를 사용해 normal-player Week 1 경로를 연결했다. New Game은 실제 시간을 시작하고 generated B01 간판과 HUD는 현재 단계·매출·납품·고용·마을 반응 목표를 안내한다.
+- 고용 주민이 없는 Day 1의 circular dead-end는 승인된 resident wrapper를 관광객 외형/profile 원천으로만 사용하는 fallback으로 해소했다. 실제 방문은 `NpcController.Start` 다음 frame에 시작해 PurchaseEvaluator와 ShopSlot 거래를 정상 통과한다.
+- producer delivery는 Day 2~7의 `B` 명시 구매로 바꿨으며 실제 비용 차감과 실패 재시도를 보존한다. Day 7 완료는 1,700G, 유료 고용 1명 이상, 판매에서 나온 village response를 모두 요구한다.
+- `BETA008_D3D11_Correction.log`는 Day 1 일반 관광객 구매, Day 1~4 actual settlement/day transition, Day 2~5 delivery, Day 5 paid Farmer hire까지 증명했다. validator의 duplicate-item stocking 때문에 Day 5가 989/1,050G에서 종료됐고, distinct high-value item selection으로 정적 보정했다.
+- 최종 correction은 Runtime/Editor compile 오류 0이며 세 번째 D3D11은 승인 범위를 넘어 실행하지 않았다. Day 6~7/Week 1 completion은 명시적 validation debt다. 최종 상태 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT`; push 없음.

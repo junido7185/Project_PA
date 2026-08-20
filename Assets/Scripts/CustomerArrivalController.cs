@@ -72,6 +72,7 @@ public class CustomerArrivalController : MonoBehaviour
         public NpcProfile runtimeProfile;
         public Vector3 entryPoint;
         public float startedAt;
+        public bool shoppingStarted;
         public bool waitingToLeave;
         public float leaveAt;
         public bool returning;
@@ -304,27 +305,49 @@ public class CustomerArrivalController : MonoBehaviour
         bubbleObject.SetActive(true);
 
         root.SetActive(true);
-        if ((!agent.isOnNavMesh && !agent.Warp(entryPoint)) || !npc.TryBeginShoppingVisitAt(shop))
+        if (!agent.isOnNavMesh && !agent.Warp(entryPoint))
         {
             Destroy(root);
             Destroy(runtimeProfile);
             return null;
         }
 
-        _tourists.Add(new TouristVisit
+        var visit = new TouristVisit
         {
             root = root,
             npc = npc,
             runtimeProfile = runtimeProfile,
             entryPoint = entryPoint,
             startedAt = Time.timeSinceLevelLoad
-        });
+        };
+        _tourists.Add(visit);
+        StartCoroutine(BeginTouristShoppingNextFrame(visit, shop));
         _touristsSpawnedThisOpening++;
         _invitedThisOpening++;
 
         bubble.Show($"{runtimeProfile.npcName}: 밤 장터를 구경 왔어요!", 2.5f);
         Debug.Log($"🧳 [CustomerArrival] {runtimeProfile.npcName} 관광객 입장 ({entryPoint})");
         return npc;
+    }
+
+    System.Collections.IEnumerator BeginTouristShoppingNextFrame(
+        TouristVisit visit, Transform shop)
+    {
+        // NpcController.Start initializes the FSM to Idle. Starting the visit in
+        // the creation frame was overwritten by that lifecycle callback, causing
+        // every runtime tourist to leave without browsing a slot.
+        yield return null;
+        if (visit == null || visit.npc == null || visit.root == null) yield break;
+
+        if (!visit.npc.TryBeginShoppingVisitAt(shop))
+        {
+            DestroyTourist(visit);
+            _tourists.Remove(visit);
+            yield break;
+        }
+
+        visit.shoppingStarted = true;
+        visit.startedAt = Time.timeSinceLevelLoad;
     }
 
     public bool IsTransientTourist(NpcController npc)
@@ -353,11 +376,32 @@ public class CustomerArrivalController : MonoBehaviour
         _npcBuffer.Sort((left, right) => string.CompareOrdinal(
             left != null ? left.gameObject.name : string.Empty,
             right != null ? right.gameObject.name : string.Empty));
-        if (_npcBuffer.Count == 0) return false;
+        if (_npcBuffer.Count > 0)
+        {
+            source = _npcBuffer[_touristsSpawnedThisOpening % _npcBuffer.Count];
+            sourceVisual = FindCharacterVisual(source.transform);
+            return sourceVisual != null;
+        }
 
-        source = _npcBuffer[_touristsSpawnedThisOpening % _npcBuffer.Count];
-        sourceVisual = FindCharacterVisual(source.transform);
-        return sourceVisual != null;
+        // WorldSandbox intentionally starts without a hired resident. Reuse the
+        // approved resident wrappers as read-only tourist presentation sources so
+        // Day 1 can earn its first money without auto-hiring or bypassing the real
+        // NpcController / PurchaseEvaluator / ShopSlot transaction path.
+        var candidateSources = new List<NpcCandidateData>(
+            Resources.LoadAll<NpcCandidateData>("Candidates"));
+        candidateSources.RemoveAll(candidate => candidate == null ||
+            candidate.profile == null || candidate.spawnPrefab == null ||
+            candidate.spawnPrefab.GetComponentInChildren<NpcController>(true) == null ||
+            FindCharacterVisual(candidate.spawnPrefab.transform) == null);
+        candidateSources.Sort((left, right) => string.CompareOrdinal(
+            left.ResolveDisplayName(), right.ResolveDisplayName()));
+        if (candidateSources.Count == 0) return false;
+
+        NpcCandidateData selected = candidateSources[
+            _touristsSpawnedThisOpening % candidateSources.Count];
+        source = selected.spawnPrefab.GetComponentInChildren<NpcController>(true);
+        sourceVisual = FindCharacterVisual(selected.spawnPrefab.transform);
+        return source != null && source.profile != null && sourceVisual != null;
     }
 
     static Transform FindCharacterVisual(Transform root)
@@ -470,6 +514,9 @@ public class CustomerArrivalController : MonoBehaviour
                 }
                 continue;
             }
+
+            if (!visit.shoppingStarted)
+                continue;
 
             if (visit.waitingToLeave)
             {
