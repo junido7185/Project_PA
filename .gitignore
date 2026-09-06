@@ -99,3 +99,11 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 # Large submission archives
 SubmissionPackages/*.zip
+
+# ART-000: master archives and expanded authoring sources stay local.
+/ExternalAssetSources/
+/Blender/Source/
+/Blender/Library/Sources/
+/Blender/Generated/
+/Blender/Export/
+/Tools/Art/__pycache__/

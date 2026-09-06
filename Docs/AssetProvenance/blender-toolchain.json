@@ -1,0 +1,8 @@
+{
+  "version": "4.5.13 LTS",
+  "officialUrl": "https://download.blender.org/release/Blender4.5/blender-4.5.13-windows-x64.zip",
+  "archiveSha256": "b5fdf800ce65fa2f209e8f68d02667e4d720fa1c42f247c72d1882ab04decba6",
+  "checksumVerified": true,
+  "installedInSystem": false,
+  "executable": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/blender.exe"
+}

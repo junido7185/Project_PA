@@ -1,0 +1,149 @@
+{
+  "status": "PASS",
+  "assets": [
+    {
+      "id": "PA_REF_CUTEFISH_DOCK_LONG_NOROPE",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUTEFISH_FISHINGROD_LVL1",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUTEFISH_KOI",
+      "sourceActions": [
+        "Attack",
+        "Death",
+        "Out_Of_Water",
+        "Swimming_Fast",
+        "Swimming_Impulse",
+        "Swimming_Normal"
+      ],
+      "libraryReferencedActions": [
+        "Attack",
+        "Death",
+        "Out_Of_Water",
+        "Swimming_Fast",
+        "Swimming_Impulse",
+        "Swimming_Normal"
+      ],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUTEFISH_TUNA",
+      "sourceActions": [
+        "Attack",
+        "Death",
+        "Out_Of_Water",
+        "Swimming_Fast",
+        "Swimming_Impulse",
+        "Swimming_Normal"
+      ],
+      "libraryReferencedActions": [
+        "Attack.001",
+        "Death.001",
+        "Out_Of_Water.001",
+        "Swimming_Fast.001",
+        "Swimming_Impulse.001",
+        "Swimming_Normal.001"
+      ],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_BIRCHTREE_1",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_BUSH_1",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_COMMONTREE_1",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_FLOWERS",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_GRASS_SHORT",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_ROCK_1",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_WHEAT",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_WOODLOG",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CART",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CHEST_CLOSED",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CHEST_OPEN",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_AXE_STONE",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_PICKAXE_STONE",
+      "sourceActions": [],
+      "libraryReferencedActions": [],
+      "allSourceActionsReferenced": true
+    }
+  ],
+  "allLibraryActions": [
+    "Attack",
+    "Attack.001",
+    "Death",
+    "Death.001",
+    "Out_Of_Water",
+    "Out_Of_Water.001",
+    "Swimming_Fast",
+    "Swimming_Fast.001",
+    "Swimming_Impulse",
+    "Swimming_Impulse.001",
+    "Swimming_Normal",
+    "Swimming_Normal.001"
+  ]
+}

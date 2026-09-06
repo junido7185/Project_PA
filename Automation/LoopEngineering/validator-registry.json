@@ -4,6 +4,17 @@
   "unityVersion": "6000.3.2f1",
   "validators": [
     {
+      "id": "art-000-external-asset-intake",
+      "executeMethod": "PA_Art000IntakeValidator.Run",
+      "sourceFile": "Assets/Editor/PA_Art000IntakeValidator.cs",
+      "purpose": "Validate audited selected FBX hashes, isolated PA visual wrapper dimensions and bottom pivots, URP materials, mesh and prefab dependency round-trip.",
+      "workflowTypes": ["art", "asset-intake", "prefab-validation"],
+      "preconditions": ["Run Tools/Art/asset_intake.py audit, review inventory, then --import-selected.", "Unity must not already have Project_PA open for batchmode.", "Use -force-d3d11. Creates only ART-000 Intake materials/prefabs; no saved scene or gameplay mutation."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Inspect the first asset/hash/bounds/material/reference failure; never overwrite source FBX or repeat the same failure more than twice.",
+      "humanFollowUp": "Final Unity scene readability, interaction-facing orientation and day/night art approval belong to ART-001 and subsequent authorized integration."
+    },
+    {
       "id": "core-slice-playability",
       "executeMethod": "PA_CoreSlicePlayabilityValidator.RunCoreSlicePlayabilityValidation",
       "sourceFile": "Assets/Editor/PA_CoreSlicePlayabilityValidator.cs",
