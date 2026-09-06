@@ -453,3 +453,12 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - **중단:** 두 실행을 모두 사용했다. 세 번째 Unity 실행, assertion 완화, 추가 추측 수정 금지. `M85_GAMEPLAY_BETA_COMPLETE` 선언 금지.
 - **다음 최소 조사:** load 직후 adapter `PlayerRoot`, `FindGameObjectWithTag("Player")`, Player-tag 객체 수와 `PlayerController` 내부 `_smoothMoveDir/_currentSpeed`를 frame별로 계측한다. 그 증거로 단일 authoritative `RestorePose`를 정한 뒤 별도 승인된 실행에서 continue/repeat-load까지 이어 간다.
 - **미검증:** BETA-009 continue/repeated load, BETA-007 hire→sale→Day2→dialogue, BETA-008 Day6–7/Week1, Golden/M70 full regression.
+
+## 2026-09-06 — CONTENT-000B Campaign Architecture / SELF-AUDIT PASS
+
+- CONTENT-000을 PROVISIONAL CANON v1으로 채택한 사람 승인과 CONTENT-000B~010 순차 진행·검증·로컬 커밋 선승인을 기록했다. 승인 대기는 해소됐다.
+- CONTENT_CAMPAIGN_DAY1_30.md와 CONTENT_IMPLEMENTATION_BACKLOG.md를 작성했다. 주요 사건 14개, 첫 주 사건 7개×17항목, 기능 노출 25개, 핵심 주민 8명의 관계 사건 24개·개인 요청 16개를 기존 시스템에 배정했다.
+- 실제 생산 재고 매입, 고용 전 작업지 거래→고용 후 상점 운반, 전문가 입력/요청 소모 구분, additive 저장과 동일 인물 복원, 자유·회복일 및 실제 Day30 완료 근거를 명시했다.
+- 검증: Tools/LoopEngineering/Test-ContentCampaignArchitecture.ps1 PASS. 증거 Logs/Content/CONTENT000B/ArchitectureValidation.json. Unity runtime/editor compile·D3D11·실제30일·save restart는 설계 티켓에서 실행하지 않았다.
+- 다음: 이 설계 체크포인트 local commit 뒤 CONTENT-001 Opening & Bori를 자동 활성화한다. 이후 CONTENT-010까지 중간 승인 요청 없이 진행한다. 기존 BETA-010 facing 137° 실패는 미해결 기술 이력으로 보존했다.
+- 기존 사용자 변경 및 별도 ART-000 자료는 보존하고 이 작업 기록의 추가분만 커밋한다. 런타임 코드·Unity 씬/프리팹·ProjectSettings·Packages·Save schema 변경 없음.

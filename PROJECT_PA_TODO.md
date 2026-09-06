@@ -1743,3 +1743,12 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [ ] 복원 후 continue sale와 same-save repeated load.
 - [ ] BETA-007 실제 주민 반응, BETA-008 Day 6~7/Week 1, Golden/M70 full regression.
 - [ ] `M85_GAMEPLAY_BETA_COMPLETE` — 현재 미달성.
+
+## 2026-09-06 — CONTENT-000B Campaign Architecture / SELF-AUDIT PASS
+
+- CONTENT-000을 PROVISIONAL CANON v1으로 채택한 사람 승인과 CONTENT-000B~010 순차 진행·검증·로컬 커밋 선승인을 기록했다. 승인 대기는 해소됐다.
+- CONTENT_CAMPAIGN_DAY1_30.md와 CONTENT_IMPLEMENTATION_BACKLOG.md를 작성했다. 주요 사건 14개, 첫 주 사건 7개×17항목, 기능 노출 25개, 핵심 주민 8명의 관계 사건 24개·개인 요청 16개를 기존 시스템에 배정했다.
+- 실제 생산 재고 매입, 고용 전 작업지 거래→고용 후 상점 운반, 전문가 입력/요청 소모 구분, additive 저장과 동일 인물 복원, 자유·회복일 및 실제 Day30 완료 근거를 명시했다.
+- 검증: Tools/LoopEngineering/Test-ContentCampaignArchitecture.ps1 PASS. 증거 Logs/Content/CONTENT000B/ArchitectureValidation.json. Unity runtime/editor compile·D3D11·실제30일·save restart는 설계 티켓에서 실행하지 않았다.
+- 다음: 이 설계 체크포인트 local commit 뒤 CONTENT-001 Opening & Bori를 자동 활성화한다. 이후 CONTENT-010까지 중간 승인 요청 없이 진행한다. 기존 BETA-010 facing 137° 실패는 미해결 기술 이력으로 보존했다.
+- 기존 사용자 변경 및 별도 ART-000 자료는 보존하고 이 작업 기록의 추가분만 커밋한다. 런타임 코드·Unity 씬/프리팹·ProjectSettings·Packages·Save schema 변경 없음.

@@ -9,6 +9,17 @@
 
 ## 현재 작업
 
+`CONTENT-000B Day 1–30 Campaign and Quest Architecture` — 2026-09-06 사용자 선승인으로 활성화된 유일한 티켓.
+
+- Canon: `CONTENT_CANON_BIBLE.md`, PROVISIONAL CANON v1 승인 완료.
+- 산출물: `CONTENT_CAMPAIGN_DAY1_30.md`, `CONTENT_IMPLEMENTATION_BACKLOG.md`.
+- 기준: `milestone/gameplay-beta-85@29fb98f4`; 기존 사용자 dirty 파일을 보존하고 콘텐츠 변경만 커밋한다.
+- 검증: 30일 분류, 12~16 anchor, 첫 주 구현 계약, 주민·요청·해금·경제·저장·복구 연결의 자기검증. 이번 티켓은 설계이며 Unity 실행은 후속 구현 티켓에서 한다.
+- 다음: 자기검증 PASS와 로컬 커밋 뒤 CONTENT-001 자동 활성화. CONTENT-010까지 추가 사람 승인 요청 없음.
+- HARD HUMAN GATE: 최신 사용자 지시 §16을 적용한다. 승인 부재는 blocker가 아니다. 기존 BETA-010의 137° 복원 실패를 해결됐다고 표시하거나 세 번째 동일 실행을 하지 않는다.
+
+## 보존된 이전 작업 이력 — 현재 활성 티켓 아님
+
 `BETA-010 Full Playable Beta Integration` — BETA-009 validation-debt checkpoint `6168d05` 뒤 M85 선승인 sequence로 자동 활성화된 유일한 티켓.
 
 - Baseline: `milestone/gameplay-beta-85@6168d05`; 활성화 전 working tree clean.

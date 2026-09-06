@@ -1,4 +1,33 @@
 {
+  "contentContinuationApproval": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "goal": "PROJECT_PA_MONTH_ONE_AUTHORED_EXPERIENCE",
+    "status": "preapproved",
+    "approvedOn": "2026-09-06",
+    "approvalSource": "User: CONTENT-000 승인 및 장기 콘텐츠 개발 재개, sections 1/11/13/16/18",
+    "canon": "PROVISIONAL CANON v1",
+    "humanPreapproved": true,
+    "autonomousContinuation": true,
+    "approvedTickets": ["CONTENT-000B", "CONTENT-001", "CONTENT-002", "CONTENT-003", "CONTENT-004", "CONTENT-005", "CONTENT-006", "CONTENT-007", "CONTENT-008", "CONTENT-009", "CONTENT-010"],
+    "activeTicket": "CONTENT-000B",
+    "nextTicket": "CONTENT-001",
+    "preapprovedThrough": "CONTENT-010",
+    "stopAtMilestone": "CONTENT_010_AUTHORED_EXPERIENCE_COMPLETE",
+    "requiresIntermediateHumanApproval": false,
+    "localTicketCommitsAllowed": true,
+    "pushAllowed": false,
+    "completionReached": false,
+    "designSelfAudit": {
+      "ticket": "CONTENT-000B",
+      "result": "PASS",
+      "evidence": "Logs/Content/CONTENT000B/ArchitectureValidation.json",
+      "commitPending": true,
+      "runtimeValidation": "NOT_RUN_DESIGN_ONLY"
+    },
+    "releasedBlockers": ["CONTENT-000 approval pending", "CONTENT-000B automatic start prohibited"],
+    "preservedTechnicalDebt": ["BETA-010 PlayerRoot facing restore 137 degrees: two prior failed executions; not cleared by canon approval", "WorldSandbox normal entry not integrated", "Day 6-30 runtime completion unproven"],
+    "knownDirtyBaseline": "Existing user-owned changes preserved; only content-ticket additions are staged. Pre-existing dirty state alone is not an unexpected conflict."
+  },
   "milestone": {
     "id": "M85",
     "policyGoalId": "M85_GAMEPLAY_BETA",
@@ -172,10 +201,10 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "BETA-009",
+  "ticketId": "CONTENT-000B",
   "status": "active",
-  "finalState": "BETA_009_ACTIVE",
-  "goal": "Persist and recover the complete WorldSandbox gameplay-beta state across game exit, restart and repeated load without duplication, while preserving Golden save compatibility.",
+  "finalState": "CONTENT_000B_ACTIVE",
+  "goal": "Author a coherent Day 1-30 campaign from approved provisional canon and existing gameplay, then execute the preapproved CONTENT-001 through CONTENT-010 sequence.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
     "commit": "46dbea9",
@@ -735,6 +764,6 @@
   "startedAt": "2026-08-11",
   "startedAt": "2026-08-20",
   "stoppedAt": "2026-08-21",
-  "stopReason": "HARD_BLOCKER_BETA_010_PLAYER_FACING_RESTORE: identical 137-degree facing loss after both approved D3D11 runs; no third attempt permitted.",
-  "nextAction": "With new approval, instrument authoritative PlayerRoot identity and PlayerController facing state across load frames, fix the proven overwrite, then resume BETA-010 at continue and repeated-load stages."
+  "stopReason": null,
+  "nextAction": "Complete CONTENT-000B campaign/backlog and self-audit, create its approved local commit, then activate CONTENT-001 without asking for approval. Historical BETA-010 facing blocker remains technical debt, not the active content ticket."
 }
