@@ -25,6 +25,9 @@ public class SaveData
     public bool worldAlphaReachedShop = false;
     public bool worldAlphaReachedWorkbench = false;
 
+    // CONTENT-001: v13 추가 필드. null인 과거 저장에는 캠페인을 강제로 시작하지 않는다.
+    public CampaignProgressSaveData campaign;
+
     // 티어 시스템
     public int currentTier = 0;
     public long cumulativeRevenue = 0;
@@ -93,6 +96,15 @@ public class SaveData
     // Procedural world state. Added additively in v11; v10 and older saves migrate
     // to LegacyFixed and keep their absolute buildings/placeables unchanged.
     public WorldStateSaveData worldState = new WorldStateSaveData();
+}
+
+[System.Serializable]
+public class CampaignProgressSaveData
+{
+    public bool started;
+    public bool boriGreeted;
+    public int firstStockItemId = -1;
+    public int firstStockDay;
 }
 
 [System.Serializable]

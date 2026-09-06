@@ -462,3 +462,13 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - 검증: Tools/LoopEngineering/Test-ContentCampaignArchitecture.ps1 PASS. 증거 Logs/Content/CONTENT000B/ArchitectureValidation.json. Unity runtime/editor compile·D3D11·실제30일·save restart는 설계 티켓에서 실행하지 않았다.
 - 다음: 이 설계 체크포인트 local commit 뒤 CONTENT-001 Opening & Bori를 자동 활성화한다. 이후 CONTENT-010까지 중간 승인 요청 없이 진행한다. 기존 BETA-010 facing 137° 실패는 미해결 기술 이력으로 보존했다.
 - 기존 사용자 변경 및 별도 ART-000 자료는 보존하고 이 작업 기록의 추가분만 커밋한다. 런타임 코드·Unity 씬/프리팹·ProjectSettings·Packages·Save schema 변경 없음.
+
+## 2026-09-07 — CONTENT-001 Opening & Bori / VERIFIED
+
+- WorldSandbox 새 캠페인에 독립 생활자 보리, 전용 Profile/Dialogue, 기존 C-01 기반 별도 외형을 연결했다. Golden 보리(Profile_Lumberjack), 기존 8역할·후보·경제식을 보존했다.
+- 실제 PlayerInteraction 인사와 실제 가방 판매 재고로 A01을 기록한다. 다른 NPC 대화로 완료되지 않으며 +2는 하루 한 번, 순서 교환·중복 시작·반복 로드에도 보상/주민/재고 중복이 없다.
+- 승인된 additive envelope v13에 캠페인 4필드를 추가하고 world payload v11 및 v12 recovery 필드 의미를 유지했다. 과거 저장에 캠페인 시작을 강제하지 않는다. 로드 후 직전 채집 성공 문구를 지워 현재 재고와 일치시켰다.
+- 검증 PASS: Logs/Content/CONTENT001/OpeningValidation_Release.log, RuntimeCompile_Release.log, EditorCompile_Release.log, GoldenRegression.log, WorldOnboardingRegression.log, WorldDaytimeRegression.log, SaveRoundTripRegression.log. Compile 오류0, 기존 CS8785/CS0414 경고는 남음.
+- 1920×1080 Runtime/Opening.png에서 한글·새 안내 영역 잘림/겹침을 확인했다. 최종 전체 미술·기존 휴대폰 패널·플레이어 표현은 후속 통합/사람 검토 대상. BETA-010 restart 후 facing 137° 문제와 실제 첫 달 완주는 이번 검증 범위 밖이며 해결로 표시하지 않는다.
+- 다음: CONTENT-001 선택 local commit 직후 CONTENT-002 First Shop Night 자동 활성화. 같은 보리를 실제 소비자로 연결하고 첫 판단과 첫 판매를 구분한다. 중간 승인 요청 없이 CONTENT-010 선승인 범위를 유지한다.
+- 실패 교정 이력: editor sync 공개 API, 구체 Collider 선행 생성, batch 캡처를 일반 D3D11 GameView로 교정해 각각 해소. native crash 없음. 기존 사용자 dirty와 ART-000 기록 보존, 씬/기존 프리팹/ProjectSettings/Packages 변경0, push 없음.

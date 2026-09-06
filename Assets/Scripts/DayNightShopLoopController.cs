@@ -236,6 +236,8 @@ public class DayNightShopLoopController : MonoBehaviour
         int openedShopDay = -1)
     {
         _prepCollectionDays.Clear();
+        // 이전 플레이의 채집 성공 문구가 과거 저장의 빈 가방 안내와 충돌하지 않게 한다.
+        _lastActivityResult = string.Empty;
 
         if (collectedActivities != null && collectedDay >= CurrentDay)
         {

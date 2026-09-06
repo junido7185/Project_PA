@@ -700,3 +700,19 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 영향: restart/load는 작동하지만 저장 방향이 다음 frame에 소실된다. 복원 후 계속 플레이와 repeated-load stage, BETA-010 full loop 및 Golden regression은 실행되지 않았다.
 - 안전: Runtime/Editor compile 오류 0, native crash 0, save corruption 0, Scene/Prefab/Packages/ProjectSettings 변경 0. assertion 삭제·완화·강제 PASS 없음.
 - 중단: 동일 원인 두 번 실패와 승인 실행 소진으로 세 번째 D3D11 및 추가 추측 수정을 금지한다. 다음 최소 조치는 실제 adapter `PlayerRoot`와 tagged player identity, `PlayerController`의 internal facing state를 같은 프레임에서 계측한 뒤 authoritative restore API 하나로 동기화하는 것이다.
+
+## 2026-09-07 — CONTENT-001 editor compile: project sync API
+
+- 첫 자산 빌더 compile이 내부 UnityEditor.SyncVS 접근 CS0122로 중단됐다. 증거: Logs/Content/CONTENT001/Build.log. Runtime validator 미진입, native crash 없음.
+- 기존 IDE 패키지의 IExternalCodeEditor 사용을 확인하고 공개 Unity.CodeEditor.CodeEditor.CurrentEditor.SyncAll()로 최소 교정했다. 같은 원인의 첫 실패이며 교정 compile 결과를 뒤에 기록한다.
+## 2026-09-07 — CONTENT-001 asset builder: concrete collider prerequisite
+
+- 공개 IDE API 교정 뒤 Runtime/Editor Unity compile 오류 0. 자산 생성 중 NpcDialogue의 RequireComponent(Collider)에 구체 Collider가 없어 AddComponent가 실패했다. 증거: Logs/Content/CONTENT001/Build_Correction.log. 앞선 compile 오류와 다른 원인이다.
+- 빌더와 같은 검증 fixture에 CapsuleCollider를 먼저 추가하도록 교정했다. Golden 읽기 감사 결과 기존 보리는 Profile_Lumberjack을 참조하며, World의 독립 보리와 구분해 보존한다. scene dirty 없음. 같은 원인 첫 실패.
+## 2026-09-07 — CONTENT-001 batch GameView capture timeout
+
+- OpeningValidation.log의 실제 상호작용·+2 멱등성·채집·v13 저장·v12 호환·반복 load·순서 교환 검사가 전부 CHECK_OK였으나 마지막 ScreenCapture 파일이 배치 실행에서 생성되지 않아 전체 VALIDATION_FAIL.
+- 일반 GameView를 여는 D3D11 에디터 실행으로 캡처 환경을 교정한다. 직접 Camera.Render는 사용하지 않는다. 같은 원인 첫 실패. 캡처를 제거하거나 완료 판정을 완화하지 않는다.
+- 앞선 빌더 Collider 문제는 Build_ColliderCorrection.log BUILD_PASS로 해소. dotnet --no-restore의 생성 임시 assets 파일 부재는 정상 build 복원으로 해소했고 RuntimeCompile_Restore.log 및 EditorCompile.log는 오류 0.
+
+- CONTENT-001 최종 해소 증거: OpeningValidation_Release.log VALIDATION_PASS, Build_ColliderCorrection.log BUILD_PASS, Runtime/EditorCompile_Release 오류0. UI 관찰로 발견한 복원 문구·카메라·인사 후 안내도 최종 검증했다. 같은 원인의 반복 실패나 native crash 없음.

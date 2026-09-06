@@ -22,7 +22,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    public const int CurrentSaveVersion = 12;
+    public const int CurrentSaveVersion = 13;
 
     bool _loadInProgress;
     PlayerInputHandler _input;
@@ -437,7 +437,7 @@ public class SaveManager : MonoBehaviour
             if (!worldAlpha.RestoreSavedSession(started,
                     data.worldAlphaMoved || legacyWorldAlpha,
                     data.worldAlphaReachedShop || legacyWorldAlpha,
-                    data.worldAlphaReachedWorkbench || legacyWorldAlpha))
+                    data.worldAlphaReachedWorkbench || legacyWorldAlpha, data.campaign))
             {
                 Debug.LogWarning("[SaveManager] WorldSandbox player-facing session state could not be restored.");
             }
@@ -638,7 +638,7 @@ public class SaveManager : MonoBehaviour
 
         // v11 -> v12: additive gameplay recovery envelope. The embedded
         // procedural-world payload remains v11 and no existing field changes meaning.
-        if (data.version < CurrentSaveVersion)
+        if (data.version < 12)
         {
             data.m85RecoveryRevision = 0;
             data.hasPlayerRotation = false;
@@ -647,8 +647,15 @@ public class SaveManager : MonoBehaviour
             data.salesLogRecords ??= new List<SaleRecord>();
             data.salesDecisionDays ??= new List<SalesDecisionDaySaveData>();
             data.farmPlots ??= new List<FarmPlotSaveData>();
-            data.version = CurrentSaveVersion;
+            data.version = 12;
             Debug.Log("[SaveManager] Migration v11->v12: additive gameplay recovery fields added.");
+        }
+
+        if (data.version < 13)
+        {
+            data.campaign = null;
+            data.version = 13;
+            Debug.Log("[SaveManager] Migration v12->v13: optional authored campaign; legacy progress preserved.");
         }
 
         return data;

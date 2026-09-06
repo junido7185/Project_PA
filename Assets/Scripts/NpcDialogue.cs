@@ -43,6 +43,7 @@ public class NpcDialogue : MonoBehaviour, IInteractable
     private int _lastVillageResponseDay = -1;
 
     public string LastLine => _lastLine ?? string.Empty;
+    public event System.Action<NpcDialogue, GameObject> GreetingInteracted;
     public int LastVillageResponseDay => _lastVillageResponseDay;
 
     // 런타임 NpcController 캐시 (결정론 RNG 시드 재사용)
@@ -112,6 +113,7 @@ public class NpcDialogue : MonoBehaviour, IInteractable
 
         SpeakTopic(DialogueTopic.Greeting);
         GrantDailyDialoguePoints();
+        if (!string.IsNullOrEmpty(_lastLine)) GreetingInteracted?.Invoke(this, interactor);
     }
 
     public string GetInteractPrompt()

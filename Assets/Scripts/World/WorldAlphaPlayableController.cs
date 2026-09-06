@@ -54,8 +54,11 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool DevelopmentOverlayVisible => _developmentOverlayVisible;
     public bool StartPromptVisible => IsReady && _startPromptVisible;
     public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
+    public CampaignOpeningController Opening => GetComponent<CampaignOpeningController>();
     public string PlayerControlHint =>
-        "WASD 이동 · Space 상호작용 · B 생산자 납품 구매 · P 휴대폰(채용/피드) · F5 저장 · F9 불러오기 · Esc 메뉴";
+        Opening != null && Opening.HasStarted && !Opening.OpeningComplete
+            ? "WASD 이동 · Space 대화/채집 · I 가방 · F5 저장 · Esc 메뉴"
+            : "WASD 이동 · Space 상호작용 · B 생산자 납품 구매 · P 휴대폰(채용/피드) · F5 저장 · F9 불러오기 · Esc 메뉴";
     public Rect PlayerFacingHudScreenRect
     {
         get
@@ -229,7 +232,8 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         if (camera == null || _adapter?.PlayerRoot == null) return;
         Transform target = _adapter.PlayerRoot.transform;
         camera.orthographic = true;
-        camera.orthographicSize = 22f;
+        camera.orthographicSize = Opening != null && Opening.HasStarted
+            ? CampaignOpeningController.PlayCameraSize : 22f;
         if (resetPose)
         {
             camera.transform.position = target.position + new Vector3(18f, 26f, -18f);
@@ -382,6 +386,13 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool BeginNewGame()
     {
         if (!IsReady || _adapter?.PlayerRoot == null) return false;
+        if (HasStartedBeta) return true;
+        CampaignOpeningController opening = Opening ?? gameObject.AddComponent<CampaignOpeningController>();
+        if (!opening.Begin(this))
+        {
+            _lastAction = "이웃 보리를 준비하지 못했습니다. 주민 데이터와 길 연결을 확인해 주세요.";
+            return false;
+        }
         if (!_adapter.BeginPlayableWeek(out string reason))
         {
             _lastAction = reason;
@@ -393,7 +404,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         HasMoved = false;
         HasReachedShop = false;
         HasReachedWorkbench = false;
-        _lastAction = "Day 1 시작 · 먼저 움직인 뒤 잡화점과 제작 작업대를 확인하세요.";
+        _lastAction = "오늘부터 마을의 잡화점을 맡습니다. 가게 옆에서 기다리는 이웃 보리에게 인사해 보세요.";
         return GameClock.Instance != null && GameClock.Instance.CurrentDay == 1;
     }
 
@@ -404,10 +415,11 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         data.worldAlphaMoved = HasMoved;
         data.worldAlphaReachedShop = HasReachedShop;
         data.worldAlphaReachedWorkbench = HasReachedWorkbench;
+        data.campaign = Opening != null ? Opening.Capture() : null;
     }
 
     public bool RestoreSavedSession(bool started, bool moved, bool reachedShop,
-        bool reachedWorkbench)
+        bool reachedWorkbench, CampaignProgressSaveData campaign = null)
     {
         if (!IsReady || _adapter?.PlayerRoot == null)
             return false;
@@ -424,6 +436,12 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         HasMoved = started && moved;
         HasReachedShop = started && reachedShop;
         HasReachedWorkbench = started && reachedWorkbench;
+        CampaignOpeningController opening = Opening;
+        if (opening != null || campaign != null)
+        {
+            opening = opening ?? gameObject.AddComponent<CampaignOpeningController>();
+            if (!opening.Restore(this, campaign)) return false;
+        }
 
         DayNightShopLoopController loop = DayNightShopLoopController.Instance;
         HasGathered = started && loop != null &&
@@ -512,7 +530,14 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     {
         if (!IsReady) return "섬 생활을 준비하고 있습니다.";
         if (!HasStartedBeta) return "새 섬 생활을 시작하세요.";
-        if (!HasMoved) return "WASD로 움직여 이동 방법을 익히세요.";
+        if (!HasMoved && (Opening == null || !Opening.HasGreetedBori))
+            return "WASD로 움직여 이동 방법을 익히세요.";
+        if (Opening != null && Opening.HasStarted && !Opening.OpeningComplete)
+        {
+            Transform target = !Opening.HasGreetedBori ? Opening.Bori?.transform :
+                _adapter.FindDaytimeActivity("forest-forage")?.transform;
+            return Opening.Objective + " · " + TargetHint(target);
+        }
         if (!HasReachedShop)
             return $"노란 표지의 P.A. 잡화점을 찾으세요 · {TargetHint(_adapter?.RuntimeShop?.transform)}";
         if (!HasReachedWorkbench)
@@ -750,16 +775,17 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     void DrawStartPrompt()
     {
         float width = Mathf.Min(620f, Screen.width - 40f);
-        float height = 260f;
+        float height = 320f;
         float left = (Screen.width - width) * 0.5f;
         float top = (Screen.height - height) * 0.5f;
         GUILayout.BeginArea(new Rect(left, top, width, height), GUI.skin.box);
+        var openingText = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
         GUILayout.Space(12f);
-        GUILayout.Label("PROJECT P.A. · 새로운 섬 생활");
+        GUILayout.Label("PROJECT P.A. · 새로운 섬 생활", openingText);
         GUILayout.Space(12f);
-        GUILayout.Label("낮에는 섬을 돌아다니며 자원과 상품을 준비하고,\n밤에는 마을의 잡화점을 열어 주민을 맞이합니다.");
+        GUILayout.Label("낮에는 섬을 돌아다니며 자원과 상품을 준비하고,\n밤에는 마을의 잡화점을 열어 주민을 맞이합니다.", openingText);
         GUILayout.Space(12f);
-        GUILayout.Label("첫날 목표 · 이동 방법을 익히고 잡화점과 제작 작업대 위치를 확인하세요.");
+        GUILayout.Label("오늘부터 이 마을의 잡화점을 맡습니다.\n이웃 보리에게 인사하고, 오늘 밤 팔 물건을 찾아보세요.", openingText);
         GUILayout.Space(12f);
         if (GUILayout.Button("새 섬 생활 시작  [Enter / Space]", GUILayout.Height(44f)))
             BeginNewGame();
@@ -772,6 +798,20 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     {
         GUILayout.BeginArea(PlayerFacingHudScreenRect, GUI.skin.box);
         int currentDay = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        if (Opening != null && Opening.HasStarted && !Opening.OpeningComplete)
+        {
+            var openingText = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
+            GUILayout.Label($"Day {currentDay} · {CurrentPlayerObjective}", openingText);
+            GUILayout.Space(6f);
+            GUILayout.Label("낮에 준비한 물건을 밤에 이웃에게 팝니다. 무엇이 필요한지는 만나며 알아가세요.", openingText);
+            GUILayout.Space(8f);
+            GUILayout.Label(Opening.HasGreetedBori ? "보리와 인사했어요." : "보리가 가게 옆에서 기다리고 있어요.", openingText);
+            GUILayout.Label(Opening.HasSecuredStock ? "가방에 첫 판매 재고를 마련했어요." : "채집한 재료도 첫 상품이 될 수 있어요.", openingText);
+            GUILayout.Space(8f);
+            GUILayout.Label(PlayerControlHint, openingText);
+            GUILayout.EndArea();
+            return;
+        }
         GUILayout.Label($"Day {currentDay} · 섬 생활 동선   |   {CurrentPlayerObjective}");
         GUILayout.Space(4f);
         GUILayout.Label(LongPlayProgressionController.Instance != null
@@ -1550,8 +1590,9 @@ public static class PA_Beta001OnboardingValidator
             if (frames < 3) return;
             if (stage == 1)
             {
-                Require(_alpha.HasMoved && _alpha.CurrentPlayerObjective.Contains("잡화점"),
-                    "movement advances the objective toward the shop landmark");
+                Require(_alpha.HasMoved && _alpha.Opening.HasStarted &&
+                        _alpha.CurrentPlayerObjective.Contains("보리"),
+                    "movement advances toward the authored neighbour greeting");
                 Require(MoveNear(_adapter.RuntimeShop.transform.position, 10f),
                     "a walkable cell exists near the shop");
                 SetStage(2);
@@ -1560,19 +1601,19 @@ public static class PA_Beta001OnboardingValidator
 
             if (stage == 2)
             {
-                Require(_alpha.HasReachedShop && _alpha.CurrentPlayerObjective.Contains("제작 작업대"),
-                    "reaching the shop explains its night-sale role and advances the route");
+                Require(_alpha.HasReachedShop && !_alpha.Opening.HasGreetedBori &&
+                        _alpha.CurrentPlayerObjective.Contains("보리"),
+                    "shop discovery preserves the pending real neighbour greeting");
                 Require(MoveNear(_adapter.RuntimeWorkbench.transform.position, 10f),
                     "a walkable cell exists near the workbench");
                 SetStage(3);
                 return;
             }
 
-            Require(_alpha.HasReachedShop && _alpha.HasReachedWorkbench &&
-                    _alpha.CurrentPlayerObjective.Contains("첫 동선 확인 완료"),
+            Require(_alpha.HasReachedShop && _alpha.HasReachedWorkbench,
                 "the player can finish the first shop/workbench orientation route");
-            Require(_alpha.CurrentPlayerObjective.Contains("낮 자원"),
-                "the completed route hands off to daytime resource play");
+            Require(!_alpha.Opening.OpeningComplete && _alpha.CurrentPlayerObjective.Contains("보리"),
+                "landmark visits alone do not fabricate the authored greeting or stock");
 
             _alpha.SetDevelopmentOverlayVisible(true);
             Require(_alpha.DevelopmentOverlayVisible &&

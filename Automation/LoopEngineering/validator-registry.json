@@ -4,6 +4,17 @@
   "unityVersion": "6000.3.2f1",
   "validators": [
     {
+      "id": "content-001-opening",
+      "executeMethod": "PA_ContentOpeningValidator.Run",
+      "sourceFile": "Assets/Editor/PA_ContentOpeningValidator.cs",
+      "purpose": "Validate actual Bori interaction, first gathered sale stock, daily friendship, idempotent entry and isolated v13/v12 campaign save migration in WorldSandbox.",
+      "workflowTypes": ["content", "gameplay", "save"],
+      "preconditions": ["Run PA_ContentOpeningBuilder.Build once for dedicated resources.", "Unity Editor must be closed; use -force-d3d11."],
+      "expectedRuntimeSeconds": 180,
+      "onFailure": "Inspect the first failed check; one bounded correction only for the same cause.",
+      "humanFollowUp": "Review 1920x1080 Opening.png and repeat the first greeting in Game view. Same-session save/load does not clear the historical BETA-010 restart-facing debt."
+    },
+    {
       "id": "art-000-external-asset-intake",
       "executeMethod": "PA_Art000IntakeValidator.Run",
       "sourceFile": "Assets/Editor/PA_Art000IntakeValidator.cs",

@@ -9,8 +9,8 @@
     "humanPreapproved": true,
     "autonomousContinuation": true,
     "approvedTickets": ["CONTENT-000B", "CONTENT-001", "CONTENT-002", "CONTENT-003", "CONTENT-004", "CONTENT-005", "CONTENT-006", "CONTENT-007", "CONTENT-008", "CONTENT-009", "CONTENT-010"],
-    "activeTicket": "CONTENT-000B",
-    "nextTicket": "CONTENT-001",
+    "activeTicket": "CONTENT-001",
+    "nextTicket": "CONTENT-002",
     "preapprovedThrough": "CONTENT-010",
     "stopAtMilestone": "CONTENT_010_AUTHORED_EXPERIENCE_COMPLETE",
     "requiresIntermediateHumanApproval": false,
@@ -21,8 +21,19 @@
       "ticket": "CONTENT-000B",
       "result": "PASS",
       "evidence": "Logs/Content/CONTENT000B/ArchitectureValidation.json",
-      "commitPending": true,
+      "commitPending": false,
+      "completedCommit": "e6f3716",
       "runtimeValidation": "NOT_RUN_DESIGN_ONLY"
+    },
+    "openingValidation": {
+      "ticket": "CONTENT-001",
+      "result": "PASS",
+      "evidence": "Logs/Content/CONTENT001/OpeningValidation_Release.log",
+      "regressions": ["Golden first-day", "World onboarding", "World daytime activities", "Save round-trip"],
+      "saveEnvelope": 13,
+      "worldPayload": 11,
+      "commitPending": true,
+      "doesNotClearHistoricalBeta010RestartFacingDebt": true
     },
     "releasedBlockers": ["CONTENT-000 approval pending", "CONTENT-000B automatic start prohibited"],
     "preservedTechnicalDebt": ["BETA-010 PlayerRoot facing restore 137 degrees: two prior failed executions; not cleared by canon approval", "WorldSandbox normal entry not integrated", "Day 6-30 runtime completion unproven"],
@@ -201,9 +212,9 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "CONTENT-000B",
+  "ticketId": "CONTENT-001",
   "status": "active",
-  "finalState": "CONTENT_000B_ACTIVE",
+  "finalState": "CONTENT_001_VERIFIED_COMMIT_PENDING",
   "goal": "Author a coherent Day 1-30 campaign from approved provisional canon and existing gameplay, then execute the preapproved CONTENT-001 through CONTENT-010 sequence.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
@@ -765,5 +776,5 @@
   "startedAt": "2026-08-20",
   "stoppedAt": "2026-08-21",
   "stopReason": null,
-  "nextAction": "Complete CONTENT-000B campaign/backlog and self-audit, create its approved local commit, then activate CONTENT-001 without asking for approval. Historical BETA-010 facing blocker remains technical debt, not the active content ticket."
+  "nextAction": "Commit verified CONTENT-001 additions selectively, then activate CONTENT-002 First Shop Night automatically. CONTENT-000B is committed at e6f3716. Opening runtime, v12/v13 same-session persistence, Golden and World regressions PASS; historical BETA-010 restart-facing debt remains."
 }

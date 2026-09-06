@@ -3,7 +3,7 @@
 ## 승인·현재 상태
 
 - 사용자 승인: 2026-09-06 「CONTENT-000 승인 및 장기 콘텐츠 개발 재개」. Canon은 **PROVISIONAL CANON v1**이며 CONTENT-000B 자기검증 PASS 후 CONTENT-001~010을 하나씩 구현·검증·로컬 커밋한다. 중간 사람 승인 요청은 없다.
-- 현재 단일 티켓: **CONTENT-000B / SELF_AUDIT_PASS / COMMIT_PENDING**. 체크포인트 커밋 뒤 CONTENT-001이 자동 활성화된다. 장기 목표는 새 게임~Day30의 실제 플레이 가능한 졸업작품이며 문서 작성만으로 완료하지 않는다.
+- 현재 단일 티켓: **CONTENT-001 / VERIFIED / COMMIT_PENDING**. 선행 CONTENT-000B는 `e6f3716`. CONTENT-001 로컬 커밋 후 CONTENT-002를 자동 활성화한다. 장기 목표는 새 게임~Day30의 실제 플레이 가능한 졸업작품이며 문서 작성만으로 완료하지 않는다.
 - 설계 권위: [CONTENT_CANON_BIBLE](CONTENT_CANON_BIBLE.md), [CONTENT_CAMPAIGN_DAY1_30](CONTENT_CAMPAIGN_DAY1_30.md). 최소 errata는 Campaign §17에 이유·전후를 기록한다.
 - 기준: `milestone/gameplay-beta-85@29fb98f400b55dcc7f7e5c580c9b476041d378f4`. 기존 사용자 변경·미추적 자료를 보존한다. 지침·로그의 기존 dirty 내용을 함께 커밋하지 않으며 추가한 작업 기록만 선택 반영한다.
 - 선승인 상태 기록: `Automation/LoopEngineering/State/loop-state.json.contentContinuationApproval`.
@@ -13,8 +13,8 @@
 
 | 순서 | 티켓 | 상태 | 완료 커밋 | 다음 |
 |---:|---|---|---|---|
-| 0 | CONTENT-000B | SELF_AUDIT_PASS | 이 설계 체크포인트 | CONTENT-001 |
-| 1 | CONTENT-001 | READY_AFTER_PREDECESSOR | — | CONTENT-002 |
+| 0 | CONTENT-000B | COMPLETE_DESIGN_PASS | e6f3716 | CONTENT-001 |
+| 1 | CONTENT-001 | VERIFIED | 이 구현 체크포인트 | CONTENT-002 |
 | 2 | CONTENT-002 | READY_AFTER_PREDECESSOR | — | CONTENT-003 |
 | 3 | CONTENT-003 | READY_AFTER_PREDECESSOR | — | CONTENT-004 |
 | 4 | CONTENT-004 | READY_AFTER_PREDECESSOR | — | CONTENT-005 |
@@ -46,6 +46,9 @@
 - 예상 경로: 위 기존 파일 중 필요한 최소 수정, `Assets/Resources/NPCs/Profile_Bori.asset`, `Assets/Resources/Dialogues/Dialogue_Bori.asset`, 필요한 작은 Opening 표현 컴포넌트·Editor validator. 새 Framework 없음. 실제 파일 목록은 조사 후 먼저 보고.
 - 검증: 시작→보리 직접 상호작용→+2 한 번→재고 확보→다른 NPC 대화는 보리 완료 아님→save/load 유지→단일 보리. D3D11 신규 `PA_ContentOpeningValidator`; 기존 `PA_FinalDemoRouteValidator`와 World/BETA 첫날 핵심 회귀. Golden 기존 경로는 자동 캐논 치환하지 않음.
 - 다음 조건: A01 실제 동작·compile·회귀·diff PASS 후 commit, CONTENT-002.
+- 2026-09-07 검증 PASS: `Logs/Content/CONTENT001/OpeningValidation_Release.log`(실제 Space 인사·+2 중복 방지·실제 채집·순서 교환·v13/v12·반복 load·카메라/문구 복원), `RuntimeCompile_Release.log`/`EditorCompile_Release.log`(오류0), `GoldenRegression.log`, `WorldOnboardingRegression.log`, `WorldDaytimeRegression.log`, `SaveRoundTripRegression.log`. 모두 같은 로그 폴더.
+- 외형 감사: Golden 보리는 Profile_Lumberjack 참조를 그대로 보존했다. World 보리는 C-01 기반 별도 외형과 프로필·대사, 후보 없음. CE-005 참고. `Runtime/Opening.png` 1920×1080에서 새 안내 글자 잘림/겹침 없음. 전체 지형·플레이어 외형·기존 휴대폰 패널과 최종 미술 품질은 후속 통합/사람 검토 대상.
+- 저장: envelope v13 additive campaign 4필드, embedded world v11 유지. 기존 v12 recovery 의미 보존. 이번 same-session load PASS가 기존 BETA-010 restart/facing 137° 부채를 해소하지 않는다. 첫 밤 소비는 다음 티켓이므로 현재 보리는 인사 자리에서 기다린다.
 
 ## CONTENT-002 — First Shop Night
 

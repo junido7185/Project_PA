@@ -2256,6 +2256,9 @@ public static class PA_Beta002DaytimeActivityValidator
             {
                 Require(_alpha.HasReachedShop && MoveNear(_adapter.RuntimeWorkbench.transform, 4f),
                     "the player can reach the workbench landmark before daytime activities");
+                // CONTENT-001의 저작된 첫 이웃 단계. 공간 탐색은 전용 Opening validator가 검증한다.
+                _alpha.Opening.Bori.GetComponent<NpcDialogue>().Interact(_adapter.PlayerRoot);
+                DialogueUI.instance?.Hide();
                 SetStage(3);
                 return;
             }

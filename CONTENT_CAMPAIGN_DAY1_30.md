@@ -497,6 +497,7 @@ CONTENT: 저장 필드는 정해진 캠페인 사실만 담는 작은 DTO다. �
 | CE-002 | 캐논 §10/17: 영구 사건은 별도 승인까지 보류 | 최소 additive campaign/producer 저장을 현 승인 sequence에 배정 | 사용자 §13/16에서 비파괴적 구현 승인. 같은 사건 반복 소모·고용 중복을 막기 위해 필요. 범용 Framework나 파괴적 schema 변경은 아님 |
 | CE-003 | 기존 코드의 Carrot2→‘구운 감자’ | 콘텐츠 표시를 당근 요리로 교정하되 Item/Recipe ID·GUID·입력·가격 보존 | 실제 입력과 음식 서사 충돌. CONTENT-006에서 itemName 기반 참조/구세이브 폴백 감사 후 최소 수정 |
 | CE-004 | 기존 날짜 목표만으로 첫 달 완료를 읽기 쉬움 | 경제 성장 목표와 실제 저작 캠페인 완료를 분리 | 캐논 CL-09의 첫 달 운영 경험을 보존. Tier/Audit threshold를 낮춰 맞추지 않음. CONTENT-009 |
+| CE-005 | 보리의 C-02/C-03 외형·기존 역할 공유 여부가 미확인 | Golden 보리는 실제 Profile_Lumberjack을 참조하므로 보존. World 보리는 8직업에 배정되지 않은 기존 C-01 기반 전용 색상·별도 prefab 사용 | CONTENT-001 Editor 감사 `Logs/Content/CONTENT001/ExistingCastAudit.txt`. 기존 8직업의 C-02~09 배정과 identity를 보존하는 가역적 자산 재사용. 최종 캐릭터 아트 완성 판정은 아님 |
 
 의류 Wheat+Plank는 새 섬 직물 설정으로 합리화하지 않는다. 준의 첫 달 관계/소비 아크는 그대로 실행 가능하다. 의류·가구 제작은 현 잠금과 원료 정합 뒤 선택 확장으로 남기며, 핵심 이름·직업·P.A. 전제·Day30 결말을 바꾸는 errata는 이번 권한에 없다.
 

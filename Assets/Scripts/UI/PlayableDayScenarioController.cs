@@ -100,7 +100,7 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     static readonly string[] RandomNames =
     {
-        "하늘", "보리", "나루", "이든", "유나", "도현"
+        "하늘", "나루", "이든", "유나", "도현"
     };
 
     static readonly Dictionary<Stage, string> Labels = new Dictionary<Stage, string>
