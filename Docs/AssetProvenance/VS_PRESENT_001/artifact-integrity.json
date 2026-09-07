@@ -1,0 +1,125 @@
+{
+    "ticket":  "VS-PRESENT-001",
+    "revision":  "02",
+    "status":  "PASS",
+    "checkedAtUtc":  "2026-09-07T13:34:01.0248893Z",
+    "assets":  5,
+    "referenceRendersReviewed":  5,
+    "unityValidation":  "Owned by milestone scene builder and play validator; no Unity launch in art finish",
+    "checks":  [
+                   {
+                       "kind":  "unityFbx",
+                       "path":  "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureTrainingShelf.fbx",
+                       "sha256":  "efe14af78bb7c2db2048502b6e97852264648e7c34b710a18a821129683cfd75",
+                       "exportMatches":  true
+                   },
+                   {
+                       "kind":  "preservedSource",
+                       "path":  "ExternalAssetSources/Kenney/MiniMarket/Extracted/Models/GLB format/display-bread.glb",
+                       "sha256":  "33a57fee0e331e5e40df5f0dc7af302e93266fd978dda810ab9f0ea4a2c205d1",
+                       "matchesAuditedSource":  true
+                   },
+                   {
+                       "kind":  "preservedSource",
+                       "path":  "Blender/Library/ProjectPA_AssetLibrary.blend",
+                       "sha256":  "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
+                       "matchesAuditedSource":  true
+                   },
+                   {
+                       "kind":  "referenceRender",
+                       "path":  "Docs/AssetProvenance/VS_PRESENT_001/r02/PA_DepartureTrainingShelf.png",
+                       "sha256":  "f5716265be06d0a81efcdc2325afa109101a2071c46bb847d6012a3fa811d0fa",
+                       "visuallyReviewed":  true
+                   },
+                   {
+                       "kind":  "unityFbx",
+                       "path":  "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureTrainingBoards.fbx",
+                       "sha256":  "97190e4c96abd900204fef0bb91b0edd4346ef4135845485a11e775013d346d3",
+                       "exportMatches":  true
+                   },
+                   {
+                       "kind":  "referenceRender",
+                       "path":  "Docs/AssetProvenance/VS_PRESENT_001/r02/PA_DepartureTrainingBoards.png",
+                       "sha256":  "73649bed5d4cbd154df5e6b68449819a28609a8f93338b9bc6a0d7d2aeee7d8e",
+                       "visuallyReviewed":  true
+                   },
+                   {
+                       "kind":  "unityFbx",
+                       "path":  "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureCheckpoint.fbx",
+                       "sha256":  "02978e4b6cfe1785d0c9b628115ce56cda3b104e408d3f7c247559a64ecee21a",
+                       "exportMatches":  true
+                   },
+                   {
+                       "kind":  "referenceRender",
+                       "path":  "Docs/AssetProvenance/VS_PRESENT_001/r02/PA_DepartureCheckpoint.png",
+                       "sha256":  "499d3bf05156437e4a0c78307318fcdbb477fa37eb35e8f3cdd8ca6aa9342308",
+                       "visuallyReviewed":  true
+                   },
+                   {
+                       "kind":  "unityFbx",
+                       "path":  "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureFruit.fbx",
+                       "sha256":  "16d8badfb1422ea7cbba982d0ee1d1375c5e36b62e3de2c8ef05bd70b74914f2",
+                       "exportMatches":  true
+                   },
+                   {
+                       "kind":  "preservedSource",
+                       "path":  "ExternalAssetSources/Kenney/FoodKit/Extracted/Models/GLB format/apple.glb",
+                       "sha256":  "2a80ab65d5bc2cb4f2bca1e8176cbb591849a288596d4b2e76e411338761a526",
+                       "matchesAuditedSource":  true
+                   },
+                   {
+                       "kind":  "referenceRender",
+                       "path":  "Docs/AssetProvenance/VS_PRESENT_001/r02/PA_DepartureFruit.png",
+                       "sha256":  "3ac9c866d4455fe7cb2694b67e3272cc683472fbe1a520cd23beb47468f63f44",
+                       "visuallyReviewed":  true
+                   },
+                   {
+                       "kind":  "unityFbx",
+                       "path":  "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureBoat.fbx",
+                       "sha256":  "2d419dd216d7a5dbfbdf2b962f12d5cbeab24682fc8713de49cf0dbc8878ab9e",
+                       "exportMatches":  true
+                   },
+                   {
+                       "kind":  "preservedSource",
+                       "path":  "ExternalAssetSources/Quaternius/CuteFish/Extracted/Cute Fish Pack - Feb 2020/Blends/Boat.blend",
+                       "sha256":  "df6babfe08f04749327c564f65ac77afa3c6194142829ff36dc4e911ddd5c4bd",
+                       "matchesAuditedSource":  true
+                   },
+                   {
+                       "kind":  "referenceRender",
+                       "path":  "Docs/AssetProvenance/VS_PRESENT_001/r02/PA_DepartureBoat.png",
+                       "sha256":  "e89239e67da8a25d7a201ea5ccb0958aee5faef3d5d85eb2bfaa20b19c2ccb5c",
+                       "visuallyReviewed":  true
+                   },
+                   {
+                       "kind":  "productionOrLicense",
+                       "path":  "Blender/Generated/VS_PRESENT_001/PA_DepartureTrainingKit_r02.blend",
+                       "sha256":  "c845a7823000bf416c4b0c27cfad2406b24c47f547072f1879562ce16eb913a1",
+                       "bytes":  1666502
+                   },
+                   {
+                       "kind":  "productionOrLicense",
+                       "path":  "Blender/Scripts/build_departure_assets.py",
+                       "sha256":  "805a9151df0cbb0326c97f1133ce249f7ba4c8970d814ef604af02198e83f2f5",
+                       "bytes":  21861
+                   },
+                   {
+                       "kind":  "productionOrLicense",
+                       "path":  "Docs/AssetProvenance/Licenses/MiniMarket_License.txt",
+                       "sha256":  "5ee4df809330c05896f223c97f250cc1bdc13b46a370eb464533c85c94146070",
+                       "bytes":  767
+                   },
+                   {
+                       "kind":  "productionOrLicense",
+                       "path":  "Docs/AssetProvenance/Licenses/FoodKit_License.txt",
+                       "sha256":  "32a081c2035dd4db47d850c83244da048165f0e53d71c076b76c1afc0590bc7f",
+                       "bytes":  711
+                   },
+                   {
+                       "kind":  "productionOrLicense",
+                       "path":  "Docs/AssetProvenance/Licenses/CuteFish_License.txt",
+                       "sha256":  "83d8959f9fc56353ed571fbe2dc52e4bcd64508e2399501cd45ac2ce3df0bf8c",
+                       "bytes":  364
+                   }
+               ]
+}

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04a0d4d4c1e88804e8a4aced10b21ad7, type: 3}
+  m_Name: Profile_TutorialBuyer
+  m_EditorClassIdentifier: Assembly-CSharp::NpcProfile
+  npcName: Farmer_01
+  bio: "TEMP \xB7 \uCD9C\uD56D \uC778\uC99D \uC2E4\uC2B5 \uC190\uB2D8. Profile_Farmer\uC758
+    \uAE30\uC874 \uC774\uB984\uACFC MBTI\uB97C \uC7AC\uC0AC\uC6A9\uD558\uBA70 \uC2E4\uC2B5
+    \uAC00\uACA9\uC740 7G."
+  traitEI: -0.3
+  traitSN: 0.5
+  traitTF: 0
+  traitJP: -0.5
+  workEfficiency: 1.2
+  socialWeight: 0.4
+  homeStayBias: 0.3
+  utilityConsumption: 1.3
+  luxuryConsumption: 0.7
+  priceSensitivity: 0.8

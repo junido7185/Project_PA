@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_TutorialFruit
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 910001
+  itemName: "\uC2E4\uC2B5\uC6A9 \uC5F4\uB9E4"
+  description: "TEMP \xB7 VS-PRESENT-001 \uCD9C\uD56D \uC778\uC99D\uC6A9 \uC5F4\uB9E4.
+    \uAE30\uC874 Item/Inventory/Shop \uAC00\uACA9 \uC815\uCC45 \uC0AC\uC6A9."
+  icon: {fileID: 0}
+  maxStack: 20
+  model: {fileID: 7828174640731620310, guid: b5a4e8c8c7693c74a840094472a60b51, type: 3}
+  basePrice: 10
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

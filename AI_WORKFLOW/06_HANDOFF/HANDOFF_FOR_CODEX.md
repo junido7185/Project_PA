@@ -472,3 +472,13 @@ Task 130은 감사 앱이 다음 감사일까지의 날짜만 표시하고 실�
 - 1920×1080 Runtime/Opening.png에서 한글·새 안내 영역 잘림/겹침을 확인했다. 최종 전체 미술·기존 휴대폰 패널·플레이어 표현은 후속 통합/사람 검토 대상. BETA-010 restart 후 facing 137° 문제와 실제 첫 달 완주는 이번 검증 범위 밖이며 해결로 표시하지 않는다.
 - 다음: CONTENT-001 선택 local commit 직후 CONTENT-002 First Shop Night 자동 활성화. 같은 보리를 실제 소비자로 연결하고 첫 판단과 첫 판매를 구분한다. 중간 승인 요청 없이 CONTENT-010 선승인 범위를 유지한다.
 - 실패 교정 이력: editor sync 공개 API, 구체 Collider 선행 생성, batch 캡처를 일반 D3D11 GameView로 교정해 각각 해소. native crash 없음. 기존 사용자 dirty와 ART-000 기록 보존, 씬/기존 프리팹/ProjectSettings/Packages 변경0, push 없음.
+
+
+## 2026-09-07 — VS-PRESENT-001 P0 / PASS · STOP
+
+- 별도 PA_DepartureTutorial 씬에서 실제 키보드 이동→나무 상호작용→열매3→ShopSlot 진열→ShopPriceUI 7G 확정→NPC 접근/평가→기존 Economy 0G→7G→출항 인증 완료를 연속 통과했다.
+- Runtime/Editor compile 오류0(기존 CS8785/CS0414 경고 유지), D3D11 Play Mode, serialized reference 검사와 1920×1080 실캡처 PASS. 근거 Docs/Presentation/2026-09-08/P0-validation-excerpt.txt, P0-validation.json, P0-integrity.json.
+- Blender 기존 Departure 자산5종과 ART-000 tree/cargo를 적용했다. 최종 화면은 01_PA_Company_FirstView.png / 02_Tutorial_PriceAndReaction.png. 전체보기는 실제 씬에서 HUD만 숨긴 캡처, 가격/반응은 실제 판매 후 남은 열매1개 재진열 상태다.
+- 개발 진입: Project PA > Presentation > Open Departure Tutorial > Play. WASD/SPACE, 실습 가격7G. 튜토리얼 세션만 유지하며 SaveManager가 없어 기존 campaign save를 쓰지 않는다. NEW GAME/standalone 통합 및 저장 재개는 이번에 확인 못 함.
+- 기존 dirty CONTENT/Save/World 코드를 수정하거나 이 checkpoint에 넣지 않았다. 이 작업은 현재 working tree의 기존 ShopPriceUI.OnPriceConfirmed 및 PurchaseFeedbackPresentationController.OnDecisionRecorded 관찰 seam을 사용하므로, checkpoint 단독 checkout은 기존 CONTENT 작업의 별도 checkpoint 없이는 재현 가능한 clean baseline이 아니다.
+- P1/P2 NOT_STARTED. 사용자 최신 지시에 따라 고가 거절 edge case·추가 제작·다음 단계 구현은 수행하지 않고 STOP. 다음 세션은 사람의 직접 플레이 확인/명시 지시를 기다린다.

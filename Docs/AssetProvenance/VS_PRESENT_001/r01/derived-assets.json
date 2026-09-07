@@ -1,0 +1,258 @@
+{
+  "ticket": "VS-PRESENT-001",
+  "phase": "P0",
+  "status": "BLENDER_EXPORT_AND_RENDER_PASS",
+  "revision": "01",
+  "blenderVersion": "4.5.13 LTS",
+  "librarySha256BeforeAndAfter": "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
+  "styleGrammar": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+  "roughness": 0.8,
+  "metallic": 0,
+  "paletteSrgb": {
+    "PA_Wood": "A07850",
+    "PA_WoodLight": "D4B896",
+    "PA_Leaf": "8DB87A",
+    "PA_LeafDark": "547957",
+    "PA_Terracotta": "D4714A",
+    "PA_Coral": "F08070",
+    "PA_Gold": "F5D76E",
+    "PA_Teal": "5BAFC0",
+    "PA_Cream": "F5EAD5",
+    "PA_Ink": "344B4E",
+    "PA_Apple": "D6604F"
+  },
+  "sourcesPreserved": true,
+  "assets": [
+    {
+      "id": "PA_DepartureTrainingShelf",
+      "purpose": "ShopSlot visual only; empty counter and blank price holder",
+      "sources": [
+        {
+          "path": "ExternalAssetSources/Kenney/MiniMarket/Extracted/Models/GLB format/display-bread.glb",
+          "sha256": "33a57fee0e331e5e40df5f0dc7af302e93266fd978dda810ab9f0ea4a2c205d1"
+        },
+        {
+          "library": "Blender/Library/ProjectPA_AssetLibrary.blend",
+          "sha256": "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
+          "mesh": "display-bread",
+          "excludedOriginalObjects": [
+            "bread",
+            "bread.001"
+          ]
+        }
+      ],
+      "derivativeWork": "Only frame retained; rescaled tray, four legs, braces, 1m worktop and removable blank price face authored. No stock mesh.",
+      "fbxPath": "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureTrainingShelf.fbx",
+      "sha256": "31e6c97ba9a4aebff340f4a631278d8a3df6ac1d3f84ffa27f927b1583b751dc",
+      "blenderDimensionsXYZ": [
+        1.7990001440048218,
+        1.3224999904632568,
+        1.215000033378601
+      ],
+      "unityDimensionsXYZ": [
+        1.7990001440048218,
+        1.215000033378601,
+        1.3224999904632568
+      ],
+      "pivot": "ground center (0,0,0)",
+      "authoringForward": "Blender -Y",
+      "unityForward": "-Z",
+      "footprintMetersXZ": [
+        1.8,
+        1.35
+      ],
+      "clearanceMeters": 1.2,
+      "collider": "none in model; gameplay owner creates primitive colliders",
+      "navMesh": "existing scene owner",
+      "materials": [
+        "PA_Cream",
+        "PA_Gold",
+        "PA_Teal",
+        "PA_Wood",
+        "PA_WoodLight"
+      ],
+      "triangles": 1070,
+      "independentChildren": [],
+      "collection": "PA_DepartureTrainingShelf",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/r01/PA_DepartureTrainingShelf.png"
+    },
+    {
+      "id": "PA_DepartureTrainingBoards",
+      "purpose": "Action pictograms for three Training Bays; choose one named child",
+      "sources": [
+        {
+          "creator": "Project P.A. original Blender geometry",
+          "externalDesignCopied": false
+        }
+      ],
+      "derivativeWork": "Original shared timber training board; relief direction, tree/fruit, shelf/coin pictograms; text converted to mesh.",
+      "fbxPath": "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureTrainingBoards.fbx",
+      "sha256": "059d1e93001d45a2a3273ec288be5bb1c28a95b1473ed53163032d6245d9964d",
+      "blenderDimensionsXYZ": [
+        1.7799999713897705,
+        0.6000000238418579,
+        2.559999942779541
+      ],
+      "unityDimensionsXYZ": [
+        1.7799999713897705,
+        2.559999942779541,
+        0.6000000238418579
+      ],
+      "pivot": "ground center (0,0,0)",
+      "authoringForward": "Blender -Y",
+      "unityForward": "-Z",
+      "footprintMetersXZ": [
+        1.8,
+        0.6
+      ],
+      "clearanceMeters": 0.8,
+      "collider": "none in model; gameplay owner creates primitive colliders",
+      "navMesh": "existing scene owner",
+      "materials": [
+        "PA_Apple",
+        "PA_Cream",
+        "PA_Gold",
+        "PA_Ink",
+        "PA_LeafDark",
+        "PA_Teal",
+        "PA_Terracotta",
+        "PA_Wood"
+      ],
+      "triangles": 10500,
+      "independentChildren": [
+        "Board_Move",
+        "Board_Harvest",
+        "Board_Trade"
+      ],
+      "collection": "PA_DepartureTrainingBoards",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/r01/PA_DepartureTrainingBoards.png"
+    },
+    {
+      "id": "PA_DepartureCheckpoint",
+      "purpose": "Movement destination light gate, clear 2m crossing",
+      "sources": [
+        {
+          "creator": "Project P.A. original Blender geometry"
+        }
+      ],
+      "derivativeWork": "Two short checkpoint lights plus threshold. No invisible wall or collision in FBX.",
+      "fbxPath": "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureCheckpoint.fbx",
+      "sha256": "4b8cb883384cb875e2c51b97e060d2948c3a567a586bdf00d3f4f83b6facf8ab",
+      "blenderDimensionsXYZ": [
+        2.820000171661377,
+        0.550000011920929,
+        1.5749999284744263
+      ],
+      "unityDimensionsXYZ": [
+        2.820000171661377,
+        1.5749999284744263,
+        0.550000011920929
+      ],
+      "pivot": "ground center (0,0,0)",
+      "authoringForward": "Blender -Y",
+      "unityForward": "-Z",
+      "footprintMetersXZ": [
+        2.82,
+        0.55
+      ],
+      "clearanceMeters": 1.0,
+      "collider": "none in model; gameplay owner creates primitive colliders",
+      "navMesh": "existing scene owner",
+      "materials": [
+        "PA_Gold",
+        "PA_Ink",
+        "PA_Teal"
+      ],
+      "triangles": 844,
+      "independentChildren": [],
+      "collection": "PA_DepartureCheckpoint",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/r01/PA_DepartureCheckpoint.png"
+    },
+    {
+      "id": "PA_DepartureFruit",
+      "purpose": "TEMP vertical slice fruit ItemData visual",
+      "sources": [
+        {
+          "path": "ExternalAssetSources/Kenney/FoodKit/Extracted/Models/GLB format/apple.glb",
+          "sha256": "2a80ab65d5bc2cb4f2bca1e8176cbb591849a288596d4b2e76e411338761a526"
+        }
+      ],
+      "derivativeWork": "Audited Kenney apple newly selected, normalized to .28m and remapped to PA apple/leaf/wood material family.",
+      "fbxPath": "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureFruit.fbx",
+      "sha256": "ce0859cae92c6ac53f222c9d0a37e04d1d20e6d91bf2f65772721b9c10fdc7f6",
+      "blenderDimensionsXYZ": [
+        0.2881336510181427,
+        0.2881336510181427,
+        0.2800000011920929
+      ],
+      "unityDimensionsXYZ": [
+        0.2881336510181427,
+        0.2800000011920929,
+        0.2881336510181427
+      ],
+      "pivot": "ground center (0,0,0)",
+      "authoringForward": "Blender -Y",
+      "unityForward": "-Z",
+      "footprintMetersXZ": [
+        0.3,
+        0.3
+      ],
+      "clearanceMeters": 0,
+      "collider": "none in model; gameplay owner creates primitive colliders",
+      "navMesh": "existing scene owner",
+      "materials": [
+        "PA_Apple",
+        "PA_LeafDark"
+      ],
+      "triangles": 136,
+      "independentChildren": [],
+      "collection": "PA_DepartureFruit",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/r01/PA_DepartureFruit.png"
+    },
+    {
+      "id": "PA_DepartureBoat",
+      "purpose": "P0 harbor dressing; no vehicle gameplay",
+      "sources": [
+        {
+          "path": "ExternalAssetSources/Quaternius/CuteFish/Extracted/Cute Fish Pack - Feb 2020/Blends/Boat.blend",
+          "sha256": "df6babfe08f04749327c564f65ac77afa3c6194142829ff36dc4e911ddd5c4bd"
+        }
+      ],
+      "derivativeWork": "Audited Quaternius skiff normalized and PA palette mapped; new central boarding deck and company pennant. No movement authority.",
+      "fbxPath": "Assets/Art/ProjectPA/Derived/Departure/PA_DepartureBoat.fbx",
+      "sha256": "8b5a3e945060f2fcd6af6495acc6f4550bedc5a99d9472b7cc286644da180999",
+      "blenderDimensionsXYZ": [
+        3.0051767826080322,
+        5.8000006675720215,
+        2.2300000190734863
+      ],
+      "unityDimensionsXYZ": [
+        3.0051767826080322,
+        2.2300000190734863,
+        5.8000006675720215
+      ],
+      "pivot": "ground center (0,0,0)",
+      "authoringForward": "Blender -Y",
+      "unityForward": "-Z",
+      "footprintMetersXZ": [
+        3.1,
+        5.8
+      ],
+      "clearanceMeters": 1.0,
+      "collider": "none in model; gameplay owner creates primitive colliders",
+      "navMesh": "existing scene owner",
+      "materials": [
+        "PA_Cream",
+        "PA_Ink",
+        "PA_Terracotta",
+        "PA_Wood",
+        "PA_WoodLight"
+      ],
+      "triangles": 1032,
+      "independentChildren": [],
+      "collection": "PA_DepartureBoat",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/r01/PA_DepartureBoat.png"
+    }
+  ],
+  "unityValidation": "Pending editor importer, wrapper bounds/reference and actual P0 gameplay validation"
+}

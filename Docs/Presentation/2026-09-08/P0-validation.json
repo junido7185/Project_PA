@@ -1,0 +1,12 @@
+{
+    "status": "PASS",
+    "input": "InputSystem keyboard -> PlayerInputHandler -> PlayerController / PlayerInteraction",
+    "stage": 6,
+    "decisionCount": 1,
+    "fruitRemaining": 1,
+    "moneyBefore": 0,
+    "moneyAfter": 7,
+    "saleAmount": 7,
+    "screenshotWidth": 1920,
+    "screenshotHeight": 1080
+}

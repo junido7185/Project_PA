@@ -776,5 +776,31 @@
   "startedAt": "2026-08-20",
   "stoppedAt": "2026-08-21",
   "stopReason": null,
-  "nextAction": "Commit verified CONTENT-001 additions selectively, then activate CONTENT-002 First Shop Night automatically. CONTENT-000B is committed at e6f3716. Opening runtime, v12/v13 same-session persistence, Golden and World regressions PASS; historical BETA-010 restart-facing debt remains."
+  "nextAction": "Commit verified CONTENT-001 additions selectively, then activate CONTENT-002 First Shop Night automatically. CONTENT-000B is committed at e6f3716. Opening runtime, v12/v13 same-session persistence, Golden and World regressions PASS; historical BETA-010 restart-facing debt remains.",
+  "presentationMilestone": {
+  "id": "VS-PRESENT-001",
+  "title": "Opening Vertical Slice Presentation Pass",
+  "humanApproved": true,
+  "approvedDate": "2026-09-07",
+  "baseHead": "c49eb01d1d4797fcfd73ccffe47f2da2faf32906",
+  "artCheckpoint": "0135ddf",
+  "activePhase": null,
+  "sequence": [
+    "P0"
+  ],
+  "gates": {
+    "P1": "P0 continuous Unity play PASS",
+    "P2": "P0 and P1 PASS"
+  },
+  "localCheckpointCommitAllowed": true,
+  "stopAtMilestone": "VS-PRESENT-001",
+  "unrelatedContentSequencePreserved": true,
+  "art001To010AutoImplementationAllowed": false,
+  "pushAllowed": false,
+  "status": "P0_PASS_STOP",
+  "P1": "NOT_STARTED",
+  "P2": "NOT_STARTED",
+  "latestHumanInstruction": "2026-09-07 P0 only; commit and STOP",
+  "evidence": "Docs/Presentation/2026-09-08/P0-validation.json"
+}
 }

@@ -19,6 +19,11 @@ public static class PA_RuntimeSceneBinder
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void BindLoadedScene()
     {
+        // VS-PRESENT-001: 출항 코스는 builder가 기존 권위 컴포넌트를 명시 배치한다.
+        // 일반 캠페인의 저장/휴대폰/월드 자동 연결을 개발용 인증 씬에 추가하지 않는다.
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == DepartureTutorialController.SceneName)
+            return;
+
         GameObject services = EnsureSceneRoot("[Services]");
         GameObject uiRoot = EnsureUiRoot();
 
