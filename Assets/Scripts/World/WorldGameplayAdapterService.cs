@@ -425,6 +425,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
                 .OrderBy(slot => slot.name, StringComparer.Ordinal).ToArray()
             : Array.Empty<ShopSlot>();
         ResolveSalesDisplayRoot();
+        ConfigureSalesDisplayInteractionVolumes();
 
         if (_inventory == null || _economy == null || _clock == null || _dayLoop == null ||
             _saveManager == null || ItemRegistry.Instance == null || _shop == null ||
@@ -436,6 +437,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
         _salesDisplayReadability = _shopRoot.GetComponent<WorldSalesDisplayReadability>() ??
                                    _shopRoot.AddComponent<WorldSalesDisplayReadability>();
+        _shop.allowDebugBulkSaleInteraction = false;
         if (!_salesDisplayReadability.Configure(_salesDisplayRoot, _shopSlots, out reason))
             return false;
 
@@ -456,6 +458,23 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             return false;
         }
         return true;
+    }
+
+    // B01의 낮은 받침대는 수평 Space 탐색보다 아래에 있다. 실제 진열대 위에만
+    // 비물리 선택 영역을 더해 가게 건물의 일괄 상호작용에 가려지지 않게 한다.
+    void ConfigureSalesDisplayInteractionVolumes()
+    {
+        foreach (ShopSlot slot in _shopSlots)
+        {
+            BoxCollider baseCollider = slot.GetComponent<BoxCollider>();
+            if (baseCollider == null || slot.GetComponents<BoxCollider>().Any(c => c.isTrigger)) continue;
+            float scaleY = Mathf.Abs(slot.transform.lossyScale.y);
+            if (scaleY < 0.001f) continue;
+            BoxCollider selection = slot.gameObject.AddComponent<BoxCollider>();
+            selection.isTrigger = true;
+            selection.center = baseCollider.center + Vector3.up * (0.6f / scaleY);
+            selection.size = new Vector3(baseCollider.size.x, 1.2f / scaleY, baseCollider.size.z);
+        }
     }
 
     public bool BeginPlayableWeek(out string reason)

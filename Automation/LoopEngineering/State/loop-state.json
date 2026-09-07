@@ -1,4 +1,11 @@
 {
+  "art000IntakeCheckpoint": {
+    "ticketId": "ART-000",
+    "status": "verified",
+    "record": "Automation/LoopEngineering/State/art000-intake-checkpoint.json",
+    "automaticArtContinuationAllowed": false,
+    "preservesContentContinuationApproval": true
+  },
   "contentContinuationApproval": {
     "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
     "goal": "PROJECT_PA_MONTH_ONE_AUTHORED_EXPERIENCE",
@@ -9,8 +16,8 @@
     "humanPreapproved": true,
     "autonomousContinuation": true,
     "approvedTickets": ["CONTENT-000B", "CONTENT-001", "CONTENT-002", "CONTENT-003", "CONTENT-004", "CONTENT-005", "CONTENT-006", "CONTENT-007", "CONTENT-008", "CONTENT-009", "CONTENT-010"],
-    "activeTicket": "CONTENT-001",
-    "nextTicket": "CONTENT-002",
+    "activeTicket": "CONTENT-002",
+    "nextTicket": "CONTENT-003",
     "preapprovedThrough": "CONTENT-010",
     "stopAtMilestone": "CONTENT_010_AUTHORED_EXPERIENCE_COMPLETE",
     "requiresIntermediateHumanApproval": false,
@@ -32,8 +39,20 @@
       "regressions": ["Golden first-day", "World onboarding", "World daytime activities", "Save round-trip"],
       "saveEnvelope": 13,
       "worldPayload": 11,
-      "commitPending": true,
+      "commitPending": false,
+      "completedCommit": "c49eb01",
       "doesNotClearHistoricalBeta010RestartFacingDebt": true
+    },
+    "firstNightCheckpoint": {
+      "ticket": "CONTENT-002",
+      "phase": "CORRECTION_READY",
+      "processId": null,
+      "evidence": "Logs/Content/CONTENT002/FirstNightValidation.log",
+      "failedSameCauseRuns": 1,
+      "diagnostic": "Logs/Content/CONTENT002/Runtime/InteractionAudit.txt",
+      "diagnosticResult": "Normal ground height; shop root masks low display collider at 1.2m. Added World-only nonphysical selection volume; validator distance and real Space selection unchanged.",
+      "saveEnvelope": 14,
+      "resumePoint": "Serial Runtime/Editor compile after Unity exit, then one D3D11 correction run. Do not run a third validation on the same interaction failure. No CONTENT-003 until PASS and local commit."
     },
     "releasedBlockers": ["CONTENT-000 approval pending", "CONTENT-000B automatic start prohibited"],
     "preservedTechnicalDebt": ["BETA-010 PlayerRoot facing restore 137 degrees: two prior failed executions; not cleared by canon approval", "WorldSandbox normal entry not integrated", "Day 6-30 runtime completion unproven"],
@@ -212,9 +231,9 @@
       "PROJECT_PA_TODO.md"
     ]
   },
-  "ticketId": "CONTENT-001",
+  "ticketId": "CONTENT-002",
   "status": "active",
-  "finalState": "CONTENT_001_VERIFIED_COMMIT_PENDING",
+  "finalState": "CONTENT_002_ACTIVE",
   "goal": "Author a coherent Day 1-30 campaign from approved provisional canon and existing gameplay, then execute the preapproved CONTENT-001 through CONTENT-010 sequence.",
   "baseline": {
     "branch": "milestone/gameplay-beta-85",
@@ -776,7 +795,7 @@
   "startedAt": "2026-08-20",
   "stoppedAt": "2026-08-21",
   "stopReason": null,
-  "nextAction": "Commit verified CONTENT-001 additions selectively, then activate CONTENT-002 First Shop Night automatically. CONTENT-000B is committed at e6f3716. Opening runtime, v12/v13 same-session persistence, Golden and World regressions PASS; historical BETA-010 restart-facing debt remains.",
+  "nextAction": "Implement CONTENT-002 First Shop Night from the existing WorldGameplayAdapter customer visit and NpcController seams. CONTENT-000B e6f3716 and CONTENT-001 c49eb01 are complete; do not repeat them. Connect the same Bori to real purchase decisions, preserve rejection/no-sale continuation, persist A02 evidence, then compile/validate/commit before CONTENT-003.",
   "presentationMilestone": {
   "id": "VS-PRESENT-001",
   "title": "Opening Vertical Slice Presentation Pass",

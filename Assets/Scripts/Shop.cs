@@ -16,6 +16,8 @@ public class Shop : MonoBehaviour, IInteractable
     // 자식 ShopSlot 들이 Awake 시점에 자기 자신을 여기에 등록한다.
     private readonly List<ShopSlot> _slots = new List<ShopSlot>();
     public IReadOnlyList<ShopSlot> Slots => _slots;
+    // 기존 프로토타입의 디버그 일괄 판매는 유지하되 일반 World 캠페인은 끈다.
+    public bool allowDebugBulkSaleInteraction = true;
 
     [Header("티어 기반 슬롯 관리 (Docs/05 §3)")]
     [Tooltip("씬에 배치한 ShopSlot 오브젝트를 활성화할 순서대로 나열한다.\n" +
@@ -100,13 +102,14 @@ public class Shop : MonoBehaviour, IInteractable
 
     public void Interact(GameObject interactor)
     {
+        if (!allowDebugBulkSaleInteraction) return;
         Debug.Log("🏪 상점 주인: 어서오세요!");
         SellAllItems();
     }
 
     public string GetInteractPrompt()
     {
-        return "모두 판매하기 (디버그)";
+        return allowDebugBulkSaleInteraction ? "모두 판매하기 (디버그)" : "상품은 가게 앞 판매대에 진열하세요";
     }
 
     public void SellAllItems()

@@ -3,7 +3,7 @@
 ## 승인·현재 상태
 
 - 사용자 승인: 2026-09-06 「CONTENT-000 승인 및 장기 콘텐츠 개발 재개」. Canon은 **PROVISIONAL CANON v1**이며 CONTENT-000B 자기검증 PASS 후 CONTENT-001~010을 하나씩 구현·검증·로컬 커밋한다. 중간 사람 승인 요청은 없다.
-- 현재 단일 티켓: **CONTENT-001 / VERIFIED / COMMIT_PENDING**. 선행 CONTENT-000B는 `e6f3716`. CONTENT-001 로컬 커밋 후 CONTENT-002를 자동 활성화한다. 장기 목표는 새 게임~Day30의 실제 플레이 가능한 졸업작품이며 문서 작성만으로 완료하지 않는다.
+- 현재 단일 티켓: **CONTENT-002 / ACTIVE**. CONTENT-000B는 `e6f3716`, CONTENT-001은 `c49eb01`로 완료했다. 장기 목표는 새 게임~Day30의 실제 플레이 가능한 졸업작품이며 문서 작성만으로 완료하지 않는다.
 - 설계 권위: [CONTENT_CANON_BIBLE](CONTENT_CANON_BIBLE.md), [CONTENT_CAMPAIGN_DAY1_30](CONTENT_CAMPAIGN_DAY1_30.md). 최소 errata는 Campaign §17에 이유·전후를 기록한다.
 - 기준: `milestone/gameplay-beta-85@29fb98f400b55dcc7f7e5c580c9b476041d378f4`. 기존 사용자 변경·미추적 자료를 보존한다. 지침·로그의 기존 dirty 내용을 함께 커밋하지 않으며 추가한 작업 기록만 선택 반영한다.
 - 선승인 상태 기록: `Automation/LoopEngineering/State/loop-state.json.contentContinuationApproval`.
@@ -14,8 +14,8 @@
 | 순서 | 티켓 | 상태 | 완료 커밋 | 다음 |
 |---:|---|---|---|---|
 | 0 | CONTENT-000B | COMPLETE_DESIGN_PASS | e6f3716 | CONTENT-001 |
-| 1 | CONTENT-001 | VERIFIED | 이 구현 체크포인트 | CONTENT-002 |
-| 2 | CONTENT-002 | READY_AFTER_PREDECESSOR | — | CONTENT-003 |
+| 1 | CONTENT-001 | COMPLETE_RUNTIME_PASS | c49eb01 | CONTENT-002 |
+| 2 | CONTENT-002 | ACTIVE | — | CONTENT-003 |
 | 3 | CONTENT-003 | READY_AFTER_PREDECESSOR | — | CONTENT-004 |
 | 4 | CONTENT-004 | READY_AFTER_PREDECESSOR | — | CONTENT-005 |
 | 5 | CONTENT-005 | READY_AFTER_PREDECESSOR | — | CONTENT-006 |

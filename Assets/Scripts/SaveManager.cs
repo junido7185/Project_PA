@@ -22,7 +22,7 @@ public class SaveManager : MonoBehaviour
     private const string SaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    public const int CurrentSaveVersion = 13;
+    public const int CurrentSaveVersion = 14;
 
     bool _loadInProgress;
     PlayerInputHandler _input;
@@ -656,6 +656,13 @@ public class SaveManager : MonoBehaviour
             data.campaign = null;
             data.version = 13;
             Debug.Log("[SaveManager] Migration v12->v13: optional authored campaign; legacy progress preserved.");
+        }
+
+        if (data.version < 14)
+        {
+            if (data.campaign != null) data.campaign.firstNight = null;
+            data.version = 14;
+            Debug.Log("[SaveManager] Migration v13->v14: optional first-shop-night evidence; opening preserved.");
         }
 
         return data;

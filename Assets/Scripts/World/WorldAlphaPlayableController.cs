@@ -55,9 +55,12 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool StartPromptVisible => IsReady && _startPromptVisible;
     public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
     public CampaignOpeningController Opening => GetComponent<CampaignOpeningController>();
+    public CampaignFirstShopNightController FirstNight => GetComponent<CampaignFirstShopNightController>();
     public string PlayerControlHint =>
         Opening != null && Opening.HasStarted && !Opening.OpeningComplete
             ? "WASD 이동 · Space 대화/채집 · I 가방 · F5 저장 · Esc 메뉴"
+            : FirstNight?.NeedsGuidance == true
+            ? "WASD 이동 · Space 진열/가격/간판 · I 가방 · F5 저장 · Esc 메뉴"
             : "WASD 이동 · Space 상호작용 · B 생산자 납품 구매 · P 휴대폰(채용/피드) · F5 저장 · F9 불러오기 · Esc 메뉴";
     public Rect PlayerFacingHudScreenRect
     {
@@ -538,6 +541,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
                 _adapter.FindDaytimeActivity("forest-forage")?.transform;
             return Opening.Objective + " · " + TargetHint(target);
         }
+        if (FirstNight?.NeedsGuidance == true) return FirstNight.Objective;
         if (!HasReachedShop)
             return $"노란 표지의 P.A. 잡화점을 찾으세요 · {TargetHint(_adapter?.RuntimeShop?.transform)}";
         if (!HasReachedWorkbench)
@@ -809,6 +813,17 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
             GUILayout.Label(Opening.HasSecuredStock ? "가방에 첫 판매 재고를 마련했어요." : "채집한 재료도 첫 상품이 될 수 있어요.", openingText);
             GUILayout.Space(8f);
             GUILayout.Label(PlayerControlHint, openingText);
+            GUILayout.EndArea();
+            return;
+        }
+        if (FirstNight?.NeedsGuidance == true)
+        {
+            var nightText = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
+            GUILayout.Label($"Day {currentDay} · {FirstNight.Objective}", nightText);
+            GUILayout.Space(8f);
+            GUILayout.Label(FirstNight.Summary, nightText);
+            GUILayout.Space(8f);
+            GUILayout.Label(PlayerControlHint, nightText);
             GUILayout.EndArea();
             return;
         }

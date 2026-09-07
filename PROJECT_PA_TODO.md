@@ -1744,6 +1744,34 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - [ ] BETA-007 실제 주민 반응, BETA-008 Day 6~7/Week 1, Golden/M70 full regression.
 - [ ] `M85_GAMEPLAY_BETA_COMPLETE` — 현재 미달성.
 
+## 2026-08-25 Visual Baseline 이후 우선순위
+
+1. `BETA-010-PERSISTENCE-RECOVERY-001`: player facing 복원 원인을 해결하고 restart/repeated-load, BETA-007/008, Golden/M70 회귀를 완료한다.
+2. `PLAYER-ENTRY-INTEGRATION-001`: Golden 보존 및 MainGame 별도 승인 규칙 아래 타이틀에서 생성 월드 전체 루프로 가는 하나의 제품 진입 경로를 만든다.
+3. `TARGET-ASPECT-AND-CAMERA-GATE-001`: 1920×1080 기준, HUD safe area, 상점 차양 가림 방지, 팝업 크기 체계를 확정한다.
+4. `SHOP-READABILITY-ONBOARDING-001`: 상점 입구/내부/판매대/개점 간판/첫 동선을 즉시 읽히게 한다.
+5. `DIEGETIC-ACTIVITY-VISUALS-001`: 해변·숲·광산·농장의 원시 큐브와 거대 라벨을 기능 에셋과 획득 피드백으로 교체한다.
+6. `PLAYABLE-BUILD-GATE-001`: standalone 후보를 만들어 새 프로필부터 저장 재실행까지 완주·16:9 증거를 확보한다.
+
+후순위 유지: 인벤토리 drag ghost, F10 개발 오버레이, 판매 fallback 음색, B06 pulse, 추가 장식/맵/고급 테마.
+
+## 2026-08-31 발표자료
+
+- [x] 6월 26일 기준선과 여름방학 신규/확장 성과를 분리한 개발 감사 작성.
+- [x] 디자인 마스터 기반 7장 PPTX/PDF, 5분 대본, 발표 근거 작성 및 1920×1080 렌더 검수.
+- [x] 현재 상태를 `PARTIAL`/`UNREACHABLE`/`BLOCKED`로 구분하고 미완성 항목을 완료로 표현하지 않음.
+- [ ] 다음 단일 개발 티켓은 기존 우선순위 1번 `BETA-010-PERSISTENCE-RECOVERY-001`로 유지한다.
+
+## 2026-09-01 정체성 감사
+
+- [x] 원안·현재 고정 정체성·Git 변천·실제 구현을 대조한 Identity & Scope Audit 작성.
+- [x] 실제 역할 NPC 8종, 보리, 미사용 이름 프로필 5종과 경제 데이터를 창작 없이 정리.
+- [x] Identity Implementation Matrix와 3~5분 Demo Identity/Run of Show 작성.
+- [x] PPT를 수정하지 않고 발표 문장 후보 5종·Demo Identity Sentence 3종 및 선택안 기록.
+- [ ] 다음 개발 티켓은 여전히 `BETA-010-PERSISTENCE-RECOVERY-001`; 정체성 감사가 자동으로 통합/구현 승인을 부여하지 않는다.
+- [ ] 이후 사람 승인된 데모 통합 티켓에서 `유료 채용→생산자 매입→가공→가격 판단→NPC 소비→다음 날 마을 변화` 연속 경로를 검증한다.
+- [ ] 보리와 역할 NPC의 개인 정체성 통합은 별도 기획 승인 전 이름·역할·외형을 임의 변경하지 않는다.
+
 ## 2026-09-06 — CONTENT-000B Campaign Architecture / SELF-AUDIT PASS
 
 - CONTENT-000을 PROVISIONAL CANON v1으로 채택한 사람 승인과 CONTENT-000B~010 순차 진행·검증·로컬 커밋 선승인을 기록했다. 승인 대기는 해소됐다.
@@ -1752,6 +1780,17 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - 검증: Tools/LoopEngineering/Test-ContentCampaignArchitecture.ps1 PASS. 증거 Logs/Content/CONTENT000B/ArchitectureValidation.json. Unity runtime/editor compile·D3D11·실제30일·save restart는 설계 티켓에서 실행하지 않았다.
 - 다음: 이 설계 체크포인트 local commit 뒤 CONTENT-001 Opening & Bori를 자동 활성화한다. 이후 CONTENT-010까지 중간 승인 요청 없이 진행한다. 기존 BETA-010 facing 137° 실패는 미해결 기술 이력으로 보존했다.
 - 기존 사용자 변경 및 별도 ART-000 자료는 보존하고 이 작업 기록의 추가분만 커밋한다. 런타임 코드·Unity 씬/프리팹·ProjectSettings·Packages·Save schema 변경 없음.
+
+## 2026-09-06 — ART-000 Asset Intake / VERIFIED
+
+- 목표 파일의 ART-000 범위에서 공식 CC0 6팩 ZIP을 원본 보존 COPY로 입고했다. 550종/2,590파일을 분류하고 Blender 33종, Unity 28종(새 FBX20+기존 Nature8 재사용)을 선정했다.
+- 산출물: Docs/AssetProvenance/EXTERNAL_ASSET_REGISTRY.md, PROJECT_PA_ART_STYLE_GRAMMAR.md, Blender/Library/ProjectPA_AssetLibrary.blend, demo 요구·missing-model·8개 제작 배치 계획, 원본 비교 렌더33장/시트3장.
+- Unity 6000.3.2f1 D3D11 전용 검사: 28개 hash/mesh/크기/바닥 pivot/URP 재질/프리팹 참조 왕복 PASS. Runtime/Editor compile 오류0; 기존 CS8785/CS0414 경고는 보존. 기존 runtime/scene/settings 보호 hash 변경0.
+- Blender 4.5.13 공식 portable 체크섬 검증 후 33개 library 생성·재개방·packed texture·render PASS. 물고기 원본 동작6개씩 모두 library에 보존했다. 원본 mesh/ZIP 변경 없음.
+- 무결성: Docs/AssetProvenance/final-integrity-report.json PASS — 2,886 checks, GUID1,199개 중 중복0, 신규 missing meta0. 자세한 요구별 판정은 ART000_COMPLETION_AUDIT.md.
+- 확인 못 함: 최종 Unity 장면의 1920x1080 시각 품질/낮밤 그림자/interaction face, 실제 gameplay 및 save/load 회귀, 최종 Vertical Slice Demo 완주. 이번은 격리 입고·제작 계획이며 ART-001 이후 적용 검증이 필요하다.
+- 다음 ART 권장: ART-001 Material Palette and Unity Import Normalization. 목표 파일 §21에 따라 후속 ART 자동 구현은 시작하지 않는다. 별도 CONTENT-000B~010 승인·활성 상태와 사용자 staging은 유지한다.
+- 사용자 원본 이동/Unity 수동 import 요구 없음. 파일/출처/검증이 바뀌지 않는 한 완료된 ART-000 intake를 재실행하지 않는다.
 
 ## 2026-09-07 — CONTENT-001 Opening & Bori / VERIFIED
 
@@ -1764,6 +1803,32 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - 실패 교정 이력: editor sync 공개 API, 구체 Collider 선행 생성, batch 캡처를 일반 D3D11 GameView로 교정해 각각 해소. native crash 없음. 기존 사용자 dirty와 ART-000 기록 보존, 씬/기존 프리팹/ProjectSettings/Packages 변경0, push 없음.
 
 
+## 2026-09-07 — 데모 창작 결정 상담 / 제안만 기록
+
+- 사용자 요청에 따라 현재 개발 상태와 오프닝·인물·첫 판매 결과·첫 달 흐름의 창작 결정 가이드를 `Docs/DEMO_CREATIVE_DECISIONS.md`에 작성했다.
+- 8월 25일 PROJECT_STATE와 9월 7일 CONTENT-001 완료/CONTENT-002 ACTIVE를 구분했다. CONTENT001 기존 로그의 CHECKS_PASS/VALIDATION_PASS를 읽었으며 이번 세션에서 새 runtime 검증을 수행한 것은 아니다.
+- 배 도착→목수 루카의 길/가게 안내→보리의 생활 필요/첫 손님 역할은 미확정 제안이다. 현행 루카 Day4 소개와 차이를 명시했고 기존 캐논·콘텐츠 순서·선승인 범위·활성 티켓은 변경하지 않았다.
+- 다음 상담 우선순위: 시작 장면, 안내자 역할, 첫 마을 변화, 체험 길이/마지막 장면에 대한 사용자 생각을 받는다. 구현 작업의 기존 우선순위 CONTENT-002는 유지한다.
+- 문서 상담만 수행. 컴파일/Play Mode/빌드/재시작은 이번에 실행하지 않아 확인 못 함. 기존 사용자 미커밋 변경 보존, 코드·씬·저장 변경 및 commit/push 없음.
+
+
+## 2026-09-07 — 무인도 정착·동행 선택 구상 검토 / 설계 상담
+
+- 사용자 구상: 본사 교육→동행 NPC 선택→배로 무인도 이동→거주 겸 상점/주민 텐트 직접 배치→입주민에 따른 기술 트리→입주 후 고용. 적용 적합성을 검토하고 `Docs/DEMO_CREATIVE_DECISIONS.md`에 기존 정착지 권고의 한계를 명시했다.
+- WORLD_NORTH_STAR의 절차 섬/자유 배치 방향과 부합한다. 현재 WorldGameplayAdapterService의 시설 자동 생성, HiringService의 고용 시 Instantiate, 레시피의 기존 시설/Tier 조건을 코드로 확인했다. 모든 주거/입주/해금이 이미 구현된 것으로 보고하지 않는다.
+- 권고: 공통 설치 키트와 기본 채집, 입주→기술 전수와 유료 고용 분리, 주민 동일 ID·주거 앵커 저장, 기존 목수/벌목꾼·광부/대장장이 역할 구분. 선택하지 않은 분야는 후속 입주로 열고 첫 판매와 실제 마을 반응을 유지한다.
+- 다음 설계 우선순위: 동행/입주/전수/고용 계약과 시작 설치 조건, 기존 날짜별 캠페인 충돌 범위 정리. 기존 활성 CONTENT-002나 선승인 sequence는 이 상담에서 변경/실행하지 않았다. 새 구상 전체의 구현 승인을 기존 승인에서 추론하지 않는다.
+- 새 compile/Unity/빌드/save restart는 실행하지 않아 확인 못 함. 코드·씬·프리팹·저장·캐논 무변경, 기존 dirty 보존, commit/push 없음. 문서 diff 검사를 수행한다.
+
+
+## 2026-09-07 — 1차 생산자·본사 기술 전수·섬 특화 / 아이디어 수집
+
+- 사용자 추가 구상: 시작 동행은 1차 생산자(목수/광부/낚시꾼/곤충 채집꾼/농사꾼), 구성에 따른 초기 상품 차이, 돈을 통한 입주 확대, 직업별 자원 본사 제출로 기술 해금, 2차 생산과 관광·과학 등 섬 특화, 정기 배 방문객 연결. 상세는 Docs/DEMO_CREATIVE_DECISIONS.md 마지막 절.
+- 이전 에이전트의 NPC 직접 기술 전수안과 본사 제출안을 구분했다. 목수의 1차 역할 표현은 보존하고 기존 전문가/벌목꾼 재배정, 입주비와 고용비의 관계, 가격·해금 수치, 후반 기능의 데모 필수 여부는 미확정으로 남겼다.
+- 다음 대화 우선순위: 사용자가 이어서 서술할 아이디어를 누적한다. 확정 질문/구현 착수로 브레인스토밍을 중단하지 않는다. 기존 활성 티켓과 선승인 범위는 이번 기록에서 변경/실행하지 않는다.
+- 문서만 수정했다. 신규 compile/Unity/빌드/밸런스 실험은 실행하지 않아 확인 못 함. 기존 사용자 변경 보존, 코드·씬·저장·캐논 무변경, commit/push 없음.
+
+
 ## 2026-09-07 — VS-PRESENT-001 P0 / PASS · STOP
 
 - 별도 PA_DepartureTutorial 씬에서 실제 키보드 이동→나무 상호작용→열매3→ShopSlot 진열→ShopPriceUI 7G 확정→NPC 접근/평가→기존 Economy 0G→7G→출항 인증 완료를 연속 통과했다.
@@ -1772,3 +1837,12 @@ Status: Before/After 스크린샷 기준 재작업 완료. 회귀 3종 통과. �
 - 개발 진입: Project PA > Presentation > Open Departure Tutorial > Play. WASD/SPACE, 실습 가격7G. 튜토리얼 세션만 유지하며 SaveManager가 없어 기존 campaign save를 쓰지 않는다. NEW GAME/standalone 통합 및 저장 재개는 이번에 확인 못 함.
 - 기존 dirty CONTENT/Save/World 코드를 수정하거나 이 checkpoint에 넣지 않았다. 이 작업은 현재 working tree의 기존 ShopPriceUI.OnPriceConfirmed 및 PurchaseFeedbackPresentationController.OnDecisionRecorded 관찰 seam을 사용하므로, checkpoint 단독 checkout은 기존 CONTENT 작업의 별도 checkpoint 없이는 재현 가능한 clean baseline이 아니다.
 - P1/P2 NOT_STARTED. 사용자 최신 지시에 따라 고가 거절 edge case·추가 제작·다음 단계 구현은 수행하지 않고 STOP. 다음 세션은 사람의 직접 플레이 확인/명시 지시를 기다린다.
+
+
+## 2026-09-07 — 현재 작업 통합 checkpoint / push 승인
+
+- 사용자가 현재까지 작업의 commit/push를 명시 승인했다. 기존 P0 0b4e511에 이어 보존했던 CONTENT 코드·관찰 이벤트·설계/발표 자료를 함께 checkpoint한다. CONTENT-002의 미완료 검증 상태와 BETA 저장 부채는 해소됐다고 표시하지 않는다.
+- Runtime/Editor compile 오류0, 기존 경고3, diff 검사 PASS. 증거 Logs/VS_PRESENT_001/PrePushCompile_Restored.log. 이번 Git 작업에서 새 Play Mode/저장/빌드 검증은 하지 않았다.
+- 기존 Word 문서 삭제 상태는 그대로 기록한다. 로컬 개인 플러그인 설정 .claude/settings.json은 commit 대상에서 제외한다. 강제 push/이력 재작성 없음.
+- P0가 사용하는 ShopPriceUI/PurchaseFeedback 관찰 이벤트가 이번 checkpoint에 포함되므로, 이전 P0 보고서의 '미커밋 이벤트 의존' 제한은 이 통합 checkpoint에서 해소된다. clean checkout 실행은 별도 수행하지 않았다.
+- 다음은 사람의 P0 수동 확인/명시적 후속 지시다. P1/P2 및 CONTENT 후속 구현은 자동 시작하지 않는다.

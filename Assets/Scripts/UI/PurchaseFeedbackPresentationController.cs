@@ -25,6 +25,8 @@ public class PurchaseFeedbackPresentationController : MonoBehaviour
     }
 
     public static PurchaseFeedbackPresentationController Instance { get; private set; }
+    // CONTENT-002: 실제 평가의 관찰 신호. 구매 의사와 결제 성공은 SalesLog에서 구분한다.
+    public static event System.Action<NpcProfile, PurchaseEvaluator.Result, Item, int, string> OnDecisionRecorded;
 
     [Header("Feedback Feed")]
     public bool autoCreateUI = true;
@@ -86,6 +88,7 @@ public class PurchaseFeedbackPresentationController : MonoBehaviour
             _entries.RemoveAt(_entries.Count - 1);
 
         RefreshUI();
+        OnDecisionRecorded?.Invoke(profile, result, item, displayPrice, customerName);
     }
 
     static string BuildReactionLine(string name, PurchaseEvaluator.Result result, Item item, int displayPrice)

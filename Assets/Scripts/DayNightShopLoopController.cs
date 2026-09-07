@@ -18,6 +18,7 @@ public enum PADayNightPhase
 public class DayNightShopLoopController : MonoBehaviour
 {
     public static DayNightShopLoopController Instance { get; private set; }
+    public static event System.Action<int> OnShopDaySettled;
 
     [Header("Phase Hours")]
     [Range(0f, 23.99f)] public float dayStartHour = 6f;
@@ -200,7 +201,9 @@ public class DayNightShopLoopController : MonoBehaviour
         int closingDay = CurrentDay;
         GameClock.Instance.AdvanceToNextDayMorning(dayStartHour, "상점 정산 완료");
         Debug.Log($"🌅 [DayNightShopLoop] Day {closingDay} 정산 완료 — Day {CurrentDay} 아침 시작");
-        return CurrentDay == closingDay + 1;
+        bool advanced = CurrentDay == closingDay + 1;
+        if (advanced) OnShopDaySettled?.Invoke(closingDay);
+        return advanced;
     }
 
     // 검증용: 플레이어 영업 시작 상태를 직접 설정한다.

@@ -4,6 +4,17 @@
   "unityVersion": "6000.3.2f1",
   "validators": [
     {
+      "id": "content-002-first-shop-night",
+      "executeMethod": "PA_ContentFirstShopNightValidator.Run",
+      "sourceFile": "Assets/Editor/PA_ContentFirstShopNightValidator.cs",
+      "purpose": "Validate real stock/price/sign input, existing resident arrival, natural Bori rejection and purchase, zero-sale settlement, exact relationship rewards and v13/v14 persistence.",
+      "workflowTypes": ["content", "gameplay", "economy", "save"],
+      "preconditions": ["Unity must be closed. Use -force-d3d11 without -batchmode for the normal GameView capture.", "Bori resources from completed CONTENT-001 are required; do not regenerate completed assets."],
+      "expectedRuntimeSeconds": 180,
+      "onFailure": "Inspect the first failed assertion; allow one minimal correction for the same cause and preserve real probability/transaction checks.",
+      "humanFollowUp": "Review FirstDecision.png and the normal first-night route. Time and non-Bori tourists are isolated fixtures; this does not prove the full month campaign."
+    },
+    {
       "id": "content-001-opening",
       "executeMethod": "PA_ContentOpeningValidator.Run",
       "sourceFile": "Assets/Editor/PA_ContentOpeningValidator.cs",

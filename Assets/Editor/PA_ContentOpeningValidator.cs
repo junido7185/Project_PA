@@ -159,7 +159,7 @@ public static class PA_ContentOpeningValidator
         await save.SaveGameAsync();
         string completedSave = await repository.LoadAsync("savegame");
         SaveData data = JsonUtility.FromJson<SaveData>(completedSave);
-        Check(data.version == 13 && data.campaign.boriGreeted && data.campaign.firstStockItemId >= 0, "v13 JSON contains explicit A01 evidence");
+        Check(data.version == SaveManager.CurrentSaveVersion && data.campaign.boriGreeted && data.campaign.firstStockItemId >= 0, "current JSON contains explicit A01 evidence");
         await save.LoadGameAsync();
         await save.LoadGameAsync();
         Check(opening.OpeningComplete && BoriCount() == 1 && FriendshipService.Instance.GetPoints("bori") == 2 &&
@@ -172,7 +172,7 @@ public static class PA_ContentOpeningValidator
         Check(!opening.HasStarted && !opening.Bori.activeSelf, "v12 migration does not infer campaign from old friendship or inventory");
         await save.SaveGameAsync();
         SaveData migrated = JsonUtility.FromJson<SaveData>(await repository.LoadAsync("savegame"));
-        Check(migrated.version == 13 && migrated.m85RecoveryRevision == data.m85RecoveryRevision &&
+        Check(migrated.version == SaveManager.CurrentSaveVersion && migrated.m85RecoveryRevision == data.m85RecoveryRevision &&
               migrated.hasPlayerRotation == data.hasPlayerRotation && migrated.shopOpenedDay == data.shopOpenedDay,
             "v12 migration preserves recovery envelope fields");
         await repository.SaveAsync("savegame", completedSave);

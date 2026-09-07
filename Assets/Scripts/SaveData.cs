@@ -105,6 +105,29 @@ public class CampaignProgressSaveData
     public bool boriGreeted;
     public int firstStockItemId = -1;
     public int firstStockDay;
+    public CampaignFirstNightSaveData firstNight;
+}
+
+[System.Serializable]
+public class CampaignFirstNightSaveData
+{
+    public int priceConfirmedDay;
+    public int confirmedItemId = -1;
+    public int confirmedUnitPrice;
+    public int firstOpenedDay;
+    public int firstDecisionDay;
+    public string firstDecisionResidentId = "";
+    public string firstDecisionName = "";
+    public string firstDecisionReason = "";
+    public int firstDecisionItemId = -1;
+    public bool firstDecisionWantedToBuy;
+    public int firstSaleDay;
+    public int firstSaleAmount;
+    public int firstSettlementDay;
+    public int firstSettlementRevenue;
+
+    // 저장 내용은 숫자·bool·불변 문자열뿐이다. 캡처가 진행 중 상태를 공유하지 않는다.
+    public CampaignFirstNightSaveData Copy() => (CampaignFirstNightSaveData)MemberwiseClone();
 }
 
 [System.Serializable]

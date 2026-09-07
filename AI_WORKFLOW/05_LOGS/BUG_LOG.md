@@ -701,6 +701,42 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 안전: Runtime/Editor compile 오류 0, native crash 0, save corruption 0, Scene/Prefab/Packages/ProjectSettings 변경 0. assertion 삭제·완화·강제 PASS 없음.
 - 중단: 동일 원인 두 번 실패와 승인 실행 소진으로 세 번째 D3D11 및 추가 추측 수정을 금지한다. 다음 최소 조치는 실제 adapter `PlayerRoot`와 tagged player identity, `PlayerController`의 internal facing state를 같은 프레임에서 계측한 뒤 authoritative restore API 하나로 동기화하는 것이다.
 
+## [RESOLVED_TOOLING] 2026-08-31 — 발표자료 PDF/자동 검사 도구 호환성
+
+- PowerPoint COM의 `ExportAsFixedFormat` 축약 호출이 현재 PowerPoint 16.0 interop에서 형 변환 오류를 냈다. PPTX는 이미 정상 저장돼 있었으며 `SaveAs(..., 32)` PDF 내보내기로 전환해 7쪽 PDF를 생성했다.
+- 제공 `slides_test.py`는 환경에 `numpy`가 없어 시작되지 않았다. 패키지를 프로젝트에 추가하지 않고 PowerPoint COM으로 슬라이드 크기·노트·shape 경계·텍스트 bound를 검사하고, 1920×1080 PNG 7장을 직접 검수했다.
+- 최종 PPTX/PDF는 각각 7장/7쪽, 1440×810이며 PDF는 `pypdf`로 재개방됐다. Unity 프로젝트 파일과 원본 디자인 마스터에는 영향이 없다.
+
+## [RESOLVED_TOOLING] 2026-09-01 — 정체성 문서 복합 검증 명령 PowerShell 구문 오류
+
+- 문서 검증용 읽기 전용 PowerShell 명령에서 `"FAIL|$f:$n"`를 사용해 변수명 뒤 `:`가 드라이브 구문으로 해석되는 ParserError가 1회 발생했다.
+- 명령은 parse 단계에서 종료되어 프로젝트 파일, 감사 문서, PPT, Unity 상태에는 영향이 없다.
+- 같은 복합 명령은 재사용하지 않고 `${f}` 표기와 분리된 읽기 전용 검사로 교체했다.
+
+## [RESOLVED] 2026-09-06 — ART-000 Blender library texture dependency
+- First run: Logs/ART000/Blender_Library_01.log, exit 1. Kenney GLB references external Textures/colormap.png; initial library copy omitted images, and global fallback found different same-name palettes.
+- Deterministic correction: copy GLB relative Textures dependencies, resolve BLEND images only within the selected source pack, verify byte identity before reuse. No source archive/model overwritten.
+- Corrected execution passed: Logs/ART000/Blender_Library_02.log, ART000_BLENDER_LIBRARY_PASS 33. Final packed-image reopen/render also passed. Unity intake PASS (28 assets); this was not a gameplay/Unity crash.
+- Earlier dotnet --no-restore attempt reported missing generated project.assets.json (NETSDK1004); ordinary dotnet build regenerated existing dependency metadata and passed with 0 errors. No package was added.
+
+## [RESOLVED] 2026-09-06 — ART-000 library reopen lazy image buffer
+- Reference-render first run stopped before rendering because it required Image.has_data before reading packed pixels.
+- Read-only diagnostic Logs/ART000/Blender_ImageBuffer_Diagnostic.log proves all 8 file images are packed; reading pixels loads valid 32x32/512x512 buffers and has_data becomes true.
+- Correction: check packing first, read packed pixels, then assert decoded data and dimensions. This keeps the texture integrity assertion. No missing texture, source overwrite, or Blender crash.
+- Source library correction separately passed: Logs/ART000/Blender_Library_02.log, ART000_BLENDER_LIBRARY_PASS 33.
+
+## [RESOLVED] 2026-09-06 — ART-000 source animation preservation audit
+- Final source comparison found that append(objects) retained only two referenced actions per Koi/Tuna, although the source BLEND and Unity FBX each contain six.
+- The builder now appends all source actions and keeps otherwise unreferenced actions in muted NLA tracks. Previous generated library preserved under Blender/Generated/ART000; source BLEND files unchanged.
+- Evidence: Logs/ART000/Blender_Library_AnimationComplete.log, Blender_Animation_Audit_Final.log and Blender_ReferenceRender_Final.log PASS; library-animation-audit.json proves all six source actions per fish.
+- A read-only inline --python-expr diagnostic had a Windows quote-parsing NameError; it made no file change. Replaced it with the saved audit_library_integrity.py diagnostic, which provided the source/library evidence above.
+
+
+## 2026-09-06 ? ART-000 staged diff whitespace / REVIEWED
+
+- ?? ?? staged `git diff --check`? Unity? ??? ? YAML ?? ?? ??? ?? license? ??/??? ? ?? ????. ?? ??? Logs/ART000/Git_Diff_Check_Raw.txt? ????.
+- ?? ??? .meta/.prefab/.mat ?? ?? license ???? ??? ????. ??/Unity serialized ???? ?? ?? ???? ?? ?? ???. ?? ??? ?????? ?? diff ??? PASS. ?? ?? ??? HARD BLOCKER? ???? ???.
+
 ## 2026-09-07 — CONTENT-001 editor compile: project sync API
 
 - 첫 자산 빌더 compile이 내부 UnityEditor.SyncVS 접근 CS0122로 중단됐다. 증거: Logs/Content/CONTENT001/Build.log. Runtime validator 미진입, native crash 없음.
@@ -716,3 +752,14 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 앞선 빌더 Collider 문제는 Build_ColliderCorrection.log BUILD_PASS로 해소. dotnet --no-restore의 생성 임시 assets 파일 부재는 정상 build 복원으로 해소했고 RuntimeCompile_Restore.log 및 EditorCompile.log는 오류 0.
 
 - CONTENT-001 최종 해소 증거: OpeningValidation_Release.log VALIDATION_PASS, Build_ColliderCorrection.log BUILD_PASS, Runtime/EditorCompile_Release 오류0. UI 관찰로 발견한 복원 문구·카메라·인사 후 안내도 최종 검증했다. 같은 원인의 반복 실패나 native crash 없음.
+
+## 2026-09-07 — CONTENT-002 first-night Space approach / first failure
+
+- FirstNightValidation.log는 실제 시작·보리 인사·채집·낮 영업 차단까지 PASS 후 ShopSlot_00의 공간 상호작용 접근점을 찾지 못해 중단됐다. 경제 거래/밤 판단 미진입, native crash 없음.
+- 첫 fixture는 판매대 중심에서 반경1.2m·8방향만 시도했다. 기존 BETA-004가 Slot.Interact 직접 호출로 검증했던 것과 달리 이번은 실제 PlayerInteraction 공간 탐색을 요구한다. 프리팹 Collider/높이·월드 점유를 읽기 감사한 뒤 최소 교정한다. 첫 실패이며 같은 원인 교정 검증은 아직 실행하지 않았다.
+
+## 2026-09-07 — 상담 문서 도구 오류 / 교정
+
+- 첫 patch는 원문 최신 상태를 최종 상태로 잘못 적어 문맥 검사에서 거부됐다. 파일 변경 없이 정확한 원문으로 한 번 교정하여 성공했다.
+- 기록 append 명령은 스마트 인용부호가 PowerShell 문자열 경계로 해석되어 파싱 단계에서 거부됐다. 해당 명령은 실행되지 않았고 파일 변경은 없었다. 스마트 인용부호를 없앤 명령으로 한 번 교정한다.
+- 서로 다른 문서 도구 원인 각 1회이며 게임 코드/Unity 검증 실패가 아니다. 같은 원인 두 번 실패 경계에 도달하지 않았다.

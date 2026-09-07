@@ -831,6 +831,17 @@ Append-only log for guarded automation and dry-run loop work.
 - 다음: 이 설계 체크포인트 local commit 뒤 CONTENT-001 Opening & Bori를 자동 활성화한다. 이후 CONTENT-010까지 중간 승인 요청 없이 진행한다. 기존 BETA-010 facing 137° 실패는 미해결 기술 이력으로 보존했다.
 - 기존 사용자 변경 및 별도 ART-000 자료는 보존하고 이 작업 기록의 추가분만 커밋한다. 런타임 코드·Unity 씬/프리팹·ProjectSettings·Packages·Save schema 변경 없음.
 
+## 2026-09-06 — ART-000 Asset Intake / VERIFIED
+
+- 목표 파일의 ART-000 범위에서 공식 CC0 6팩 ZIP을 원본 보존 COPY로 입고했다. 550종/2,590파일을 분류하고 Blender 33종, Unity 28종(새 FBX20+기존 Nature8 재사용)을 선정했다.
+- 산출물: Docs/AssetProvenance/EXTERNAL_ASSET_REGISTRY.md, PROJECT_PA_ART_STYLE_GRAMMAR.md, Blender/Library/ProjectPA_AssetLibrary.blend, demo 요구·missing-model·8개 제작 배치 계획, 원본 비교 렌더33장/시트3장.
+- Unity 6000.3.2f1 D3D11 전용 검사: 28개 hash/mesh/크기/바닥 pivot/URP 재질/프리팹 참조 왕복 PASS. Runtime/Editor compile 오류0; 기존 CS8785/CS0414 경고는 보존. 기존 runtime/scene/settings 보호 hash 변경0.
+- Blender 4.5.13 공식 portable 체크섬 검증 후 33개 library 생성·재개방·packed texture·render PASS. 물고기 원본 동작6개씩 모두 library에 보존했다. 원본 mesh/ZIP 변경 없음.
+- 무결성: Docs/AssetProvenance/final-integrity-report.json PASS — 2,886 checks, GUID1,199개 중 중복0, 신규 missing meta0. 자세한 요구별 판정은 ART000_COMPLETION_AUDIT.md.
+- 확인 못 함: 최종 Unity 장면의 1920x1080 시각 품질/낮밤 그림자/interaction face, 실제 gameplay 및 save/load 회귀, 최종 Vertical Slice Demo 완주. 이번은 격리 입고·제작 계획이며 ART-001 이후 적용 검증이 필요하다.
+- 다음 ART 권장: ART-001 Material Palette and Unity Import Normalization. 목표 파일 §21에 따라 후속 ART 자동 구현은 시작하지 않는다. 별도 CONTENT-000B~010 승인·활성 상태와 사용자 staging은 유지한다.
+- 사용자 원본 이동/Unity 수동 import 요구 없음. 파일/출처/검증이 바뀌지 않는 한 완료된 ART-000 intake를 재실행하지 않는다.
+
 ## 2026-09-07 — CONTENT-001 Opening & Bori / VERIFIED
 
 - WorldSandbox 새 캠페인에 독립 생활자 보리, 전용 Profile/Dialogue, 기존 C-01 기반 별도 외형을 연결했다. Golden 보리(Profile_Lumberjack), 기존 8역할·후보·경제식을 보존했다.

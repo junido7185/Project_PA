@@ -9,14 +9,14 @@
 
 ## 현재 작업
 
-`CONTENT-001 Opening & Bori` — 2026-09-07 선행 설계 체크포인트 `e6f3716` 완료 후 자동 활성화된 유일한 티켓.
+`CONTENT-002 First Shop Night` — 2026-09-07 CONTENT-001 검증·커밋 `c49eb01` 완료 후 자동 활성화된 유일한 티켓.
 
 - Canon: `CONTENT_CANON_BIBLE.md`, PROVISIONAL CANON v1 승인 완료.
-- 계약: `CONTENT_CAMPAIGN_DAY1_30.md` A01, `CONTENT_IMPLEMENTATION_BACKLOG.md` CONTENT-001. WorldSandbox의 실제 보리 인사·재고 확보·additive 저장을 연결한다.
+- 계약: `CONTENT_CAMPAIGN_DAY1_30.md` A02, `CONTENT_IMPLEMENTATION_BACKLOG.md` CONTENT-002. 같은 보리의 실제 소비 판단과 첫 영업·정산을 연결한다.
 - 기준: `milestone/gameplay-beta-85@29fb98f4`; 기존 사용자 dirty 파일을 보존하고 콘텐츠 변경만 커밋한다.
 - 검증: Runtime/Editor compile, D3D11 Opening validator, Golden/World 핵심 회귀, 격리 save/load, diff 검사.
-- 현재: VERIFIED / COMMIT_PENDING. `Logs/Content/CONTENT001/OpeningValidation_Release.log` 및 Runtime/Editor Release compile, Golden·World onboarding/daytime·SaveRoundTrip 회귀 PASS. 1920×1080 화면 검토 완료, 최종 미술 품질 사람 확인 필요.
-- 다음: CONTENT-001 PASS와 로컬 커밋 뒤 CONTENT-002 자동 활성화. CONTENT-010까지 추가 사람 승인 요청 없음.
+- 현재: CONTENT-002 첫 구현과 validator 작성, D3D11 검증 진행 중. `Logs/Content/CONTENT002/FirstNightValidation.log`와 state의 process checkpoint를 먼저 확인한다. 선행 CONTENT-001은 `c49eb01`, 재수행하지 않는다.
+- 다음: CONTENT-002 PASS와 로컬 커밋 뒤 CONTENT-003 자동 활성화. CONTENT-010까지 추가 사람 승인 요청 없음.
 - HARD HUMAN GATE: 최신 사용자 지시 §16을 적용한다. 승인 부재는 blocker가 아니다. 기존 BETA-010의 137° 복원 실패를 해결됐다고 표시하거나 세 번째 동일 실행을 하지 않는다.
 
 ## 보존된 이전 작업 이력 — 현재 활성 티켓 아님
@@ -40,6 +40,11 @@
 - SaveManager가 모든 restore consumer 뒤에 pose를 다시 적용하도록 보정했으나 `Logs/BETA010_PersistenceRestart_Correction.log`도 같은 cell `(64,61)`은 복원하면서 facing만 정확히 `137°` 소실했다.
 - 승인된 최초/교정 D3D11 두 실행을 모두 사용했다. 동일 원인 세 번째 실행, 추가 추측 수정, assertion 완화는 금지한다.
 - 미도달: 복원 후 계속 판매, same-save repeat load, BETA-007/008 debt, full-loop/Golden regression, `M85_GAMEPLAY_BETA_COMPLETE`.
+
+## 별도 아트 입고 체크포인트 — ART-000 / VERIFIED (2026-09-06)
+
+- 이 대화의 goal-objective.md에 따른 ART-000 source intake·style grammar·library·isolated Unity import·production plan을 검증했다. 기록: Docs/AssetProvenance/ART000_COMPLETION_AUDIT.md.
+- 후속 ART-001~010 자동 구현 없음. 기존 CONTENT 활성 티켓과 preapproved milestone은 보존한다. ART-000 source 작업을 다시 수행하지 않는다.
 
 
 ## 2026-09-07 현재 대화 실행 우선권 — VS-PRESENT-001

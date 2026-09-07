@@ -21,6 +21,7 @@ public class ShopPriceUI : MonoBehaviour
 
     public bool IsOpen { get; private set; }
     public int ConfirmCount { get; private set; }
+    public static event System.Action<ShopSlot> OnPriceConfirmed;
 
     // ── UI 참조 ─────────────────────────────────────────────────────────────────
     Canvas          _canvas;
@@ -314,7 +315,9 @@ public class ShopPriceUI : MonoBehaviour
         _slot.RefreshDisplay();
         ConfirmCount++;
         Debug.Log($"🏷️ 가격 확정: {_slot.currentItem?.data?.itemName} @ {_pendingPrice}G");
+        ShopSlot confirmedSlot = _slot;
         Close();
+        OnPriceConfirmed?.Invoke(confirmedSlot);
     }
 
     void OnRetrieve()

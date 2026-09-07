@@ -32,6 +32,7 @@ public sealed class CampaignOpeningController : MonoBehaviour
         _progress.started = true;
         _bori.SetActive(true);
         ApplyCampaignCamera();
+        EnsureFirstNight().Begin(this);
         ObserveInventory();
         return true;
     }
@@ -98,7 +99,8 @@ public sealed class CampaignOpeningController : MonoBehaviour
             started = _progress.started,
             boriGreeted = _progress.boriGreeted,
             firstStockItemId = _progress.firstStockItemId,
-            firstStockDay = _progress.firstStockDay
+            firstStockDay = _progress.firstStockDay,
+            firstNight = GetComponent<CampaignFirstShopNightController>()?.Capture()
         };
     }
 
@@ -115,13 +117,18 @@ public sealed class CampaignOpeningController : MonoBehaviour
         if (!HasStarted)
         {
             if (_bori != null) _bori.SetActive(false);
+            GetComponent<CampaignFirstShopNightController>()?.Restore(this, null);
             return true;
         }
         if (!EnsureBori()) return false;
         _bori.SetActive(true);
         ApplyCampaignCamera();
+        EnsureFirstNight().Restore(this, saved?.firstNight);
         return true;
     }
+
+    CampaignFirstShopNightController EnsureFirstNight() =>
+        GetComponent<CampaignFirstShopNightController>() ?? gameObject.AddComponent<CampaignFirstShopNightController>();
 
     void ApplyCampaignCamera()
     {
