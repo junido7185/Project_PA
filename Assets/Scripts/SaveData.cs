@@ -7,6 +7,7 @@ public class SaveData
     // 스키마 버전 — SaveManager 가 로드 시 마이그레이션에 사용한다.
     // 새 필드가 추가되면 CurrentSaveVersion(SaveManager) 을 올리고 마이그레이션 함수를 추가한다.
     public int version = 0;
+    public FirstSettlementSaveData firstSettlement; // v15: optional opening settlement only
 
     // 플레이어 정보
     public int money;
@@ -308,4 +309,13 @@ public class BuildingSaveData
         position = pos;
         rotation = rot;
     }
+}
+
+[System.Serializable]
+public class FirstSettlementSaveData
+{
+    public int version = 1;
+    public string[] companionIds;
+    public bool settlementCompleted;
+    public List<WorldPlacedBuildingSaveData> buildings = new List<WorldPlacedBuildingSaveData>();
 }

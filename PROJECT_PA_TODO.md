@@ -1,5 +1,12 @@
 # Project PA TODO
 
+## 2026-09-09 — P3 완료 / STOP
+
+- [x] VS-PRESENT-001-P3: hub1 + selected companion shelter2, collision/cancel/rotate/move, companion linkage, SaveManager save/fresh reentry, B09 storage regression, final 1920×1080 evidence.
+- [ ] 사람 확인: 마우스 배치/90도 회전·이동 조작, 새 Play에서 저장한 정착 이어서 불러오기, 최종 화면 가독성.
+- P4 생산/First Night 및 CONTENT 후속은 시작하지 않는다. 다음 작업은 별도 사람 지시를 기다린다.
+
+
 ## Milestone M85 — GAMEPLAY BETA (2026-08-11)
 
 Status: `IN_PROGRESS`; branch `milestone/gameplay-beta-85`; approved through `BETA-010`.

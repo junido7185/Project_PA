@@ -15,6 +15,14 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
     public float voyageSeconds = 12f;
     public bool Sailing { get; private set; }
     public bool Arrived { get; private set; }
+    public bool ArrivalFadeFinished { get; private set; }
+    public Transform IslandRoot => _world;
+
+    public void SkipTravelForSavedArrival() { if (Sailing) Elapsed = voyageSeconds; }
+    public void SetSettlementObjective(string text)
+    {
+        if (_objective != null) _objective.text = text;
+    }
     public float Elapsed { get; private set; }
     public WorldGridService IslandGrid { get; private set; }
     public WorldChunkTerrain IslandTerrain { get; private set; }
@@ -119,6 +127,7 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
         Arrived = true;
         Debug.Log("[VS-P2] ARRIVED same companions=" + string.Join(",", _arrivedIds));
         yield return Fade(1f, 0f);
+        ArrivalFadeFinished = true;
     }
 
     IEnumerator Fade(float from, float to)

@@ -19,10 +19,10 @@ public class SaveManager : MonoBehaviour
     // 멀티 전환 시 이 필드 하나만 UGSCloudSaveRepository 로 교체된다.
     private ISaveRepository _repository;
 
-    private const string SaveKey = "savegame";
+    private string SaveKey => gameObject.scene.name == DepartureTutorialController.SceneName ? "departure_settlement" : "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    public const int CurrentSaveVersion = 14;
+    public const int CurrentSaveVersion = 15;
 
     bool _loadInProgress;
     PlayerInputHandler _input;
@@ -67,7 +67,14 @@ public class SaveManager : MonoBehaviour
 
     public async System.Threading.Tasks.Task SaveGameAsync()
     {
+        var settlement = FindFirstObjectByType<FirstIslandSettlementController>();
+        if (gameObject.scene.name == DepartureTutorialController.SceneName && (settlement == null || !settlement.IsReady))
+        {
+            Debug.LogWarning("[SaveManager] Settlement is not ready; existing save preserved.");
+            return;
+        }
         SaveData data = new SaveData();
+        data.firstSettlement = settlement != null && settlement.IsReady ? settlement.CaptureState() : null;
         data.m85RecoveryRevision = 1;
 
         // 1. 플레이어 정보
@@ -259,6 +266,20 @@ public class SaveManager : MonoBehaviour
         }
 
         NormalizeSaveData(data);
+        var settlement = FindFirstObjectByType<FirstIslandSettlementController>();
+        if (gameObject.scene.name == DepartureTutorialController.SceneName)
+        {
+            if (settlement == null || !await settlement.PrepareRestoreAsync(data.firstSettlement))
+            {
+                Debug.LogWarning("[SaveManager] Invalid settlement save; live state preserved.");
+                return;
+            }
+        }
+        else if (data.firstSettlement != null)
+        {
+            Debug.LogWarning("[SaveManager] Settlement saves require the departure entry.");
+            return;
+        }
         PrepareRuntimeForStateRestore();
 
         Vector3 restoredPlayerPosition = data.playerPosition;
@@ -442,6 +463,8 @@ public class SaveManager : MonoBehaviour
                 Debug.LogWarning("[SaveManager] WorldSandbox player-facing session state could not be restored.");
             }
         }
+
+        if (data.firstSettlement != null) settlement.RestoreState(data.firstSettlement);
 
         // World/furniture/hiring/presentation restore can synchronously rebind runtime roots.
         // The saved player pose is the final authority, so apply it after every restore consumer.
@@ -665,6 +688,11 @@ public class SaveManager : MonoBehaviour
             Debug.Log("[SaveManager] Migration v13->v14: optional first-shop-night evidence; opening preserved.");
         }
 
+        if (data.version < 15)
+        {
+            data.firstSettlement = null;
+            data.version = 15;
+        }
         return data;
     }
 

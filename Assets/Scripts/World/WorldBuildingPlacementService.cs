@@ -30,7 +30,8 @@ public enum WorldBuildingPlacementFailure
     CommitConflict = 14,
     SpawnFailed = 15,
     NoPreview = 16,
-    CriticalRouteBlocked = 17
+    CriticalRouteBlocked = 17,
+    PhysicalObstacle = 18
 }
 
 public sealed class WorldBuildingPlacementDefinition
@@ -195,6 +196,26 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
     int _revision;
     WorldBuildingPlacementResult _lastResult;
 
+    // P3: 기존 창고 기본값을 유지하고 승인된 건물 인스턴스만 별도 정의를 등록한다.
+    readonly Dictionary<string, WorldBuildingPlacementDefinition> _definitions = new Dictionary<string, WorldBuildingPlacementDefinition>();
+    readonly List<Collider> _placementObstacles = new List<Collider>();
+
+    public void RegisterDefinition(string instanceId, WorldBuildingPlacementDefinition definition)
+    {
+        if (string.IsNullOrWhiteSpace(instanceId) || definition == null || !definition.IsValid() || _placements.ContainsKey(instanceId))
+            throw new ArgumentException("Invalid or already placed definition.");
+        _definitions[instanceId] = definition;
+    }
+
+    public void RegisterObstacle(Collider obstacle)
+    {
+        if (obstacle != null && !_placementObstacles.Contains(obstacle)) _placementObstacles.Add(obstacle);
+    }
+
+    WorldBuildingPlacementDefinition ResolveDefinition(string id) =>
+        _placements.TryGetValue(id ?? "", out var placed) ? placed.Definition :
+        _definitions.TryGetValue(id ?? "", out var registered) ? registered : StorageShedDefinition;
+
     public event Action<WorldBuildingPlacementResult> Changed;
 
     public int RegisteredCount => _placements.Count;
@@ -223,7 +244,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         string movingInstanceId = null)
     {
         ResolveGrid();
-        WorldBuildingPlacementDefinition definition = StorageShedDefinition;
+        WorldBuildingPlacementDefinition definition = ResolveDefinition(instanceId);
         Vector2Int[] footprint = definition.ResolveFootprint(anchor, quarterTurns);
         Vector2Int entrance = definition.ResolveEntrance(anchor, quarterTurns);
 
@@ -301,6 +322,16 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
                 quarterTurns, footprint, entrance);
         }
 
+        // 명시적으로 등록한 자연물과 부두를 검사하며 자동 제거하지 않는다.
+        foreach (Vector2Int coordinate in footprint.Concat(new[] { entrance }))
+        {
+            _grid.CellToWorld(coordinate, out Vector3 groundPosition);
+            Bounds volume = new Bounds(groundPosition + Vector3.up * 1.5f,
+                new Vector3(_grid.Definition.CellSize * .96f, 2.9f, _grid.Definition.CellSize * .96f));
+            if (_placementObstacles.Any(c => c != null && c.enabled && c.gameObject.activeInHierarchy && !c.isTrigger && c.bounds.Intersects(volume)))
+                return Failed(WorldBuildingPlacementFailure.PhysicalObstacle, instanceId, anchor, quarterTurns, footprint, entrance);
+        }
+
         if (_navigation == null) _navigation = GetComponent<WorldNavigationService>();
         if (_navigation != null && !_navigation.TryValidateBuildingPlacement(
                 footprint, entrance, ignoredOwnCells, out _))
@@ -324,7 +355,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         WorldBuildingPlacementResult preview = Evaluate(instanceId, anchor, quarterTurns);
         if (!preview.Succeeded) return Store(preview);
 
-        BuildingData data = Resources.Load<BuildingData>(StorageShedDefinition.BuildingResourcePath);
+        BuildingData data = Resources.Load<BuildingData>(ResolveDefinition(instanceId).BuildingResourcePath);
         if (data == null || data.prefab == null)
             return Store(Failed(WorldBuildingPlacementFailure.MissingPrefab, instanceId, anchor,
                 quarterTurns, preview.Footprint, preview.Entrance));
@@ -348,7 +379,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
             int normalized = WorldBuildingPlacementDefinition.NormalizeQuarterTurns(quarterTurns);
             var placement = new WorldPlacedBuildingRuntime(
                 instanceId,
-                StorageShedDefinition,
+                ResolveDefinition(instanceId),
                 anchor,
                 normalized,
                 preview.Footprint.ToArray(),
@@ -610,11 +641,11 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
 
     bool TryCreateGhost()
     {
-        BuildingData data = Resources.Load<BuildingData>(StorageShedDefinition.BuildingResourcePath);
+        BuildingData data = Resources.Load<BuildingData>(ResolveDefinition(_previewInstanceId).BuildingResourcePath);
         if (data == null || data.prefab == null) return false;
 
         _previewGhost = InstantiateInactive(data.prefab, "PREVIEW");
-        _previewGhost.name = "B09_StorageShed_PlacementGhost";
+        _previewGhost.name = ResolveDefinition(_previewInstanceId).StableId + "_PlacementGhost";
         foreach (Collider collider in _previewGhost.GetComponentsInChildren<Collider>(true))
             collider.enabled = false;
         foreach (MonoBehaviour behaviour in _previewGhost.GetComponentsInChildren<MonoBehaviour>(true))

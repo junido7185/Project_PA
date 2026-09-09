@@ -1,5 +1,16 @@
 # 졸업 발표 진행 기록 — 2026-09-08
 
+## 발표용 최신 요약 — 첫 정착까지 (2026-09-09)
+
+P.A. Company에서 이동·채집·판매를 배운 뒤 생산자 두 명과 섬으로 출발합니다.
+자연 상태의 섬에서 첫 관리 거점과 동행자들의 임시 거처를 직접 배치할 수 있습니다.
+건물은 격자에 맞춰 회전하거나 옮길 수 있고 나무·바위와 겹치는 설치는 막습니다.
+선택했던 광부와 농부가 각자의 거처 앞으로 이동하며 첫 정착지가 만들어집니다.
+기존 저장 시스템으로 건물 위치와 동행자 연결을 저장하고 새 플레이에서 복원했습니다.
+Blender에서 만든 거점·거처와 실제 Unity 화면으로 무인도에서 정착지로 바뀌는 모습을 확인했습니다.
+첫 정착 후에는 첫 야간 영업 준비를 안내하며, 실제 생산과 다음 밤의 플레이는 후속 개발 범위입니다.
+
+
 기존 기능 데모를 P.A. Company 출항 인증 코스의 첫 플레이로 연결했습니다.
 이동·자원 확보·유통의 세 실습 구역을 실제로 걸어서 통과합니다.
 나무에서 얻은 열매가 기존 가방과 진열대에 들어가며 직접 가격을 정합니다.
@@ -86,3 +97,20 @@ Runtime/Editor 순차 compile 오류0. P2에서는 실제 InputSystem 키 입력
 - 상세 증거: `P1-validation.json`, `P1-recovery-excerpt.txt`, `P2-validation.json`, `P2-validation-excerpt.txt`.
 
 최종 P2 D3D11 PASS. 광부·농부 ID와 같은 NPC 오브젝트가 도착했다. blocking Console/native crash 0, 실제 PNG 쓰기 안정화 PASS. 약한 수면 경계선·캐릭터 자세·최종 가독성은 작은 presentation polish debt로 남긴다. P1 checkpoint `6b283c1`, P2는 이 기록을 포함한 별도 local checkpoint이며 push하지 않는다.
+
+
+## 2026-09-09 — VS-PRESENT-001-P3 First Island Settlement PASS
+
+- 기존 WorldBuildingPlacementService에 승인된 거점/거처 정의와 명시적 장애물 검사를 연결했다. 기존 B09 창고 기본값·preview/place/90도 rotation/move를 유지한다. 자연물 자동 삭제 없이 무료 거점 1개와 선택 동행자의 임시 거처 2개를 설치한다.
+- P1의 Miner_01/Farmer_01과 P2의 동일 NPC 오브젝트를 재사용한다. 거처 설치 후 기존 NavMeshAgent로 해당 입구까지 이동한다. 3번째 미선택 NPC 없음. 완료 후 현재 목표는 ‘오늘 밤 첫 영업을 준비하세요.’ 한 개이며 P4 실제 생산/First Night는 미구현이다.
+- SaveData v15의 선택적 firstSettlement 필드에 기존 WorldPlacedBuildingSaveData를 사용한다. SaveManager/LocalJsonSaveRepository가 건물 3개의 좌표·90도 회전·동행자 연결·완료 상태를 저장/복원한다. Departure 씬은 departure_settlement.json, 기존 캠페인은 savegame.json으로 분리한다. 검증 파일은 Logs/VS_PRESENT_001/P3/ValidationSave/에서만 썼다.
+- Blender: 기존 ART-000 라이브러리를 실제 조합한 PA_SettlementHub_Tier0와 PA_StarterShelter, 원본 라이브러리 SHA256 보존. 모델/규격/출처/reference render는 Docs/AssetProvenance/VS_PRESENT_001/P3/derived-assets.json. 신규 외부 자산 없음. 최종 거처 재질만 양면 표시로 교정했으며 모델 재생성 없음.
+- 증거는 합산 판정이다. D3D11-02: 실제 P0 채집/진열/가격/판매→P1→P2 도착→P3 거점 배치/회전/이동 PASS. D3D11-06 RunRemaining: 거처2/동행입구 도착/취소/장애물/무료설치/완료/기존 창고 회귀/저장복원/새 Play 재진입 PASS. D3D11-07: 최종 재질 적용 후 저장된 동일 정착지 fresh reentry/참조/캡처 PASS. P0→P3 전체를 하나의 실행으로 통과했다고 주장하지 않는다.
+- D3D11-02의 Unity missing-object ?? 처리 오류는 NavMeshAgent null 비교 후 AddComponent로 수정. D3D11-03은 가격창 미열림을 validator가 confirm으로 간주한 P0 fixture timeout. D3D11-04는 진입 전 중단, D3D11-05는 비활성 Editor 시간 진행 문제였다. 자세한 실패와 교정은 BUG_LOG 보존. 검증 중 runInBackground는 임시 true, 종료 시 원래 값 복원. 비정상 종료 복구본은 Assets/_Recovery에 보존, P3 커밋 제외.
+- 최종 Runtime→Editor 순차 컴파일 오류0, 기존 CS8785/CS0414 경고. P3 blocking runtime/serialized missing reference/native crash 확인0. diff 공백 검사 PASS. Golden 전체·무관한 CONTENT·standalone·모든 과거 저장 마이그레이션 회귀는 이번 범위에서 확인 못 함.
+- 실제 1920×1080 PNG: Docs/Presentation/2026-09-09/P3/01_Island_BeforeSettlement.png, 02_Settlement_PlacementPreview.png, 03_FirstSettlement_Complete.png. 03은 최종 재질의 실제 저장 복원 화면이며 동행자2/거점/거처2/다음목표/복원안내를 포함한다. 동일 구도의 04 중복 캡처는 추가하지 않았다.
+- local checkpoint는 이번 P3 코드·프리팹·모델·증거·기존 상태 문서만 포함한다. 개인 .claude/settings.json과 Assets/_Recovery 복구본 제외. push 없음. P4 미시작, 이 checkpoint에서 STOP.
+
+### P3 실행
+
+Unity 메뉴 Project PA > Presentation > Play Companion Selection (Development Entry), 광부·농부 선택 후 출항. 도착 후 오른쪽 거점/거처 버튼 또는 B, 마우스로 위치 선택, R 90도, 클릭/Enter 확정, 취소 버튼/Esc 취소. 설치된 건물 버튼을 다시 누르면 이동한다. F5/정착 저장 버튼으로 저장, 다음 Play의 개발용 동행 선택 화면 오른쪽 위 ‘저장한 정착 이어가기’로 복원한다. 처음부터는 기존 Departure Tutorial의 인증 완료 버튼을 사용한다. 자동 검증은 전용 저장 폴더를 사용했으므로 사용자 저장 슬롯을 미리 채워 두지 않았다.

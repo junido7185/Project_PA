@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3894469486501208732}
   - component: {fileID: 4982061799146763502}
   - component: {fileID: 8470394929383330151}
+  - component: {fileID: 7374569531784968135}
   m_Layer: 0
   m_Name: DepartureContinuation
   m_TagString: Untagged
@@ -99,3 +100,15 @@ MonoBehaviour:
   cratePrefab: {fileID: 5277294008632995306, guid: 1575c64cec9028c42943e849d31ae221, type: 3}
   waterMaterial: {fileID: 2100000, guid: 7e2cf8a349205c44c960c410926e8dc1, type: 2}
   voyageSeconds: 12
+--- !u!114 &7374569531784968135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3524566492540838093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a74dd5d27f031f943bcad6f653605254, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FirstIslandSettlementController

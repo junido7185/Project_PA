@@ -1,0 +1,131 @@
+D3D11-02.log
+[VS-P3] CHECK_OK P0 actual movement
+[VS-P3] CHECK_OK P0 tree inventory
+[VS-P3] shelf input approach position=(7.03, 0.08, -2.67) forward=(-0.25, 0.00, 0.97)
+[VS-P3] CHECK_OK P0 ShopSlot
+[VS-PRESENT-001] DECISION buy=True probability=0.895 price=7
+[VS-PRESENT-001] COMPLETE sale=7G decisions=1 companionUnlock=true
+[VS-P3] CHECK_OK P0 real purchase decision
+[VS-P3] CHECK_OK P0 sale uses original economy
+[VS-P3] CHECK_OK certification unlocks P1
+[VS-P3] CHECK_OK P2 selected companions on boat
+[VS-P2] ARRIVED same companions=Miner_01,Farmer_01
+[VS-P3] READY companions=Miner_01,Farmer_01
+[VS-P3] CHECK_OK P2 fade arrival to P3
+[VS-P3] CHECK_OK same confirmed IDs and same P2 objects
+[VS-P3] CHECK_OK all twelve tree and four rock colliders recorded
+[VS-P3] CHECK_OK arrival PlayerController movement
+[VS-P3] CHECK_OK build mode preview and control gate
+[VS-P3] CHECK_OK natural tree blocks placement without removal
+[VS-P3] CHECK_OK water or protected shore blocks placement
+[VS-P3] CHECK_OK hub has valid flat footprint
+[VS-P3] PLACED pa-settlement-hub (6, 5) rotation=0
+[VS-P3] CHECK_OK real placement confirm creates hub
+[VS-P3] CHECK_OK existing move preview rotates 90 degrees
+[VS-P3] PLACED pa-settlement-hub (5, 5) rotation=0
+[VS-P3] CHECK_OK placed hub moves without duplicates
+[VS-P3] PLACED pa-settlement-hub (6, 5) rotation=0
+[VS-P3] CHECK_OK hub move back retains one instance
+[VS-P3] UnityEngine.MissingComponentException: There is no 'NavMeshAgent' attached to the "Companion_Miner_01" game object, but a script is trying to access it.
+[VS-P3] VALIDATION_FAIL
+
+D3D11-06.log
+[VS-P3] CHECK_OK certification unlocks P1
+[VS-P3] CHECK_OK P2 selected companions on boat
+[VS-P2] ARRIVED same companions=Miner_01,Farmer_01
+[VS-P3] READY companions=Miner_01,Farmer_01
+[VS-P3] CHECK_OK P2 fade arrival to P3
+[VS-P3] CHECK_OK same confirmed IDs and same P2 objects
+[VS-P3] CHECK_OK all twelve tree and four rock colliders recorded
+[VS-P3] CHECK_OK arrival PlayerController movement
+[VS-P3] CHECK_OK build mode preview and control gate
+[VS-P3] CHECK_OK natural tree blocks placement without removal
+[VS-P3] CHECK_OK water or protected shore blocks placement
+[VS-P3] CHECK_OK dock overlap blocked
+[VS-P3] CHECK_OK cancel preview restores controls with no building
+[VS-P3] CHECK_OK hub has valid flat footprint
+[VS-P3] PLACED pa-settlement-hub (6, 5) rotation=0
+[VS-P3] CHECK_OK real placement confirm creates hub
+[VS-P3] CHECK_OK existing move preview rotates 90 degrees
+[VS-P3] CHECK_OK cancel move preserves original pose and occupancy
+[VS-P3] PLACED pa-settlement-hub (5, 5) rotation=0
+[VS-P3] CHECK_OK placed hub moves without duplicates
+[VS-P3] PLACED pa-settlement-hub (6, 5) rotation=0
+[VS-P3] CHECK_OK hub move back retains one instance
+[VS-P3] PLACED pa-shelter-Miner_01 (9, 4) rotation=1
+[VS-P3] CHECK_OK selected companion shelter pa-shelter-Miner_01
+[VS-P3] PLACED pa-shelter-Farmer_01 (8, 7) rotation=0
+[VS-P3] CHECK_OK selected companion shelter pa-shelter-Farmer_01
+[VS-P3] CHECK_OK minimal settlement 1 hub + 2 linked shelters complete
+[VS-P3] CHECK_OK unselected third companion absent
+[VS-P3] CHECK_OK first three structures free through existing placement
+[VS-P3] CHECK_OK natural colliders preserved
+[VS-P3] CHECK_OK same companions walk to assigned shelters
+[VS-P3] CHECK_OK canonical shelter binding exists
+[VS-P3] CHECK_OK companion actually near its own shelter entrance
+[VS-P3] CHECK_OK canonical shelter binding exists
+[VS-P3] CHECK_OK companion actually near its own shelter entrance
+[VS-P3] CHECK_OK single next objective without P4 implementation
+[VS-P3] CHECK_OK isolated flat grid for existing storage regression
+[VS-P3] CHECK_OK unregistered IDs retain original B09 storage placement
+[VS-P3] CHECK_OK original storage definition retained
+[VS-P3] CHECK_OK invalid storage move keeps original occupancy
+[VS-P3] CHECK_OK original storage rotate and move
+[VS-P3] CHECK_OK original storage removal clears occupancy
+[VS-P3] CHECK_OK existing repository wrote dedicated slot
+[VS-P3] PLACED pa-settlement-hub (5, 5) rotation=0
+[VS-P3] CHECK_OK state changed before restore
+[VS-P3] CHECK_OK SaveManager restores exact poses rotations companion binding and completion
+[VS-P3] CHECK_OK runtime errors zero before full reentry
+[VS-P3] FULL_FLOW_AND_SAVE_PASS; unloading scene for fresh reentry
+[VS-P3] CHECK_OK fresh scene has no cached settlement
+[VS-P2] ARRIVED same companions=Miner_01,Farmer_01
+[VS-P3] READY companions=Miner_01,Farmer_01
+[VS-P3] CHECK_OK existing SaveManager loads settlement through new scene entry
+[VS-P3] CHECK_OK fresh reentry exact persisted state
+[VS-P3] CHECK_OK reentry retains economy without double sale
+[VS-P3] CHECK_OK one SaveManager authority
+[VS-P3] CHECK_OK reentry same selected companion shelter binding
+[VS-P3] CHECK_OK all runtime errors zero
+[VS-P3] P3_VALIDATION_PASS
+
+D3D11-07.log
+[VS-P3] CANVAS_TWO_SIDED_PASS existing mesh and palette preserved
+[VS-P3] CHECK_OK fresh scene has no cached settlement
+[VS-P2] ARRIVED same companions=Miner_01,Farmer_01
+[VS-P3] READY companions=Miner_01,Farmer_01
+[VS-P3] CHECK_OK existing SaveManager loads settlement through new scene entry
+[VS-P3] CHECK_OK fresh reentry exact persisted state
+[VS-P3] CHECK_OK reentry retains economy without double sale
+[VS-P3] CHECK_OK one SaveManager authority
+[VS-P3] CHECK_OK reentry same selected companion shelter binding
+[VS-P3] CHECK_OK restored companions reached their linked shelters
+[VS-P3] CHECK_OK thin canvas renders both faces
+[VS-P3] CHECK_OK all runtime errors zero
+[VS-P3] P3_VALIDATION_PASS
+
+RuntimeCompile-Final.log
+msbuild 버전 17.9.4+90725d08d(.NET용)
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp.csproj]
+
+빌드했습니다.
+
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp.csproj]
+    경고 1개
+    오류 0개
+
+경과 시간: 00:00:02.93
+
+EditorCompile-Final.log
+msbuild 버전 17.9.4+90725d08d(.NET용)
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_ErrorTracker.cs(268,10): warning CS0414: 'PA_ErrorTracker._autoScrollNew' 필드가 할당되었지만 사용되지 않았습니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+
+빌드했습니다.
+
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_ErrorTracker.cs(268,10): warning CS0414: 'PA_ErrorTracker._autoScrollNew' 필드가 할당되었지만 사용되지 않았습니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+    경고 2개
+    오류 0개
+
+경과 시간: 00:00:02.10

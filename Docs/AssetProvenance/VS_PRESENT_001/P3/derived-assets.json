@@ -1,0 +1,86 @@
+{
+  "ticket": "VS-PRESENT-001-P3",
+  "librarySha256": "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
+  "libraryPreserved": true,
+  "styleGrammar": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+  "sourceProvenance": "Docs/AssetProvenance/selected-assets.json / CubeWorldKit CC0",
+  "blend": "Blender\\Generated\\VS_PRESENT_001_P3\\PA_FirstSettlement_r01.blend",
+  "assets": [
+    {
+      "id": "PA_SettlementHub_Tier0",
+      "classification": "NEW hero structure + DERIVE audited library storage",
+      "sourceCollection": "PA_REF_CUBEWORLDKIT_CHEST_CLOSED",
+      "dimensionsBlender": [
+        3.799999952316284,
+        3.634117364883423,
+        2.8067545890808105
+      ],
+      "footprintCells": [
+        2,
+        2
+      ],
+      "footprintMeters": [
+        4,
+        4
+      ],
+      "pivot": "ground center",
+      "forward": "Blender -Y; Unity wrapper verifies -Z",
+      "interactionFace": "front opening -Z",
+      "navClearanceMeters": 2,
+      "collider": "Unity root box inside 4m footprint; separate external entrance cell",
+      "palette": {
+        "Wood": "A07850",
+        "WoodLight": "D4B896",
+        "Terracotta": "D4714A",
+        "Teal": "5BAFC0",
+        "Cream": "F5EAD5",
+        "Ink": "344B4E",
+        "Gold": "F5D76E"
+      },
+      "roughness": 0.8,
+      "metallic": 0,
+      "triangles": 9656,
+      "fbx": "Assets\\Art\\ProjectPA\\Derived\\Settlement\\PA_SettlementHub_Tier0.fbx",
+      "sha256": "f6d5b15855c947e11fe03dcbfa770d69525ac97bb999937cfaaa096fb0211f26",
+      "referenceRender": "Docs\\AssetProvenance\\VS_PRESENT_001\\P3\\PA_SettlementHub_Tier0_r01.png"
+    },
+    {
+      "id": "PA_StarterShelter",
+      "classification": "NEW hero structure + DERIVE audited library storage",
+      "sourceCollection": "PA_REF_CUBEWORLDKIT_CHEST_CLOSED",
+      "dimensionsBlender": [
+        3.25,
+        3.200000047683716,
+        2.434999942779541
+      ],
+      "footprintCells": [
+        2,
+        2
+      ],
+      "footprintMeters": [
+        4,
+        4
+      ],
+      "pivot": "ground center",
+      "forward": "Blender -Y; Unity wrapper verifies -Z",
+      "interactionFace": "front opening -Z",
+      "navClearanceMeters": 2,
+      "collider": "Unity root box inside 4m footprint; separate external entrance cell",
+      "palette": {
+        "Wood": "A07850",
+        "WoodLight": "D4B896",
+        "Terracotta": "D4714A",
+        "Teal": "5BAFC0",
+        "Cream": "F5EAD5",
+        "Ink": "344B4E",
+        "Gold": "F5D76E"
+      },
+      "roughness": 0.8,
+      "metallic": 0,
+      "triangles": 4427,
+      "fbx": "Assets\\Art\\ProjectPA\\Derived\\Settlement\\PA_StarterShelter.fbx",
+      "sha256": "10b0aabca019eb2ba5a4bc36d401237b760676667a6da9ff948e73b6067c6b6a",
+      "referenceRender": "Docs\\AssetProvenance\\VS_PRESENT_001\\P3\\PA_StarterShelter_r01.png"
+    }
+  ]
+}

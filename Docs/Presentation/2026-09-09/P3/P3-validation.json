@@ -1,0 +1,45 @@
+{
+    "status": "PASS",
+    "graphics": "Direct3D11",
+    "priorOpeningEvidence": "D3D11-02.log: actual P0 sale -> P1 -> P2 -> hub movement PASS",
+    "width": 1920,
+    "height": 1080,
+    "fullP0P1P2P3Flow": false,
+    "storagePlacementRegression": true,
+    "saveAndFreshReentry": true,
+    "naturalObjectsPreserved": true,
+    "settlement": {
+        "version": 1,
+        "companionIds": [
+            "Miner_01",
+            "Farmer_01"
+        ],
+        "settlementCompleted": true,
+        "buildings": [
+            {
+                "instanceId": "pa-settlement-hub",
+                "buildingId": "PA_SETTLEMENT_HUB_T0",
+                "anchorX": 6,
+                "anchorZ": 5,
+                "rotationQuarterTurns": 0,
+                "storedItems": []
+            },
+            {
+                "instanceId": "pa-shelter-Miner_01",
+                "buildingId": "PA_STARTER_SHELTER",
+                "anchorX": 9,
+                "anchorZ": 4,
+                "rotationQuarterTurns": 1,
+                "storedItems": []
+            },
+            {
+                "instanceId": "pa-shelter-Farmer_01",
+                "buildingId": "PA_STARTER_SHELTER",
+                "anchorX": 8,
+                "anchorZ": 7,
+                "rotationQuarterTurns": 0,
+                "storedItems": []
+            }
+        ]
+    }
+}

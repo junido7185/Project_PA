@@ -780,3 +780,32 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 증거: Docs/Presentation/2026-09-08/P1-validation.json, P1-recovery-excerpt.txt. 전체 로그와 순차 compile: Logs/VS_PRESENT_001/P1_Recovery_Editor.log, Recovery_RuntimeCompile.log, Recovery_EditorCompile.log.
 - 범위: 기존 미커밋 P1 구현과 이번 recovery만 local checkpoint, 개인 .claude/settings.json 제외. P0/CONTENT/Blender/씬/Save/ProjectSettings 변경 없음. 실제 P0 인증 완료부터 연결은 이번 개발용 진입 검사에서 확인 못 함.
 - 다음: 사용자 §13 승인에 따라 P1 local commit 후 VS-PRESENT-001-P2 자동 진행. 배/WorldGrid 재사용, 신규 권위 없음, push 금지.
+
+
+## 2026-09-09 — VS-P3 첫 통합 입력 검증 / 진열대 접근
+
+- D3D11-01.log: P0 실제 이동·나무·열매 획득 PASS 뒤 진열대 접근 검증이 부모 Shop/ShopSlot 탐색 조건에 걸렸다. 실제 위치 (6.98, 0.08, -2.55); P3 미진입, native crash 없음.
+- P0 기능 코드는 변경하지 않고 P3 검증 입력에 실제 PlayerInteraction 타깃이 잡힐 때까지 짧게 전진하는 단계를 추가했다. 같은 원인 첫 실패, 후속 검증 예정.
+
+
+## 2026-09-09 — VS-P3 D3D11-02 / companion NavMeshAgent 연결
+
+- 기존 P0 접근 fixture 교정은 PASS. P0 판매→P1 선택→P2 도착→P3 자연물 차단·거점 배치·90도 회전·이동까지 PASS.
+- 첫 거처 확정 후 BindShelters에서 Unity의 missing-component 객체를 C# ?? 연산자가 유효한 참조로 처리하여 NavMeshAgent.speed 설정 중 MissingComponentException. P3 구현 오류(B), native crash 없음.
+- FirstIslandSettlementController에서 Unity null 비교 뒤 AddComponent하도록 최소 교정. 이번 continuation에서 이 원인에 대한 추가 교정 검증은 D3D11-03 1회만 진행한다.
+
+- D3D11-03은 P3 진입 전 가격 UI가 열리지 않은 상태를 validator가 confirm 성공으로 잘못 간주하여 P0 normal retry timeout. P3 NavMeshAgent 교정 경로는 미실행. P0 authority 변경 없음.
+- 동일한 P0 흐름을 반복하지 않고 D3D11-02의 실제 sale→selection→arrival→hub PASS를 재사용한다. 기존 OpenDevelopmentSelection을 사용하는 RunRemaining으로 P3 미완 검증만 진행한다. 전체 단일 실행 PASS라고 주장하지 않는다. 가격 UI 열림 assertion과 기존 grid snapshot의 row-major 순서를 validator에 교정했다.
+
+- D3D11-04: 18:15:19 Editor loading completed/RunRemaining 호출 뒤 로그 종료, 재개 시 Unity 프로세스 없음. Play 검증 마커와 PASS/FAIL 없음. Unity crash 폴더 및 Windows Application 1000/1001에서 관련 native crash 기록 확인되지 않음. 종료 원인은 확인 못 함. 코드 변경 없이 D3D11-05에서 중단된 잔여 검증을 회수한다.
+
+- D3D11-05 초기에 Recovering Scene Backups 모달 대기를 확인하여 Yes 기본 버튼으로 Assets/_Recovery에 백업 2개를 보존했다. 복구본으로 원본 씬을 교체하지 않았고 P3 commit에서 제외한다.
+- 실행은 개발용 P1 선택/배 NPC 생성까지 PASS 후 P2 fade arrival timeout. 비활성 Editor에서 프로젝트 runInBackground=0으로 게임 시간 진행이 정지한 검증 환경 문제(3). PA_FirstSettlementChecks에서 Game View focus 및 Play 검증 중에만 Application.runInBackground=true, 종료 때 원래 값 복원하도록 교정한다. Runtime gameplay/ProjectSettings 변경 없음.
+- 초기 중단된 세션의 빈 Library/StateCache JSON은 Unity가 자체 처리했다. 이 Editor cache 진단과 CancellationTokenSource 종료 진단은 P3 gameplay 오류와 분리하여 기록한다.
+
+- Compile-06: 명령이 진행중 session으로 반환됐는데 완료 전 다음 build/Unity를 시작한 실행 순서 오류. Unity Temp/obj 정리와 겹쳐 GeneratedMSBuildEditorConfig 경로 부재/NETSDK1004 발생. 코드 컴파일 오류로 분류하지 않으며, 현재 Unity 종료 후 Runtime 완료 확인→Editor 완료 확인 순서로 재검증한다.
+
+- D3D11-06: P3 placement/cancel/rotation/move, 두 거처와 실제 동행 NPC 입구 도착, 완료/다음 목표, 무료 설치, 자연물 보존, 기존 B09 storage 회귀, SaveManager save/restore 전부 PASS. Editor 재진입 예약이 asset refresh 중 유실돼 실제 Ctrl+P Play 재진입으로 이어갔으며 fresh reentry exact persisted state/one SaveManager/runtime errors zero/P3_VALIDATION_PASS 확인.
+- 완료 캡처 직접 검사에서 얇은 거처 canvas가 뒷면 culling으로 사라지는 시각 결함 발견. 기존 FBX/Blender 재생성 없이 거처 전용 PA_ShelterCanvas 재질의 _Cull=0으로 교정한다. 저장된 동일 정착지의 reload/capture만 D3D11-07에서 확인. 검증기의 재진입 예약은 저장 phase를 다음 Editor update에서도 재개하도록 보완했다.
+
+- 최종 D3D11-07: CANVAS_TWO_SIDED_PASS, fresh reentry exact persisted state, restored companions reached their linked shelters, thin canvas renders both faces, runtime errors zero, P3_VALIDATION_PASS. 03 최종 PNG 1920×1080 직접 확인. RuntimeCompile-Final/EditorCompile-Final은 각각 종료 후 다음 명령을 실행하여 오류0 확인; Compile-06 실행 순서/Temp 충돌 해소.

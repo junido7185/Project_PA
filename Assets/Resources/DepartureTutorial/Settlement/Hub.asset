@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+  m_Name: Hub
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingData
+  buildingName: "\uAC1C\uCC99 \uAD00\uB9AC \uAC70\uC810 Tier 0"
+  price: 0
+  prefab: {fileID: 137153987618104463, guid: 9a1f9e5daea5ecb4fa7df182a2fd0d52, type: 3}
+  requiredTier: 0

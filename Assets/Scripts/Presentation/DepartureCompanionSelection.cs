@@ -136,6 +136,20 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
         IsOpen = false;
     }
 
+    // 저장 복원은 같은 선택 상태를 사용하며 새 선택 결과를 만들지 않는다.
+    public bool RestoreConfirmedSelection(string[] ids)
+    {
+        if (ids == null || ids.Length != 2 || ids.Distinct().Count() != 2 ||
+            ids.Any(id => !candidates.Any(c => c.id == id))) return false;
+        if (IsConfirmed) return ConfirmedIds.SequenceEqual(ids);
+        OpenSelection();
+        _selected.Clear();
+        _selected.AddRange(ids);
+        Refresh();
+        Confirm();
+        return IsConfirmed;
+    }
+
     void Refresh()
     {
         _count.text = $"동행 {_selected.Count} / 2명  ·  함께 시작할 생산 분야를 선택하세요";

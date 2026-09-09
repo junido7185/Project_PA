@@ -1,0 +1,41 @@
+{
+  "ticket": "VS-PRESENT-001-P3",
+  "status": "PASS",
+  "openingEvidence": "D3D11-02: P0 sale -> P1 -> P2 -> hub placement/move",
+  "targetedEvidence": "D3D11-06: shelter/linkage/completion/save/fresh reentry/storage regression; D3D11-07: final canvas/reload/capture",
+  "singleFullOpeningRun": false,
+  "runtimeCompileErrors": 0,
+  "editorCompileErrors": 0,
+  "blockingRuntimeErrors": 0,
+  "missingSerializedReferences": 0,
+  "nativeCrashesObservedInCompletedRuns": 0,
+  "gitDiffCheck": true,
+  "captures": [
+    {
+      "path": "Docs/Presentation/2026-09-09/P3/01_Island_BeforeSettlement.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "c1d6472677e03de7d864a55134308e5b284d606c7a63017a514c8c476f7d028b",
+      "bytes": 690739
+    },
+    {
+      "path": "Docs/Presentation/2026-09-09/P3/02_Settlement_PlacementPreview.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "6c22c55e0c8f881c5b432bafce2937ee36ad58d02e7e5265f257de1648a5a6a4",
+      "bytes": 656747
+    },
+    {
+      "path": "Docs/Presentation/2026-09-09/P3/03_FirstSettlement_Complete.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "94e8f96efbbea8cae631047235d7b630312b628ac8f2ea2bd0c533a68f6354c0",
+      "bytes": 723365
+    }
+  ],
+  "assetLibraryPreserved": true,
+  "protectedExclusions": [
+    ".claude/settings.json",
+    "Assets/_Recovery/"
+  ]
+}
