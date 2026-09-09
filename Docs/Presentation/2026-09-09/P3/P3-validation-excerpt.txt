@@ -105,27 +105,47 @@ D3D11-07.log
 [VS-P3] P3_VALIDATION_PASS
 
 RuntimeCompile-Final.log
-msbuild 버전 17.9.4+90725d08d(.NET용)
-CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp.csproj]
-
-빌드했습니다.
-
-CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp.csproj]
-    경고 1개
-    오류 0개
-
+msbuild 버전 17.9.4+90725d08d(.NET용)
+
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp.csproj]
+
+
+
+빌드했습니다.
+
+
+
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp.csproj]
+
+    경고 1개
+
+    오류 0개
+
+
+
 경과 시간: 00:00:02.93
 
 EditorCompile-Final.log
-msbuild 버전 17.9.4+90725d08d(.NET용)
-CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
-C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_ErrorTracker.cs(268,10): warning CS0414: 'PA_ErrorTracker._autoScrollNew' 필드가 할당되었지만 사용되지 않았습니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
-
-빌드했습니다.
-
-CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
-C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_ErrorTracker.cs(268,10): warning CS0414: 'PA_ErrorTracker._autoScrollNew' 필드가 할당되었지만 사용되지 않았습니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
-    경고 2개
-    오류 0개
-
+msbuild 버전 17.9.4+90725d08d(.NET용)
+
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+
+C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_ErrorTracker.cs(268,10): warning CS0414: 'PA_ErrorTracker._autoScrollNew' 필드가 할당되었지만 사용되지 않았습니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+
+
+
+빌드했습니다.
+
+
+
+CSC : warning CS8785: 생성기 'AttributeBasedFieldGenerator'이(가) 소스를 생성하지 못했습니다. 출력에 기여하지 않으므로 컴파일 오류가 발생할 수 있습니다. 예외의 형식은 'IndexOutOfRangeException'이고 메시지는 'Index was outside the bounds of the array.'입니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+
+C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_ErrorTracker.cs(268,10): warning CS0414: 'PA_ErrorTracker._autoScrollNew' 필드가 할당되었지만 사용되지 않았습니다. [C:\Users\sdjsd\Desktop\Unity\Project_PA\Assembly-CSharp-Editor.csproj]
+
+    경고 2개
+
+    오류 0개
+
+
+
 경과 시간: 00:00:02.10
