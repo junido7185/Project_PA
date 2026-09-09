@@ -861,3 +861,12 @@ Append-only log for guarded automation and dry-run loop work.
 - 개발 진입: Project PA > Presentation > Open Departure Tutorial > Play. WASD/SPACE, 실습 가격7G. 튜토리얼 세션만 유지하며 SaveManager가 없어 기존 campaign save를 쓰지 않는다. NEW GAME/standalone 통합 및 저장 재개는 이번에 확인 못 함.
 - 기존 dirty CONTENT/Save/World 코드를 수정하거나 이 checkpoint에 넣지 않았다. 이 작업은 현재 working tree의 기존 ShopPriceUI.OnPriceConfirmed 및 PurchaseFeedbackPresentationController.OnDecisionRecorded 관찰 seam을 사용하므로, checkpoint 단독 checkout은 기존 CONTENT 작업의 별도 checkpoint 없이는 재현 가능한 clean baseline이 아니다.
 - P1/P2 NOT_STARTED. 사용자 최신 지시에 따라 고가 거절 edge case·추가 제작·다음 단계 구현은 수행하지 않고 STOP. 다음 세션은 사람의 직접 플레이 확인/명시 지시를 기다린다.
+
+## 2026-09-09 — VS-PRESENT-001-P1-RECOVERY PASS
+
+- 사람의 recovery ticket으로 이전 STOP 해제. 기존 P1 코드/후보/프리팹을 보존하고 공용 GameView 캡처 lifecycle과 PrototypeWorldLabel/ShopOpenSign 초기화만 최소 교정했다. OnValidate 구조 생성 제거, ShopOpenSign 초기화 Start로 이동. 새 label/캡처 framework 없음.
+- Runtime → Editor 순차 build 오류0, 기존 CS8785/CS0414 경고만 유지. D3D11 실제 GameView 첫 recovery 실행 PASS. P0 미인증 보호, 후보3/선택2, 0·1명 확정/unknown ID/3번째 거부, 취소·교체·참조, 확정 ID 1회 전달·동결 모두 PASS.
+- 새 03_CompanionSelection.png 1920×1080, 229720 bytes, 2026-09-09T01:35:56Z. 기존 파일 기준선과 새 쓰기/연속 크기 안정화 확인. Camera.Render 호출 없음. blocking Console/OnValidate 오류/native crash 0. 종료 시 기존 JobTempAlloc 진단은 별도 기존 Editor 종료 부채로 남긴다.
+- 증거: Docs/Presentation/2026-09-08/P1-validation.json, P1-recovery-excerpt.txt. 전체 로그와 순차 compile: Logs/VS_PRESENT_001/P1_Recovery_Editor.log, Recovery_RuntimeCompile.log, Recovery_EditorCompile.log.
+- 범위: 기존 미커밋 P1 구현과 이번 recovery만 local checkpoint, 개인 .claude/settings.json 제외. P0/CONTENT/Blender/씬/Save/ProjectSettings 변경 없음. 실제 P0 인증 완료부터 연결은 이번 개발용 진입 검사에서 확인 못 함.
+- 다음: 사용자 §13 승인에 따라 P1 local commit 후 VS-PRESENT-001-P2 자동 진행. 배/WorldGrid 재사용, 신규 권위 없음, push 금지.

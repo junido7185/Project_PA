@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "entry": "explicit development selection; P0 state unchanged",
+  "selectedIds": [
+    "Miner_01",
+    "Farmer_01"
+  ],
+  "candidates": 3,
+  "selectionLimit": 2,
+  "toggleAndCancel": true,
+  "thirdBlocked": true,
+  "handoffOnce": true,
+  "missingReferences": 0,
+  "runtimeErrors": 0,
+  "ticket": "VS-PRESENT-001-P1-RECOVERY",
+  "runDate": "2026-09-09",
+  "recoveryRun": 1,
+  "screenshotBytes": 229720,
+  "screenshotUtc": "2026-09-09T01:35:56.2743529Z",
+  "screenshotSize": [
+    1920,
+    1080
+  ],
+  "freshStableWrite": true,
+  "zeroAndOneConfirmRejected": true,
+  "unknownIdRejected": true,
+  "confirmedFrozen": true,
+  "nativeCrash": 0
+}

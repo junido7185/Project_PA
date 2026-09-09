@@ -12,7 +12,7 @@ public class ShopOpenSign : MonoBehaviour, IInteractable
     PrototypeWorldLabel _label;
     float _nextLabelRefresh;
 
-    void Awake()
+    void Start()
     {
         EnsureLabel();
         RefreshLabel();

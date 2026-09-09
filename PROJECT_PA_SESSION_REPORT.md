@@ -3083,3 +3083,22 @@ Safety and validation:
 - 기존 Word 문서 삭제 상태는 그대로 기록한다. 로컬 개인 플러그인 설정 .claude/settings.json은 commit 대상에서 제외한다. 강제 push/이력 재작성 없음.
 - P0가 사용하는 ShopPriceUI/PurchaseFeedback 관찰 이벤트가 이번 checkpoint에 포함되므로, 이전 P0 보고서의 '미커밋 이벤트 의존' 제한은 이 통합 checkpoint에서 해소된다. clean checkout 실행은 별도 수행하지 않았다.
 - 다음은 사람의 P0 수동 확인/명시적 후속 지시다. P1/P2 및 CONTENT 후속 구현은 자동 시작하지 않는다.
+
+## 2026-09-08 — VS-PRESENT-001 P1 재개 / 검증 실패 · STOP
+
+- 사용자 요청: 현재 git 변경만 최소 확인하여 중단 작업을 마무리하고 검증 후 이번 변경만 로컬 commit, push 금지. 시작 HEAD는 e02c3a0. 기존 미추적 P1 코드 3종·meta·설정 프리팹·캡처·JSON을 확인했으며 .claude/settings.json은 제외했다.
+- PA_DepartureContinuationChecks만 보강: 검증 중 프리팹 재생성 제거, 재실행 Task/오류 상태 초기화, 준비 단계까지 90초 제한, 미인증 P0 유지·필수 참조·SaveManager 부재·1명 확정 거부·unknown ID 거부 검사 추가. Runtime/Setup/기존 씬·저장·경제 코드는 수정하지 않았다.
+- 컴파일: dotnet build Assembly-CSharp-Editor.csproj 통과(오류 0, 기존 CS8785/CS0414 경고 3), Unity 스크립트 재컴파일 후 Console 오류 0. 증거 Logs/VS_PRESENT_001/ResumeCompile.log. 최초 --no-restore는 임시 project.assets.json 부재(NETSDK1004)로 실행되지 않았고 일반 build 복원으로 해소했다.
+- D3D11 기존 Editor에서 Run Companion Selection Checks 1회 실행: 미인증 진입 차단, 0/1명 출항 차단, 2명 활성화, 3번째 차단, 선택 취소/교체, 참조 검사까지 PASS. 이후 PA_SafeGameViewCapture의 GameView capture was not written in time: 03_CompanionSelection.png 예외로 [VS-P1] FAIL. 자동으로 Edit Mode 복귀했다. 증거 Logs/VS_PRESENT_001/ResumeP1_EditorExcerpt.log 및 Docs/Presentation/2026-09-08/P1-validation.json.
+- 추가 관찰: 기존 ShopOpenSign.Awake → PrototypeWorldLabel.OnValidate → TextMeshPro 생성 경로에서 SendMessage cannot be called during Awake, CheckConsistency, or OnValidate 오류가 발생했다. 이번 P1 코드 원인으로 단정하지 않으며 기존 시스템을 임의 수정하지 않았다.
+- 확인 못 함: 확정 후 ID 1회 전달/동결(캡처 다음 검사여서 미도달), P0 실제 인증 완료→P1 버튼 연결, 새 캡처 가독성, 전체 Golden 회귀, standalone, 저장 재시작. 기존 P1 PASS JSON은 과거 실행 기록으로 분리했고 이번 실행은 FAIL로 기록했다. 캡처 파일이 갱신됐더라도 검증 통과 증거로 인정하지 않는다.
+- AGENTS.md의 실패 시 BUG_LOG 기록 후 중단 규칙을 적용했다. 추가 수정/재실행 없이 STOP, commit/push 없음. 다음 세션은 BUG_LOG의 캡처 타임아웃과 기존 OnValidate 오류를 먼저 확인한다. 정상화 후 같은 메뉴로 P1을 재검증하고, P0 실제 인증 완료 뒤 동행 선택을 수동 확인한다. P2 신규 구현·CONTENT/ART 자동 진행 없음.
+
+## 2026-09-09 — VS-PRESENT-001-P1-RECOVERY PASS
+
+- 사람의 recovery ticket으로 이전 STOP 해제. 기존 P1 코드/후보/프리팹을 보존하고 공용 GameView 캡처 lifecycle과 PrototypeWorldLabel/ShopOpenSign 초기화만 최소 교정했다. OnValidate 구조 생성 제거, ShopOpenSign 초기화 Start로 이동. 새 label/캡처 framework 없음.
+- Runtime → Editor 순차 build 오류0, 기존 CS8785/CS0414 경고만 유지. D3D11 실제 GameView 첫 recovery 실행 PASS. P0 미인증 보호, 후보3/선택2, 0·1명 확정/unknown ID/3번째 거부, 취소·교체·참조, 확정 ID 1회 전달·동결 모두 PASS.
+- 새 03_CompanionSelection.png 1920×1080, 229720 bytes, 2026-09-09T01:35:56Z. 기존 파일 기준선과 새 쓰기/연속 크기 안정화 확인. Camera.Render 호출 없음. blocking Console/OnValidate 오류/native crash 0. 종료 시 기존 JobTempAlloc 진단은 별도 기존 Editor 종료 부채로 남긴다.
+- 증거: Docs/Presentation/2026-09-08/P1-validation.json, P1-recovery-excerpt.txt. 전체 로그와 순차 compile: Logs/VS_PRESENT_001/P1_Recovery_Editor.log, Recovery_RuntimeCompile.log, Recovery_EditorCompile.log.
+- 범위: 기존 미커밋 P1 구현과 이번 recovery만 local checkpoint, 개인 .claude/settings.json 제외. P0/CONTENT/Blender/씬/Save/ProjectSettings 변경 없음. 실제 P0 인증 완료부터 연결은 이번 개발용 진입 검사에서 확인 못 함.
+- 다음: 사용자 §13 승인에 따라 P1 local commit 후 VS-PRESENT-001-P2 자동 진행. 배/WorldGrid 재사용, 신규 권위 없음, push 금지.

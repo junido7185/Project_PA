@@ -1,4 +1,22 @@
 {
+  "departurePresentationApproval": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "approvedOn": "2026-09-09",
+    "approvalSource": "User VS-PRESENT-001-P1-RECOVERY sections 12-16",
+    "approvedTickets": [
+      "VS-PRESENT-001-P1-RECOVERY",
+      "VS-PRESENT-001-P2"
+    ],
+    "activeTicket": "VS-PRESENT-001-P1-RECOVERY",
+    "preapprovedThrough": "VS-PRESENT-001-P2",
+    "stopAtMilestone": "VS_PRESENT_001_P2_CHECKPOINT",
+    "localTicketCommitsAllowed": true,
+    "pushAllowed": false,
+    "recoveryValidationLimit": 2,
+    "recoveryValidationsStarted": 1,
+    "status": "P1_PASS_COMMIT_PENDING",
+    "preservesContentAndArtState": true
+  },
   "art000IntakeCheckpoint": {
     "ticketId": "ART-000",
     "status": "verified",

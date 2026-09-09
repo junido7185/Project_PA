@@ -415,6 +415,16 @@ internal static class PA_SafeGameViewCapture
         bool hadPreviousFile = File.Exists(outputPath);
         long previousLength = hadPreviousFile ? new FileInfo(outputPath).Length : -1L;
         DateTime previousWriteTime = hadPreviousFile ? File.GetLastWriteTimeUtc(outputPath) : DateTime.MinValue;
+        Debug.Log($"[SafeGameViewCapture] baseline exists={hadPreviousFile} bytes={previousLength} utc={previousWriteTime:O} path={outputPath}");
+        if (!Application.isPlaying || EditorApplication.isPaused ||
+            SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            throw new InvalidOperationException("Capture requires an unpaused, rendered Play Mode GameView.");
+        var gameView = EditorWindow.GetWindow(typeof(Editor).Assembly.GetType("UnityEditor.GameView"));
+        gameView.Show();
+        gameView.Focus();
+        gameView.Repaint();
+        int initialFrame = Time.frameCount;
+        Debug.Log($"[SafeGameViewCapture] graphics={SystemInfo.graphicsDeviceType} gameView={gameView.position} frame={initialFrame}");
 
         int previousWidth = Mathf.Max(1, Screen.width);
         int previousHeight = Mathf.Max(1, Screen.height);
@@ -445,11 +455,27 @@ internal static class PA_SafeGameViewCapture
             // D3D11 GameView와 일시 Canvas가 안정될 시간을 둔다. 이 지연은
             // ThemeCorner의 안전 경로에서 검은 UI 프레임 빈도를 줄인 값이다.
             await Task.Delay(Mathf.Max(100, settleMilliseconds));
+            double frameDeadline = EditorApplication.timeSinceStartup + 3;
+            while (Time.frameCount < initialFrame + 2 && EditorApplication.timeSinceStartup < frameDeadline)
+            {
+                gameView.Repaint();
+                EditorApplication.QueuePlayerLoopUpdate();
+                await Task.Delay(50);
+            }
+            if (Time.frameCount < initialFrame + 2)
+                throw new InvalidOperationException("GameView frames did not advance before capture.");
+            gameView.Focus();
+            gameView.Repaint();
             ScreenCapture.CaptureScreenshot(outputPath);
 
             bool captured = false;
-            for (int i = 0; i < 80; i++)
+            long stableLength = -1;
+            DateTime stableWriteTime = DateTime.MinValue;
+            int stablePolls = 0;
+            for (int i = 0; i < 120; i++)
             {
+                gameView.Repaint();
+                EditorApplication.QueuePlayerLoopUpdate();
                 if (File.Exists(outputPath))
                 {
                     var info = new FileInfo(outputPath);
@@ -457,8 +483,15 @@ internal static class PA_SafeGameViewCapture
                         || info.Length != previousLength;
                     if (fresh && info.Length > 1024)
                     {
-                        captured = true;
-                        break;
+                        stablePolls = info.Length == stableLength && info.LastWriteTimeUtc == stableWriteTime ? stablePolls + 1 : 0;
+                        stableLength = info.Length;
+                        stableWriteTime = info.LastWriteTimeUtc;
+                        if (stablePolls >= 2)
+                        {
+                            captured = true;
+                            Debug.Log($"[SafeGameViewCapture] fresh stable bytes={stableLength} utc={stableWriteTime:O} frame={Time.frameCount}");
+                            break;
+                        }
                     }
                 }
                 await Task.Delay(100);

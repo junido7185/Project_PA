@@ -763,3 +763,20 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 첫 patch는 원문 최신 상태를 최종 상태로 잘못 적어 문맥 검사에서 거부됐다. 파일 변경 없이 정확한 원문으로 한 번 교정하여 성공했다.
 - 기록 append 명령은 스마트 인용부호가 PowerShell 문자열 경계로 해석되어 파싱 단계에서 거부됐다. 해당 명령은 실행되지 않았고 파일 변경은 없었다. 스마트 인용부호를 없앤 명령으로 한 번 교정한다.
 - 서로 다른 문서 도구 원인 각 1회이며 게임 코드/Unity 검증 실패가 아니다. 같은 원인 두 번 실패 경계에 도달하지 않았다.
+
+## 2026-09-08 — VS-PRESENT-001 P1 재開 / capture timeout · STOP
+
+- 이번 세션 D3D11 Play 검증 1회: PA_DepartureContinuationChecks.CheckSelection의 캡처에서 InvalidOperationException: GameView capture was not written in time: 03_CompanionSelection.png. PA_SafeGameViewCapture.CaptureAsync 위치는 Assets/Editor/PA_ThemeCornerValidator.cs:468, 호출은 PA_DepartureContinuationChecks.cs:124. 최종 [VS-P1] FAIL, Edit Mode 복귀.
+- 미인증 P0 보호, 필수 참조, SaveManager 부재, 0/1명 확정 거부, unknown ID 거부, 2명 활성화, 3번째 차단, 취소/교체와 serialized reference 검사는 통과. 캡처 이후 확정/ID 전달/동결 검사는 미도달. 새 캡처는 파일 수정 시각이 갱신됐지만 정상 캡처 완료는 확인 못 함.
+- 같은 실행에서 기존 ShopOpenSign.Awake → EnsureLabel (Assets/Scripts/ShopOpenSign.cs:62) → PrototypeWorldLabel.OnValidate/EnsureText (Assets/Scripts/UI/PrototypeWorldLabel.cs:15/40) → AddComponent<TextMeshPro> 경로의 SendMessage cannot be called during Awake, CheckConsistency, or OnValidate 오류 관찰. 원인 코드 수정이나 오류 필터링은 하지 않았다.
+- 증거: Logs/VS_PRESENT_001/ResumeP1_EditorExcerpt.log, Docs/Presentation/2026-09-08/P1-validation.json. 이전 PASS 결과는 이번 결과와 분리했다. compile은 ResumeCompile.log 오류0/기존 경고3; 최초 no-restore의 NETSDK1004는 일반 build로 해소.
+- AGENTS.md의 실패 시 기록 후 멈춤 규칙에 따라 추가 수정/재실행 중단. commit/push 없음. 다음 작업은 위 두 오류의 제한된 조사와 교정 여부 판단이며 P2 또는 기존 CONTENT 범위로 확대하지 않는다.
+
+## 2026-09-09 — VS-PRESENT-001-P1-RECOVERY PASS
+
+- 사람의 recovery ticket으로 이전 STOP 해제. 기존 P1 코드/후보/프리팹을 보존하고 공용 GameView 캡처 lifecycle과 PrototypeWorldLabel/ShopOpenSign 초기화만 최소 교정했다. OnValidate 구조 생성 제거, ShopOpenSign 초기화 Start로 이동. 새 label/캡처 framework 없음.
+- Runtime → Editor 순차 build 오류0, 기존 CS8785/CS0414 경고만 유지. D3D11 실제 GameView 첫 recovery 실행 PASS. P0 미인증 보호, 후보3/선택2, 0·1명 확정/unknown ID/3번째 거부, 취소·교체·참조, 확정 ID 1회 전달·동결 모두 PASS.
+- 새 03_CompanionSelection.png 1920×1080, 229720 bytes, 2026-09-09T01:35:56Z. 기존 파일 기준선과 새 쓰기/연속 크기 안정화 확인. Camera.Render 호출 없음. blocking Console/OnValidate 오류/native crash 0. 종료 시 기존 JobTempAlloc 진단은 별도 기존 Editor 종료 부채로 남긴다.
+- 증거: Docs/Presentation/2026-09-08/P1-validation.json, P1-recovery-excerpt.txt. 전체 로그와 순차 compile: Logs/VS_PRESENT_001/P1_Recovery_Editor.log, Recovery_RuntimeCompile.log, Recovery_EditorCompile.log.
+- 범위: 기존 미커밋 P1 구현과 이번 recovery만 local checkpoint, 개인 .claude/settings.json 제외. P0/CONTENT/Blender/씬/Save/ProjectSettings 변경 없음. 실제 P0 인증 완료부터 연결은 이번 개발용 진입 검사에서 확인 못 함.
+- 다음: 사용자 §13 승인에 따라 P1 local commit 후 VS-PRESENT-001-P2 자동 진행. 배/WorldGrid 재사용, 신규 권위 없음, push 금지.

@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3524566492540838093
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3894469486501208732}
+  - component: {fileID: 4982061799146763502}
+  m_Layer: 0
+  m_Name: DepartureContinuation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3894469486501208732
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3524566492540838093}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4982061799146763502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3524566492540838093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f997186dc6326674e9cef5140ceca11c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DepartureCompanionSelection
+  candidates:
+  - id: Lumberjack_01
+    displayName: "\uC544\uB97C\uB85C \xB7 TEMP"
+    profession: "\uBC8C\uBAA9\uAFBC"
+    production: "\uBAA9\uC7AC"
+    firstGoods: "\uC6D0\uBAA9 \uACC4\uC5F4"
+    future: "\uBAA9\uC218"
+    personality: "\uB9D0\uC744 \uC544\uB07C\uBA70 \uACC1\uC5D0\uC11C \uB3D5\uB294
+      \uB3D9\uB8CC"
+    profile: {fileID: 11400000, guid: 58cf9299ddc2f4f498958b4f2e777989, type: 2}
+    model: {fileID: 919132149155446097, guid: 957caf3a55712f441a4481d023666f3e, type: 3}
+    accent: {r: 0.49, g: 0.59, b: 0.31, a: 1}
+  - id: Miner_01
+    displayName: "\uB85C\uAC74 \xB7 TEMP"
+    profession: "\uAD11\uBD80"
+    production: "\uCC44\uAD11"
+    firstGoods: "\uB3CC / \uAE30\uCD08 \uAD11\uC11D"
+    future: "\uB300\uC7A5\uC7A5\uC774"
+    personality: "\uC2E0\uC911\uD558\uAC8C \uD655\uC778\uD558\uACE0 \uC57D\uC18D\uC744
+      \uC9C0\uD0B4"
+    profile: {fileID: 11400000, guid: 839c16ef268a1c1459ed10bf196672b9, type: 2}
+    model: {fileID: 919132149155446097, guid: 46d9b2c63c5639d49b80702a436af620, type: 3}
+    accent: {r: 0.46, g: 0.54, b: 0.59, a: 1}
+  - id: Farmer_01
+    displayName: "\uBBF8\uB77C \xB7 TEMP"
+    profession: "\uB18D\uBD80"
+    production: "\uB18D\uC5C5"
+    firstGoods: "\uAE30\uCD08 \uC791\uBB3C"
+    future: "\uC694\uB9AC\uC0AC / \uAC00\uACF5\uC5C5\uC790"
+    personality: "\uB0B4\uC77C \uD544\uC694\uD55C \uC591\uC744 \uBBF8\uB9AC \uC0B4\uD54C"
+    profile: {fileID: 11400000, guid: a8eb1fe829f42004890f63574349f7a1, type: 2}
+    model: {fileID: 919132149155446097, guid: 4a5338e623ebe674ca1c847a9c6f27df, type: 3}
+    accent: {r: 0.83, g: 0.59, b: 0.24, a: 1}
+  font: {fileID: 11400000, guid: 3afe92293a7925a498df5910f03da54c, type: 2}
