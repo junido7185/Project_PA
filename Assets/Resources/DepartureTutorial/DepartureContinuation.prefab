@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3894469486501208732}
   - component: {fileID: 4982061799146763502}
+  - component: {fileID: 8470394929383330151}
   m_Layer: 0
   m_Name: DepartureContinuation
   m_TagString: Untagged
@@ -78,3 +79,23 @@ MonoBehaviour:
     model: {fileID: 919132149155446097, guid: 4a5338e623ebe674ca1c847a9c6f27df, type: 3}
     accent: {r: 0.83, g: 0.59, b: 0.24, a: 1}
   font: {fileID: 11400000, guid: 3afe92293a7925a498df5910f03da54c, type: 2}
+--- !u!114 &8470394929383330151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3524566492540838093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79177b84c648e624ab54fc948f3048b7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DepartureVoyagePresentation
+  boatPrefab: {fileID: 2227741323378753310, guid: a3ca36dd29c7cbd468c5dbf19136d407, type: 3}
+  treePrefab: {fileID: 7934636992084984661, guid: c7dcb29395b93124bb768993e8fa94c9, type: 3}
+  birchPrefab: {fileID: 4011117964635858024, guid: 7683b1d3d71be0441811ce44bad94c52, type: 3}
+  rockPrefab: {fileID: 6639828307063432887, guid: 050a43d55d4800a49938e27c7dd6ea47, type: 3}
+  dockPrefab: {fileID: 2826359740306342772, guid: 92df52192f940554a98f8c510f65a7e6, type: 3}
+  cratePrefab: {fileID: 5277294008632995306, guid: 1575c64cec9028c42943e849d31ae221, type: 3}
+  waterMaterial: {fileID: 2100000, guid: 7e2cf8a349205c44c960c410926e8dc1, type: 2}
+  voyageSeconds: 12

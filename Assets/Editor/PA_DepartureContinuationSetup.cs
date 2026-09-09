@@ -9,6 +9,29 @@ public static class PA_DepartureContinuationSetup
 {
     public const string PrefabPath = "Assets/Resources/DepartureTutorial/DepartureContinuation.prefab";
 
+    [MenuItem("Project PA/Presentation/Configure Departure Voyage")]
+    public static void ConfigureVoyage()
+    {
+        GameObject root = PrefabUtility.LoadPrefabContents(PrefabPath);
+        try
+        {
+            var voyage = root.GetComponent<DepartureVoyagePresentation>() ?? root.AddComponent<DepartureVoyagePresentation>();
+            const string intake = "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_";
+            voyage.boatPrefab = Require<GameObject>("Assets/Resources/DepartureTutorial/Visuals/PA_DepartureBoat.prefab");
+            voyage.treePrefab = Require<GameObject>(intake + "ULTIMATENATURE_COMMONTREE_1.prefab");
+            voyage.birchPrefab = Require<GameObject>(intake + "ULTIMATENATURE_BIRCHTREE_1.prefab");
+            voyage.rockPrefab = Require<GameObject>(intake + "ULTIMATENATURE_ROCK_1.prefab");
+            voyage.dockPrefab = Require<GameObject>(intake + "CUTEFISH_DOCK_LONG_NOROPE.prefab");
+            voyage.cratePrefab = Require<GameObject>(intake + "CUBEWORLDKIT_CHEST_CLOSED.prefab");
+            voyage.waterMaterial = Require<Material>("Assets/Resources/DepartureTutorial/Materials/PA_WaterLight.mat");
+            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        AssetDatabase.SaveAssets();
+        Unity.CodeEditor.CodeEditor.CurrentEditor.SyncAll();
+        Debug.Log("[VS-P2] CONFIGURED existing boat, nature and grid presentation.");
+    }
+
     [MenuItem("Project PA/Presentation/Configure Departure Continuation")]
     public static void Configure()
     {

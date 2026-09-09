@@ -7,14 +7,17 @@
       "VS-PRESENT-001-P1-RECOVERY",
       "VS-PRESENT-001-P2"
     ],
-    "activeTicket": "VS-PRESENT-001-P1-RECOVERY",
+    "activeTicket": "VS-PRESENT-001-P2",
     "preapprovedThrough": "VS-PRESENT-001-P2",
     "stopAtMilestone": "VS_PRESENT_001_P2_CHECKPOINT",
     "localTicketCommitsAllowed": true,
     "pushAllowed": false,
     "recoveryValidationLimit": 2,
     "recoveryValidationsStarted": 1,
-    "status": "P1_PASS_COMMIT_PENDING",
+    "p1Checkpoint": "6b283c1",
+    "status": "complete",
+    "completionReached": true,
+    "p2Evidence": "Docs/Presentation/2026-09-08/P2-validation.json",
     "preservesContentAndArtState": true
   },
   "art000IntakeCheckpoint": {

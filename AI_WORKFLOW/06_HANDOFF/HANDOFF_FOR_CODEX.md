@@ -1,5 +1,14 @@
 # HANDOFF_FOR_CODEX — 다음 세션 인수인계
 
+## 2026-09-09 — VS-PRESENT-001-P2 PASS / local checkpoint 후 STOP
+
+- P1 recovery 첫 실행 PASS 및 6b283c1 local commit 후 명시 승인된 P2 자동 진행. P1 선택 ID → 기존 배/실제 NPC2 → 갑판 WASD → 12초 항해 → fade → 같은 NPC2와 WorldGrid 섬 도착 → 섬 이동 PASS. 최종 캡처 조합은 광부·농부이며 벌목꾼·농부 조합도 앞선 P2 검사에서 PASS했다.
+- 기존 WorldGridService/WorldChunkTerrain/WorldPlayerTraversalGuard/PlayerController/CameraController와 ART-000/P0 자산만 재사용. 새 presentation+전용 checks, 기존 continuation setup/prefab 연결. P0/Golden/MainGame/WorldSandbox 씬 및 WorldGrid·Save·경제 권위 소스, Packages/ProjectSettings 변경 없음.
+- Runtime/Editor compile 오류0(기존 CS8785/CS0414 경고), D3D11 blocking Console 오류0/native crash0, 필수 참조/모델/청크 collider PASS. 최종 PNG2장 fresh stable write/1920×1080 확인. 증거 Docs/Presentation/2026-09-08/P2-validation.json, P2-validation-excerpt.txt; 전체 Logs/VS_PRESENT_001/P2_Presentation_Editor.log.
+- P0 인증부터 연결한 전체 연속 플레이·standalone·save/load는 이번에 확인 못 함. P0 validator 재실행 없음. 생산 실행/입주/고용/채집 보상/placement preview/저장 확장은 DEFER. 개발용 메뉴 Play Companion Selection (Development Entry)로 바로 확인 가능.
+- 이번 P2 변경만 local checkpoint 후 STOP. 개인 .claude/settings.json 보존/미포함, push 없음. 다음은 사람의 전체 첫 플레이 연결과 화면/조작감 확인이다.
+
+
 ## 2026-09-09 — VS-PRESENT-001-P1-RECOVERY PASS
 
 - 사람의 recovery ticket으로 이전 STOP 해제. 기존 P1 코드/후보/프리팹을 보존하고 공용 GameView 캡처 lifecycle과 PrototypeWorldLabel/ShopOpenSign 초기화만 최소 교정했다. OnValidate 구조 생성 제거, ShopOpenSign 초기화 Start로 이동. 새 label/캡처 framework 없음.

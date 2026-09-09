@@ -155,7 +155,7 @@ public static class PA_DepartureContinuationChecks
         }
     }
 
-    static void ConfigureGameView()
+    public static void ConfigureGameView()
     {
         var editor = typeof(Editor).Assembly;
         var type = editor.GetType("UnityEditor.GameView");

@@ -1,0 +1,26 @@
+[VS-P2] CHECK_OK existing presentation references
+[VS-P2] SAILING ids=Miner_01,Farmer_01 duration=12
+[VS-P2] CHECK_OK confirm starts departure
+[VS-P2] CHECK_OK exact selected two NPC models on board
+[VS-P2] CHECK_OK companions have real rendered models
+[VS-P2] CHECK_OK existing player moves on deck
+[VS-P2] CHECK_OK deck rail bounds movement
+[SafeGameViewCapture] baseline exists=True bytes=516866 utc=2026-09-09T01:46:39.4041930Z path=C:\Users\sdjsd\Desktop\Unity\Project_PA\Docs\Presentation\2026-09-08\04_Boat_To_Island.png
+[SafeGameViewCapture] graphics=Direct3D11 gameView=(x:1.33, y:30.00, width:1704.00, height:961.33) frame=687
+[SafeGameViewCapture] fresh stable bytes=511083 utc=2026-09-09T01:47:57.3850806Z frame=948
+[VS-P2] CHECK_OK unsteered voyage advances in real time
+[VS-P2] ARRIVED same companions=Miner_01,Farmer_01
+[VS-P2] CHECK_OK fade and island arrival
+[VS-P2] CHECK_OK voyage lasts ten to fifteen seconds
+[VS-P2] CHECK_OK same companion objects and IDs arrive
+[VS-P2] CHECK_OK companions stand on island
+[VS-P2] CHECK_OK player arrived on existing dry WorldGrid cell
+[VS-P2] CHECK_OK existing terrain mesh and collider ready
+[VS-P2] CHECK_OK water beach and stepped cells
+[VS-P2] CHECK_OK one existing WorldGrid and no new save authority
+[VS-P2] CHECK_OK existing player explores island after arrival
+[SafeGameViewCapture] baseline exists=True bytes=747985 utc=2026-09-09T01:46:51.3315023Z path=C:\Users\sdjsd\Desktop\Unity\Project_PA\Docs\Presentation\2026-09-08\05_Island_FirstArrival.png
+[SafeGameViewCapture] graphics=Direct3D11 gameView=(x:1.33, y:30.00, width:1704.00, height:961.33) frame=4617
+[SafeGameViewCapture] fresh stable bytes=748684 utc=2026-09-09T01:48:09.3087628Z frame=4908
+[VS-P2] CHECK_OK blocking Console error zero
+[VS-P2] PASS
