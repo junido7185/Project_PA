@@ -1,0 +1,38 @@
+PASS D3D11 final connected route
+PASS walk (-5.00, 0.00, -3.00)
+PASS checkpoint
+PASS walk (0.00, 0.00, -2.65)
+PASS tree interaction inventory3
+PASS walk (0.00, 0.00, -3.70)
+PASS walk (7.00, 0.00, -3.70)
+PASS walk (7.00, 0.00, -2.85)
+PASS display existing ShopSlot stock1
+PASS existing price UI
+PASS clickable 가격 확정Btn
+PASS PurchaseEvaluator decision
+PASS sale removes display and deposits once
+PASS clickable CompanionSelectionButton
+PASS mouse certification CTA enters P1
+PASS clickable Candidate_Miner_01
+PASS clickable Candidate_Farmer_01
+PASS mouse chooses2
+PASS keyboard confirms P1
+PASS fade then deck spawn
+PASS deck player and2 companions
+PASS voyage arrival
+PASS P3 ready
+PASS build zoom state
+PASS P3 place0
+PASS build zoom state
+PASS P3 place1
+PASS build zoom state
+PASS P3 place2
+PASS normal camera returns P3complete
+PASS companions stop at shelters
+PASS walk (114.00, 0.00, 108.00)
+P3 height=0.1568 centerFromTop=0.6019
+PASS load actually restores changed money
+PASS P3 save restore exact
+PASS forced fall recovery
+PASS post recovery stop
+PASS runtime errors0

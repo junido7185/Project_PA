@@ -352,7 +352,10 @@ public class ShopSlot : MonoBehaviour, IInteractable
         {
             var child = transform.GetChild(i);
             if (child != null && child.name == DisplayRootName)
+            {
+                child.gameObject.SetActive(false); // 지연 Destroy 프레임에도 판매된 모델을 표시하지 않는다.
                 DestroyUnityObject(child.gameObject);
+            }
         }
     }
 

@@ -1,0 +1,60 @@
+P0 height=0.1570 centerFromTop=0.6041
+PASS stop distance=0.237
+PASS stop distance=0.237
+PASS cardinal=4.20 diagonal=4.20 cellSeconds=0.476
+PASS collision stop drives idle from actual velocity
+PASS P0 forced fall recovers exactly once
+PASS walk (-5.00, 0.00, -3.00)
+PASS checkpoint
+PASS walk (0.00, 0.00, -3.30)
+PASS two cells rejected
+PASS behind rejected
+PASS adjacent front tree accepted
+PASS solid obstacle blocks interaction
+PASS real tree inventory3
+PASS walk (0.00, 0.00, -3.70)
+PASS walk (7.00, 0.00, -3.70)
+PASS walk (7.00, 0.00, -2.85)
+PASS shelf front anchor accepted
+PASS real shelf stock1
+PASS back of shelf rejected
+PASS UI opens cycle0
+PASS clickable 닫기Btn
+PASS mouse close without Escape 0
+PASS UI opens cycle1
+PASS clickable 닫기Btn
+PASS mouse close without Escape 1
+PASS UI opens cycle2
+PASS clickable 닫기Btn
+PASS mouse close without Escape 2
+PASS UI opens cycle3
+PASS clickable 닫기Btn
+PASS mouse close without Escape 3
+PASS UI opens cycle4
+PASS clickable 닫기Btn
+PASS mouse close without Escape 4
+PASS UI opens cycle5
+PASS clickable 닫기Btn
+PASS mouse close without Escape 5
+PASS UI opens cycle6
+PASS clickable 닫기Btn
+PASS mouse close without Escape 6
+PASS UI opens cycle7
+PASS clickable 닫기Btn
+PASS mouse close without Escape 7
+PASS UI opens cycle8
+PASS clickable 닫기Btn
+PASS mouse close without Escape 8
+PASS UI opens cycle9
+PASS clickable 닫기Btn
+PASS mouse close without Escape 9
+PASS sale price UI open
+PASS stock1 visual present before sale
+PASS clickable 가격 확정Btn
+PASS real purchase evaluator decision
+PASS stock0 visual absent exact sale money
+PASS refresh cannot resurrect sold fruit
+PASS keyboard CTA actually enters P1 (mouse passed first run)
+PASS clickable Candidate_Miner_01
+PASS clickable Candidate_Farmer_01
+PASS mouse chooses2

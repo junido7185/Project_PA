@@ -39,6 +39,7 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
 
     Animator _animator;
     NavMeshAgent _agent;
+    PlayerController _player;
     HumanPoseHandler _handler;
     HumanPose _basePose;
     HumanPose _pose;
@@ -164,6 +165,8 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
             velocity.y = 0f;
             speed = velocity.magnitude;
         }
+        if (_player == null) _player = GetComponent<PlayerController>();
+        if (_player != null) speed = _player.enabled ? _player.ActualPlanarSpeed : 0f;
         CurrentPlanarSpeed = speed;
 
         float targetBlend = Mathf.InverseLerp(0.05f, 1.25f, speed);
@@ -175,6 +178,9 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         CurrentCadence = Mathf.Lerp(idleFrequency, distanceCadence, _walkBlend);
         _cycle += Time.deltaTime * CurrentCadence;
 
+        // 원본 rig/절차 pose를 유지하며 기본 idle을 작은 호흡으로 제한한다.
+        if (gameObject.scene.name == DepartureTutorialController.SceneName)
+        { idleBreath = .008f; idleHeadNod = .004f; elbowRestBend = .10f; if (_player == null) armRestDrop = 1f; }
         ApplyPose();
     }
 

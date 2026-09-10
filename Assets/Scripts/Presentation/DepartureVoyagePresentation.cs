@@ -18,7 +18,7 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
     public bool ArrivalFadeFinished { get; private set; }
     public Transform IslandRoot => _world;
 
-    public void SkipTravelForSavedArrival() { if (Sailing) Elapsed = voyageSeconds; }
+    public void SkipTravelForSavedArrival() { Elapsed = voyageSeconds; }
     public void SetSettlementObjective(string text)
     {
         if (_objective != null) _objective.text = text;
@@ -64,20 +64,29 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
         _player = _selection.Tutorial.player;
         _controller = _player.GetComponent<CharacterController>();
         _cameraFollow = Camera.main.GetComponent<CameraController>();
+        _player.GetComponent<PlayerController>().enabled = false;
+        _player.GetComponent<PlayerInteraction>().enabled = false;
+        BuildHUD();
+        StartCoroutine(Board(ids));
+    }
+
+    IEnumerator Board(IReadOnlyList<string> ids)
+    {
+        yield return Fade(0, 1);
         BuildIsland();
         BuildBoat(ids);
         _selection.HideSelection();
         _selection.Tutorial.buyer.Pause();
         _selection.Tutorial.buyer.gameObject.SetActive(false);
         MovePlayer(Boat.position + new Vector3(0, 1.4f, -.9f));
-        _player.GetComponent<PlayerController>().enabled = true;
         _cameraFraming = new GameObject("VoyageCameraFraming").transform;
         _cameraFraming.SetParent(transform, false);
         UpdateCameraFraming();
-        _cameraFollow.target = _cameraFraming;
+        _cameraFollow.target = _cameraFollow.OpeningFraming ? _player : _cameraFraming;
         _cameraFollow.SnapToTarget();
         Camera.main.orthographicSize = 12f;
-        BuildHUD();
+        yield return Fade(1, 0);
+        _player.GetComponent<PlayerController>().enabled = true;
         Sailing = true;
         Debug.Log("[VS-P2] SAILING ids=" + string.Join(",", ids) + " duration=" + voyageSeconds);
         StartCoroutine(Voyage());
@@ -246,6 +255,7 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
         _player.position = position;
         _player.rotation = Quaternion.identity;
         _controller.enabled = true;
+        _player.GetComponent<PlayerController>().ResetMotionAfterTeleport();
         Physics.SyncTransforms();
     }
 

@@ -87,8 +87,7 @@ public class InventoryUI : MonoBehaviour
         else
         {
             // 닫으면 마우스 숨기고 게임으로 돌아가기
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            PlayerInputHandler.RestoreGameplayCursor();
             
             // 툴팁도 같이 꺼주기 (혹시 켜져있을까봐)
             if(tooltip != null) tooltip.Hide();

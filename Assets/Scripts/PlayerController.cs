@@ -25,6 +25,17 @@ public class PlayerController : MonoBehaviour
 
     public bool isSitting = false;
 
+    public float ActualPlanarSpeed { get; private set; }
+    public void ResetMotionAfterTeleport()
+    {
+        _verticalVelocity = 0; _currentSpeed = 0; ActualPlanarSpeed = 0;
+        _smoothMoveDir = transform.forward;
+    }
+    public void ApplyOpeningFeel()
+    {
+        acceleration = 30f; deceleration = 36f; rotationSpeed = 20f;
+    }
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -109,7 +120,9 @@ public class PlayerController : MonoBehaviour
 
         // ── 이동 적용 ─────────────────────────────────────────────────────────────
         Vector3 motion = _smoothMoveDir * _currentSpeed + Vector3.up * _verticalVelocity;
+        Vector3 beforeMove = transform.position;
         controller.Move(motion * Time.deltaTime);
+        ActualPlanarSpeed = Vector3.ProjectOnPlane(transform.position-beforeMove,Vector3.up).magnitude / Mathf.Max(.001f,Time.deltaTime);
 
         // ── 회전 Slerp (Ease-out 곡선 — 몸통이 먼저 틀리는 유기적 느낌) ──────────
         // _smoothMoveDir 기반이므로 방향 Slerp와 이중으로 부드럽게 따라온다.
@@ -125,7 +138,7 @@ public class PlayerController : MonoBehaviour
         // 물리 가속도 자체가 Damping 역할을 하므로 dampTime 인자를 제거한다.
         // 이를 통해 Idle↔Walk 블렌딩이 실제 이동 속도와 정확히 동기화된다.
         if (anim != null && anim.runtimeAnimatorController != null)
-            anim.SetFloat("Speed", _currentSpeed / moveSpeed);
+            anim.SetFloat("Speed", ActualPlanarSpeed / moveSpeed, .08f, Time.deltaTime);
     }
 
     // ── 카메라 기준 이동 방향 계산 ───────────────────────────────────────────────

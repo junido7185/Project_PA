@@ -1,0 +1,17 @@
+PASS clickable Candidate_Miner_01
+PASS clickable Candidate_Farmer_01
+PASS mouse chooses2
+PASS keyboard confirms P1
+PASS fade then deck spawn
+PASS deck player and2 companions
+PASS voyage arrival
+PASS P3 ready
+PASS build zoom state
+PASS P3 place0
+PASS build zoom state
+PASS P3 place1
+PASS build zoom state
+PASS P3 place2
+PASS normal camera returns P3complete
+PASS companions stop at shelters
+P3 height=0.1569 centerFromTop=0.6020

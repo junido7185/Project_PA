@@ -146,6 +146,7 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
         Selection.Tutorial.player.GetComponent<PlayerController>().enabled = false;
         Selection.Tutorial.player.GetComponent<PlayerInteraction>().enabled = false;
         Camera.main.orthographicSize = _cameraSize + 2;
+        Camera.main.GetComponent<CameraController>().SetOpeningBuildMode(true);
         _lastMouse = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
         PreviewAt(_anchor, _turn);
     }
@@ -179,6 +180,7 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
         Selection.Tutorial.player.GetComponent<PlayerController>().enabled = true;
         Selection.Tutorial.player.GetComponent<PlayerInteraction>().enabled = true;
         Camera.main.orthographicSize = _cameraSize;
+        Camera.main.GetComponent<CameraController>().SetOpeningBuildMode(false);
         if (ConfirmButton != null) ConfirmButton.interactable = false;
         if (_hint != null) _hint.text = "B 다음 설치  ·  건물을 다시 선택하면 이동  ·  첫 3개 무료";
     }

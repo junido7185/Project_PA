@@ -809,3 +809,30 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 완료 캡처 직접 검사에서 얇은 거처 canvas가 뒷면 culling으로 사라지는 시각 결함 발견. 기존 FBX/Blender 재생성 없이 거처 전용 PA_ShelterCanvas 재질의 _Cull=0으로 교정한다. 저장된 동일 정착지의 reload/capture만 D3D11-07에서 확인. 검증기의 재진입 예약은 저장 phase를 다음 Editor update에서도 재개하도록 보완했다.
 
 - 최종 D3D11-07: CANVAS_TWO_SIDED_PASS, fresh reentry exact persisted state, restored companions reached their linked shelters, thin canvas renders both faces, runtime errors zero, P3_VALIDATION_PASS. 03 최종 PNG 1920×1080 직접 확인. RuntimeCompile-Final/EditorCompile-Final은 각각 종료 후 다음 명령을 실행하여 오류0 확인; Compile-06 실행 순서/Temp 충돌 해소.
+
+## 2026-09-10 — OPENING-FEEL-001 전환 / 검증 준비
+
+- 사용자 지시로 P4 보류. D3D11-02는 광부 수령 및 중복 방지까지 통과했으나 농부 수령 후 예상 Inventory 수량 assertion 실패. P4 추가 조사/재시도 중지, 미커밋 구현·증거 보존. OPENING-FEEL 작업 전 상태는 Logs/OpeningFeel001/Before에 별도 보존했다.
+- 기존 사용자 Unity Editor PID5280이 실행 중이어서 Camera-01 신규 실행은 프로젝트 점유 오류 창에서 중지됐다. 새 오류 창만 닫고 기존 Editor의 Play를 종료해 동일 Editor에서 검증한다. 저장 씬/사용자 데이터는 수정하지 않았다.
+- 전용 검증기에서 internal SyncVS 직접 호출 CS0122. 첫 교정으로 이미 프로젝트 setup이 쓰는 Unity.CodeEditor.CodeEditor.CurrentEditor.SyncAll을 재사용한다. Runtime 코드 오류 없음.
+
+- OPENING-FEEL 첫 flow 검증: 전방 tree/shelf, 뒤/두 칸 거리 거절, 마우스 UI 10회 연속, 실제 NPC 판매 후 stock0/표시 제거/정확한 금액, 마우스 P0→P1 진입 PASS. P1 Enter가 EventSystem의 마지막 후보 카드 Submit과 겹쳐 선택을 취소했다. 선택 확정 처리를 EventSystem보다 앞에서 실행하고 선택된 UI를 해제하여 중복 입력을 막는다. 첫 실패/첫 교정.
+
+- 모션 contact sheet 직접 확인 후 1회 focused correction: SafeGameViewCapture가 구도 변경 없는 캡처에서도 카메라 transform을 복원하여 연속 이동에서 추적을 되감음. configureCamera를 제공한 구도 변경 캡처만 transform 복원한다. NPC 기본 idle 팔 벌어짐은 기존 절차 pose의 armRestDrop으로 줄인다. 완료 CTA가 빈 판매대를 가리던 위치는 오른쪽으로 이동한다.
+
+- 재개 P1 입력 probe: Enter 직전 Miner_01/Farmer_01, Enter 프레임에는 Miner_01만 남음. 실행 순서 조정만으로 EventSystem Submit을 막지 못한 것을 확인했다. 카드 pointer 클릭 직후 선택 UI focus를 해제하여 교정. 잔여 targeted 실행에서 실제 Enter 확정/페이드/배/섬/P3 배치와 NPC 거처 도착 PASS.
+- 잔여 저장 fixture의 custom root 폴더 누락으로 DirectoryNotFoundException. 기존 LocalJsonSaveRepository는 호출자가 폴더를 준비하는 계약이므로 검증기에서 Directory.CreateDirectory 추가. Save authority 변경 없음. 후속 저장/복원 exact state PASS.
+- 새 출항 페이드 이전에 저장 복원 SkipTravel 요청이 도착할 수 있으므로 기존 Elapsed 값에 즉시 반영하게 수정. Sailing 조건 때문에 요청을 잃던 비동기 순서 문제이며 새 저장 상태/권위 없음.
+- 저장 targeted에서 강제 낙하 위치 복구 PASS 후 post recovery stop 속도 assertion 실패. 원인 확인 없이 같은 검사를 반복하지 않고 fresh restore에서 입력/좌표/CharacterController 실제 속도를 기록한다.
+
+- fresh Play에서 보존 중인 P4 SaveData v16의 null firstProduction이 빈 worksites 객체로 직렬화되고 P4 IsValidSave가 거절하는 것을 확인했다. 같은 실행에서 상태가 그대로였다는 이전 exact state assertion은 복원 성공 증거가 아니므로 정정한다. SaveManager를 실제로 검증하도록 저장 후 잔액을 변경하고 Load로 원래 잔액 복구를 확인하는 조건을 추가했다.
+- P4 코드/프리팹을 고치거나 덮어쓰지 않는다. Logs/OpeningFeel001/CheckpointValidation에 eab53b0 기반 detached 검증 사본을 만들고 이번 feel 파일과 P3 카메라 연결 두 줄만 적용했다. 원래 사용자 Editor PID5280 유지. 이 사본의 검증 결과만 최종 commit 판정에 사용한다.
+- stop 진단에서 입력0/실제 속도0을 확인했다. 복원 직후 동행자 이동·충돌이 안정되기 전에 200ms 한 프레임으로 단정하던 fixture를 정돈: 동행자 도착 대기, 부두 밖 보행, 제한 시간 안 실제 속도 정지 확인. 신규 movement authority 없음.
+- 사본 첫 Unity import는 기존 패키지 registry ETIMEDOUT 대기. 해당 사본 프로세스만 종료하고 이미 설치된 Library/PackageCache를 복사해 동일 버전으로 재개한다. manifest/lock/package 추가 변경 없음.
+
+- 검증 사본의 local package가 Library 내부에 있으면 일부 패키지 assembly가 무시되어 SRP의 Mathematics/Collections 참조 compile 실패. 사본 캐시만 경로 검증 후 Logs/OpeningFeel001/OfflinePackageSource로 이동하고 사본 manifest를 같은 설치 버전의 file 경로로 연결했다. 원본 manifest/lock은 보존. 원본 resolved set 밖의 패키지 이름 0 확인.
+- Isolated-SaveRecovery-Local: Unity Runtime/Editor compile 성공. 실제 저장 후 +11G → Load 원래 잔액 복원, 정착 state exact, 강제 낙하 복귀와 정지, missing reference 검사 PASS. CHECKS_FAIL 원인은 최초 import의 UnityEditor.Search.SearchDatabase.EnumerateAll 인덱스 예외였으며 gameplay/Save 예외가 아니다. 오류 필터링 없이 새 Editor fresh restore로 이어간다. 종료 JobTempAlloc 경고는 기존 부채.
+
+- Isolated-FreshRestore: 새 Editor/Play에서 실제 SaveManager로 P3 exact state/동일 동행자2/SaveManager1 PASS. 반복된 SearchDatabase 예외의 원인은 사본 UserSettings/Search.index 누락이었다. 원본의 Assets 상대경로 인덱스 설정만 사본으로 복사 후 Isolated-FinalRoute Editor 시작에서 해당 예외 0 확인. 저장 gameplay PASS를 반복하지 않고 최종 연속 경로를 한 번 실행한다.
+
+- Isolated-FinalRoute 최종 1회: P0 실제 이동/채집3/진열1/가격확정/PurchaseEvaluator 판매/금액1회, 마우스 CTA, 후보2/Enter 확정, 페이드/배/섬, P3 거점/거처2/NPC 도착, 부두 밖 이동, SaveManager 실제 잔액 및 state 복원, 낙하 복구/정지, 필수 참조, runtime errors0 모두 PASS. CHECKS_PASS. 검색 초기화 예외 없음. 08_P3_GameplayCamera.png 1920×1080 직접 검사 완료. staged diff 공백 PASS; 원래 P4 prefab 공백4줄은 보존.

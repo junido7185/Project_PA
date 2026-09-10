@@ -80,10 +80,18 @@ public class PlayerInputHandler : MonoBehaviour
 
     // -------- Unity 생명주기 --------
 
+    // 코지 플레이에는 pointer lock이 필요하지 않다. UI 닫기도 같은 정책을 사용한다.
+    public static void RestoreGameplayCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        RestoreGameplayCursor();
     }
 
     void Update()

@@ -1,0 +1,12 @@
+PASS diagnostic fixture state (not SaveManager restore)
+PASS one SaveManager after reentry
+PASS fresh reentry same two companions
+PASS fresh runtime errors0
+stop sample=0 position=(113.950, 0.580, 105.857) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True
+stop sample=1 position=(114.022, 0.580, 105.791) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True
+stop sample=2 position=(114.074, 0.580, 105.728) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True
+stop sample=3 position=(114.114, 0.580, 105.653) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True
+stop sample=4 position=(114.114, 0.580, 105.653) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True
+stop sample=5 position=(114.114, 0.580, 105.653) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True
+stop sample=6 position=(114.114, 0.580, 105.653) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True
+stop sample=7 position=(114.114, 0.580, 105.653) actual=0 input=(0.00, 0.00) cc=(0.00, 0.00, 0.00) enabled=True

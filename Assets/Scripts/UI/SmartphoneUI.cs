@@ -205,8 +205,7 @@ public class SmartphoneUI : MonoBehaviour
     // 닫힘 상태에서 게임 커서로 복구 (안전한 단일 진입점)
     void ApplyCursorState()
     {
-        Cursor.lockState = _isOpen ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible   = _isOpen;
+        PlayerInputHandler.RestoreGameplayCursor();
     }
 
     // 캔버스 실제 rect 크기를 기반으로 스마트폰이 정중앙에 오는 anchoredPosition 계산.

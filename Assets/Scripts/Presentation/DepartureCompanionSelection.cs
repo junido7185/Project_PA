@@ -40,6 +40,7 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
     TextMeshProUGUI[] _selectionLabels;
     TextMeshProUGUI _count;
     bool _hooked;
+    float _certifiedAt = -1f;
     static readonly Color Ink = new Color(.17f, .23f, .23f);
     static readonly Color Paper = new Color(.97f, .94f, .85f);
     static readonly Color Teal = new Color(.22f, .45f, .44f);
@@ -56,7 +57,11 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
     {
         if (scene.name != DepartureTutorialController.SceneName || FindFirstObjectByType<DepartureCompanionSelection>() != null) return;
         var prefab = Resources.Load<GameObject>("DepartureTutorial/DepartureContinuation");
-        if (prefab != null) Instantiate(prefab).name = "PA_DepartureContinuation";
+        if (prefab != null)
+        {
+            var continuation = Instantiate(prefab); continuation.name = "PA_DepartureContinuation";
+            continuation.AddComponent<OpeningFeelPresentation>();
+        }
     }
 
     void Start()
@@ -80,6 +85,14 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
             _hooked = true;
         }
         Tutorial.presentation.CompanionButton.interactable = Tutorial.CompanionSelectionUnlocked && !IsConfirmed;
+        if (Tutorial.Complete && _certifiedAt < 0) _certifiedAt = Time.unscaledTime;
+        var key = UnityEngine.InputSystem.Keyboard.current;
+        if (Tutorial.Complete && !IsOpen && !IsConfirmed && Time.unscaledTime > _certifiedAt + .35f &&
+            key != null && (key.enterKey.wasPressedThisFrame || key.spaceKey.wasPressedThisFrame)) OpenAfterCertification();
+        else if (IsOpen && !IsConfirmed && key != null && key.enterKey.wasPressedThisFrame)
+        {
+            Confirm();
+        }
     }
 
     void OnDestroy()
@@ -104,6 +117,7 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
         Tutorial.player.GetComponent<PlayerController>().enabled = false;
         Tutorial.player.GetComponent<PlayerInteraction>().enabled = false;
         foreach (Canvas canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None)) canvas.enabled = false;
+        PlayerInputHandler.RestoreGameplayCursor();
         BuildUI();
         IsOpen = true;
         Refresh();
@@ -191,7 +205,12 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
             button.targetGraphic = _cards[i];
             button.transition = Selectable.Transition.None;
             string id = c.id;
-            button.onClick.AddListener(() => Toggle(id));
+            button.onClick.AddListener(() =>
+            {
+                Toggle(id);
+                // A pointer-selected card must not receive Enter as another toggle.
+                UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(null);
+            });
             CandidateButtons[i] = button;
             Panel(card, "Accent", 0, 0, 580, 10, c.accent);
             Label(card, "Number", "PARTNER 0" + (i + 1), 30, 29, 510, 30, 20, Teal);

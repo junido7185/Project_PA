@@ -1,0 +1,44 @@
+[OPENING-FEEL] PASS D3D11 final connected route
+[OPENING-FEEL] PASS walk (-5.00, 0.00, -3.00)
+[OPENING-FEEL] PASS checkpoint
+[OPENING-FEEL] PASS walk (0.00, 0.00, -2.65)
+[OPENING-FEEL] PASS tree interaction inventory3
+[OPENING-FEEL] PASS walk (0.00, 0.00, -3.70)
+[OPENING-FEEL] PASS walk (7.00, 0.00, -3.70)
+[OPENING-FEEL] PASS walk (7.00, 0.00, -2.85)
+[OPENING-FEEL] PASS display existing ShopSlot stock1
+[OPENING-FEEL] PASS existing price UI
+[OPENING-FEEL] PASS clickable 가격 확정Btn
+[OPENING-FEEL] PASS PurchaseEvaluator decision
+[OPENING-FEEL] PASS sale removes display and deposits once
+[OPENING-FEEL] PASS clickable CompanionSelectionButton
+[OPENING-FEEL] PASS mouse certification CTA enters P1
+[OPENING-FEEL] PASS clickable Candidate_Miner_01
+[OPENING-FEEL] PASS clickable Candidate_Farmer_01
+[OPENING-FEEL] PASS mouse chooses2
+[VS-P1] CONFIRMED Miner_01,Farmer_01
+[OPENING-FEEL] PASS keyboard confirms P1
+[VS-P2] SAILING ids=Miner_01,Farmer_01 duration=12
+[OPENING-FEEL] PASS fade then deck spawn
+[OPENING-FEEL] PASS deck player and2 companions
+[VS-P2] ARRIVED same companions=Miner_01,Farmer_01
+[OPENING-FEEL] PASS voyage arrival
+[OPENING-FEEL] PASS P3 ready
+[OPENING-FEEL] PASS build zoom state
+[VS-P3] PLACED pa-settlement-hub (6, 5) rotation=0
+[OPENING-FEEL] PASS P3 place0
+[OPENING-FEEL] PASS build zoom state
+[VS-P3] PLACED pa-shelter-Miner_01 (9, 4) rotation=1
+[OPENING-FEEL] PASS P3 place1
+[OPENING-FEEL] PASS build zoom state
+[VS-P3] PLACED pa-shelter-Farmer_01 (8, 7) rotation=0
+[OPENING-FEEL] PASS P3 place2
+[OPENING-FEEL] PASS normal camera returns P3complete
+[OPENING-FEEL] PASS companions stop at shelters
+[OPENING-FEEL] PASS walk (114.00, 0.00, 108.00)
+[OPENING-FEEL] PASS load actually restores changed money
+[OPENING-FEEL] PASS P3 save restore exact
+[OPENING-FEEL] PASS forced fall recovery
+[OPENING-FEEL] PASS post recovery stop
+[OPENING-FEEL] PASS runtime errors0
+[OPENING-FEEL] CHECKS_PASS

@@ -1,5 +1,18 @@
 # PROJECT_PA_SESSION_REPORT.md
 
+## 2026-09-10 — OPENING-FEEL-001 PASS / local checkpoint 후 STOP
+
+- 기존 PlayerController/CameraController 안에서 가까운 원근 구도와 실제 이동 속도 기반 절차 애니메이션을 연결했다. 카메라 거리 12.5m, pitch 40°, FOV 34°, follow 0.16s; 화면 캐릭터 높이 P0 15.70% / P3 15.68%, 중심은 위에서 약 60%다.
+- 전방·인접·명시적 InteractionAnchor·가림 검사를 기존 PlayerInteraction에 적용했다. UI 후 커서 복원, 판매 직후 표시 제거, P0 완료 CTA/Enter, P1 카드 Submit 충돌, 페이드 후 안전한 배 탑승과 낙하 복귀를 교정했다. 기존 Inventory/Shop/PurchaseEvaluator/Economy/Save 권위와 기존 모델·rig를 사용하며 신규 Blender 작업은 없다.
+- targeted 증거: 4.20m/s 축·대각선 일치, 2m 셀 0.476s, 정지 거리 0.237m, 충돌 정지 애니메이션, 전방/뒤/거리/장애물, 마우스 UI 10회, 1개 판매→빈 진열대→정확히 7G, P0 마우스·Enter 진입, P1 Enter 확정→P2→P3 배치/NPC 거처 도착. 모션·idle contact sheet 및 기존 실제 1920×1080 캡처를 재사용했다.
+- 저장 검증 주의: 보존한 P4 미커밋 Save v16은 빈 firstProduction을 다시 읽을 때 거절한다. 이전 same-state assertion을 복원 PASS 근거로 쓰지 않는다. 이번 commit에 P4 변경을 섞지 않고 eab53b0 + feel 변경만 담은 Logs/OpeningFeel001/CheckpointValidation에서 저장·최종 연속 회귀를 통과했다. 기존 패키지의 동일 버전을 사본 안에서만 file 참조하여 registry timeout을 피한다.
+- 최종 D3D11 연속 1회 PASS: P0 이동/열매3/ShopSlot1/가격 확정/PurchaseEvaluator 판매/정확한 금액 → 실제 마우스 CTA → 후보2/Enter 확정 → 페이드/배 → 섬 → 거점1/거처2/NPC 도착 → 기존 SaveManager 저장 후 +11G 변경/Load 원래 잔액 및 정착 상태 복원 → 강제 낙하/정지. runtime errors0, missing component/reference0. 별도 fresh Play에서 같은 상태/동행자2/SaveManager1 복원 PASS.
+- Runtime/Editor 최종 dotnet build 오류0, P4 제외 검증 사본 Unity Runtime/Editor compile 오류0. 실제 검증 결과/캡처: Docs/Presentation/2026-09-10/GameFeel/. 전체 실행·compile 로그: Logs/OpeningFeel001/. 새 캡처는 기존 ScreenCapture Game View 경로만 사용한다.
+- 사람 확인이 남는 감각: 발 접지와 방향 전환의 세부 리듬, 가까운 카메라에서 건물/돛대 가림, P3 UI의 화면 점유. 자동 검사나 정지 이미지로 사람의 만족도를 확정하지 않는다.
+- 이번 staged diff --check PASS. 전체 dirty diff에는 작업 전 P4 프리팹의 공백 4줄이 남아 있으며 보존 요구에 따라 고치지 않았다. 최종 캡처 08만 갱신했고 나머지 실제 Game View와 contact sheet는 재사용했다.
+- P4, CONTENT, 개인 .claude/settings.json, Assets/_Recovery와 보류 자산/프리팹은 보존한다. push 금지. 이번 변경만 local checkpoint 후 STOP. P4 보류 dirty는 현재 사용자 작업공간에 남아 있으므로 저장 시 그 별도 결함이 영향을 줄 수 있다. 검증한 상태는 이번 commit과 동일한 P3+feel 사본이다.
+
+
 ## 2026-08-11 — BETA-002 Daytime Activity Completion
 
 - Started from clean BETA-001 commit `9bf71d6` and audited the existing daytime stack. Gathering, Farming, Mining, and Fishing already existed but spawned around the origin before the WorldSandbox generated player/shop became available.

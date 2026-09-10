@@ -37,6 +37,9 @@ public class PlayerInteraction : MonoBehaviour
 
     void TryInteract()
     {
+        if (!isActiveAndEnabled || (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) ||
+            (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf) ||
+            (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen)) return;
         Vector3 origin = GetInteractOrigin();
         Vector3 direction = transform.forward;
 
@@ -90,51 +93,47 @@ public class PlayerInteraction : MonoBehaviour
         interactable = null;
         bestHit = default;
 
+        if (!isActiveAndEnabled) return false;
         Vector3 origin = GetInteractOrigin();
-        Vector3 direction = transform.forward;
-
-        if (Physics.SphereCast(origin, interactRadius, direction, out bestHit, interactDistance,
-                ~0, QueryTriggerInteraction.Collide))
-        {
-            interactable = ResolveInteractable(bestHit.collider);
-            if (interactable != null) return true;
-        }
-
-        float radius = Mathf.Max(fallbackSearchRadius, interactRadius);
-        Collider[] nearby = Physics.OverlapSphere(origin, radius, ~0, QueryTriggerInteraction.Collide);
-        float bestScore = float.MaxValue;
-        Collider bestCollider = null;
-
-        foreach (var col in nearby)
+        float reach = Mathf.Min(interactDistance, 2.05f); // 2m cell + contact tolerance, not a two-cell radius.
+        float bestAngle = float.MaxValue, bestDistance = float.MaxValue;
+        bool bestAnchored = false;
+        foreach (var col in Physics.OverlapSphere(origin, reach + .5f, ~0, QueryTriggerInteraction.Collide))
         {
             if (col == null || col.transform.IsChildOf(transform)) continue;
-
             var candidate = ResolveInteractable(col);
-            if (candidate == null) continue;
-
-            Vector3 closest = col.ClosestPoint(origin);
-            Vector3 to = closest - origin;
-            float distance = to.magnitude;
-            if (distance > radius) continue;
-
-            Vector3 flatTo = new Vector3(to.x, 0f, to.z);
-            float facing = flatTo.sqrMagnitude > 0.001f
-                ? Vector3.Dot(transform.forward, flatTo.normalized)
-                : 1f;
-
-            if (distance > 1.2f && facing < -0.15f) continue;
-
-            float score = distance - Mathf.Max(0f, facing) * 0.55f;
-            if (score >= bestScore) continue;
-
-            bestScore = score;
-            bestCollider = col;
-            interactable = candidate;
+            var component = candidate as Component;
+            if (component == null || candidate is Shop shop && !shop.allowDebugBulkSaleInteraction) continue;
+            Transform anchor = component.transform.Find("InteractionAnchor");
+            Vector3 point = anchor != null ? anchor.position : col.bounds.center;
+            Vector3 flat = Vector3.ProjectOnPlane(point-transform.position, Vector3.up);
+            float distance = flat.magnitude;
+            if (distance > reach || distance < .05f) continue;
+            float facing = Vector3.Dot(transform.forward, flat / distance);
+            if (facing < .75f) continue;
+            if (anchor != null)
+            {
+                var outward = Vector3.ProjectOnPlane(anchor.position-component.transform.position,Vector3.up).normalized;
+                if (outward.sqrMagnitude < .1f) outward = Vector3.ProjectOnPlane(anchor.forward,Vector3.up).normalized;
+                if (Vector3.Dot(-flat.normalized,outward) < .6f || distance > 1.25f) continue;
+            }
+            // 장애물 너머의 가까운 대상도 선택하지 않는다. 표식/trigger는 가림으로 취급하지 않는다.
+            Vector3 endpoint = new Vector3(point.x,origin.y,point.z);
+            bool blocked = false;
+            foreach (var hit in Physics.RaycastAll(origin,(endpoint-origin).normalized,Mathf.Max(0,distance-.4f),~0,QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.transform.IsChildOf(transform) || ResolveInteractable(hit.collider) == candidate ||
+                    hit.collider.transform.IsChildOf(component.transform)) continue;
+                blocked = true; break;
+            }
+            if (blocked) continue;
+            bool anchored = anchor != null;
+            float angle = 1f-facing;
+            if (interactable != null && (bestAnchored && !anchored || bestAnchored==anchored &&
+                (angle > bestAngle+.001f || Mathf.Abs(angle-bestAngle)<=.001f && distance>=bestDistance))) continue;
+            interactable = candidate; bestAnchored=anchored; bestAngle=angle; bestDistance=distance;
         }
-
-        if (interactable == null || bestCollider == null) return false;
-
-        return true;
+        return interactable != null;
     }
 
     static IInteractable ResolveInteractable(Collider col)

@@ -296,8 +296,7 @@ public class ShopPriceUI : MonoBehaviour
         _slot  = null;
         IsOpen = false;
         SetCanvasActive(false);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible   = false;
+        PlayerInputHandler.RestoreGameplayCursor();
     }
 
     // ── 내부 로직 ────────────────────────────────────────────────────────────────

@@ -504,8 +504,12 @@ internal static class PA_SafeGameViewCapture
         finally
         {
             camera.targetTexture = previousTarget;
-            camera.transform.position = previousPosition;
-            camera.transform.rotation = previousRotation;
+            // 일반 GameView 캡처는 움직이는 follow를 되감지 않는다. 구도를 바꾼 캡처만 복원한다.
+            if (configureCamera != null)
+            {
+                camera.transform.position = previousPosition;
+                camera.transform.rotation = previousRotation;
+            }
             camera.orthographic = previousOrthographic;
             camera.orthographicSize = previousOrthographicSize;
             camera.fieldOfView = previousFieldOfView;

@@ -1,5 +1,13 @@
 # Project PA TODO
 
+## 2026-09-10 — OPENING-FEEL-001
+
+- [x] 카메라·이동·상호작용·idle·커서10회·실제 판매·P1 Enter·P2/P3 targeted 교정.
+- [x] P4 제외한 정확한 checkpoint의 Save/fresh restore와 마지막 P0→P3 연속 회귀 PASS.
+- [x] 이번 변경만 local checkpoint 대상 준비, push 없이 STOP. P4 재개는 별도 사람 지시 대기.
+- [ ] 사람 확인: 발 접지/회전 감각, 카메라 가림과 UI 점유. 보존된 P4 dirty Save v16의 빈 생산 상태 거절은 별도 후속 이슈.
+
+
 ## 2026-09-09 — P3 완료 / STOP
 
 - [x] VS-PRESENT-001-P3: hub1 + selected companion shelter2, collision/cancel/rotate/move, companion linkage, SaveManager save/fresh reentry, B09 storage regression, final 1920×1080 evidence.
