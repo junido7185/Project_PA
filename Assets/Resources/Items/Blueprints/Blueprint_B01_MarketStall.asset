@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: Blueprint_B01_MarketStall
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 1001
-  itemName: "\uC124\uACC4\uB3C4: \uB178\uC810 \uC0C1\uC810"
-  description: "\uB178\uC810 \uC0C1\uC810\uC744(\uB97C) \uAC74\uC124\uD558\uB294
-    \uD504\uB85C\uD1A0\uD0C0\uC785 \uC124\uACC4\uB3C4\uC785\uB2C8\uB2E4."
+  itemName: Shop Kit
+  description: Select in the hotbar and press Space to place the market stall.
   icon: {fileID: 0}
   maxStack: 99
   model: {fileID: 542899802191680043, guid: 3b6b7eb4e63a4ce4c80a04cbfdfd3ef8, type: 3}

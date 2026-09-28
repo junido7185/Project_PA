@@ -9,6 +9,10 @@ public class PlayerInteraction : MonoBehaviour
     public LayerMask interactLayer;
     private Animator anim;
     public GameObject farmlandPrefab;
+    DemoPlacedObject pendingHold;
+    float holdBegan;
+    void OnDisable() { pendingHold = null; }
+
 
     void Start()
     {
@@ -26,9 +30,25 @@ public class PlayerInteraction : MonoBehaviour
 
     void Update()
     {
+        if (PlayerInputHandler.ModalOpen) { pendingHold = null; InteractPromptUI.instance?.ClearPrompt(); return; }
+        var placing = GetComponent<WorldHotbarPlacementController>();
+        if (placing != null && placing.IsPlacing)
+        { pendingHold = null; InteractPromptUI.instance?.SetPrompt("[E] 확정 · [R] 회전 · [Esc / RMB] 취소 · " + placing.Status); return; }
+        if (pendingHold != null)
+        {
+            var pending = pendingHold;
+            if (EquipmentSystem.CurrentHeld(gameObject) != null ||
+                !TryFindInteractable(out var current, out _) || current != (IInteractable)pending)
+                pendingHold = null;
+            else if (PlayerInputHandler.Instance.InteractHeld)
+            {
+                if (Time.unscaledTime - holdBegan >= .5f) { pendingHold = null; pending.BeginMove(gameObject); }
+            }
+            else { pendingHold = null; pending.Interact(gameObject); }
+        }
         if (TryFindInteractable(out var interactable, out _))
         {
-            InteractPromptUI.instance?.SetPrompt($"[Space] {interactable.GetInteractPrompt()}");
+            InteractPromptUI.instance?.SetPrompt($"[{(PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.FirstDayControls ? "E" : "Space")}] {interactable.GetInteractPrompt().Replace("Space", "E")}");
             return;
         }
 
@@ -37,13 +57,15 @@ public class PlayerInteraction : MonoBehaviour
 
     void TryInteract()
     {
-        if (!isActiveAndEnabled || (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) ||
+        if (!isActiveAndEnabled || PlayerInputHandler.ModalOpen || (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) ||
             (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf) ||
             (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen)) return;
+        var directPlacement = GetComponent<WorldHotbarPlacementController>();
+        if (directPlacement != null && directPlacement.TryUseSelected()) return;
         Vector3 origin = GetInteractOrigin();
         Vector3 direction = transform.forward;
 
-        Item heldItem = Inventory.instance != null ? Inventory.instance.GetSelectedItem() : null;
+        Item heldItem = EquipmentSystem.CurrentHeld(gameObject);
         if (heldItem != null && (heldItem.toolType == ToolType.Hoe || heldItem.toolType == ToolType.Seed))
             direction = (transform.forward + Vector3.down).normalized;
 
@@ -51,7 +73,10 @@ public class PlayerInteraction : MonoBehaviour
 
         if (TryFindInteractable(out var interactable, out _))
         {
+            if (interactable is DemoPlacedObject placed && placed.CanMove && EquipmentSystem.CurrentHeld(gameObject) == null)
+            { pendingHold = placed; holdBegan = Time.unscaledTime; return; }
             interactable.Interact(gameObject);
+            GetComponent<EquipmentSystem>()?.PlayAction();
             return;
         }
 
@@ -98,12 +123,37 @@ public class PlayerInteraction : MonoBehaviour
         float reach = Mathf.Min(interactDistance, 2.05f); // 2m cell + contact tolerance, not a two-cell radius.
         float bestAngle = float.MaxValue, bestDistance = float.MaxValue;
         bool bestAnchored = false;
+        int bestPriority = int.MaxValue;
         foreach (var col in Physics.OverlapSphere(origin, reach + .5f, ~0, QueryTriggerInteraction.Collide))
         {
             if (col == null || col.transform.IsChildOf(transform)) continue;
             var candidate = ResolveInteractable(col);
             var component = candidate as Component;
             if (component == null || candidate is Shop shop && !shop.allowDebugBulkSaleInteraction) continue;
+            if (component is Behaviour behaviour && !behaviour.isActiveAndEnabled) continue;
+            int priority = 1;
+            if (PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.FirstDayControls)
+            {
+                Item held = EquipmentSystem.CurrentHeld(gameObject);
+                if (candidate is InventoryFramework.PickupItem pickup)
+                { if (!pickup.contextual || held != null) continue; priority = 0; }
+                else if (candidate is Gatherable gather)
+                { if (held?.toolType != ToolType.Axe || gather.DirectDepleted) continue; priority = 2; }
+                else if (candidate is MiningSpot mine)
+                { if (held?.toolType != ToolType.Pickaxe || mine.DirectDepleted) continue; priority = 2; }
+                else if (candidate is BugCritter)
+                { if (held?.toolType != ToolType.Net) continue; priority = 2; }
+                else if (candidate is FishingSpot)
+                { if (held?.toolType != ToolType.FishingRod) continue; priority = 2; }
+                else if (candidate is DaytimeStockPrepPoint tree)
+                { if (held != null || !tree.PhysicalFruit || tree.FruitDropped) continue; priority = 3; }
+                else if (candidate is FirstDaySupplyBox && held != null) continue;
+                else if (candidate is BuildingEntrance && held != null) continue;
+                else if (candidate is DemoPlacedObject furniture && furniture.Entry?.kind != DemoPlaceableKind.DisplayStand && held != null) continue;
+                else if (candidate is NpcDialogue && held != null) continue;
+                else if (candidate is DemoResident resident && held != null && !resident.Accepts(held)) continue;
+                else if (candidate is ShopSlot slot && slot.IsEmpty && (held == null || held.category == ItemCategory.Tool)) continue;
+            }
             Transform anchor = component.transform.Find("InteractionAnchor");
             Vector3 point = anchor != null ? anchor.position : col.bounds.center;
             Vector3 flat = Vector3.ProjectOnPlane(point-transform.position, Vector3.up);
@@ -129,9 +179,10 @@ public class PlayerInteraction : MonoBehaviour
             if (blocked) continue;
             bool anchored = anchor != null;
             float angle = 1f-facing;
-            if (interactable != null && (bestAnchored && !anchored || bestAnchored==anchored &&
-                (angle > bestAngle+.001f || Mathf.Abs(angle-bestAngle)<=.001f && distance>=bestDistance))) continue;
-            interactable = candidate; bestAnchored=anchored; bestAngle=angle; bestDistance=distance;
+            if (interactable != null && (priority > bestPriority || priority == bestPriority &&
+                (bestAnchored && !anchored || bestAnchored==anchored &&
+                (angle > bestAngle+.001f || Mathf.Abs(angle-bestAngle)<=.001f && distance>=bestDistance)))) continue;
+            interactable = candidate; bestPriority=priority; bestAnchored=anchored; bestAngle=angle; bestDistance=distance;
         }
         return interactable != null;
     }
@@ -139,6 +190,10 @@ public class PlayerInteraction : MonoBehaviour
     static IInteractable ResolveInteractable(Collider col)
     {
         if (col == null) return null;
+        if (col.GetComponent<BuildingEntrance>() is BuildingEntrance entrance) return entrance;
+        if (PlayerInputHandler.Instance?.FirstDayControls == true && col.GetComponentInParent<DemoResident>() is DemoResident resident) return resident;
+        if (PlayerInputHandler.Instance?.FirstDayControls == true && col.GetComponentInParent<DemoPlacedObject>() is DemoPlacedObject placed) return placed;
+        if (PlayerInputHandler.Instance?.FirstDayControls == true && col.GetComponent<FishingSpot>() is FishingSpot fishing) return fishing;
         return col.GetComponent<IInteractable>()
             ?? col.GetComponentInParent<IInteractable>();
     }

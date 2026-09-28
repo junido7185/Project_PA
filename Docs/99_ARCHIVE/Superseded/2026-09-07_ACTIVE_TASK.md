@@ -1,0 +1,64 @@
+> 보존된 당시 기록입니다. 본문의 CURRENT/ACTIVE/DONE·승인·규칙은 원문 시점에 한정하며 현재 상태나 새 실행 지시가 아닙니다. 현재 판단은 `Docs/00_CURRENT/`를 따릅니다.
+
+# ACTIVE_TASK — 현재 진행 중인 단일 작업
+
+사용법: `Docs/02_IMPLEMENTATION/Backlog/2026-07_TASK_QUEUE.md`에서 작업 하나를 골라 아래 양식에 **복사**해 채운다. 동시에 두 작업 금지.
+작업이 끝나면 이 파일을 비우고, `Docs/02_IMPLEMENTATION/Backlog/2026-07_TASK_QUEUE.md` 상태를 `DONE`으로, `Docs/03_VERIFICATION/StateSnapshots/2026-07-17_DONE_TASKS.md`에 한 줄 기록, 3~5개마다 `HANDOFF_FOR_CODEX.md` 갱신.
+
+먼저 읽을 문서: `AI_WORKFLOW/00_START_HERE/ONE_PAGE_WORKFLOW.md`, `../02_AGENT_RULES/`(3종), `AI_WORKFLOW/04_VERIFICATION/VERIFICATION_RULES.md`.
+
+---
+
+## 현재 작업
+
+`CONTENT-002 First Shop Night` — 2026-09-07 CONTENT-001 검증·커밋 `c49eb01` 완료 후 자동 활성화된 유일한 티켓.
+
+- Canon: `Docs/01_GAME_DESIGN/Canon/CONTENT_CANON_BIBLE.md`, PROVISIONAL CANON v1 승인 완료.
+- 계약: `Docs/01_GAME_DESIGN/Campaign/CONTENT_CAMPAIGN_DAY1_30.md` A02, `Docs/02_IMPLEMENTATION/Content/CONTENT_IMPLEMENTATION_BACKLOG.md` CONTENT-002. 같은 보리의 실제 소비 판단과 첫 영업·정산을 연결한다.
+- 기준: `milestone/gameplay-beta-85@29fb98f4`; 기존 사용자 dirty 파일을 보존하고 콘텐츠 변경만 커밋한다.
+- 검증: Runtime/Editor compile, D3D11 Opening validator, Golden/World 핵심 회귀, 격리 save/load, diff 검사.
+- 현재: CONTENT-002 첫 구현과 validator 작성, D3D11 검증 진행 중. `Logs/Content/CONTENT002/FirstNightValidation.log`와 state의 process checkpoint를 먼저 확인한다. 선행 CONTENT-001은 `c49eb01`, 재수행하지 않는다.
+- 다음: CONTENT-002 PASS와 로컬 커밋 뒤 CONTENT-003 자동 활성화. CONTENT-010까지 추가 사람 승인 요청 없음.
+- HARD HUMAN GATE: 최신 사용자 지시 §16을 적용한다. 승인 부재는 blocker가 아니다. 기존 BETA-010의 137° 복원 실패를 해결됐다고 표시하거나 세 번째 동일 실행을 하지 않는다.
+
+## 보존된 이전 작업 이력 — 현재 활성 티켓 아님
+
+`BETA-010 Full Playable Beta Integration` — BETA-009 validation-debt checkpoint `6168d05` 뒤 M85 선승인 sequence로 자동 활성화된 유일한 티켓.
+
+- Baseline: `milestone/gameplay-beta-85@6168d05`; 활성화 전 working tree clean.
+- 목표: WorldSandbox에서 새 게임→온보딩→낮 활동→제작·가공→진열·가격→개점→고객 반응·구매/거절→정산→다음날 반응→Day 1~7→채용·Feed→저장→재시작→복원→계속 플레이를 하나의 실제 beta 경로로 연결한다.
+- 첫 검증 우선순위: 교정된 BETA-009 save→Play 종료→재진입→load→continue→same-save repeat-load 경로를 실제 D3D11에서 먼저 증명한다.
+- 통합 부채: BETA-007 실제 hire→판매→Day 2→주민 대화, BETA-008 Day 6~7/Week 1 completion을 같은 full-loop 계약에서 재검증한다.
+- 기존 권위: ItemInstance, Inventory, CraftingService, EconomyService, Shop/ShopSlot, PurchaseEvaluator, NpcController, HiringService, SaveManager, WorldGrid를 우회하지 않는다.
+- 보호: Prototype_FirstDay Golden, MainGame, Scene/Prefab/Packages/ProjectSettings, procedural world payload v11과 additive gameplay envelope v12 호환.
+- 금지: assertion 약화, 강제 PASS, validator 전용 production 우회, D3D12, push/rebase/reset/clean, 별도 병렬 gameplay/save manager.
+- 검증 예산: BETA-010 최초 D3D11 통합 1회와 결정적 비충돌 결함 최소 교정 뒤 1회. native crash, 데이터 손상, Golden/M70 핵심 회귀면 즉시 중단한다.
+- 완료 조건: 기능 assertion·compile·Console/crash·Golden 회귀가 실제로 통과하고 30~45분 플레이 경로에 진행 차단이 없을 때만 `M85_GAMEPLAY_BETA_COMPLETE`로 기록한다.
+
+## 현재 중단 지점
+
+- 상태: `HARD_BLOCKER_BETA_010_PLAYER_FACING_RESTORE`.
+- `Logs/BETA010_PersistenceRestart_Initial.log`는 save·Editor Play 종료·재진입·load 뒤 world checksum과 B09 contents까지 복원했지만 player facing assertion에서 실패했다.
+- SaveManager가 모든 restore consumer 뒤에 pose를 다시 적용하도록 보정했으나 `Logs/BETA010_PersistenceRestart_Correction.log`도 같은 cell `(64,61)`은 복원하면서 facing만 정확히 `137°` 소실했다.
+- 승인된 최초/교정 D3D11 두 실행을 모두 사용했다. 동일 원인 세 번째 실행, 추가 추측 수정, assertion 완화는 금지한다.
+- 미도달: 복원 후 계속 판매, same-save repeat load, BETA-007/008 debt, full-loop/Golden regression, `M85_GAMEPLAY_BETA_COMPLETE`.
+
+## 별도 아트 입고 체크포인트 — ART-000 / VERIFIED (2026-09-06)
+
+- 이 대화의 goal-objective.md에 따른 ART-000 source intake·style grammar·library·isolated Unity import·production plan을 검증했다. 기록: Docs/AssetProvenance/ART000_COMPLETION_AUDIT.md.
+- 후속 ART-001~010 자동 구현 없음. 기존 CONTENT 활성 티켓과 preapproved milestone은 보존한다. ART-000 source 작업을 다시 수행하지 않는다.
+
+
+## 2026-09-07 현재 대화 실행 우선권 — VS-PRESENT-001
+
+사용자가 Opening Vertical Slice Presentation Pass의 P0→검증→P1→검증→P2→증거→local checkpoint→STOP을 명시 승인했다. 이 대화에서는 P0만 활성화하며 CONTENT-002 상태/변경/선승인 sequence는 보존하고 실행하지 않는다. ART-000 재수행 및 ART-001~010 자동 구현은 하지 않는다. 새 개발용 PA_DepartureTutorial 씬에서 기존 gameplay authority를 연결한다.
+
+
+## 2026-09-07 — VS-PRESENT-001 P0 / PASS · STOP
+
+- 별도 PA_DepartureTutorial 씬에서 실제 키보드 이동→나무 상호작용→열매3→ShopSlot 진열→ShopPriceUI 7G 확정→NPC 접근/평가→기존 Economy 0G→7G→출항 인증 완료를 연속 통과했다.
+- Runtime/Editor compile 오류0(기존 CS8785/CS0414 경고 유지), D3D11 Play Mode, serialized reference 검사와 1920×1080 실캡처 PASS. 근거 Docs/90_PRESENTATION/Evidence/2026-09-08/P0-validation-excerpt.txt, P0-validation.json, P0-integrity.json.
+- Blender 기존 Departure 자산5종과 ART-000 tree/cargo를 적용했다. 최종 화면은 01_PA_Company_FirstView.png / 02_Tutorial_PriceAndReaction.png. 전체보기는 실제 씬에서 HUD만 숨긴 캡처, 가격/반응은 실제 판매 후 남은 열매1개 재진열 상태다.
+- 개발 진입: Project PA > Presentation > Open Departure Tutorial > Play. WASD/SPACE, 실습 가격7G. 튜토리얼 세션만 유지하며 SaveManager가 없어 기존 campaign save를 쓰지 않는다. NEW GAME/standalone 통합 및 저장 재개는 이번에 확인 못 함.
+- 기존 dirty CONTENT/Save/World 코드를 수정하거나 이 checkpoint에 넣지 않았다. 이 작업은 현재 working tree의 기존 ShopPriceUI.OnPriceConfirmed 및 PurchaseFeedbackPresentationController.OnDecisionRecorded 관찰 seam을 사용하므로, checkpoint 단독 checkout은 기존 CONTENT 작업의 별도 checkpoint 없이는 재현 가능한 clean baseline이 아니다.
+- P1/P2 NOT_STARTED. 사용자 최신 지시에 따라 고가 거절 edge case·추가 제작·다음 단계 구현은 수행하지 않고 STOP. 다음 세션은 사람의 직접 플레이 확인/명시 지시를 기다린다.

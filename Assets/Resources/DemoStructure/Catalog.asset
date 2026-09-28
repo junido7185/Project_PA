@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63886b11750a73344a2b9304cd3a1d15, type: 3}
+  m_Name: Catalog
+  m_EditorClassIdentifier: Assembly-CSharp::DemoPlaceableCatalog
+  entries:
+  - item: {fileID: 11400000, guid: d25822e218cd00440b8f6dea175b1344, type: 2}
+    key: shop-base
+    buildingResource: DemoStructure/PioneerShopBase
+    kind: 0
+    size: {x: 1, y: 1}
+    footprint:
+    - {x: 0, y: 0}
+    - {x: 6, y: 0}
+    - {x: 0, y: 1}
+    - {x: 6, y: 1}
+    - {x: 0, y: 2}
+    - {x: 6, y: 2}
+    - {x: 0, y: 3}
+    - {x: 6, y: 3}
+    - {x: 0, y: 4}
+    - {x: 6, y: 4}
+    - {x: 0, y: 5}
+    - {x: 1, y: 5}
+    - {x: 2, y: 5}
+    - {x: 3, y: 5}
+    - {x: 4, y: 5}
+    - {x: 5, y: 5}
+    - {x: 6, y: 5}
+    entrance: {x: 3, y: -1}
+    surfaces: 1
+    canMove: 0
+  - item: {fileID: 11400000, guid: 14a73207e757c8548bf4ee6da2e36f4a, type: 2}
+    key: resident-tent
+    buildingResource: DepartureTutorial/Settlement/Shelter
+    kind: 1
+    size: {x: 2, y: 2}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 1
+    canMove: 1
+  - item: {fileID: 11400000, guid: 6b70caad4677103458410e4786e991f0, type: 2}
+    key: field-workbench
+    buildingResource: DemoStructure/FieldWorkbench
+    kind: 2
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 13
+    canMove: 1
+  - item: {fileID: 11400000, guid: 32e22529592adc744bff5985fb4b797b, type: 2}
+    key: display-stand
+    buildingResource: DemoStructure/StarterDisplayStand
+    kind: 3
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 2
+    canMove: 1
+  - item: {fileID: 11400000, guid: ce7806ada71faf54195a5d2bdcaf1659, type: 2}
+    key: furniture-chair
+    buildingResource: DemoStructure/SimpleFurniture
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 12
+    canMove: 1
+  upgrades:
+  - recipe: {fileID: 11400000, guid: b7c76881e781eae4bb65509e9ef5268f, type: 2}
+    tool: {fileID: 11400000, guid: 1b9f8a9f909e80c4cbfaf1113a4c4258, type: 2}
+    starterTool: {fileID: 11400000, guid: 9e64a6681df3bd44cac10562bce30aa9, type: 2}
+    root: 2
+    specialty: 2
+    production: {fileID: 11400000, guid: abf119c1079a9bc48b068651e935b5de, type: 2}
+    companionPrefix: Miner
+    npcEfficiency: 1.5
+    playerWorkStrength: 2

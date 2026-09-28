@@ -26,6 +26,8 @@ public static class CraftingService
             return false;
         }
 
+        if (!DemoPlaceableCatalog.RecipeUnlocked(recipe)) return false;
+
         // 1. 워크샵 종류 매칭
         if (recipe.requiredWorkbench != WorkbenchType.None)
         {

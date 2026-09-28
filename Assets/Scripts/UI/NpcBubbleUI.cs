@@ -53,13 +53,14 @@ public class NpcBubbleUI : MonoBehaviour
         _bubbleRoot = (RectTransform)rootGO.transform;
         _bubbleRoot.anchorMin = new Vector2(0.5f, 0.5f);
         _bubbleRoot.anchorMax = new Vector2(0.5f, 0.5f);
-        _bubbleRoot.pivot = new Vector2(0.5f, 0.5f);
-        _bubbleRoot.sizeDelta = new Vector2(360f, 112f);
+        _bubbleRoot.pivot = new Vector2(0.5f, 0f);
+        _bubbleRoot.sizeDelta = new Vector2(220f, 80f);
 
         // 배경
         var bgGO = rootGO;
         var bgRT        = (RectTransform)bgGO.transform;
         _bg             = bgGO.GetComponent<Image>();
+        _bg.raycastTarget = false;
         _bg.color       = new Color(1f, 1f, 1f, 0.92f);
 
         // 텍스트
@@ -69,10 +70,11 @@ public class NpcBubbleUI : MonoBehaviour
         textRT.anchorMin = Vector2.zero;
         textRT.anchorMax = Vector2.one;
         textRT.offsetMin = new Vector2(8f, 6f);
-        textRT.offsetMax = new Vector2(-8f, -28f);
+        textRT.offsetMax = new Vector2(-8f, -26f);
 
         bubbleText           = textGO.GetComponent<TextMeshProUGUI>();
-        bubbleText.fontSize  = 21;
+        bubbleText.font = TMP_Settings.defaultFontAsset;
+        bubbleText.fontSize  = 18;
         bubbleText.color     = new Color(0.1f, 0.1f, 0.1f);
         bubbleText.alignment = TextAlignmentOptions.Center;
         bubbleText.textWrappingMode = TextWrappingModes.Normal;
@@ -94,7 +96,8 @@ public class NpcBubbleUI : MonoBehaviour
         tagRT.sizeDelta = new Vector2(-16f, 22f);
 
         customerClassText = tagGO.GetComponent<TextMeshProUGUI>();
-        customerClassText.fontSize = 15f;
+        customerClassText.font = TMP_Settings.defaultFontAsset;
+        customerClassText.fontSize = 13f;
         customerClassText.fontStyle = FontStyles.Bold;
         customerClassText.alignment = TextAlignmentOptions.Center;
         customerClassText.textWrappingMode = TextWrappingModes.NoWrap;
@@ -108,6 +111,12 @@ public class NpcBubbleUI : MonoBehaviour
     public void Show(string text, float duration = 2.5f)
     {
         RefreshCustomerClassLabel();
+        var speaker = GetComponentInParent<NpcController>();
+        string speakerName = speaker != null && speaker.profile != null
+            && !string.IsNullOrEmpty(speaker.profile.npcName) ? speaker.profile.npcName : speaker != null ? speaker.name : "";
+        string prefix = string.IsNullOrEmpty(speakerName) ? "" : speakerName + ": ";
+        if (!string.IsNullOrEmpty(prefix) && text != null && text.StartsWith(prefix))
+            text = text.Substring(prefix.Length);
         if (bubbleText != null) bubbleText.text = text;
         if (_bg != null) _bg.color = new Color(1f, 1f, 1f, 0.92f);
         gameObject.SetActive(true);
@@ -188,12 +197,16 @@ public class NpcBubbleUI : MonoBehaviour
             appliedOffset.y = 2.4f;
 
         Vector3 screen = Camera.main.WorldToScreenPoint(anchor.position + appliedOffset);
+        _bubbleRoot.gameObject.SetActive(screen.z > 0f);
         if (screen.z <= 0f) return;
+        // 머리 위 anchor부터 위쪽으로 펼쳐 상품/캐릭터 몸을 가리지 않는다.
+        screen.y += 18f;
 
         float halfWidth = Mathf.Min(_bubbleRoot.rect.width * 0.5f, Screen.width * 0.45f);
-        float halfHeight = Mathf.Min(_bubbleRoot.rect.height * 0.5f, Screen.height * 0.45f);
+        // 정면 판매대/가격표와 분리하고, 화면 중심의 플레이어 반대쪽에 붙인다.
+        screen.x += (screen.x >= Screen.width * .5f ? 1f : -1f) * (halfWidth + 60f);
         screen.x = Mathf.Clamp(screen.x, halfWidth, Screen.width - halfWidth);
-        screen.y = Mathf.Clamp(screen.y, halfHeight, Screen.height - halfHeight);
+        screen.y = Mathf.Clamp(screen.y, 8f, Screen.height - _bubbleRoot.rect.height - 8f);
         screen.z = 0f;
 
         _bubbleRoot.position = screen;

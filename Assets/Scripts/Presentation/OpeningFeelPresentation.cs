@@ -14,9 +14,6 @@ public sealed class OpeningFeelPresentation : MonoBehaviour
 
     void Awake()
     {
-        // 보류된 미커밋 P4를 보존하되 이번 opening 실행에서는 활성화하지 않는다.
-        foreach (var behaviour in GetComponents<Behaviour>())
-            if (behaviour.GetType().Name == "FirstProductionController") behaviour.enabled = false;
         _selection = GetComponent<DepartureCompanionSelection>();
         _voyage = GetComponent<DepartureVoyagePresentation>();
     }
@@ -51,8 +48,7 @@ public sealed class OpeningFeelPresentation : MonoBehaviour
         if (completion != null) completion.anchoredPosition = new Vector2(600f,0f);
         if (_selection.Tutorial.Complete && !_selection.IsConfirmed)
             _selection.Tutorial.player.GetComponent<PlayerInteraction>().enabled = false;
-        if (_voyage.Sailing)
-            _safe = _voyage.Boat.position + new Vector3(0,1.5f,-.9f);
+        if (_voyage.Sailing) return;
         else if (!_voyage.Arrived && _body.isGrounded && _player.transform.position.y>-.5f)
             _safe = _player.transform.position;
         else if (_voyage.Arrived)
@@ -72,6 +68,6 @@ public sealed class OpeningFeelPresentation : MonoBehaviour
     {
         var rail=GameObject.CreatePrimitive(PrimitiveType.Cube);rail.name=label;
         rail.transform.SetParent(transform,false);rail.transform.position=position;rail.transform.localScale=size;
-        rail.GetComponent<Renderer>().sharedMaterial=Resources.Load<Material>("DepartureTutorial/Materials/PA_Teal");
+        rail.GetComponent<Renderer>().enabled=false;
     }
 }

@@ -233,6 +233,26 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         AddMuscle(_leftArmFrontBack, -stride * armSwing * _walkBlend);
         AddMuscle(_rightArmFrontBack, stride * armSwing * _walkBlend);
 
+        if (_player != null && PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.FirstDayControls)
+        {
+            if (_player.IsAirborne)
+            {
+                AddMuscle(_leftUpperLegFrontBack, .22f); AddMuscle(_rightUpperLegFrontBack, .12f);
+                AddMuscle(_leftLowerLegStretch, .3f * _leftKneeBendSign);
+                AddMuscle(_rightLowerLegStretch, .45f * _rightKneeBendSign);
+                AddMuscle(_leftArmFrontBack, .14f); AddMuscle(_rightArmFrontBack, .14f);
+            }
+            var equipment = _player.GetComponent<EquipmentSystem>();
+            if (equipment != null && equipment.HeldItem != null)
+            { AddMuscle(_rightForearmStretch, .28f * _rightElbowBendSign); AddMuscle(_rightArmFrontBack, .14f); }
+            float action = equipment != null ? Time.time - equipment.ActionStartedAt : 10;
+            if (action < .5f)
+            {
+                float swing = Mathf.Sin(action / .5f * Mathf.PI);
+                AddMuscle(_rightArmFrontBack, swing * .65f);
+                AddMuscle(_chestFrontBack, swing * .12f);
+            }
+        }
         _handler.SetHumanPose(ref _pose);
     }
 

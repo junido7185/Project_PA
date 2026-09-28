@@ -7,6 +7,7 @@ public class SaveData
     // 스키마 버전 — SaveManager 가 로드 시 마이그레이션에 사용한다.
     // 새 필드가 추가되면 CurrentSaveVersion(SaveManager) 을 올리고 마이그레이션 함수를 추가한다.
     public int version = 0;
+    public FirstProductionSaveData firstProduction = new FirstProductionSaveData(); // v16 explicit opening state
     public FirstSettlementSaveData firstSettlement; // v15: optional opening settlement only
 
     // 플레이어 정보
@@ -318,4 +319,31 @@ public class FirstSettlementSaveData
     public string[] companionIds;
     public bool settlementCompleted;
     public List<WorldPlacedBuildingSaveData> buildings = new List<WorldPlacedBuildingSaveData>();
+}
+
+[System.Serializable]
+public class FirstProductionSaveData
+{
+    public int version = 1;
+    public bool started;
+    public bool completed;
+    public List<StarterWorksiteSaveData> worksites = new List<StarterWorksiteSaveData>();
+}
+
+[System.Serializable]
+public class StarterWorksiteSaveData
+{
+    public string companionId, role;
+    public WorldPlacedBuildingSaveData placement;
+    public bool playerActivityCompleted, seedIssued;
+    public FarmPlotSaveData farm;
+    public StarterProducerSaveData producer;
+}
+
+[System.Serializable]
+public class StarterProducerSaveData
+{
+    public bool active, ready, claimed;
+    public float elapsed;
+    public int pendingAmount, stockCount;
 }

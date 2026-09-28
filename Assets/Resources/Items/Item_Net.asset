@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Net
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2003
+  itemName: Net
+  description: Select in the hotbar, face a butterfly and press Space.
+  icon: {fileID: 21300000, guid: 6618c2eba8fba274d9d64ff7ce80c1d2, type: 3}
+  maxStack: 1
+  model: {fileID: 0}
+  basePrice: 0
+  toolType: 7
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

@@ -105,6 +105,9 @@ public class DemoVisualDressingController : MonoBehaviour
     public void RefreshDressing()
     {
         if (!autoDress) return;
+        // Canon v2 §7–8: Demo256는 배치된 실내/가판대의 authored 표현을 사용한다.
+        // Golden 야외 노점/샘플 상품/손님 스테이징을 실내에 중복 투영하지 않는다.
+        if (WorldGameplayAdapterService.Instance?.FirstDay == true) return;
 
         Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         if (shop == null) return; // 상점 없는 씬에서는 아무것도 하지 않는다.

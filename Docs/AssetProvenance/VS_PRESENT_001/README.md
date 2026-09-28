@@ -2,19 +2,19 @@
 
 2026-09-07 · P0 · 최종 제작판 `r02`. ART-000의 입고 결과와 Style Grammar를 사용했다. ART-000 라이브러리와 원본은 읽기 전용으로 유지했으며, 새 외부 다운로드는 없다.
 
-현재 Unity FBX 5종은 [derived-assets.json](derived-assets.json)의 경로와 SHA256으로 식별한다. 편집 가능한 제작 파일은 `Blender/Generated/VS_PRESENT_001/PA_DepartureTrainingKit_r02.blend`, 최종 참조 렌더는 [r02/](r02/)다. 기존 초판과 r01 파일은 삭제하지 않았다. 이 PNG는 Blender 모델 참조 렌더이며 실제 Unity 플레이 캡처가 아니다.
+현재 Unity FBX 5종은 [derived-assets.json](<derived-assets.json>)의 경로와 SHA256으로 식별한다. 편집 가능한 제작 파일은 `Blender/Generated/VS_PRESENT_001/PA_DepartureTrainingKit_r02.blend`, 최종 참조 렌더는 [r02/](<r02>)다. 기존 초판과 r01 파일은 삭제하지 않았다. 이 PNG는 Blender 모델 참조 렌더이며 실제 Unity 플레이 캡처가 아니다.
 
 ## 출처와 파생 작업
 
 | 결과 | 보존한 원본 / 라이선스 | 실제 파생 작업 |
 |---|---|---|
-| TrainingShelf | Kenney Mini Market의 `display-bread.glb`, ART-000 library의 `display-bread` mesh / [CC0-1.0 원문](../Licenses/MiniMarket_License.txt) | 원본 빵 두 개를 제외한 빈 틀만 append. 치수 보정, 약 1m 상판, 다리 네 개, 버팀대, 빈 가격표 제작. 실제 재고는 ShopSlot이 표시한다. |
+| TrainingShelf | Kenney Mini Market의 `display-bread.glb`, ART-000 library의 `display-bread` mesh / [CC0-1.0 원문](<../Licenses/MiniMarket_License.txt>) | 원본 빵 두 개를 제외한 빈 틀만 append. 치수 보정, 약 1m 상판, 다리 네 개, 버팀대, 빈 가격표 제작. 실제 재고는 ShopSlot이 표시한다. |
 | TrainingBoards | Project P.A.에서 직접 제작한 Blender geometry | 공통 목재 보드와 이동·열매 채집·진열/가격 그림 3종. 글자를 mesh로 변환. 외부 게임의 간판·배치·그림을 복제하지 않았다. |
 | Checkpoint | Project P.A.에서 직접 제작한 Blender geometry | 두 개의 낮은 신호 기둥과 통과 방향을 읽는 바닥 문턱. |
-| Fruit | Kenney Food Kit의 `apple.glb` / [CC0-1.0 원문](../Licenses/FoodKit_License.txt) | ART-000에서 입고·해시 검증한 사과를 새로 선택해 높이 0.28m로 정규화하고 팔레트 적용. 이번 열매 ItemData에 사용하는 TEMP 시각 자료. |
-| Boat | Quaternius Cute Fish의 `Boat.blend` / [CC0-1.0 원문](../Licenses/CuteFish_License.txt) | 길이 5.8m 정규화, P.A. 목재 팔레트, 중앙 승선판과 회사 깃발 추가. P0 항구 장식이며 이동 기능은 포함하지 않는다. |
+| Fruit | Kenney Food Kit의 `apple.glb` / [CC0-1.0 원문](<../Licenses/FoodKit_License.txt>) | ART-000에서 입고·해시 검증한 사과를 새로 선택해 높이 0.28m로 정규화하고 팔레트 적용. 이번 열매 ItemData에 사용하는 TEMP 시각 자료. |
+| Boat | Quaternius Cute Fish의 `Boat.blend` / [CC0-1.0 원문](<../Licenses/CuteFish_License.txt>) | 길이 5.8m 정규화, P.A. 목재 팔레트, 중앙 승선판과 회사 깃발 추가. P0 항구 장식이며 이동 기능은 포함하지 않는다. |
 
-공식 출처와 팩 버전은 기존 [EXTERNAL_ASSET_REGISTRY.md](../EXTERNAL_ASSET_REGISTRY.md)를 따른다. 새로 직접 제작한 geometry에 외부 팩의 CC0 라이선스를 임의로 부여하지 않는다.
+공식 출처와 팩 버전은 기존 [EXTERNAL_ASSET_REGISTRY.md](<../EXTERNAL_ASSET_REGISTRY.md>)를 따른다. 새로 직접 제작한 geometry에 외부 팩의 CC0 라이선스를 임의로 부여하지 않는다.
 
 | 보존 원본 | SHA256 |
 |---|---|
@@ -56,5 +56,5 @@ FBX에는 collider와 NavMesh, 상호작용 코드를 넣지 않았다. 기존 g
 - 안내판: 01→02→03 순서, 이동 화살표·SPACE·PRICE 식별, 채집 수관의 겹침과 Trade 선반 다리의 검은 접합면, PRICE 글자 간섭이 최종 렌더에서 해소됐다.
 - 선반: 빈 상판·가격표·다리와 버팀대가 구분된다. 뒤쪽 상판 가장자리가 참조 조명에서 매우 어둡게 보이며 실제 URP 화면의 normal/shadow 확인 대상이다.
 - 체크포인트: 두 기둥·노란 문턱·빈 중앙 통행 구간 확인. 열매: 붉은 본체·짙은 잎과 낮은 polygon 실루엣 확인. 보트: 선체·승선판·P.A. 깃발 확인.
-- [artifact-integrity.json](artifact-integrity.json): 최종 FBX/Blender/render/script/license SHA, export와 Unity 복사본 일치, 원본 해시 보존을 실제 파일로 검사했다.
+- [artifact-integrity.json](<artifact-integrity.json>): 최종 FBX/Blender/render/script/license SHA, export와 Unity 복사본 일치, 원본 해시 보존을 실제 파일로 검사했다.
 - 이 문서의 검증은 Blender와 파일 무결성 범위다. Unity compile·wrapper·실제 gameplay flow·1920×1080 캡처는 해당 milestone 검증 보고서로 판정하며, 사람의 최종 미술 승인을 대신하지 않는다.

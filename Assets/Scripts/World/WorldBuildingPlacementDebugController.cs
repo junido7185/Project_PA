@@ -18,6 +18,8 @@ public sealed class WorldBuildingPlacementDebugController : MonoBehaviour
     void Update()
     {
         if (_placement == null || _gridDebug == null) return;
+        if (Inventory.instance != null &&
+            Inventory.instance.TryGetComponent<WorldHotbarPlacementController>(out var direct) && direct.IsPlacing) return;
 
         if (_placement.HasPreview && _gridDebug.HasSelectedCell)
             _placement.UpdatePreview(_gridDebug.SelectedCell, _quarterTurns);

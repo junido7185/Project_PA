@@ -5,7 +5,7 @@
   "revision": "01",
   "blenderVersion": "4.5.13 LTS",
   "librarySha256BeforeAndAfter": "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
-  "styleGrammar": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+  "styleGrammar": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md",
   "roughness": 0.8,
   "metallic": 0,
   "paletteSrgb": {

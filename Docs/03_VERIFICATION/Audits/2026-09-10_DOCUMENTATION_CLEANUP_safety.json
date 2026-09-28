@@ -1,0 +1,151 @@
+[
+  {
+    "path": "Assets/Editor/PA_DepartureTutorialValidator.cs",
+    "result": "PATH_ONLY"
+  },
+  {
+    "path": "Assets/Editor/PA_OpeningFeelChecks.cs",
+    "result": "PATH_ONLY"
+  },
+  {
+    "path": "Automation/LoopEngineering/State/loop-state.json",
+    "result": "EVIDENCE_PATH_ONLY"
+  },
+  {
+    "path": "Assets/Editor/PA_DepartureContinuationChecks.cs",
+    "result": "PATH_ONLY"
+  },
+  {
+    "path": "Assets/Editor/PA_DepartureVoyageChecks.cs",
+    "result": "PATH_ONLY"
+  },
+  {
+    "path": "Assets/Editor/PA_FirstSettlementChecks.cs",
+    "result": "PATH_ONLY"
+  },
+  {
+    "path": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "result": "PROTECTED_UNCHANGED"
+  },
+  {
+    "path": "Assets/Resources/DepartureTutorial/DepartureContinuation.prefab",
+    "result": "PROTECTED_UNCHANGED"
+  },
+  {
+    "path": "Assets/Scripts/Presentation/FirstIslandSettlementController.cs",
+    "result": "PROTECTED_UNCHANGED"
+  },
+  {
+    "path": "Assets/Scripts/ProducerNpcController.cs",
+    "result": "PROTECTED_UNCHANGED"
+  },
+  {
+    "path": "Assets/Scripts/SaveData.cs",
+    "result": "PROTECTED_UNCHANGED"
+  },
+  {
+    "path": "Assets/Scripts/SaveManager.cs",
+    "result": "PROTECTED_UNCHANGED"
+  },
+  {
+    "path": "Docs/90_PRESENTATION/Evidence/2026-09-09/P3/P3-integrity.json",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "Docs/Presentation/2026-09-09/P3/02_Settlement_PlacementPreview.png": "Docs/90_PRESENTATION/Evidence/2026-09-09/P3/02_Settlement_PlacementPreview.png",
+      "Docs/Presentation/2026-09-09/P3/03_FirstSettlement_Complete.png": "Docs/90_PRESENTATION/Evidence/2026-09-09/P3/03_FirstSettlement_Complete.png",
+      "Docs/Presentation/2026-09-09/P3/01_Island_BeforeSettlement.png": "Docs/90_PRESENTATION/Evidence/2026-09-09/P3/01_Island_BeforeSettlement.png"
+    }
+  },
+  {
+    "path": "Blender/Scripts/build_departure_assets.py",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_ART_STYLE_GRAMMAR.md": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md"
+    }
+  },
+  {
+    "path": "Docs/AssetProvenance/VS_PRESENT_001/P3/derived-assets.json",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_ART_STYLE_GRAMMAR.md": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md"
+    }
+  },
+  {
+    "path": "Blender/Scripts/build_settlement_assets.py",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_ART_STYLE_GRAMMAR.md": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md"
+    }
+  },
+  {
+    "path": "Assets/Editor/PA_UIBuilder.cs",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "Docs/UI_스프라이트_가이드.md": "Docs/02_IMPLEMENTATION/Systems/UI_스프라이트_가이드.md"
+    }
+  },
+  {
+    "path": "Assets/Editor/PA_FeatureChecker.cs",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "Docs/기능_명세서.md": "Docs/03_VERIFICATION/StateSnapshots/2026-04-28_기능_명세서.md"
+    }
+  },
+  {
+    "path": "Assets/Scripts/UI/CustomerPreferencePresentationController.cs",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_CREATIVE_NORTH_STAR.md": "Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md"
+    }
+  },
+  {
+    "path": "Assets/Scripts/UI/PurchaseFeedbackPresentationController.cs",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_CREATIVE_NORTH_STAR.md": "Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md"
+    }
+  },
+  {
+    "path": "Assets/Scripts/CustomerArrivalController.cs",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_CREATIVE_NORTH_STAR.md": "Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md",
+      "Docs/IslandLife/GATHERING_AND_SHOP_GATE.md": "Docs/02_IMPLEMENTATION/Systems/GATHERING_AND_SHOP_GATE.md"
+    }
+  },
+  {
+    "path": "Assets/Editor/PA_TMPFontFixer.cs",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "Docs/UI_스프라이트_가이드.md": "Docs/02_IMPLEMENTATION/Systems/UI_스프라이트_가이드.md"
+    }
+  },
+  {
+    "path": "Docs/AssetProvenance/VS_PRESENT_001/r02/derived-assets.json",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_ART_STYLE_GRAMMAR.md": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md"
+    }
+  },
+  {
+    "path": "Docs/AssetProvenance/VS_PRESENT_001/derived-assets.json",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_ART_STYLE_GRAMMAR.md": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md"
+    }
+  },
+  {
+    "path": "Assets/Scripts/ShopOpenSign.cs",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_CREATIVE_NORTH_STAR.md": "Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md"
+    }
+  },
+  {
+    "path": "Docs/AssetProvenance/VS_PRESENT_001/r01/derived-assets.json",
+    "result": "DOCUMENT_REFERENCE_ONLY",
+    "replacements": {
+      "PROJECT_PA_ART_STYLE_GRAMMAR.md": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md"
+    }
+  }
+]

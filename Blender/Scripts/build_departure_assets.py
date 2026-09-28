@@ -420,7 +420,7 @@ for entry in (APPLE, BOAT, SHELF):
 report = {"ticket": "VS-PRESENT-001", "phase": "P0", "status": "BLENDER_EXPORT_AND_RENDER_PASS",
           "revision": REVISION,
           "blenderVersion": bpy.app.version_string, "librarySha256BeforeAndAfter": library_hash,
-          "styleGrammar": "PROJECT_PA_ART_STYLE_GRAMMAR.md", "roughness": .8, "metallic": 0,
+          "styleGrammar": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md", "roughness": .8, "metallic": 0,
           "paletteSrgb": PALETTE, "sourcesPreserved": True, "assets": assets,
           "unityValidation": "Pending editor importer, wrapper bounds/reference and actual P0 gameplay validation"}
 (EVIDENCE / "derived-assets.json").write_text(json.dumps(report, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")

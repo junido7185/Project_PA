@@ -26,6 +26,9 @@ public class PlayerController : MonoBehaviour
     public bool isSitting = false;
 
     public float ActualPlanarSpeed { get; private set; }
+    public bool IsAirborne => controller != null && !controller.isGrounded;
+    public float VerticalSpeed => _verticalVelocity;
+    public int JumpCount { get; private set; }
     public void ResetMotionAfterTeleport()
     {
         _verticalVelocity = 0; _currentSpeed = 0; ActualPlanarSpeed = 0;
@@ -73,6 +76,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0) { ActualPlanarSpeed=0; return; }
         if (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf) return;
         // 📱 스마트폰 열려있을 때도 이동 차단 (인벤토리와 동일 패턴)
         if (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen) return;
@@ -96,7 +100,8 @@ public class PlayerController : MonoBehaviour
         // ── § 가속/감속 ──────────────────────────────────────────────────────────
         // Deadzone: desiredDir.magnitude(0~1) × moveSpeed = 목표 속도
         // 키보드는 항상 magnitude=1(최대), 게임패드는 반틸트면 0.5 등 자연스럽게 처리된다.
-        float targetSpeed = desiredDir.magnitude * moveSpeed;
+        float targetSpeed = desiredDir.magnitude * moveSpeed *
+            (PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.RunHeld ? 1.6f : 1f);
 
         if (targetSpeed > _currentSpeed)
             _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, acceleration * Time.deltaTime);
@@ -116,6 +121,8 @@ public class PlayerController : MonoBehaviour
         // ── 중력 ─────────────────────────────────────────────────────────────────
         if (controller.isGrounded && _verticalVelocity < 0f)
             _verticalVelocity = -2f; // 지면에 붙어 있도록 약한 하향력 유지
+        if (controller.isGrounded && PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.JumpPressed)
+        { _verticalVelocity = 5.5f; JumpCount++; }
         _verticalVelocity += -9.81f * Time.deltaTime;
 
         // ── 이동 적용 ─────────────────────────────────────────────────────────────

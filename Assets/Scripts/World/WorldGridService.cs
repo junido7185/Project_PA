@@ -432,9 +432,11 @@ public sealed class WorldGridService : MonoBehaviour
                coordinate.y >= 0 && coordinate.y < _definition.Height;
     }
 
+    WorldBuildingPlacementService _placementProtection;
+    internal void BindPlacementProtection(WorldBuildingPlacementService placement) => _placementProtection = placement;
     public bool IsTerraformProtected(Vector2Int coordinate)
     {
-        return coordinate == protectedTerraformCell;
+        return coordinate == protectedTerraformCell || (_placementProtection != null && _placementProtection.IsMoveReserved(coordinate));
     }
 
     public bool TryGetCell(Vector2Int coordinate, out WorldCellData cell)

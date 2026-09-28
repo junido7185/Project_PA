@@ -53,6 +53,7 @@ public sealed class WorldPersistenceService : MonoBehaviour
 
     public static WorldPersistenceService Instance { get; private set; }
     public bool IsProceduralActive => _baseWorld != null;
+    public WorldGenerationResult ActiveGeneratedWorld => _baseWorld;
     public long ActiveSeed => _baseWorld != null ? _baseWorld.Seed : 0L;
     public int ActiveGenerationVersion => _baseWorld != null ? _baseWorld.GenerationVersion : 0;
     public int CurrentSparseDeltaCount => IsProceduralActive
@@ -90,6 +91,11 @@ public sealed class WorldPersistenceService : MonoBehaviour
 
     public bool StartProceduralWorld(long seed, out string reason)
     {
+        return StartProceduralWorld(seed, WorldIslandGenerationSettings.Provisional128, out reason);
+    }
+
+    public bool StartProceduralWorld(long seed, WorldIslandGenerationSettings settings, out string reason)
+    {
         reason = string.Empty;
         if (!Application.isPlaying)
         {
@@ -99,7 +105,7 @@ public sealed class WorldPersistenceService : MonoBehaviour
 
         ResolveDependencies();
         WorldGenerationResult generated = WorldIslandGenerator.Generate(
-            seed, WorldIslandGenerationSettings.Provisional128);
+            seed, settings);
         if (!RemovePrototypeBuilding(out reason)) return false;
         if (!_grid.TryRestoreSnapshot(generated.Definition, generated.TerrainCells))
         {
@@ -201,6 +207,8 @@ public sealed class WorldPersistenceService : MonoBehaviour
 
         foreach (WorldPlacedBuildingSaveData building in state.placedBuildings)
         {
+            WorldPlaceableKitCatalog.TryDefinition(building.instanceId, out var definition);
+            _buildings.RegisterDefinition(building.instanceId, definition);
             WorldBuildingPlacementResult result = _buildings.TryPlace(
                 building.instanceId,
                 new Vector2Int(building.anchorX, building.anchorZ),
@@ -308,13 +316,17 @@ public sealed class WorldPersistenceService : MonoBehaviour
             reason = "World payload is not Procedural.";
             return false;
         }
-        if (state.generationVersion != WorldIslandGenerationSettings.CurrentGenerationVersion)
+        WorldIslandGenerationSettings settings;
+        if (state.generationVersion == WorldIslandGenerationSettings.LegacyGenerationVersion)
+            settings = WorldIslandGenerationSettings.Provisional128;
+        else if (state.generationVersion == WorldIslandGenerationSettings.Demo256.GenerationVersion)
+            settings = WorldIslandGenerationSettings.Demo256;
+        else
         {
             reason = "Missing or unsupported generationVersion.";
             return false;
         }
 
-        WorldIslandGenerationSettings settings = WorldIslandGenerationSettings.Provisional128;
         if (state.widthCells != settings.WidthCells ||
             state.heightCells != settings.HeightCells ||
             Mathf.Abs(state.cellSizeMeters - settings.CellSize) > 0.001f ||
@@ -391,66 +403,70 @@ public sealed class WorldPersistenceService : MonoBehaviour
         reason = string.Empty;
         WorldGridDefinition definition = generated.Definition;
         records ??= new List<WorldPlacedBuildingSaveData>();
-        if (records.Count > 1)
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        var occupied = new HashSet<Vector2Int>();
+        var entrances = new List<Vector2Int>();
+        foreach (WorldPlacedBuildingSaveData record in records)
         {
-            reason = "WORLD-007 MVP supports one persisted B09 building.";
-            return false;
+            if (record == null || !ids.Add(record.instanceId) ||
+                !WorldPlaceableKitCatalog.TryDefinition(record.instanceId, out var buildingDefinition) ||
+                record.buildingId != buildingDefinition.StableId ||
+                record.rotationQuarterTurns < 0 || record.rotationQuarterTurns > 3)
+            {
+                reason = "Unsupported or unstable building identity.";
+                return false;
+            }
+            if (record.storedItems != null &&
+                (record.storedItems.Count > 100 || record.storedItems.Any(item =>
+                    item == null || item.count <= 0 || item.quality < 0f)))
+            {
+                reason = "Persisted building storage payload is invalid.";
+                return false;
+            }
+            BuildingData data = Resources.Load<BuildingData>(
+                buildingDefinition.BuildingResourcePath);
+            if (data == null || data.prefab == null)
+            {
+                reason = "Persisted building prefab is unavailable.";
+                return false;
+            }
+
+            var anchor = new Vector2Int(record.anchorX, record.anchorZ);
+            Vector2Int[] footprint = buildingDefinition
+                .ResolveFootprint(anchor, record.rotationQuarterTurns);
+            Vector2Int entrance = buildingDefinition
+                .ResolveEntrance(anchor, record.rotationQuarterTurns);
+            int? flat = null;
+            foreach (Vector2Int coordinate in footprint)
+            {
+                if (!TryGetCell(definition, cells, coordinate, out WorldCellData cell) ||
+                    occupied.Contains(coordinate) || entrances.Contains(coordinate) ||
+                    cell.HasWater || cell.HasPath || cell.Occupancy != WorldCellOccupancy.Empty ||
+                    (cell.GroundType != WorldGroundType.Default &&
+                     cell.GroundType != WorldGroundType.Soil))
+                {
+                    reason = "Persisted building footprint is invalid.";
+                    return false;
+                }
+                flat ??= cell.ElevationLevel;
+                if (flat.Value != cell.ElevationLevel)
+                {
+                    reason = "Persisted building footprint is uneven.";
+                    return false;
+                }
+            }
+            if (!TryGetCell(definition, cells, entrance, out WorldCellData entranceCell) ||
+                occupied.Contains(entrance) || footprint.Contains(entrance) || entranceCell.HasWater || entranceCell.HasPath ||
+                !flat.HasValue || Mathf.Abs(entranceCell.ElevationLevel - flat.Value) > 1)
+            {
+                reason = "Persisted building entrance is blocked.";
+                return false;
+            }
+
+            occupied.UnionWith(footprint);
+            entrances.Add(entrance);
         }
         if (records.Count == 0) return true;
-
-        WorldPlacedBuildingSaveData record = records[0];
-        if (record == null ||
-            record.instanceId != WorldBuildingPlacementService.PrototypeInstanceId ||
-            record.buildingId != WorldBuildingPlacementService.StorageShedDefinition.StableId)
-        {
-            reason = "Unsupported or unstable building identity.";
-            return false;
-        }
-        if (record.storedItems != null &&
-            (record.storedItems.Count > 100 || record.storedItems.Any(item =>
-                item == null || item.count <= 0 || item.quality < 0f)))
-        {
-            reason = "Persisted building storage payload is invalid.";
-            return false;
-        }
-        BuildingData data = Resources.Load<BuildingData>(
-            WorldBuildingPlacementService.StorageShedDefinition.BuildingResourcePath);
-        if (data == null || data.prefab == null)
-        {
-            reason = "Persisted building prefab is unavailable.";
-            return false;
-        }
-
-        var anchor = new Vector2Int(record.anchorX, record.anchorZ);
-        Vector2Int[] footprint = WorldBuildingPlacementService.StorageShedDefinition
-            .ResolveFootprint(anchor, record.rotationQuarterTurns);
-        Vector2Int entrance = WorldBuildingPlacementService.StorageShedDefinition
-            .ResolveEntrance(anchor, record.rotationQuarterTurns);
-        int? flat = null;
-        foreach (Vector2Int coordinate in footprint)
-        {
-            if (!TryGetCell(definition, cells, coordinate, out WorldCellData cell) ||
-                cell.HasWater || cell.HasPath || cell.Occupancy != WorldCellOccupancy.Empty ||
-                (cell.GroundType != WorldGroundType.Default &&
-                 cell.GroundType != WorldGroundType.Soil))
-            {
-                reason = "Persisted building footprint is invalid.";
-                return false;
-            }
-            flat ??= cell.ElevationLevel;
-            if (flat.Value != cell.ElevationLevel)
-            {
-                reason = "Persisted building footprint is uneven.";
-                return false;
-            }
-        }
-        if (!TryGetCell(definition, cells, entrance, out WorldCellData entranceCell) ||
-            footprint.Contains(entrance) || entranceCell.HasWater || entranceCell.HasPath ||
-            !flat.HasValue || Mathf.Abs(entranceCell.ElevationLevel - flat.Value) > 1)
-        {
-            reason = "Persisted building entrance is blocked.";
-            return false;
-        }
 
         if (!generated.TryGetAnchor(WorldGenerationAnchorKind.Start,
                 out WorldGenerationAnchor start))
@@ -462,9 +478,9 @@ public sealed class WorldPersistenceService : MonoBehaviour
             anchor.Kind == WorldGenerationAnchorKind.Shop
                 ? anchor.EntranceCoordinate
                 : anchor.Coordinate).ToList();
-        targets.Add(entrance);
+        targets.AddRange(entrances);
         if (!WorldCellReachability.CanReachAll(definition, cells, start.Coordinate,
-                targets, new HashSet<Vector2Int>(footprint), null, out _))
+                targets, occupied, null, out _))
         {
             reason = "Persisted building would isolate a critical world anchor or entrance.";
             return false;
@@ -559,8 +575,8 @@ public sealed class WorldPersistenceService : MonoBehaviour
     List<WorldPlacedBuildingSaveData> CaptureBuildings()
     {
         var result = new List<WorldPlacedBuildingSaveData>();
-        if (_buildings.TryGetPlacement(WorldBuildingPlacementService.PrototypeInstanceId,
-                out WorldPlacedBuildingRuntime placement))
+        foreach (string id in WorldPlaceableKitCatalog.PersistedIds)
+        if (_buildings.TryGetPlacement(id, out WorldPlacedBuildingRuntime placement))
         {
             result.Add(new WorldPlacedBuildingSaveData
             {
@@ -626,13 +642,16 @@ public sealed class WorldPersistenceService : MonoBehaviour
     bool RemovePrototypeBuilding(out string reason)
     {
         reason = string.Empty;
-        if (!_buildings.TryGetPlacement(WorldBuildingPlacementService.PrototypeInstanceId, out _))
-            return true;
-        WorldBuildingPlacementResult removed = _buildings.TryRemove(
-            WorldBuildingPlacementService.PrototypeInstanceId);
-        if (removed.Succeeded) return true;
-        reason = $"Existing prototype building could not be cleared: {removed.Failure}.";
-        return false;
+        _buildings.CancelPreview();
+        foreach (string id in WorldPlaceableKitCatalog.PersistedIds)
+        {
+            if (!_buildings.TryGetPlacement(id, out _)) continue;
+            var removed = _buildings.TryRemove(id);
+            if (removed.Succeeded) continue;
+            reason = $"Existing building could not be cleared: {removed.Failure}.";
+            return false;
+        }
+        return true;
     }
 
     void RefreshTerrainProjection()

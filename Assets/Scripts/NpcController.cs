@@ -483,27 +483,14 @@ public class NpcController : MonoBehaviour
         int displayPrice = Mathf.Max(1, slot.EffectiveDisplayPrice);
         int basePrice = Mathf.Max(1, item.basePrice);
         float ratio = displayPrice / (float)basePrice;
-        int percent = Mathf.RoundToInt(result.probability * 100f);
-
-        string itemName = item.itemName;
-        string categoryHint = ResolveCategoryHint(item.category);
-
         if (result.willBuy)
         {
-            if (ratio <= 0.85f)
-                return $"{DisplayName}: 저렴해서 구매 ({percent}%)";
-            if (ratio <= 1.15f)
-                return $"{DisplayName}: 가격 적정, 구매 ({percent}%)";
-            return $"{DisplayName}: {categoryHint} 선호로 구매 ({percent}%)";
+            if (ratio <= 0.85f) return "이 가격이면 좋죠!";
+            if (ratio <= 1.15f) return "이걸로 주세요!";
+            return "마음에 들어요!";
         }
-
-        if (ratio >= 1.35f)
-            return $"{DisplayName}: 가격 높아 보류 ({percent}%)";
-
-        if (result.probability < 0.35f)
-            return $"{DisplayName}: 선호 낮아 보류 ({percent}%)";
-
-        return $"{DisplayName}: 고민 후 보류 ({percent}%)";
+        if (ratio >= 1.35f) return "조금 비싸네요…";
+        return "다음에 살게요.";
     }
 
     string ResolveCategoryHint(ItemCategory category)

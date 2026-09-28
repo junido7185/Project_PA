@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4982061799146763502}
   - component: {fileID: 8470394929383330151}
   - component: {fileID: 7374569531784968135}
+  - component: {fileID: 5459125345858840842}
   m_Layer: 0
   m_Name: DepartureContinuation
   m_TagString: Untagged
@@ -44,7 +45,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f997186dc6326674e9cef5140ceca11c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DepartureCompanionSelection
   candidates:
   - id: Lumberjack_01
@@ -90,7 +91,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79177b84c648e624ab54fc948f3048b7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DepartureVoyagePresentation
   boatPrefab: {fileID: 2227741323378753310, guid: a3ca36dd29c7cbd468c5dbf19136d407, type: 3}
   treePrefab: {fileID: 7934636992084984661, guid: c7dcb29395b93124bb768993e8fa94c9, type: 3}
@@ -110,5 +111,75 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a74dd5d27f031f943bcad6f653605254, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FirstIslandSettlementController
+--- !u!114 &5459125345858840842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3524566492540838093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19b056e7b243db44b9923e5bc4a3160e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FirstProductionController
+  worksiteProfiles:
+  - companionId: Lumberjack_01
+    profileId: Wood
+    productionData: {fileID: 11400000, guid: c08a3cc6d0e450b4db1860a4c434325a, type: 2}
+    specialty: 3
+    buildingId: PA_STARTER_Wood
+    buildingResourcePath: DepartureTutorial/Worksites/Wood
+    footprint:
+    - {x: 0, y: 0}
+    entranceOffset: {x: 0, y: -1}
+    activityKind: 0
+    activityIdPrefix: p4-gather-
+    activityLabel: "\uC815\uCC29 \uC2E4\uC2B5 \uC6D0\uBAA9"
+    activityPrompt: "\uACF5\uC6A9 \uB3C4\uB07C\uB85C \uC6D0\uBAA9 \uCC44\uC9D1"
+    activityItemResourcePath: 
+    activityAmount: 1
+    growthSecondsPerStage: 3
+    starterSeed: {fileID: 0}
+    gatheringTool: 0
+    toolPrefab: {fileID: 5294167684914719612, guid: 537afb070799d8742a5dfceca927046e, type: 3}
+  - companionId: Miner_01
+    profileId: Ore
+    productionData: {fileID: 11400000, guid: abf119c1079a9bc48b068651e935b5de, type: 2}
+    specialty: 2
+    buildingId: PA_STARTER_Ore
+    buildingResourcePath: DepartureTutorial/Worksites/Ore
+    footprint:
+    - {x: 0, y: 0}
+    entranceOffset: {x: 0, y: -1}
+    activityKind: 1
+    activityIdPrefix: p4-mine-
+    activityLabel: "\uC815\uCC29 \uC2E4\uC2B5 \uAD11\uB9E5"
+    activityPrompt: "\uAD11\uB9E5 \uCC44\uAD74 \uCCB4\uD5D8"
+    activityItemResourcePath: Items/Item_Ore
+    activityAmount: 2
+    growthSecondsPerStage: 3
+    starterSeed: {fileID: 0}
+    gatheringTool: 0
+    toolPrefab: {fileID: 7536797756379795926, guid: f49940b6b4aa7054eb2d0d5d87ca953c, type: 3}
+  - companionId: Farmer_01
+    profileId: Wheat
+    productionData: {fileID: 11400000, guid: d6e3ec2239765be4899169da8b382732, type: 2}
+    specialty: 1
+    buildingId: PA_STARTER_Wheat
+    buildingResourcePath: DepartureTutorial/Worksites/Wheat
+    footprint:
+    - {x: 0, y: 0}
+    entranceOffset: {x: 0, y: -1}
+    activityKind: 2
+    activityIdPrefix: p4-farm-
+    activityLabel: "\uC815\uCC29 \uC2E4\uC2B5 \uBC2D"
+    activityPrompt: "\uD30C\uC885 / \uC218\uD655 \uCCB4\uD5D8"
+    activityItemResourcePath: 
+    activityAmount: 1
+    growthSecondsPerStage: 3
+    starterSeed: {fileID: 11400000, guid: 46ae44861479f4b44ad96a13075a8738, type: 2}
+    gatheringTool: 0
+    toolPrefab: {fileID: 6843603316459136398, guid: 856c3d937703f7f4c8faa21bcfa7e377, type: 3}

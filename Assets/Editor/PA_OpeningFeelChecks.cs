@@ -17,7 +17,7 @@ using Object=UnityEngine.Object;
 [InitializeOnLoad]
 public static class PA_OpeningFeelChecks
 {
-    const string Key="PA.OpeningFeel", Output="Docs/Presentation/2026-09-10/GameFeel";
+    const string Key="PA.OpeningFeel", Output="Docs/90_PRESENTATION/Evidence/2026-09-10/GameFeel";
     const BindingFlags Hidden=BindingFlags.Instance|BindingFlags.NonPublic;
     static Task _task; static Keyboard _keyboard; static Mouse _mouse; static double _start;
     static readonly List<string> Results=new List<string>();

@@ -20,6 +20,8 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
     GameObject _completionPanel;
     RectTransform _progress;
     Canvas _canvas;
+    Mesh _keyCoverMesh;
+    float _nextBoardCheck;
 
     static readonly Color Ink = new Color(0.17f, 0.23f, 0.23f);
     static readonly Color Paper = new Color(0.97f, 0.94f, 0.85f, 0.98f);
@@ -32,6 +34,9 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         if (tutorial == null) tutorial = GetComponent<DepartureTutorialController>();
         if (font == null) font = TMP_Settings.defaultFontAsset;
         BuildUI();
+        foreach(var label in FindObjectsByType<TextMeshPro>(FindObjectsSortMode.None))
+            if(label.text.Contains("실습 가격"))label.text="가격은 직접 정해보세요";
+        CorrectGatherBoards();
         var priceCanvas = Resources.FindObjectsOfTypeAll<Canvas>().FirstOrDefault(c => c.gameObject.scene.IsValid() && c.name == "ShopPriceUI_Canvas");
         if (priceCanvas != null)
         {
@@ -40,9 +45,19 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         }
     }
 
+    int _lastStage;
+    float _noticeUntil;
     void Update()
     {
+        // 생성 시점이 다른 실제 보드 인스턴스도 교정한다. MOVE 메시에는 적용하지 않는다.
+        if (Time.unscaledTime >= _nextBoardCheck)
+        {
+            _nextBoardCheck = Time.unscaledTime + 1f;
+            CorrectGatherBoards();
+        }
         if (tutorial == null || _canvas == null) return;
+        if (_lastStage != tutorial.Stage) { _lastStage = tutorial.Stage; _noticeUntil = Time.unscaledTime + 4; }
+        ObjectiveLabel.transform.parent.gameObject.SetActive(Time.unscaledTime < _noticeUntil || tutorial.Complete);
         ObjectiveLabel.text = tutorial.ObjectiveText;
         _step.text = tutorial.Complete ? "P.A. COMPANY  /  DEPARTURE CERTIFIED"
             : $"P.A. COMPANY  /  STEP {tutorial.Stage:00}";
@@ -52,8 +67,59 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         _reactionPanel.SetActive(reactionVisible);
         if (reactionVisible) _reaction.text = tutorial.LastReaction;
         _completionPanel.SetActive(tutorial.Complete && !(ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen));
-        _controls.text = tutorial.Complete ? "출항 준비를 마쳤습니다."
-            : "W A S D  이동     SPACE  상호작용";
+        bool modal=PlayerInputHandler.ModalOpen;
+        _controls.transform.parent.gameObject.SetActive(!modal);
+        _controls.text = tutorial.Complete ? "출항 준비를 마쳤습니다." : tutorial.Stage==3
+            ? "1–9 / 휠 선택 · X 빈손 · E 진열" : "WASD 이동 · Shift 달리기 · Space 점프 · E 행동";
+    }
+
+    void CorrectGatherBoards()
+    {
+        foreach (var renderer in FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+        {
+            if (renderer.gameObject.scene.name != DepartureTutorialController.SceneName) continue;
+            var filter = renderer.GetComponent<MeshFilter>();
+            if (filter == null || filter.sharedMesh == null || filter.sharedMesh.name != "Board_Harvest"
+                || renderer.transform.Find("InteractionKey_E") != null) continue;
+
+            // 실제 FBX는 SPACE까지 하나의 Board_Harvest 메시로 합쳐져 있다.
+            // 확인한 글자 bounds: x ±.19, y 1.35–1.45, z .19. 키 바탕 안쪽만 덮는다.
+            if (_keyCoverMesh == null)
+            {
+                _keyCoverMesh = new Mesh { name = "GatherKeyCover" };
+                _keyCoverMesh.vertices = new[] { new Vector3(-.3f, -.09f, 0), new Vector3(.3f, -.09f, 0),
+                    new Vector3(.3f, .09f, 0), new Vector3(-.3f, .09f, 0) };
+                _keyCoverMesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+                _keyCoverMesh.RecalculateNormals();
+                _keyCoverMesh.RecalculateBounds();
+            }
+            var cover = new GameObject("InteractionKeyCover", typeof(MeshFilter), typeof(MeshRenderer));
+            cover.transform.SetParent(renderer.transform, false);
+            cover.transform.localPosition = new Vector3(0, 1.39f, .202f);
+            cover.GetComponent<MeshFilter>().sharedMesh = _keyCoverMesh;
+            var coverRenderer = cover.GetComponent<MeshRenderer>();
+            coverRenderer.sharedMaterial = Resources.Load<Material>("DepartureTutorial/Materials/PA_Ink");
+            coverRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            coverRenderer.receiveShadows = false;
+
+            var legend = new GameObject("InteractionKey_E", typeof(TextMeshPro));
+            legend.transform.SetParent(renderer.transform, false);
+            legend.transform.localPosition = new Vector3(0, 1.40f, .208f);
+            legend.transform.localRotation = Quaternion.Euler(0, 180, 0);
+            var text = legend.GetComponent<TextMeshPro>();
+            text.font = font;
+            text.text = "E";
+            text.fontSize = 1.6f;
+            text.fontStyle = FontStyles.Bold;
+            text.color = Paper;
+            text.alignment = TextAlignmentOptions.Center;
+            text.rectTransform.sizeDelta = new Vector2(.6f, .18f);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (_keyCoverMesh != null) Destroy(_keyCoverMesh);
     }
 
     void BuildUI()
@@ -90,8 +156,8 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         _money.alignment = TextAlignmentOptions.MidlineRight;
 
         RectTransform controlsPanel = Panel(root.transform, "Controls", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 26f), new Vector2(580f, 44f), new Color(0.17f, 0.23f, 0.23f, 0.86f));
-        _controls = Label(controlsPanel, "Keys", "", new Vector2(14f, -3f), new Vector2(552f, 38f), 19f, Paper);
+            new Vector2(0f, 182f), new Vector2(720f, 44f), new Color(0.17f, 0.23f, 0.23f, 0.86f));
+        _controls = Label(controlsPanel, "Keys", "", new Vector2(14f, -3f), new Vector2(692f, 38f), 19f, Paper);
         _controls.alignment = TextAlignmentOptions.Center;
 
         RectTransform reaction = Panel(root.transform, "ActualCustomerReaction", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),

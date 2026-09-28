@@ -2,7 +2,7 @@
 
 2026-09-06 · 제작 계획, 후속 티켓 구현 승인 아님.
 
-기준: `CONTENT_CANON_BIBLE.md`, 최신 `CONTENT_CAMPAIGN_DAY1_30.md`·`CONTENT_IMPLEMENTATION_BACKLOG.md`, `PROJECT_PA_DEMO_IDENTITY.md`, `Docs/PROJECT_STATE.md`, 실제 `Assets/Scripts`·`Assets/Resources`·기존 prefab. 캠페인 초안의 **고용 전 실제 유료 매입→고용 후 반복 작업 위임** 순서를 읽었으며 예전 데모 문서의 고용 먼저 시연과 혼동하지 않는다. 인물 이름/성격/직업과 가격·고용비·Tier는 아트 티켓에서 재정의하지 않는다.
+기준: `Docs/01_GAME_DESIGN/Canon/CONTENT_CANON_BIBLE.md`, 최신 `Docs/01_GAME_DESIGN/Campaign/CONTENT_CAMPAIGN_DAY1_30.md`·`Docs/02_IMPLEMENTATION/Content/CONTENT_IMPLEMENTATION_BACKLOG.md`, `Docs/90_PRESENTATION/Demo/PROJECT_PA_DEMO_IDENTITY.md`, `Docs/03_VERIFICATION/StateSnapshots/2026-08-25_PROJECT_STATE.md`, 실제 `Assets/Scripts`·`Assets/Resources`·기존 prefab. 캠페인 초안의 **고용 전 실제 유료 매입→고용 후 반복 작업 위임** 순서를 읽었으며 예전 데모 문서의 고용 먼저 시연과 혼동하지 않는다. 인물 이름/성격/직업과 가격·고용비·Tier는 아트 티켓에서 재정의하지 않는다.
 
 기존 WorldSandbox 일반 진입과 BETA-010 facing 137° 저장 복원은 별도 CONTENT/BETA 작업이다. ART-000의 에셋 검증으로 해소되지 않는다. CONTENT 문서가 구현 중이므로 아트 적용 시 해당 티켓의 최종 계약을 다시 대조한다.
 
@@ -42,7 +42,7 @@ FOUND_DIRECT는 필요한 시각 모델이 발견됐다는 뜻이며 무보정/�
 
 ## 2. Missing asset list / 제작 배치
 
-이번 티켓에서 파생 mesh를 생산하지 않는다. 아래 입력은 [원본 registry](EXTERNAL_ASSET_REGISTRY.md)와 [33종 manifest](selected-assets.json)의 stable ID/해시로 고정한다. 새 파일은 `Blender/Generated/<batch>/PA_DERIVED_*.blend`, FBX는 `Blender/Export/<batch>/`, 최종 게임 파일은 `Assets/Art/ProjectPA/Derived/<role>/`이다.
+이번 티켓에서 파생 mesh를 생산하지 않는다. 아래 입력은 [원본 registry](<EXTERNAL_ASSET_REGISTRY.md>)와 [33종 manifest](<selected-assets.json>)의 stable ID/해시로 고정한다. 새 파일은 `Blender/Generated/<batch>/PA_DERIVED_*.blend`, FBX는 `Blender/Export/<batch>/`, 최종 게임 파일은 `Assets/Art/ProjectPA/Derived/<role>/`이다.
 
 | Batch / priority | 만들 결과 | Blender 작업 내용 | 완성 판정 |
 |---|---|---|---|
@@ -59,7 +59,7 @@ FOUND_DIRECT는 필요한 시각 모델이 발견됐다는 뜻이며 무보정/�
 
 1. source 사본 SHA256 확인, collection `PA_DERIVED_*` 생성, source collection은 보존한다.
 2. mesh bounds와 단위 확인, bottom center/interaction face -Z(Blender -Y) 기준으로 새 root를 정한다. 적용한 회전/축/scale을 manifest에 기록한다.
-3. `PROJECT_PA_ART_STYLE_GRAMMAR.md`에 따라 PA 공유 재질을 remap하고, 실제 source의 UV/flat 면을 보존할 부분을 검사한다.
+3. `Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md`에 따라 PA 공유 재질을 remap하고, 실제 source의 UV/flat 면을 보존할 부분을 검사한다.
 4. 한 runtime 형식 FBX로 export하고 texture/material dependency를 manifest로 고정한다. OBJ/GLB/BLEND를 Assets에 중복 복사하지 않는다.
 5. Editor utility로 기존 owner의 visual child 또는 별도 PA wrapper를 만들고 collider/anchor/NavMesh 계약을 검증한다. source prefab 자체를 경제/저장 authority로 쓰지 않는다.
 6. 격리 import/prefab 왕복 후 승인된 WorldSandbox/Demo surface에서 실제 기능 상태를 검증한다. 씬 생성/편집은 Editor builder와 validator를 사용한다. Golden/MainGame 덮어쓰기 없음.

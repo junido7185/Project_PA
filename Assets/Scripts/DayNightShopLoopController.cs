@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -19,6 +21,44 @@ public class DayNightShopLoopController : MonoBehaviour
 {
     public static DayNightShopLoopController Instance { get; private set; }
     public static event System.Action<int> OnShopDaySettled;
+    public bool IsOpeningDemo { get; private set; }
+    public bool OpeningSessionCompleted { get; private set; }
+    public event Action<int, int, int> OpeningShopClosed; // purchases, revenue, rejections
+    Shop _openingShop;
+    int _openingRevenue, _openingSales, _openingRejectionsAtStart;
+    public void ConfigureOpeningDemo(Shop shop)
+    {
+        // null은 새 Opening 월드 세션의 시작 신호다. 같은 씬에서 재시작해도
+        // 이전 CLOSE 결과가 새 Shop/Base의 OPEN을 막지 않도록 한다.
+        if (shop == null)
+        {
+            OpeningSessionCompleted = false;
+            _openingSales = _openingRevenue = _openingRejectionsAtStart = 0;
+            _playerOpenedShopToday = false;
+            _openedShopDay = -1;
+        }
+        if (!IsOpeningDemo)
+        {
+            IsOpeningDemo = true; keepDay1TutorialShopOpen = false;
+            _playerOpenedShopToday = false; _openedShopDay = -1;
+            SalesLogManager.OnSaleRecorded += ObserveOpeningSale;
+        }
+        _openingShop = shop;
+    }
+    void ObserveOpeningSale(SaleRecord sale)
+    {
+        if (!IsOpeningDemo || !IsShopOpenForCustomers || sale == null) return;
+        _openingSales++; _openingRevenue += sale.price;
+    }
+    public bool TryCloseOpeningShop()
+    {
+        if (!IsOpeningDemo || OpeningSessionCompleted || !IsShopOpenForCustomers) return false;
+        _playerOpenedShopToday = false; OpeningSessionCompleted = true;
+        int rejected = SalesLogManager.Instance != null ? SalesLogManager.Instance.GetDailyDecisionStats(CurrentDay).rejections : 0;
+        RefreshUI();
+        OpeningShopClosed?.Invoke(_openingSales, _openingRevenue, Mathf.Max(0, rejected - _openingRejectionsAtStart));
+        return true;
+    }
 
     [Header("Phase Hours")]
     [Range(0f, 23.99f)] public float dayStartHour = 6f;
@@ -67,10 +107,10 @@ public class DayNightShopLoopController : MonoBehaviour
     public bool IsShopOpenForCustomers => IsTutorialAlwaysOpen
         || (_phase == PADayNightPhase.ShopOpen && PlayerHasOpenedShopToday);
     // 플레이어가 지금 영업을 시작할 수 있는가(밤 ShopOpen 단계, 아직 안 열었음).
-    public bool CanPlayerOpenShop => !IsTutorialAlwaysOpen
+    public bool CanPlayerOpenShop => !OpeningSessionCompleted && !IsTutorialAlwaysOpen
         && _phase == PADayNightPhase.ShopOpen && !PlayerHasOpenedShopToday;
     // 정산 때 기존 가게 간판으로 하루를 마감하고 다음 날 아침을 시작한다.
-    public bool CanPlayerStartNextDay => _phase == PADayNightPhase.Settlement;
+    public bool CanPlayerStartNextDay => !IsOpeningDemo && _phase == PADayNightPhase.Settlement;
 
     int CurrentDay => GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
     float CurrentHour => GameClock.Instance != null ? GameClock.Instance.CurrentHour : 8f;
@@ -108,6 +148,7 @@ public class DayNightShopLoopController : MonoBehaviour
 
     void OnDestroy()
     {
+        SalesLogManager.OnSaleRecorded -= ObserveOpeningSale;
         if (GameClock.Instance != null)
         {
             GameClock.Instance.OnHourTick -= OnHourTick;
@@ -138,6 +179,15 @@ public class DayNightShopLoopController : MonoBehaviour
     // ShopOpen 단계에서만 실제로 열리며, 그 전에는 자연스러운 안내만 보여준다.
     public bool TryOpenShop()
     {
+        if (IsOpeningDemo)
+        {
+            if (OpeningSessionCompleted || IsShopOpenForCustomers || _openingShop == null ||
+                !_openingShop.Slots.Any(slot => slot != null && slot.isActiveAndEnabled && !slot.IsEmpty) ||
+                DemoSettlementController.Instance == null || !DemoSettlementController.Instance.NightReady ||
+                Inventory.instance?.GetComponent<WorldHotbarPlacementController>()?.IsPlacing == true) return false;
+            _openingRevenue = _openingSales = 0;
+            _openingRejectionsAtStart = SalesLogManager.Instance != null ? SalesLogManager.Instance.GetDailyDecisionStats(CurrentDay).rejections : 0;
+        }
         RefreshState(force: false);
 
         if (IsTutorialAlwaysOpen)
@@ -174,6 +224,7 @@ public class DayNightShopLoopController : MonoBehaviour
 
     bool TryStartNextDayInternal(bool allowCompletedDay1Tutorial)
     {
+        if (IsOpeningDemo) return false;
         RefreshState(force: false);
 
         if (LongPlayProgressionController.Instance != null

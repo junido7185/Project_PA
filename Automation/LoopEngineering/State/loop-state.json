@@ -1,4 +1,38 @@
 {
+  "visualDirectorContinuationApproval": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "approvedOn": "2026-09-25",
+    "approvalSource": "User: resume T2-A through T7; no per-ticket confirmation; Demo256 entry after Shop/Base + two tents; Golden Tier1 unchanged",
+    "approvedTickets": [
+      "T2",
+      "T2-A",
+      "T2-B",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "activeTicket": "T7",
+    "preapprovedThrough": "T7",
+    "autonomousContinuation": false,
+    "localTicketCommitsAllowed": false,
+    "pushAllowed": false,
+    "status": "delivery_cleanup_complete_standalone_unverified",
+    "latestScope": "User 2026-09-27: preserve current candidate; T7 delivery cleanup only; no repeated Windows focus/input automation or unchanged T2-T6 validation. Cleanup completed; human standalone acceptance remains unverified.",
+    "missingPlanDetails": [],
+    "ticketStatus": {
+      "T2-A": "FUNCTIONAL_VERIFIED_VISUAL_PARTIAL",
+      "T2-B": "VERIFIED",
+      "T3": "VERIFIED_HUMAN_UNVERIFIED",
+      "T4": "VERIFIED_HUMAN_UNVERIFIED",
+      "T5": "VERIFIED_HUMAN_UNVERIFIED",
+      "T6": "VERIFIED_AUTONOMOUS_HUMAN_UNVERIFIED",
+      "T7": "BUILD_VERIFIED_STANDALONE_INPUT_BLOCKED",
+      "T2": "VERIFIED_CUSTOMER_PATH_HUMAN_UNVERIFIED"
+    },
+    "definitionSource": "User 2026-09-26; exact T2 finish through T7 recorded in INTEGRATION_QUEUE.md"
+  },
   "departurePresentationApproval": {
     "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
     "approvedOn": "2026-09-09",
@@ -17,7 +51,7 @@
     "p1Checkpoint": "6b283c1",
     "status": "complete",
     "completionReached": true,
-    "p2Evidence": "Docs/Presentation/2026-09-08/P2-validation.json",
+    "p2Evidence": "Docs/90_PRESENTATION/Evidence/2026-09-08/P2-validation.json",
     "preservesContentAndArtState": true
   },
   "art000IntakeCheckpoint": {
@@ -841,6 +875,6 @@
   "P1": "NOT_STARTED",
   "P2": "NOT_STARTED",
   "latestHumanInstruction": "2026-09-07 P0 only; commit and STOP",
-  "evidence": "Docs/Presentation/2026-09-08/P0-validation.json"
+  "evidence": "Docs/90_PRESENTATION/Evidence/2026-09-08/P0-validation.json"
 }
 }

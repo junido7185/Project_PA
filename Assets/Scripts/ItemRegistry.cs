@@ -21,6 +21,19 @@ public class ItemRegistry : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        RegisterResourceItems();
+    }
+
+    // ItemRegistry remains the single lookup authority, but Resources/Items is also a canonical
+    // item source. Merge newly added resource items so save/load does not depend on manually
+    // updating every scene's serialized allItems list.
+    void RegisterResourceItems()
+    {
+        if (allItems == null) allItems = new List<Item>();
+
+        foreach (var item in Resources.LoadAll<Item>("Items"))
+            if (item != null && !allItems.Contains(item))
+                allItems.Add(item);
     }
 
     // id 우선, 이름 폴백으로 Item 원형을 반환한다.

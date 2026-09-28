@@ -28,6 +28,17 @@ public class InventoryUI : MonoBehaviour
         instance = this;
     }
 
+    void OnDestroy()
+    {
+        if (instance == this) instance = null;
+    }
+
+    void OnEnable()
+    {
+        BindRuntimeReferences();
+        RefreshUI();
+    }
+
     void Start()
     {
         BindRuntimeReferences();
@@ -66,6 +77,17 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
+    public void Rebind(Inventory playerInventory, Hotbar playerHotbar)
+    {
+        if (playerInventory != null) inventory = playerInventory;
+        hotbar = playerInventory != null && playerInventory.hotbar != null
+            ? playerInventory.hotbar
+            : playerHotbar;
+        if (inventory != null && inventory.hotbar == null && hotbar != null)
+            inventory.hotbar = hotbar;
+        RefreshUI();
+    }
+
     // ⭐ [추가] 껐다 켰다 하는 함수
     public void Toggle()
     {
@@ -96,21 +118,15 @@ public class InventoryUI : MonoBehaviour
 
     void BindRuntimeReferences()
     {
-        GameObject player = null;
-        try { player = GameObject.FindGameObjectWithTag("Player"); } catch { }
-
-        var playerInventory = player != null ? player.GetComponent<Inventory>() : null;
-        var playerHotbar = player != null ? player.GetComponent<Hotbar>() : null;
-
-        if (playerInventory != null)
-            inventory = playerInventory;
+        if (Inventory.instance != null)
+            inventory = Inventory.instance;
         else if (inventory == null)
-            inventory = Inventory.instance != null ? Inventory.instance : FindAnyObjectByType<Inventory>();
+            inventory = FindAnyObjectByType<Inventory>();
 
-        if (playerHotbar != null)
-            hotbar = playerHotbar;
+        if (inventory != null && inventory.hotbar != null)
+            hotbar = inventory.hotbar;
         else if (hotbar == null)
-            hotbar = inventory != null && inventory.hotbar != null ? inventory.hotbar : FindAnyObjectByType<Hotbar>();
+            hotbar = FindAnyObjectByType<Hotbar>();
 
         if (inventory != null && inventory.hotbar == null && hotbar != null)
             inventory.hotbar = hotbar;

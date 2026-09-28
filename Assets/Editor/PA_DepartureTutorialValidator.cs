@@ -17,7 +17,7 @@ using Object = UnityEngine.Object;
 public static class PA_DepartureTutorialValidator
 {
     const string Key = "PA.Departure.Validation";
-    const string Output = "Docs/Presentation/2026-09-08";
+    const string Output = "Docs/90_PRESENTATION/Evidence/2026-09-08";
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
     static Task _task;
     static Keyboard _keyboard;

@@ -32,6 +32,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     string _claimedBy;
     Shop _parentShop;
+    bool _purchaseInProgress;
 
     public bool IsClaimed => !string.IsNullOrEmpty(_claimedBy);
     public bool IsClaimedBy(string buyerTag) => !string.IsNullOrEmpty(buyerTag) && _claimedBy == buyerTag;
@@ -47,6 +48,14 @@ public class ShopSlot : MonoBehaviour, IInteractable
     public void ReleaseClaim(string buyerTag)
     {
         if (_claimedBy == buyerTag) _claimedBy = null;
+    }
+
+    public void BindOperatingShop(Shop shop)
+    {
+        if (_parentShop == shop) return;
+        _parentShop?.UnregisterSlot(this);
+        _parentShop = shop;
+        _parentShop?.RegisterSlot(this);
     }
 
     void Awake()
@@ -84,6 +93,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public void Interact(GameObject interactor)
     {
+        if (!isActiveAndEnabled || _purchaseInProgress) return;
         if (IsEmpty)
         {
             TryStockFromPlayer();
@@ -144,6 +154,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
         var inv = Inventory.instance;
         if (inv == null) return false;
 
+        if (PlayerInputHandler.Instance?.FirstDayControls == true && EquipmentSystem.CurrentHeld(inv.gameObject) == null) return false;
         InventorySlot selected = inv.hotbar != null ? inv.hotbar.GetSlot(inv.selectedHotbarIndex) : null;
         if (IsUsableStockSlot(selected))
         {
@@ -153,6 +164,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
             return true;
         }
 
+        if (PlayerInputHandler.Instance?.FirstDayControls == true) return false;
         if (TryFindFirstSellable(inv.hotbar != null ? inv.hotbar.slots : null, "hotbar", out sourceSlot, out sourceInstance, out sourceHint))
             return true;
 
@@ -215,35 +227,45 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     void TryTakeBackToPlayer()
     {
+        if (_purchaseInProgress) return;
         if (Inventory.instance == null || currentItem == null || currentItem.data == null) return;
 
-        bool added = Inventory.instance.AddInstance(currentItem);
+        ItemInstance reclaimed = currentItem;
+        bool added = Inventory.instance.AddInstance(reclaimed);
         if (!added)
         {
             Debug.LogWarning("가방이 꽉 차서 회수할 수 없습니다.");
             return;
         }
 
-        Debug.Log($"회수 완료: {currentItem.data.itemName}");
+        Debug.Log($"회수 완료: {reclaimed.data.itemName}");
         currentItem = null;
+        // AddInstance의 중간 콜백 뒤, 진열대까지 비워진 최종 거래 상태를 UI에 전파한다.
+        Inventory.instance.RefreshAllUI();
         RefreshDisplay();
     }
 
     public bool TryPurchaseByNpc(string buyerTag, out int paidAmount)
     {
         paidAmount = 0;
+        if (!isActiveAndEnabled || _purchaseInProgress ||
+            (DayNightShopLoopController.Instance != null && !DayNightShopLoopController.Instance.IsShopOpenForCustomers)) return false;
         if (string.IsNullOrEmpty(buyerTag)) return false;
         if (!TryClaim(buyerTag)) return false;
 
         try
         {
             if (IsEmpty) return false;
+            if (EconomyService.Instance == null || SalesLogManager.Instance == null) return false;
+            _purchaseInProgress = true;
 
             int unitPrice = EffectiveDisplayPrice;
-            paidAmount = unitPrice * currentItem.count;
+            long total = (long)unitPrice * currentItem.count;
+            if (total < 0 || total > int.MaxValue - (long)EconomyService.Instance.Money) return false;
+            int amount = (int)total;
 
-            if (EconomyService.Instance != null)
-                EconomyService.Instance.Deposit(paidAmount, $"Shop sale[{buyerTag}]: {currentItem.data.itemName}");
+            if (!EconomyService.Instance.Deposit(amount, $"Shop sale[{buyerTag}]: {currentItem.data.itemName}")) return false;
+            paidAmount = amount;
 
             int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
 
@@ -267,6 +289,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
         }
         finally
         {
+            _purchaseInProgress = false;
             ReleaseClaim(buyerTag);
         }
     }
@@ -288,7 +311,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
                 soldOutLabelGo.transform.SetParent(soldOutRoot.transform, false);
                 soldOutLabelGo.transform.localPosition = new Vector3(0f, 0.35f, 0f);
                 var soldOutLabel = soldOutLabelGo.AddComponent<PrototypeWorldLabel>();
-                soldOutLabel.Set("품절 · 보충하세요", new Color(1f, 0.62f, 0.55f), 1.2f);
+                soldOutLabel.Set("품절 · 보충하세요", new Color(1f, 0.80f, 0.66f), WorldGameplayAdapterService.Instance?.FirstDay == true ? 2.6f : 1.2f);
             }
             return;
         }
@@ -301,13 +324,28 @@ public class ShopSlot : MonoBehaviour, IInteractable
         root.transform.localRotation = Quaternion.identity;
 
         GameObject visual = null;
-        if (currentItem.data.model != null)
+        bool firstDay = WorldGameplayAdapterService.Instance?.FirstDay == true;
+        var model = firstDay ? FirstDayStudioAssets.Load()?.ModelFor(currentItem.data) : currentItem.data.model;
+        if (model != null)
         {
-            visual = Instantiate(currentItem.data.model, root.transform);
+            visual = Instantiate(model, root.transform);
             visual.name = "ItemModel";
             visual.transform.localPosition = Vector3.zero;
-            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localRotation = model.transform.localRotation;
             visual.transform.localScale = Vector3.one * fallbackDisplayScale;
+            if (firstDay)
+            {
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                if (renderers.Length > 0)
+                {
+                    Bounds bounds = renderers[0].bounds;
+                    foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                    visual.transform.localScale *= .65f / Mathf.Max(.001f, bounds.size.x, bounds.size.y, bounds.size.z);
+                    bounds = renderers[0].bounds;
+                    foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                    visual.transform.position += root.transform.position - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+                }
+            }
         }
         else
         {
@@ -341,7 +379,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
         labelGo.transform.SetParent(root.transform, false);
         labelGo.transform.localPosition = new Vector3(0f, 0.55f, 0f);
         var label = labelGo.AddComponent<PrototypeWorldLabel>();
-        label.Set($"{currentItem.data.itemName}\n{EffectiveDisplayPrice}G", new Color(1f, 0.94f, 0.62f), 1.8f);
+        label.Set($"{currentItem.data.itemName}\n{EffectiveDisplayPrice}G", new Color(1f, 0.94f, 0.62f), firstDay ? 2.6f : 1.8f);
     }
 
     void ClearDisplay()

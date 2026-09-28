@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // First playable prototype flow:
@@ -2278,17 +2279,18 @@ public class PlayableDayScenarioController : MonoBehaviour
     {
         if (!_startupCompleted && _startupStep == StartupStep.Title)
         {
-            _startupStep = _continueSaveAvailable
-                ? StartupStep.NewGameConfirm
-                : StartupStep.Name;
-            ShowStartupStep();
+            if (_continueSaveAvailable)
+            {
+                _startupStep = StartupStep.NewGameConfirm;
+                ShowStartupStep();
+            }
+            else EnterDepartureTutorial();
             return;
         }
 
         if (!_startupCompleted && _startupStep == StartupStep.NewGameConfirm)
         {
-            _startupStep = StartupStep.Name;
-            ShowStartupStep();
+            EnterDepartureTutorial();
             return;
         }
 
@@ -2301,6 +2303,17 @@ public class PlayableDayScenarioController : MonoBehaviour
                 Debug.LogWarning("[PlayableDay] Day 1 결산 후 다음 날 전환에 실패했습니다.");
         }
         else AdvanceStartupStep();
+    }
+
+    void EnterDepartureTutorial()
+    {
+        if (_startupPausedTime)
+        {
+            Time.timeScale = _timeScaleBeforeStartup;
+            _startupPausedTime = false;
+        }
+
+        SceneManager.LoadScene(DepartureTutorialController.SceneName, LoadSceneMode.Single);
     }
 
     async void OnSecondaryPressed()

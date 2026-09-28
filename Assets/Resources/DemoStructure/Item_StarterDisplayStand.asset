@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_StarterDisplayStand
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2020
+  itemName: Starter Display Stand
+  description: 
+  icon: {fileID: 21300000, guid: c829b6eb39ed48648beb2bbb645bde49, type: 3}
+  maxStack: 3
+  model: {fileID: 5940832217553501373, guid: 54cc51d5fb9a46149bd9a31806d53c51, type: 3}
+  basePrice: 10
+  toolType: 0
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

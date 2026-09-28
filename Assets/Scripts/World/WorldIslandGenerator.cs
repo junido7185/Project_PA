@@ -42,7 +42,8 @@ public enum WorldResourceKind
 
 public sealed class WorldIslandGenerationSettings
 {
-    public const int CurrentGenerationVersion = 1;
+    public const int LegacyGenerationVersion = 1;
+    public const int CurrentGenerationVersion = 2;
     public const int ProvisionalWidthCells = 128;
     public const int ProvisionalHeightCells = 128;
 
@@ -57,9 +58,18 @@ public sealed class WorldIslandGenerationSettings
 
     public static WorldIslandGenerationSettings Provisional128 { get; } =
         new WorldIslandGenerationSettings(
-            CurrentGenerationVersion,
+            LegacyGenerationVersion,
             ProvisionalWidthCells,
             ProvisionalHeightCells,
+            WorldGridService.World001CellSize,
+            WorldGridService.World001ChunkSize,
+            WorldGridService.World001ElevationStep,
+            WorldGridService.World001MinElevation,
+            WorldGridService.World001MaxElevation);
+
+    public static WorldIslandGenerationSettings Demo256 { get; } =
+        new WorldIslandGenerationSettings(
+            CurrentGenerationVersion, 256, 256,
             WorldGridService.World001CellSize,
             WorldGridService.World001ChunkSize,
             WorldGridService.World001ElevationStep,
@@ -257,16 +267,17 @@ public static class WorldIslandGenerator
         Vector2Int center = ResolveCenter(seed, settings);
         var start = center;
         var shop = center + new Vector2Int(3, -1);
-        var meadow = center + new Vector2Int(-14, -10);
-        var forest = center + new Vector2Int(0, 22);
-        var highland = center + new Vector2Int(-18, 8);
-        var pondCenter = center + new Vector2Int(14, 12);
+        var meadow = center + ScaleOffset(settings, new Vector2Int(-14, -10));
+        var forest = center + ScaleOffset(settings, new Vector2Int(0, 22));
+        var highland = center + ScaleOffset(settings, new Vector2Int(-18, 8));
+        var pondCenter = center + ScaleOffset(settings, new Vector2Int(14, 12));
         var pondActivity = pondCenter + new Vector2Int(-3, 0);
 
-        PaintDryPatch(mutable, settings, center, new Vector2Int(10, 8),
+        PaintDryPatch(mutable, settings, center, ScaleOffset(settings, new Vector2Int(10, 8)),
             2, WorldGroundType.Default, WorldBiomeType.Meadow, WorldPathType.None);
         CarvePondAndRiver(mutable, settings, pondCenter);
-        Vector2Int beach = FindLastDryLandEast(mutable, settings, center.y - 18);
+        Vector2Int beach = FindLastDryLandEast(mutable, settings,
+            center.y + ScaleOffset(settings, new Vector2Int(0, -18)).y);
 
         CarveDryRoute(mutable, settings, start, shop + new Vector2Int(1, -1), 2, 2);
         CarveDryRoute(mutable, settings, start, meadow, 2, 1);
@@ -303,6 +314,24 @@ public static class WorldIslandGenerator
             anchors,
             resourceSpawns,
             checksum);
+    }
+
+    static Vector2Int ScaleOffset(WorldIslandGenerationSettings settings, Vector2Int offset)
+    {
+        // Generation-v1 must retain its exact cells, anchors and resource keys.
+        if (settings.GenerationVersion == WorldIslandGenerationSettings.LegacyGenerationVersion)
+            return offset;
+        return new Vector2Int(
+            Mathf.RoundToInt(offset.x * settings.WidthCells / 128f),
+            Mathf.RoundToInt(offset.y * settings.HeightCells / 128f));
+    }
+
+    static int ScaleSpawnCount(WorldIslandGenerationSettings settings, int count)
+    {
+        if (settings.GenerationVersion == WorldIslandGenerationSettings.LegacyGenerationVersion)
+            return count;
+        float areaRatio = settings.WidthCells * (float)settings.HeightCells / (128f * 128f);
+        return Mathf.RoundToInt(count * Mathf.Clamp(areaRatio, 1f, 4f));
     }
 
     static MutableCell[] CreateBaseIsland(
@@ -602,16 +631,16 @@ public static class WorldIslandGenerator
     {
         var records = new List<WorldResourceSpawnRecord>();
         AddRankedSpawns(records, seed, generationVersion, cells, settings,
-            WorldResourceKind.Forage, 6,
+            WorldResourceKind.Forage, ScaleSpawnCount(settings, 6),
             cell => cell.IsDryLand && cell.Biome == WorldBiomeType.Meadow && !cell.Terrain.HasPath);
         AddRankedSpawns(records, seed, generationVersion, cells, settings,
-            WorldResourceKind.Timber, 8,
+            WorldResourceKind.Timber, ScaleSpawnCount(settings, 8),
             cell => cell.IsDryLand && cell.Biome == WorldBiomeType.Forest && !cell.Terrain.HasPath);
         AddRankedSpawns(records, seed, generationVersion, cells, settings,
-            WorldResourceKind.Stone, 6,
+            WorldResourceKind.Stone, ScaleSpawnCount(settings, 6),
             cell => cell.IsDryLand && cell.Biome == WorldBiomeType.Highland && !cell.Terrain.HasPath);
         AddRankedSpawns(records, seed, generationVersion, cells, settings,
-            WorldResourceKind.Fish, 4,
+            WorldResourceKind.Fish, ScaleSpawnCount(settings, 4),
             cell => cell.WaterType == WorldWaterType.Pond ||
                     cell.WaterType == WorldWaterType.River);
         return records

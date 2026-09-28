@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 public static class PA_DepartureContinuationChecks
 {
     const string Key = "PA.Companions.Checks";
-    const string Output = "Docs/Presentation/2026-09-08/";
+    const string Output = "Docs/90_PRESENTATION/Evidence/2026-09-08/";
     static Task _task;
     static bool _errors;
     static double _started;

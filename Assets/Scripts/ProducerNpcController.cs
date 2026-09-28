@@ -29,6 +29,33 @@ using UnityEngine.AI;
 public class ProducerNpcController : MonoBehaviour
 {
     public enum State { Idle, MovingToWorkspot, Working, MovingToDropOff, OfferingItems }
+    // Session-only equipment. No durability or free unequip API; normal P4 state stays unchanged.
+    public ItemInstance DemoEquippedTool { get; private set; }
+    float _demoToolEfficiency = 1f;
+    bool _exchangingDemoTool;
+    public void ConfigureDemoTool(Item starter)
+    {
+        if (DemoEquippedTool == null && starter != null) DemoEquippedTool = new ItemInstance(starter, 1);
+    }
+    public bool TryReceiveDemoTool(Inventory inventory, DemoToolUpgrade upgrade)
+    {
+        if (_exchangingDemoTool || inventory == null || upgrade == null || upgrade.specialty != specialty ||
+            upgrade.tool == null || EquipmentSystem.CurrentHeld(inventory.gameObject) != upgrade.tool) return false;
+        var slot = inventory.hotbar?.GetSlot(inventory.selectedHotbarIndex);
+        if (slot == null || slot.IsEmpty || slot.count != 1 || slot.item != upgrade.tool ||
+            DemoEquippedTool?.data == upgrade.tool || upgrade.npcEfficiency < _demoToolEfficiency) return false;
+        _exchangingDemoTool = true;
+        try
+        {
+            var incoming = slot.instance;
+            slot.SetInstance(DemoEquippedTool);
+            DemoEquippedTool = incoming;
+            _demoToolEfficiency = Mathf.Max(1f, upgrade.npcEfficiency);
+            inventory.RefreshAllUI();
+            return true;
+        }
+        finally { _exchangingDemoTool = false; }
+    }
 
     [Header("정체성")]
     [Tooltip("MBTI/가중치. null이면 평균형 기본값 사용")]
@@ -92,6 +119,64 @@ public class ProducerNpcController : MonoBehaviour
     private string DisplayName =>
         profile != null && !string.IsNullOrEmpty(profile.npcName) ? profile.npcName : gameObject.name;
 
+    // Docs/02_IMPLEMENTATION/PROJECT_PA_CODE_REUSE_MAP_v1.md §2.1, §6.1:
+    // 기존 P4/P3/저장 호출용 어댑터. 자격은 정책, 생산·재고는 이 컨트롤러가 소유한다.
+    ProcurementPolicy _procurement;
+    public ProcurementPolicy Procurement => _procurement ?? (_procurement = new ProcurementPolicy(this));
+    public int StockCount => TotalInventoryCount();
+    public bool StarterBatchReady => Procurement.BatchReady;
+    public bool StarterClaimed => Procurement.Claimed;
+    public int StarterStockCount => Procurement.Mode == ProcurementMode.SettlementSupport ? StockCount : 0;
+    public bool StarterWorking => Procurement.Mode == ProcurementMode.SettlementSupport && !Procurement.HoldProduction &&
+        !_schedulePaused && (_currentState == State.MovingToWorkspot || _currentState == State.Working);
+
+    public void ConfigureStarterSession()
+    {
+        if (!Procurement.BeginSettlementSupport()) return;
+        PrepareStarterProduction();
+    }
+
+    void PrepareStarterProduction()
+    {
+        _npcInventory.Clear(); _productionTimer = 0; _pendingProductionAmount = 0;
+        _restoredFromSave = true; _schedulePaused = true; ChangeState(State.Idle);
+    }
+
+    public void StartStarterWork()
+    {
+        if (Procurement.Mode != ProcurementMode.SettlementSupport || Procurement.HoldProduction || StarterWorking) return;
+        _schedulePaused = false;
+        BeginWork();
+    }
+
+    public bool TryClaimStarterBatch(Inventory inventory) => Procurement.TryClaimSettlementSupport(inventory);
+
+    // 가격·지원 자격 판단 없이 실제 단일 재고만 이전한다. 내부 정책에서만 호출한다.
+    internal bool TryTransferSingleStock(Inventory inventory)
+    {
+        if (inventory == null || _npcInventory.Count != 1) return false;
+        var stock = _npcInventory[0];
+        if (!inventory.CanAddInstance(stock) || !inventory.AddInstance(stock)) return false;
+        _npcInventory.Clear();
+        return true;
+    }
+
+    public StarterProducerSaveData CaptureStarterState() => new StarterProducerSaveData {
+        active = StarterWorking, ready = Procurement.BatchReady, claimed = Procurement.Claimed,
+        elapsed = _productionTimer, pendingAmount = _pendingProductionAmount, stockCount = TotalInventoryCount()
+    };
+
+    public void RestoreStarterState(StarterProducerSaveData state)
+    {
+        PrepareStarterProduction();
+        Procurement.RestoreSettlementSupport(state != null && state.claimed);
+        if (state == null) return;
+        if (state.stockCount > 0) _npcInventory.Add(new ItemInstance(productionData.producedItem, state.stockCount));
+        if (state.active) { _schedulePaused = false; BeginWork(); }
+        _productionTimer = Mathf.Max(0, state.elapsed);
+        _pendingProductionAmount = state.pendingAmount > 0 ? state.pendingAmount : CalculateProductionAmount();
+    }
+
     // -------- Unity 생명주기 --------
 
     void Awake()
@@ -120,7 +205,7 @@ public class ProducerNpcController : MonoBehaviour
         _debugSchedulePaused = _schedulePaused;
 
         // 스케줄에 의해 일시 정지 중이면 처리 차단
-        if (_schedulePaused) return;
+        if (_schedulePaused || (_procurement != null && _procurement.HoldProduction)) return;
 
         switch (_currentState)
         {
@@ -227,6 +312,11 @@ public class ProducerNpcController : MonoBehaviour
 
         // 아이템 생산
         ProduceItems();
+        if (_procurement != null && _procurement.Mode == ProcurementMode.SettlementSupport)
+        {
+            Debug.Log("[VS-P4] FIRST_BATCH " + productionData.producedItem.itemName + " count=" + TotalInventoryCount());
+            return; // P6 paid stock remains on the original non-starter delivery path.
+        }
 
         // 납품 임계 도달 시 배달 시작
         if (TotalInventoryCount() >= productionData.deliveryThreshold)
@@ -514,7 +604,7 @@ public class ProducerNpcController : MonoBehaviour
         eiFactor = Mathf.Max(0.1f, eiFactor);
 
         float seasonMod = SeasonModifier.GetProductionModifier(specialty);
-        return productionData.baseProductionInterval / (workEff * eiFactor * Mathf.Max(0.1f, seasonMod));
+        return productionData.baseProductionInterval / (workEff * eiFactor * Mathf.Max(0.1f, seasonMod) * _demoToolEfficiency);
     }
 
     // 실제 생산량:  max(1, round(baseAmount × workEfficiency × (1 + 0.2 × (-traitJP))))

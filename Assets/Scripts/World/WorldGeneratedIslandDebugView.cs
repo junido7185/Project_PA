@@ -153,6 +153,15 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
             "GeneratedGrass", "GeneratedSoil", "GeneratedSand", "GeneratedRock",
             "GeneratedDirtPath", "GeneratedStonePath", "GeneratedCliff", "GeneratedWater"
         };
+        // T1: 같은 cell/mesh 투영을 유지하고 실제 Demo256의 넓은 면만 로컬 아트에 맞춘다.
+        // 전역 재질/조명과 다른 월드 검증의 팔레트는 변경하지 않는다.
+        if (GetComponent<DemoRouteController>() != null)
+        {
+            colors[WorldSurfaceMaterialSlots.Grass] = new Color(.48f, .60f, .34f);
+            colors[WorldSurfaceMaterialSlots.Sand] = new Color(.78f, .71f, .51f);
+            colors[WorldSurfaceMaterialSlots.Cliff] = new Color(.48f, .39f, .28f);
+            colors[WorldSurfaceMaterialSlots.Water] = new Color(.22f, .53f, .59f);
+        }
         var result = new Material[WorldSurfaceMaterialSlots.Count];
         for (int i = 0; i < result.Length; i++)
         {

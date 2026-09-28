@@ -60,6 +60,8 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
             !Placement.TryGetPlacement(HubId, out _) ? "첫 거점을 설치할 장소를 정하세요." :
             !complete ? $"동행자의 임시 거처를 준비하세요. ({ShelterCount()}/2)" :
             Time.unscaledTime < _completedAt + 2.5f ? "첫 정착이 완료되었습니다." : "오늘 밤 첫 영업을 준비하세요.";
+        var production = GetComponent<FirstProductionController>();
+        if (complete && production != null && production.IsReady) Objective = production.Objective;
         Voyage.SetSettlementObjective(Objective);
         _saveStatus.text = SaveFeedback;
         var keyboard = Keyboard.current;
@@ -131,7 +133,7 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
 
     public void Begin(string id)
     {
-        if (!IsReady || _restoring || !BuildingIds.Contains(id) || id != HubId && !Placement.TryGetPlacement(HubId, out _)) return;
+        if (!IsReady || _restoring || !(BuildingIds.Contains(id) || GetComponent<FirstProductionController>() != null && GetComponent<FirstProductionController>().OwnsWorksite(id)) || id != HubId && !Placement.TryGetPlacement(HubId, out _)) return;
         Cancel(); _previewId = id; _turn = 0;
         if (Placement.TryGetPlacement(id, out var placed))
         {
@@ -218,7 +220,8 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
             }
             Voyage.IslandGrid.CellToWorld(shelter.Entrance, out Vector3 destination);
             if (NavMesh.SamplePosition(npc.transform.position, out NavMeshHit start, 4, NavMesh.AllAreas)) agent.Warp(start.position);
-            if (agent.isOnNavMesh) agent.SetDestination(destination);
+            var producer = npc.GetComponent<ProducerNpcController>();
+            if (agent.isOnNavMesh && (producer == null || !producer.StarterWorking)) agent.SetDestination(destination);
             var marker = shelter.GameObject.transform.Find("CompanionRole");
             if (marker == null)
             {

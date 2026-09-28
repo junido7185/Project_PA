@@ -9,7 +9,9 @@ public enum ToolType
     Weapon,     // 무기
     Building,   // 건설
     Hoe,        // 괭이
-    Seed        // 씨앗
+    Seed,       // 씨앗
+    Net = 7,
+    FishingRod = 8
 }
 
 // 경제 시스템용 카테고리. Docs/03의 MBTI 소비 패턴에 사용된다.

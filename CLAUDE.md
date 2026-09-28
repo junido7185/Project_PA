@@ -14,16 +14,7 @@ Do not modify, copy, merge, or import anything from the reference project.
 
 ## First Documents
 
-Start with `Docs/AgentWorkflow/CONTEXT_INDEX.md`, then read only the documents required for the current task type.
-
-For gameplay, UI, NPC, economy, art, or scene work, include:
-
-- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
-- `PROJECT_PA_DESIGN_INTENT.md`
-- `PROJECT_PA_CURRENT_MILESTONE.md`
-- `PROJECT_PA_STATUS.md`
-- `PROJECT_PA_TODO.md`
-- `PROJECT_PA_SESSION_REPORT.md`
+Read the four documents under `Docs/00_CURRENT/` first: CURRENT_STATE, CAPABILITY_REGISTRY, GAME_LOOP_MAP, INTEGRATION_QUEUE. Follow `AI_WORKFLOW/00_START_HERE/ONE_PAGE_WORKFLOW.md`; select only task-relevant references through `Docs/AgentWorkflow/CONTEXT_INDEX.md`.
 
 ## Project Identity
 
@@ -81,19 +72,9 @@ Stop and document the issue when:
 
 ## Documentation Rules
 
-After meaningful work, update:
+작업 결과는 `Docs/04_DEVELOPMENT_LOG/YYYY-MM.md`에 날짜·티켓·변경·검증·미해결 사항을 한 번 기록한다. 현재 상태가 바뀌면 `Docs/00_CURRENT/CURRENT_STATE.md`, 기능 계약은 `CAPABILITY_REGISTRY.md`, 실제 연결은 `GAME_LOOP_MAP.md`, 다음 우선순위는 `INTEGRATION_QUEUE.md`의 해당 부분만 갱신한다. 완료 티켓과 긴 이력을 현재 문서에 누적하지 않는다. CHANGELOG·handoff·구 개발일지에 결과를 복제하지 않는다.
 
-- `PROJECT_PA_STATUS.md`
-- `PROJECT_PA_TODO.md`
-- `PROJECT_PA_SESSION_REPORT.md`
-- `Docs/07_개발일지.md`
-
-For loop/dry-run work, also update:
-
-- `Automation/LoopEngineering/progress.md`
-- `Automation/LoopEngineering/State/loop-state.json`
-
-Do not only write a commit message. Keep the project records current.
+For authorized automation work, maintain its existing machine state/progress contract without copying it into multiple current reports.
 
 ## WORLD Scene Rules
 

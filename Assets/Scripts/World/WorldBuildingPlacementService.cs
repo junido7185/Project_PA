@@ -31,7 +31,9 @@ public enum WorldBuildingPlacementFailure
     SpawnFailed = 15,
     NoPreview = 16,
     CriticalRouteBlocked = 17,
-    PhysicalObstacle = 18
+    PhysicalObstacle = 18,
+    InvalidZone = 19,
+    MoveNotAllowed = 20
 }
 
 public sealed class WorldBuildingPlacementDefinition
@@ -42,17 +44,22 @@ public sealed class WorldBuildingPlacementDefinition
     public string BuildingResourcePath { get; }
     public IReadOnlyList<Vector2Int> FootprintOffsets => _footprintOffsets;
     public Vector2Int EntranceOffset { get; }
+    public WorldPlaceableSurface AllowedSurfaces { get; }
+    public bool CanMove { get; }
 
     public WorldBuildingPlacementDefinition(
         string stableId,
         string buildingResourcePath,
         IEnumerable<Vector2Int> footprintOffsets,
-        Vector2Int entranceOffset)
+        Vector2Int entranceOffset,
+        WorldPlaceableSurface allowedSurfaces = WorldPlaceableSurface.None, bool canMove = true)
     {
         StableId = stableId;
         BuildingResourcePath = buildingResourcePath;
         _footprintOffsets = footprintOffsets?.ToArray() ?? Array.Empty<Vector2Int>();
         EntranceOffset = entranceOffset;
+        AllowedSurfaces = allowedSurfaces;
+        CanMove = canMove;
     }
 
     public bool IsValid()
@@ -195,6 +202,20 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
     bool _hasPreview;
     int _revision;
     WorldBuildingPlacementResult _lastResult;
+    WorldPlacedBuildingRuntime _releasedMove;
+    bool _releasedWasActive;
+    readonly List<WorldPlaceableZone> _zones = new List<WorldPlaceableZone>();
+    public void RegisterZone(WorldPlaceableZone zone) { if (zone != null && !_zones.Contains(zone)) _zones.Add(zone); }
+    public bool IsMoveReserved(Vector2Int cell) => _releasedMove != null && _releasedMove.Footprint.Contains(cell);
+    public WorldPlaceableSurface SurfaceAt(Vector3 position)
+    {
+        WorldPlaceableZone best = null;
+        foreach (var zone in _zones)
+            if (zone != null && zone.Contains(position) && (best == null || zone.priority > best.priority)) best = zone;
+        return best != null ? best.surface : WorldPlaceableSurface.None;
+    }
+    void OnDisable() { CancelPreview(); }
+
 
     // P3: 기존 창고 기본값을 유지하고 승인된 건물 인스턴스만 별도 정의를 등록한다.
     readonly Dictionary<string, WorldBuildingPlacementDefinition> _definitions = new Dictionary<string, WorldBuildingPlacementDefinition>();
@@ -217,6 +238,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         _definitions.TryGetValue(id ?? "", out var registered) ? registered : StorageShedDefinition;
 
     public event Action<WorldBuildingPlacementResult> Changed;
+    public Func<WorldPlacedBuildingRuntime, bool> MoveAllowed { get; set; }
 
     public int RegisteredCount => _placements.Count;
     public int Revision => _revision;
@@ -229,6 +251,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
     void Awake()
     {
         _grid = GetComponent<WorldGridService>();
+        _grid.BindPlacementProtection(this);
         _navigation = GetComponent<WorldNavigationService>();
     }
 
@@ -244,6 +267,8 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         string movingInstanceId = null)
     {
         ResolveGrid();
+        if (_releasedMove != null && movingInstanceId != _releasedMove.InstanceId)
+            return Failed(WorldBuildingPlacementFailure.CommitConflict, instanceId, anchor, quarterTurns, Array.Empty<Vector2Int>(), default);
         WorldBuildingPlacementDefinition definition = ResolveDefinition(instanceId);
         Vector2Int[] footprint = definition.ResolveFootprint(anchor, quarterTurns);
         Vector2Int entrance = definition.ResolveEntrance(anchor, quarterTurns);
@@ -268,7 +293,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
             foreach (Vector2Int oldCell in ignoredOwnCells)
             {
                 if (!_grid.TryGetCell(oldCell, out WorldCellData oldData) ||
-                    oldData.Occupancy != WorldCellOccupancy.Occupied)
+                    oldData.Occupancy != (moving == _releasedMove ? WorldCellOccupancy.Empty : WorldCellOccupancy.Occupied))
                 {
                     return Failed(WorldBuildingPlacementFailure.CommitConflict, instanceId, anchor,
                         quarterTurns, footprint, entrance);
@@ -277,12 +302,21 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         }
 
         int? flatLevel = null;
+        if (definition.AllowedSurfaces != WorldPlaceableSurface.None)
+        {
+            foreach (var coordinate in footprint)
+            {
+                if (!_grid.CellToWorld(coordinate, out var point) ||
+                    (SurfaceAt(point) & definition.AllowedSurfaces) == 0)
+                    return Failed(WorldBuildingPlacementFailure.InvalidZone, instanceId, anchor, quarterTurns, footprint, entrance);
+            }
+        }
         foreach (Vector2Int coordinate in footprint)
         {
             if (!_grid.TryGetCell(coordinate, out WorldCellData cell))
                 return Failed(WorldBuildingPlacementFailure.OutOfBounds, instanceId, anchor,
                     quarterTurns, footprint, entrance);
-            if (_grid.IsTerraformProtected(coordinate))
+            if (_grid.IsTerraformProtected(coordinate) && (ignoredOwnCells == null || !ignoredOwnCells.Contains(coordinate)))
                 return Failed(WorldBuildingPlacementFailure.ProtectedCell, instanceId, anchor,
                     quarterTurns, footprint, entrance);
             if (cell.Occupancy != WorldCellOccupancy.Empty &&
@@ -418,6 +452,8 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
             instanceId, anchor, quarterTurns, instanceId);
         if (!preview.Succeeded) return Store(preview);
 
+        if (!placement.Definition.CanMove || MoveAllowed != null && !MoveAllowed(placement))
+            return Store(Failed(WorldBuildingPlacementFailure.MoveNotAllowed, instanceId, anchor, quarterTurns, preview.Footprint, preview.Entrance));
         Vector2Int oldAnchor = placement.Anchor;
         int oldQuarterTurns = placement.QuarterTurns;
         Vector2Int oldEntrance = placement.Entrance;
@@ -429,7 +465,9 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
             ? placement.GameObject.transform.rotation
             : Quaternion.identity;
 
-        if (!TryCommitFootprint(oldFootprint, preview.Footprint))
+        bool released = placement == _releasedMove;
+        var occupiedBefore = released ? Array.Empty<Vector2Int>() : oldFootprint;
+        if (!TryCommitFootprint(occupiedBefore, preview.Footprint))
             return Store(Failed(WorldBuildingPlacementFailure.CommitConflict, instanceId, anchor,
                 quarterTurns, preview.Footprint, preview.Entrance));
 
@@ -443,13 +481,14 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
             placement.QuarterTurns = WorldBuildingPlacementDefinition.NormalizeQuarterTurns(quarterTurns);
             placement.Footprint = preview.Footprint.ToArray();
             placement.Entrance = preview.Entrance;
+            if (released) { _releasedMove = null; placement.GameObject.SetActive(_releasedWasActive); }
             _revision++;
             return Publish(Succeeded(instanceId, anchor, placement.QuarterTurns,
                 placement.Footprint, placement.Entrance));
         }
         catch (Exception)
         {
-            TryCommitFootprint(preview.Footprint, oldFootprint);
+            TryCommitFootprint(preview.Footprint, occupiedBefore);
             if (placement.GameObject != null)
                 placement.GameObject.transform.SetPositionAndRotation(oldPosition, oldRotation);
             placement.Anchor = oldAnchor;
@@ -463,6 +502,8 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
 
     public WorldBuildingPlacementResult TryRemove(string instanceId)
     {
+        if (_releasedMove != null)
+            return Store(Failed(WorldBuildingPlacementFailure.CommitConflict, instanceId, default, 0, Array.Empty<Vector2Int>(), default));
         if (!Application.isPlaying)
             return Store(Failed(WorldBuildingPlacementFailure.RuntimeOnly, instanceId, default,
                 0, Array.Empty<Vector2Int>(), default));
@@ -496,9 +537,23 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
     public WorldBuildingPlacementResult BeginMovePreview(
         string instanceId,
         Vector2Int anchor,
-        int quarterTurns)
+        int quarterTurns, bool releaseOriginal = false)
     {
-        return BeginPreview(instanceId, anchor, quarterTurns, true);
+        if (!releaseOriginal) return BeginPreview(instanceId, anchor, quarterTurns, true);
+        if (_hasPreview)
+            return Store(Failed(WorldBuildingPlacementFailure.CommitConflict, instanceId, anchor, quarterTurns, Array.Empty<Vector2Int>(), default));
+        if (!_placements.TryGetValue(instanceId ?? "", out var placed) || !placed.Definition.CanMove)
+            return Store(Failed(WorldBuildingPlacementFailure.MoveNotAllowed, instanceId, anchor, quarterTurns, Array.Empty<Vector2Int>(), default));
+        var result = BeginPreview(instanceId, anchor, quarterTurns, true);
+        if (!_hasPreview) return result;
+        if (!TryCommitFootprint(placed.Footprint, Array.Empty<Vector2Int>()))
+        { CancelPreview(); return Store(Failed(WorldBuildingPlacementFailure.CommitConflict, instanceId, anchor, quarterTurns, placed.Footprint, placed.Entrance)); }
+        _releasedMove = placed;
+        _releasedWasActive = placed.GameObject.activeSelf;
+        placed.GameObject.SetActive(false);
+        _revision++;
+        Publish(Succeeded(placed.InstanceId, placed.Anchor, placed.QuarterTurns, placed.Footprint, placed.Entrance));
+        return UpdatePreview(anchor, quarterTurns);
     }
 
     public WorldBuildingPlacementResult UpdatePreview(Vector2Int anchor, int quarterTurns)
@@ -532,9 +587,9 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         return Store(result);
     }
 
-    public void CancelPreview()
+    public bool CancelPreview()
     {
-        ClearPreview();
+        return ClearPreview();
     }
 
     WorldBuildingPlacementResult BeginPreview(
@@ -546,11 +601,15 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         if (!Application.isPlaying)
             return Store(Failed(WorldBuildingPlacementFailure.RuntimeOnly, instanceId, anchor,
                 quarterTurns, Array.Empty<Vector2Int>(), default));
+        if (isMove && _placements.TryGetValue(instanceId ?? "", out var movable) &&
+            (!movable.Definition.CanMove || MoveAllowed != null && !MoveAllowed(movable)))
+            return Store(Failed(WorldBuildingPlacementFailure.MoveNotAllowed, instanceId, anchor, quarterTurns, movable.Footprint, movable.Entrance));
         if (isMove && !_placements.ContainsKey(instanceId ?? string.Empty))
             return Store(Failed(WorldBuildingPlacementFailure.MissingInstance, instanceId, anchor,
                 quarterTurns, Array.Empty<Vector2Int>(), default));
 
-        ClearPreview();
+        if (!ClearPreview())
+            return Store(Failed(WorldBuildingPlacementFailure.CommitConflict, instanceId, anchor, quarterTurns, Array.Empty<Vector2Int>(), default));
         _hasPreview = true;
         _previewIsMove = isMove;
         _previewInstanceId = instanceId;
@@ -777,12 +836,32 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
     WorldBuildingPlacementResult Publish(WorldBuildingPlacementResult result)
     {
         _lastResult = result;
-        Changed?.Invoke(result);
+        // Listener failures must not roll back a committed placement while leaving its registry entry alive.
+        if (Changed != null)
+            foreach (Action<WorldBuildingPlacementResult> listener in Changed.GetInvocationList())
+                try { listener(result); } catch (Exception error) { Debug.LogException(error); }
         return result;
     }
 
-    void ClearPreview()
+    bool ClearPreview()
     {
+        if (_releasedMove != null)
+        {
+            // Other placements and terrain edits cannot enter the reserved source footprint.
+            if (!TryCommitFootprint(Array.Empty<Vector2Int>(), _releasedMove.Footprint))
+            {
+                // Retain the original object, reservation and preview so cancellation is retryable.
+                // Never clear the registry or destroy the original on restore failure.
+                Store(Failed(WorldBuildingPlacementFailure.CommitConflict, _releasedMove.InstanceId,
+                    _releasedMove.Anchor, _releasedMove.QuarterTurns, _releasedMove.Footprint, _releasedMove.Entrance));
+                return false;
+            }
+            var restored = _releasedMove;
+            if (restored.GameObject != null) restored.GameObject.SetActive(_releasedWasActive);
+            _releasedMove = null;
+            _revision++;
+            Publish(Succeeded(restored.InstanceId, restored.Anchor, restored.QuarterTurns, restored.Footprint, restored.Entrance));
+        }
         if (_previewGhost != null) DestroyRuntimeObject(_previewGhost);
         _previewGhost = null;
         _previewInstanceId = null;
@@ -790,6 +869,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
         _previewQuarterTurns = 0;
         _previewIsMove = false;
         _hasPreview = false;
+        return true;
     }
 
     static void DestroyRuntimeObject(UnityEngine.Object target)

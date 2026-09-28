@@ -1,0 +1,44 @@
+--- a/Assets/Scripts/Presentation/FirstProductionController.cs
++++ b/Assets/Scripts/Presentation/FirstProductionController.cs
+@@ -166,8 +166,13 @@
+     {
+         foreach(var site in _sites.Values) if(site!=null) site.Binding.Unassign();
+         if (Settlement != null && Settlement.Placement != null)
+-            foreach(string owner in _sites.Keys.ToArray())
++        {
++            var owners = new HashSet<string>(_sites.Keys);
++            if (Settlement.Selection != null)
++                foreach (string owner in Settlement.Selection.ConfirmedIds) owners.Add(owner);
++            foreach(string owner in owners)
+                 if(Settlement.Placement.TryGetPlacement(WorksiteId(owner),out _)) Settlement.Placement.TryRemove(WorksiteId(owner));
++        }
+         _sites.Clear();
+     }
+ 
+@@ -200,6 +205,7 @@
+             if(!result.Succeeded)
+             {
+                 Debug.LogWarning("[VS-P4] Restore placement rejected: " + p.instanceId + " / " + result.Failure);
++                ClearWorksitesForRestore(); // remove any earlier placements created by this restore attempt
+                 return false;
+             }
+             Attach(record.companionId,Placed(record.companionId)).Restore(record);
+--- a/Assets/Editor/PA_FirstProductionSaveContractChecks.cs
++++ b/Assets/Editor/PA_FirstProductionSaveContractChecks.cs
+@@ -371,12 +371,14 @@
+         Check(EconomyService.Instance.Money == beforeMoney && JsonUtility.ToJson(p.CaptureState()) == beforeBad, "structurally malformed P4 rejected before live mutation");
+ 
+         // Spatial rejection is deliberately last: no global rollback is claimed or attempted.
++        // Make the SECOND placement invalid so the first succeeds and rollback of this P4 restore attempt is proven.
+         var spatial = p.CaptureState();
+-        spatial.worksites[0].placement.anchorX = s.Voyage.IslandGrid.Definition.Width;
++        spatial.worksites[1].placement.anchorX = s.Voyage.IslandGrid.Definition.Width;
+         Check(FirstProductionController.IsValidSave(spatial, s.CaptureState()), "spatial invalidity deferred to placement authority");
+         p.ClearWorksitesForRestore();
+         Check(!p.RestoreState(spatial), "placement rejection returns false without throwing");
+-        Check(p.Sites.Count == 0, "rejection fabricates no replacement site/progress");
++        Check(p.Sites.Count == 0 && Ids.All(owner => !s.Placement.TryGetPlacement(FirstProductionController.WorksiteId(owner), out _)),
++            "second-placement rejection rolls back partial P4 restore");
+         Check(!_runtimeError, "runtime errors zero");
+     }
+ }

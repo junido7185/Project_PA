@@ -1,3 +1,18 @@
+# ============================================================
+# Project P.A. — Codex project configuration
+# VS Code Codex Extension
+# ============================================================
+
+# Give optional MCPs a few seconds to appear in the initial tool catalog.
+mcp_optional_startup_grace_ms = 5000
+
+
+# ============================================================
+# Unity MCP
+# EXPENSIVE: use only when runtime / scene / serialized state
+# cannot be resolved from code, logs, or Human Play evidence.
+# ============================================================
+
 [mcp_servers.unityMCP]
 url = "http://127.0.0.1:8080/mcp"
 enabled = true
@@ -5,3 +20,86 @@ required = false
 startup_timeout_sec = 20
 tool_timeout_sec = 120
 default_tools_approval_mode = "writes"
+
+enabled_tools = [
+    "read_console",
+    "refresh_unity",
+    "validate_script",
+    "run_tests",
+    "get_test_job",
+    "find_gameobjects",
+    "manage_scene"
+]
+
+[mcp_servers.unityMCP.tools.read_console]
+output_token_limit = 2000
+
+[mcp_servers.unityMCP.tools.find_gameobjects]
+output_token_limit = 1500
+
+[mcp_servers.unityMCP.tools.validate_script]
+output_token_limit = 1500
+
+[mcp_servers.unityMCP.tools.refresh_unity]
+output_token_limit = 1000
+
+[mcp_servers.unityMCP.tools.run_tests]
+output_token_limit = 1500
+
+[mcp_servers.unityMCP.tools.get_test_job]
+output_token_limit = 2000
+
+[mcp_servers.unityMCP.tools.manage_scene]
+output_token_limit = 2500
+
+
+# ============================================================
+# Serena
+# DEFAULT code-navigation layer.
+#
+# No separate installation required:
+# uvx is already available on this machine.
+# Fixed project path avoids CWD ambiguity in IDE environments.
+# ============================================================
+
+[mcp_servers.serena]
+command = "uvx"
+args = [
+    "-p",
+    "3.13",
+    "--from",
+    "serena-agent",
+    "serena",
+    "start-mcp-server",
+    "--context=codex",
+    "--project",
+    "C:/Users/sdjsd/Desktop/Unity/Project_PA"
+]
+enabled = true
+required = false
+startup_timeout_sec = 45
+tool_timeout_sec = 120
+default_tools_approval_mode = "writes"
+
+
+# ============================================================
+# Context7
+# External library / framework / SDK docs only.
+#
+# Anonymous access first.
+# Add an API key later only if rate limits become a problem.
+# ============================================================
+
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+enabled = true
+required = false
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+
+enabled_tools = [
+    "resolve-library-id",
+    "query-docs"
+]
+
+default_tools_approval_mode = "auto"

@@ -54,7 +54,7 @@
 - Demo Lock 선언, 시연/슬라이스/출시 완료 판정.
 - 밸런스 값 확정.
 
-## 운영 속도 (요약, 상세는 `../07_FULL_GAME_ROADMAP/DEVELOPMENT_TIMELINE.md` §7)
+## 운영 속도 (요약, 상세는 `Docs/02_IMPLEMENTATION/Backlog/DEVELOPMENT_TIMELINE.md` §7)
 
 - 하루 권장: 저강도 1~2개 / 집중 3~5개 / 크런치 5~8개(품질 위험 있음).
 - 3~5개마다 HANDOFF 갱신, 5~10개마다 사람 검수.

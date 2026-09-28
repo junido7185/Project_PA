@@ -14,6 +14,70 @@ public class FishingSpot : MonoBehaviour, IInteractable
     public bool IsFishing => _isFishing;
     public string LastFeedback => _lastFeedback;
 
+    bool _directPlayerDemo, _biteReady, _claiming;
+    GameObject _castingPlayer;
+    public bool IsDirectPlayerDemo => _directPlayerDemo;
+    public bool BiteReady => _biteReady;
+
+    public void ConfigureDirectPlayerDemo()
+    {
+        if (_directPlayerDemo) return;
+        CancelCast();
+        _directPlayerDemo = true;
+    }
+
+    bool IsPlayerInReach(GameObject player)
+    {
+        if (player == null || player.GetComponent<Inventory>() != Inventory.instance || Inventory.instance == null)
+            return false;
+        Vector3 delta = Vector3.ProjectOnPlane(transform.position - player.transform.position, Vector3.up);
+        return Mathf.Abs(transform.position.y - player.transform.position.y) < 2f &&
+            delta.sqrMagnitude <= 2.05f * 2.05f && delta.sqrMagnitude > .0025f &&
+            Vector3.Dot(player.transform.forward, delta.normalized) >= .75f;
+    }
+
+    void InteractDirect(GameObject player)
+    {
+        if (_claiming || !isActiveAndEnabled || !IsPlayerInReach(player)) return;
+        if ((PlayerInputHandler.Instance?.FirstDayControls ?? false) && EquipmentSystem.CurrentHeld(player)?.toolType != ToolType.FishingRod) return;
+        var loop = DayNightShopLoopController.Instance;
+        if (loop == null || _stockPoint == null || !loop.IsDayPrepPointAvailable(_stockPoint))
+        {
+            CancelCast();
+            _lastFeedback = "Fishing finished for now. Return next day.";
+            return;
+        }
+        if (_isFishing)
+        {
+            if (!_biteReady || player != _castingPlayer) return;
+            // Existing daily activity owns Inventory-first delivery and saved completion.
+            _claiming = true;
+            bool caught;
+            try { caught = loop.TryCollectDayPrepStock(_stockPoint, player); }
+            finally { _claiming = false; }
+            if (caught)
+            {
+                CancelCast();
+                _lastFeedback = "Caught Fish! Added to inventory.";
+            }
+            else _lastFeedback = "Bag full. Make room, then press Space to reel in.";
+            return;
+        }
+        _castingPlayer = player;
+        _isFishing = true;
+        _biteReady = false;
+        _lastFeedback = "Casting... wait for a bite.";
+        _castRoutine = StartCoroutine(WaitForDirectBite());
+    }
+
+    IEnumerator WaitForDirectBite()
+    {
+        yield return new WaitForSeconds(castDuration);
+        _castRoutine = null;
+        _biteReady = true;
+        _lastFeedback = "BITE! Press Space to reel in!";
+    }
+
     public void Configure(DaytimeStockPrepPoint stockPoint)
     {
         _stockPoint = stockPoint;
@@ -32,6 +96,7 @@ public class FishingSpot : MonoBehaviour, IInteractable
 
     public void Interact(GameObject interactor)
     {
+        if (_directPlayerDemo) { InteractDirect(interactor); return; }
         if (_isFishing)
             return;
 
@@ -60,6 +125,14 @@ public class FishingSpot : MonoBehaviour, IInteractable
 
     public string GetInteractPrompt()
     {
+        if (_directPlayerDemo)
+        {
+            if (_isFishing) return _lastFeedback;
+            var directLoop = DayNightShopLoopController.Instance;
+            return directLoop != null && _stockPoint != null && directLoop.IsDayPrepPointAvailable(_stockPoint)
+                ? "Fishing: cast, wait for BITE, then press Space."
+                : _lastFeedback == "Caught Fish! Added to inventory." ? _lastFeedback : "Fishing: return next day.";
+        }
         if (_isFishing)
             return _lastFeedback;
 
@@ -104,6 +177,8 @@ public class FishingSpot : MonoBehaviour, IInteractable
 
     void CancelCast()
     {
+        _biteReady = false;
+        _castingPlayer = null;
         if (_castRoutine != null)
         {
             StopCoroutine(_castRoutine);
@@ -122,6 +197,7 @@ public class FishingSpot : MonoBehaviour, IInteractable
     // Editor smoke tests use the same completion path without waiting on wall-clock time.
     public bool CompleteCatchForValidation(GameObject interactor)
     {
+        if (_directPlayerDemo) return false;
         if (!_isFishing)
             return false;
 

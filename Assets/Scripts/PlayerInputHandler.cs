@@ -32,6 +32,18 @@ public class PlayerInputHandler : MonoBehaviour
 
     // -------- 현재 이동 벡터 (폴링 방식으로도 읽을 수 있도록 프로퍼티 제공) --------
     public Vector2 MoveInput { get; private set; }
+    // Opening Canon v2 §4. Legacy scenes retain their established controls.
+    public bool FirstDayControls { get; set; }
+    public bool RunHeld { get; private set; }
+    public bool JumpPressed { get; private set; }
+    public bool InteractHeld { get; private set; }
+    public event Action OnHolster;
+    public static bool ModalOpen => Time.timeScale == 0 ||
+        (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf) ||
+        (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen) ||
+        (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) ||
+        (CraftingUI.instance != null && CraftingUI.instance.IsOpen) ||
+        (DemoSettlementController.Instance != null && DemoSettlementController.Instance.IsPanelOpen);
 
     // -------- 이벤트 --------
     // 각 이벤트에 구독하면 키/버튼 입력 시 콜백을 받는다.
@@ -98,7 +110,10 @@ public class PlayerInputHandler : MonoBehaviour
     {
         var kb    = Keyboard.current;
         var mouse = Mouse.current;
-        if (kb == null) return;
+        if (kb == null) { InteractHeld = false; return; }
+        InteractHeld = FirstDayControls && !ModalOpen && kb.eKey.isPressed;
+        RunHeld = FirstDayControls && !ModalOpen && kb.leftShiftKey.isPressed;
+        JumpPressed = FirstDayControls && !ModalOpen && kb.spaceKey.wasPressedThisFrame;
 
         // -------- 이동 (WASD / 방향키 폴링) --------
         Vector2 move = Vector2.zero;
@@ -113,16 +128,20 @@ public class PlayerInputHandler : MonoBehaviour
         }
 
         // -------- 버튼 입력 감지 --------
-        if (kb.spaceKey.wasPressedThisFrame)  OnInteractPressed?.Invoke();
-        if (kb.iKey.wasPressedThisFrame)      OnInventoryToggle?.Invoke();
+        if (!ModalOpen && (FirstDayControls ? kb.eKey : kb.spaceKey).wasPressedThisFrame) OnInteractPressed?.Invoke();
+        if (kb.iKey.wasPressedThisFrame || FirstDayControls && kb.tabKey.wasPressedThisFrame) OnInventoryToggle?.Invoke();
         if (kb.pKey.wasPressedThisFrame)      OnPhoneToggle?.Invoke(); // 📱 스마트폰
-        if (kb.cKey.wasPressedThisFrame)      OnCraftToggle?.Invoke();
+        if (!FirstDayControls && kb.cKey.wasPressedThisFrame) OnCraftToggle?.Invoke();
         if (kb.rKey.wasPressedThisFrame)      OnBuildRotate?.Invoke();
-        if (kb.mKey.wasPressedThisFrame)      OnBuildMove?.Invoke();
-        if (kb.xKey.wasPressedThisFrame)      OnBuildRecover?.Invoke();
-        if (kb.f5Key.wasPressedThisFrame)        OnSave?.Invoke();
-        if (kb.f9Key.wasPressedThisFrame)        OnLoad?.Invoke();
-        if (kb.escapeKey.wasPressedThisFrame)    OnPauseToggle?.Invoke();
+        if (!FirstDayControls && kb.mKey.wasPressedThisFrame) OnBuildMove?.Invoke();
+        if (kb.xKey.wasPressedThisFrame && !ModalOpen)
+        { if (FirstDayControls) OnHolster?.Invoke(); else OnBuildRecover?.Invoke(); }
+        if (!FirstDayControls && kb.f5Key.wasPressedThisFrame) OnSave?.Invoke();
+        if (!FirstDayControls && kb.f9Key.wasPressedThisFrame) OnLoad?.Invoke();
+        if (kb.escapeKey.wasPressedThisFrame)    CancelPlacementOrPause();
+        if (FirstDayControls && mouse != null && mouse.rightButton.wasPressedThisFrame)
+            Inventory.instance?.GetComponent<WorldHotbarPlacementController>()?.Cancel();
+        if (ModalOpen) return;
 
         // -------- 핫바 숫자키 1~9 --------
         CheckDigitKey(kb.digit1Key, 0);
@@ -143,15 +162,28 @@ public class PlayerInputHandler : MonoBehaviour
             OnHotbarScroll?.Invoke(scrollY);
 
         // -------- 건설 배치 좌클릭 (UI 위 클릭 제외) --------
-        if (mouse.leftButton.wasPressedThisFrame && !IsPointerOverUI())
+        if (!FirstDayControls && mouse.leftButton.wasPressedThisFrame && !IsPointerOverUI())
             OnBuildPlace?.Invoke();
     }
 
     // -------- 헬퍼 --------
 
+    void CancelPlacementOrPause()
+    {
+        if (CraftingUI.instance != null && CraftingUI.instance.IsOpen) { CraftingUI.instance.Close(); return; }
+        if (DemoSettlementController.Instance?.IsPanelOpen == true) return;
+        var placement = Inventory.instance != null
+            ? Inventory.instance.GetComponent<WorldHotbarPlacementController>() : null;
+        if (placement != null && placement.IsPlacing) placement.Cancel();
+        else OnPauseToggle?.Invoke();
+    }
+
     private void CheckDigitKey(KeyControl key, int index)
     {
-        if (key.wasPressedThisFrame) OnHotbarDirectSelect?.Invoke(index);
+        if (!key.wasPressedThisFrame) return;
+        // 숫자 선택은 UI의 활성/구독 수와 무관하게 기존 Inventory 권위에 전달한다.
+        Inventory.instance?.SelectHotbarSlot(index);
+        OnHotbarDirectSelect?.Invoke(index);
     }
 
     private static bool IsPointerOverUI()

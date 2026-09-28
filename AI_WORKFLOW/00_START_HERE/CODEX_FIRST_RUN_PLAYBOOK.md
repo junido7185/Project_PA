@@ -77,7 +77,7 @@ Codex 첫 실행은 **개발이 아니라 안전 시운전**이다. 목표는 "C
 먼저 AI_WORKFLOW/00_START_HERE/CODEX_REPEAT_PROMPT.md 를 읽고 그 지시를 따른다.
 
 이번 세션:
-- AI_WORKFLOW/03_TASKS/TASK_QUEUE.md 에서 상태 TODO이고 선행이 모두 DONE인 첫 작업(=Task 001)을 고른다.
+- Docs/02_IMPLEMENTATION/Backlog/2026-07_TASK_QUEUE.md 에서 상태 TODO이고 선행이 모두 DONE인 첫 작업(=Task 001)을 고른다.
 - 그 작업을 ACTIVE_TASK.md 양식으로 수행한다.
 - 작업 전 보고(수정 예정 파일/보존 선언/검증 방법)를 먼저 하고 진행한다.
 - 사용자 승인 없이 두 개 이상의 작업을 하지 않는다.

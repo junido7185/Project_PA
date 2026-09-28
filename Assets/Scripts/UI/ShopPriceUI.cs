@@ -10,13 +10,44 @@ using TMPro;
 // ─ 찬 슬롯:    가격 조정 모드 (현재 진열 아이템의 displayPrice 변경 + 회수)
 //
 // 🐾 자기완결 싱글톤: Awake 에서 Canvas 를 직접 빌드한다.
-// NPC 반응 힌트: displayPrice / (basePrice+quality 추천 기준가) 비율로 즉각 피드백 제공.
+// 가격은 플레이어가 정한다. 구매 판단의 내부 수치는 노출하지 않는다.
 //
 // PlayerController 이동 차단: PlayerController.Update() 에
 //   if (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) return;
 // 이미 추가돼 있어야 한다. (기능_명세서.md §씬구성 참조)
 public class ShopPriceUI : MonoBehaviour
 {
+    public Slider TutorialPriceDrag { get; private set; }
+    public bool TutorialPriceDragged { get; private set; }
+    bool FirstDayTutorial => gameObject.scene.name == DepartureTutorialController.SceneName && FirstDayStudioAssets.Load() != null;
+    void ConfigureTutorialPriceDrag()
+    {
+        if (TutorialPriceDrag != null) return;
+        var root = new GameObject("PriceDrag", typeof(RectTransform), typeof(Image), typeof(Slider));
+        root.transform.SetParent(_panel, false);
+        var rect = (RectTransform)root.transform;
+        rect.sizeDelta = new Vector2(320, 20);
+        rect.anchoredPosition = new Vector2(0, -20);
+        root.GetComponent<Image>().color = new Color(.28f, .36f, .34f);
+        var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        handle.transform.SetParent(root.transform, false);
+        var handleRect = (RectTransform)handle.transform;
+        handleRect.anchorMin = handleRect.anchorMax = new Vector2(0, .5f);
+        handleRect.sizeDelta = new Vector2(24, 34);
+        handle.GetComponent<Image>().color = C_Gold;
+        TutorialPriceDrag = root.GetComponent<Slider>();
+        TutorialPriceDrag.minValue = 1;
+        TutorialPriceDrag.maxValue = FirstDayTutorial ? 40 : 100;
+        TutorialPriceDrag.wholeNumbers = true;
+        TutorialPriceDrag.handleRect = handleRect;
+        TutorialPriceDrag.targetGraphic = handle.GetComponent<Image>();
+        TutorialPriceDrag.onValueChanged.AddListener(v =>
+        {
+            _pendingPrice = Mathf.RoundToInt(v);
+            TutorialPriceDragged = true;
+            RefreshUI();
+        });
+    }
     public static ShopPriceUI instance;
 
     public bool IsOpen { get; private set; }
@@ -28,12 +59,7 @@ public class ShopPriceUI : MonoBehaviour
     RectTransform   _panel;
     TextMeshProUGUI _titleTxt;       // "가격 설정" / "진열하기"
     TextMeshProUGUI _itemNameTxt;    // 아이템 이름
-    TextMeshProUGUI _merchandisingTxt; // 가격 파생 희귀/일반 구분 + 실제 품질
     TextMeshProUGUI _priceTxt;       // 현재 설정 가격
-    TextMeshProUGUI _recommendationTxt; // 기존 구매 기준 수식의 읽기 전용 추천가
-    TextMeshProUGUI _reactionTxt;    // NPC 반응 힌트
-    Image           _reactionBar;    // 색상으로 반응 강도 표현
-    TextMeshProUGUI _reactionBarTxt; // 반응 바 안 설명
     Button          _confirmBtn;
     Button          _retrieveBtn;
     Button          _closeBtn;
@@ -42,20 +68,13 @@ public class ShopPriceUI : MonoBehaviour
     ShopSlot _slot;
     int      _pendingPrice;
 
-    // 현재 sellable 카탈로그는 8~52G와 150~185G 두 가격대로 나뉜다.
-    // 별도 rarity 데이터가 생기기 전까지 그 사이인 100G를 명시적 "가격 파생값" 경계로 쓴다.
-    const int DerivedRareBasePrice = 100;
-
     // ── 색상 팔레트 (레퍼런스.html 기준) ────────────────────────────────────────
-    static readonly Color C_PanelBG     = new Color(0.13f, 0.13f, 0.13f, 0.96f);
+    static readonly Color C_PanelBG     = new Color(0.13f, 0.13f, 0.13f, 1f);
     static readonly Color C_Header      = new Color(0.941f, 0.502f, 0.439f, 1f);  // #F08070 coral
     static readonly Color C_Gold        = new Color(1f,    0.92f,  0.38f,  1f);   // #FFEB61
     static readonly Color C_BtnGreen    = new Color(0.28f, 0.68f,  0.40f,  1f);
     static readonly Color C_BtnOrange   = new Color(0.86f, 0.48f,  0.22f,  1f);
     static readonly Color C_BtnGray     = new Color(0.30f, 0.30f,  0.30f,  1f);
-    static readonly Color C_ReactionGood= new Color(0.25f, 0.75f,  0.35f,  1f);
-    static readonly Color C_ReactionMid = new Color(0.90f, 0.78f,  0.22f,  1f);
-    static readonly Color C_ReactionBad = new Color(0.85f, 0.22f,  0.22f,  1f);
 
     // ──────────────────────────────────────────────────────────────────────────────
     void Awake()
@@ -102,81 +121,20 @@ public class ShopPriceUI : MonoBehaviour
         _panel.anchoredPosition = Vector2.zero;
         panelGO.GetComponent<Image>().color = C_PanelBG;
 
-        float y = 170f; // 상단부터 내려가며 배치 (anchoredPosition y 기준)
-
-        // ── 헤더 타이틀 ──────────────────────────────────────────────────────────
-        _titleTxt = CreateLabel(panelGO.transform, "TitleTxt", "가격 설정",
-            new Rect(-180, y, 360, 36), 20, FontStyles.Bold, C_Header, TextAlignmentOptions.Center);
-        y -= 44;
-
-        // ── 아이템 이름 ──────────────────────────────────────────────────────────
-        _itemNameTxt = CreateLabel(panelGO.transform, "ItemNameTxt", "—",
-            new Rect(-180, y, 360, 28), 17, FontStyles.Normal,
-            Color.white, TextAlignmentOptions.Center);
-        y -= 36;
-
-        // Task 023 — 현재 rarity 원본 필드가 없으므로 기본가 파생 구분임을 화면에 명시한다.
-        _merchandisingTxt = CreateLabel(panelGO.transform, "MerchandisingTxt",
-            "일반품 · 가격 파생값 · 품질 ×1.00",
-            new Rect(-180, y, 360, 24), 13, FontStyles.Bold,
-            new Color(0.74f, 0.86f, 0.72f), TextAlignmentOptions.Center);
-        y -= 30;
-
-        // ── 가격 표시 ─────────────────────────────────────────────────────────
-        _priceTxt = CreateLabel(panelGO.transform, "PriceTxt", "0 G",
-            new Rect(-180, y, 360, 44), 28, FontStyles.Bold,
-            C_Gold, TextAlignmentOptions.Center);
-        y -= 50;
-
-        // Task 025 — 자동 적용하지 않는 읽기 전용 가격 결정 기준.
-        _recommendationTxt = CreateLabel(panelGO.transform, "RecommendationTxt",
-            "추천 기준가 — · 기본가+품질",
-            new Rect(-180, y, 360, 22), 13, FontStyles.Normal,
-            new Color(0.82f, 0.82f, 0.82f), TextAlignmentOptions.Center);
-        y -= 44;
-
-        // ── +/- 버튼 행 ───────────────────────────────────────────────────────
-        BuildAdjustRow(panelGO.transform, y, new[] { -1000, -100, -10, +10, +100, +1000 });
-        y -= 44;
-
-        // ── NPC 반응 바 ───────────────────────────────────────────────────────
-        var barBgGO = new GameObject("ReactionBarBg", typeof(RectTransform), typeof(Image));
-        var barBgRT = (RectTransform)barBgGO.transform;
-        barBgRT.SetParent(panelGO.transform, false);
-        barBgRT.anchorMin        = new Vector2(0.5f, 0.5f);
-        barBgRT.anchorMax        = new Vector2(0.5f, 0.5f);
-        barBgRT.pivot            = new Vector2(0.5f, 0.5f);
-        barBgRT.sizeDelta        = new Vector2(340, 26);
-        barBgRT.anchoredPosition = new Vector2(0, y);
-        barBgGO.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f);
-
-        var barFillGO = new GameObject("ReactionBarFill", typeof(RectTransform), typeof(Image));
-        _reactionBar  = barFillGO.GetComponent<Image>();
-        var barFillRT = (RectTransform)barFillGO.transform;
-        barFillRT.SetParent(barBgGO.transform, false);
-        barFillRT.anchorMin        = Vector2.zero;
-        barFillRT.anchorMax        = new Vector2(0.5f, 1f); // 너비 동적 조정
-        barFillRT.pivot            = Vector2.zero;
-        barFillRT.offsetMin        = Vector2.zero;
-        barFillRT.offsetMax        = Vector2.zero;
-        _reactionBar.color         = C_ReactionMid;
-
-        _reactionBarTxt = CreateLabel(barBgGO.transform, "BarTxt", "적당한 가격",
-            new Rect(-170, -13, 340, 26), 12, FontStyles.Normal,
-            Color.white, TextAlignmentOptions.Center);
-        y -= 34;
-
-        // ── NPC 반응 설명 ─────────────────────────────────────────────────────
-        _reactionTxt = CreateLabel(panelGO.transform, "ReactionTxt",
-            "NPC 반응을 예측합니다...",
-            new Rect(-180, y, 360, 22), 13, FontStyles.Normal,
-            new Color(0.75f, 0.75f, 0.75f), TextAlignmentOptions.Center);
-        y -= 30;
-
-        // ── 확정 / 회수 / 닫기 버튼 행 ───────────────────────────────────────
-        _confirmBtn  = BuildActionBtn(panelGO.transform, "가격 확정",  C_BtnGreen,  new Vector2(-130, y - 8), OnConfirm);
-        _retrieveBtn = BuildActionBtn(panelGO.transform, "아이템 회수", C_BtnOrange, new Vector2(  0,  y - 8), OnRetrieve);
-        _closeBtn    = BuildActionBtn(panelGO.transform, "닫기",        C_BtnGray,   new Vector2( 130, y - 8), Close);
+        _titleTxt = CreateLabel(_panel, "TitleTxt", "가격 설정",
+            new Rect(-180, 166, 360, 36), 24, FontStyles.Bold, C_Header, TextAlignmentOptions.Center);
+        _itemNameTxt = CreateLabel(_panel, "ItemNameTxt", "—",
+            new Rect(-180, 116, 360, 32), 20, FontStyles.Normal, Color.white, TextAlignmentOptions.Center);
+        _priceTxt = CreateLabel(_panel, "PriceTxt", "0 G",
+            new Rect(-180, 70, 360, 48), 34, FontStyles.Bold, C_Gold, TextAlignmentOptions.Center);
+        ConfigureTutorialPriceDrag();
+        BuildAdjustRow(_panel, -76, new[] { -10, -1, 1, 10 });
+        CreateLabel(_panel, "DragHint", "버튼 또는 드래그로 가격 조절",
+            new Rect(-180, -106, 360, 26), 16, FontStyles.Normal,
+            new Color(.82f, .85f, .81f), TextAlignmentOptions.Center);
+        _confirmBtn = BuildActionBtn(_panel, "가격 확정", C_BtnGreen, new Vector2(-124, -158), OnConfirm);
+        _retrieveBtn = BuildActionBtn(_panel, "상품 회수", C_BtnOrange, new Vector2(0, -158), OnRetrieve);
+        _closeBtn = BuildActionBtn(_panel, "닫기", C_BtnGray, new Vector2(124, -158), Close);
     }
 
     // ── UI 헬퍼 ─────────────────────────────────────────────────────────────────
@@ -196,9 +154,9 @@ public class ShopPriceUI : MonoBehaviour
 
             var btn = BuildActionBtn(parent, label, col,
                 new Vector2(startX + i * (btnW + 4), y), null);
-            btn.GetComponentInChildren<TextMeshProUGUI>().fontSize = 14;
+            btn.GetComponentInChildren<TextMeshProUGUI>().fontSize = 20;
             var rt  = (RectTransform)btn.transform;
-            rt.sizeDelta = new Vector2(btnW, 32);
+            rt.sizeDelta = new Vector2(btnW, 40);
 
             btn.onClick.AddListener(() => AdjustPrice(d));
         }
@@ -213,7 +171,7 @@ public class ShopPriceUI : MonoBehaviour
         rt.anchorMin        = new Vector2(0.5f, 0.5f);
         rt.anchorMax        = new Vector2(0.5f, 0.5f);
         rt.pivot            = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta        = new Vector2(100, 36);
+        rt.sizeDelta        = new Vector2(112, 40);
         rt.anchoredPosition = pos;
 
         go.GetComponent<Image>().color = bg;
@@ -222,6 +180,7 @@ public class ShopPriceUI : MonoBehaviour
         txt.transform.SetParent(go.transform, false);
         StretchFull((RectTransform)txt.transform);
         var tmp     = txt.GetComponent<TextMeshProUGUI>();
+        tmp.font = TMP_Settings.defaultFontAsset;
         tmp.text    = label;
         tmp.fontSize = 15;
         tmp.fontStyle = FontStyles.Bold;
@@ -248,6 +207,7 @@ public class ShopPriceUI : MonoBehaviour
         rt.anchoredPosition = new Vector2(rect.x + rect.width * 0.5f, rect.y - rect.height * 0.5f);
 
         var tmp           = go.GetComponent<TextMeshProUGUI>();
+        tmp.font          = TMP_Settings.defaultFontAsset;
         tmp.text          = text;
         tmp.fontSize      = size;
         tmp.fontStyle     = style;
@@ -270,6 +230,7 @@ public class ShopPriceUI : MonoBehaviour
     // SlotSlot.Interact() 에서 호출. 이미 진열된 아이템의 가격을 조정하거나 회수한다.
     public void Open(ShopSlot slot)
     {
+        ConfigureTutorialPriceDrag();
         _slot        = slot;
         _pendingPrice = (slot.displayPrice > 0)
             ? slot.displayPrice
@@ -289,6 +250,7 @@ public class ShopPriceUI : MonoBehaviour
             SmartphoneUI.instance.Toggle();
 
         RefreshUI();
+        if (TutorialPriceDrag != null) TutorialPriceDrag.SetValueWithoutNotify(_pendingPrice);
     }
 
     public void Close()
@@ -326,16 +288,6 @@ public class ShopPriceUI : MonoBehaviour
         Close();
     }
 
-    // PurchaseEvaluator의 실제 기준가와 동일한 읽기 전용 계산이다.
-    // 가격을 자동 변경하지 않으며, 플레이어가 비교할 숫자만 제공한다.
-    static int ResolveRecommendedPrice(ItemInstance instance)
-    {
-        if (instance?.data == null) return 0;
-
-        float qualityBoost = 0.5f * Mathf.Max(0f, instance.quality - 1f);
-        return Mathf.Max(1, Mathf.RoundToInt(instance.data.basePrice * (1f + qualityBoost)));
-    }
-
     void RefreshUI()
     {
         if (_slot == null) return;
@@ -357,26 +309,6 @@ public class ShopPriceUI : MonoBehaviour
                 : itemName;
         }
 
-        if (_merchandisingTxt != null)
-        {
-            if (occupied)
-            {
-                ItemInstance instance = _slot.currentItem;
-                bool isDerivedRare = instance.data.basePrice >= DerivedRareBasePrice;
-                string rarityLabel = isDerivedRare ? "희귀품" : "일반품";
-                float quality = Mathf.Max(0f, instance.quality);
-                _merchandisingTxt.text = $"{rarityLabel} · 가격 파생값 · 품질 ×{quality:F2}";
-                _merchandisingTxt.color = isDerivedRare
-                    ? C_Gold
-                    : new Color(0.74f, 0.86f, 0.72f);
-            }
-            else
-            {
-                _merchandisingTxt.text = "희귀/일반 구분은 기본가에서 파생";
-                _merchandisingTxt.color = new Color(0.72f, 0.72f, 0.72f);
-            }
-        }
-
         // 회수 버튼 활성 (빈 슬롯이면 회수 불필요)
         if (_retrieveBtn != null)
             _retrieveBtn.gameObject.SetActive(occupied);
@@ -385,54 +317,13 @@ public class ShopPriceUI : MonoBehaviour
         if (_priceTxt != null)
             _priceTxt.text = $"{_pendingPrice:N0} G";
 
-        if (_recommendationTxt != null)
+        if (TutorialPriceDrag != null)
         {
-            int recommendedPrice = occupied ? ResolveRecommendedPrice(_slot.currentItem) : 0;
-            _recommendationTxt.text = recommendedPrice > 0
-                ? $"추천 기준가 {recommendedPrice:N0} G · 기본가+품질"
-                : "추천 기준가 — · 기본가+품질";
+            // 버튼으로 범위를 넘겼을 때만 확장한다. 드래그 중 눈금은 고정한다.
+            if (_pendingPrice > TutorialPriceDrag.maxValue)
+                TutorialPriceDrag.maxValue = _pendingPrice * 2f;
+            TutorialPriceDrag.SetValueWithoutNotify(_pendingPrice);
         }
-
-        // NPC 반응 계산
-        ComputeReaction(out string reaction, out Color barColor, out float barFill);
-
-        if (_reactionBar != null)
-        {
-            _reactionBar.color = barColor;
-            // 바 너비 = anchorMax.x 조정 (0~1)
-            var barRT        = (RectTransform)_reactionBar.transform;
-            barRT.anchorMax  = new Vector2(barFill, 1f);
-            barRT.offsetMax  = Vector2.zero;
-        }
-        if (_reactionBarTxt != null) _reactionBarTxt.text = reaction;
-        if (_reactionTxt    != null)
-        {
-            int approxPct = Mathf.RoundToInt(barFill * 100);
-            _reactionTxt.text = $"예상 구매율: {approxPct}%";
-        }
-    }
-
-    // 추천 기준가 비율 기반 NPC 반응 힌트 (PurchaseEvaluator 의 ratio 로직 단순화 버전)
-    void ComputeReaction(out string label, out Color color, out float fill)
-    {
-        if (_slot == null || _slot.IsEmpty || _slot.currentItem?.data == null)
-        {
-            label = "아이템을 먼저 진열하세요";
-            color = C_ReactionMid;
-            fill  = 0f;
-            return;
-        }
-
-        int recommendedPrice = ResolveRecommendedPrice(_slot.currentItem);
-        float ratio = recommendedPrice > 0 ? (float)_pendingPrice / recommendedPrice : 1f;
-
-        if      (ratio > 3.0f) { label = "너무 비쌈 - 구매 거의 없음"; color = C_ReactionBad;  fill = 0.05f; }
-        else if (ratio > 2.2f) { label = "많이 비쌈";                  color = C_ReactionBad;  fill = 0.15f; }
-        else if (ratio > 1.8f) { label = "조금 비쌈";                  color = C_ReactionMid;  fill = 0.30f; }
-        else if (ratio > 1.4f) { label = "비싸지만 구매 가능";         color = C_ReactionMid;  fill = 0.45f; }
-        else if (ratio > 1.0f) { label = "적정가";                     color = C_ReactionGood; fill = 0.60f; }
-        else if (ratio > 0.8f) { label = "저렴함 - 판매 유리";         color = C_ReactionGood; fill = 0.78f; }
-        else                    { label = "너무 저렴 - 수익 낮음";      color = C_ReactionGood; fill = 0.92f; }
     }
 
     void SetCanvasActive(bool active)

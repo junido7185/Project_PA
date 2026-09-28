@@ -2,7 +2,7 @@
   "ticket": "VS-PRESENT-001-P3",
   "librarySha256": "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
   "libraryPreserved": true,
-  "styleGrammar": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+  "styleGrammar": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md",
   "sourceProvenance": "Docs/AssetProvenance/selected-assets.json / CubeWorldKit CC0",
   "blend": "Blender\\Generated\\VS_PRESENT_001_P3\\PA_FirstSettlement_r01.blend",
   "assets": [

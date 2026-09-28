@@ -834,7 +834,7 @@ Append-only log for guarded automation and dry-run loop work.
 ## 2026-09-06 — ART-000 Asset Intake / VERIFIED
 
 - 목표 파일의 ART-000 범위에서 공식 CC0 6팩 ZIP을 원본 보존 COPY로 입고했다. 550종/2,590파일을 분류하고 Blender 33종, Unity 28종(새 FBX20+기존 Nature8 재사용)을 선정했다.
-- 산출물: Docs/AssetProvenance/EXTERNAL_ASSET_REGISTRY.md, PROJECT_PA_ART_STYLE_GRAMMAR.md, Blender/Library/ProjectPA_AssetLibrary.blend, demo 요구·missing-model·8개 제작 배치 계획, 원본 비교 렌더33장/시트3장.
+- 산출물: Docs/AssetProvenance/EXTERNAL_ASSET_REGISTRY.md, Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md, Blender/Library/ProjectPA_AssetLibrary.blend, demo 요구·missing-model·8개 제작 배치 계획, 원본 비교 렌더33장/시트3장.
 - Unity 6000.3.2f1 D3D11 전용 검사: 28개 hash/mesh/크기/바닥 pivot/URP 재질/프리팹 참조 왕복 PASS. Runtime/Editor compile 오류0; 기존 CS8785/CS0414 경고는 보존. 기존 runtime/scene/settings 보호 hash 변경0.
 - Blender 4.5.13 공식 portable 체크섬 검증 후 33개 library 생성·재개방·packed texture·render PASS. 물고기 원본 동작6개씩 모두 library에 보존했다. 원본 mesh/ZIP 변경 없음.
 - 무결성: Docs/AssetProvenance/final-integrity-report.json PASS — 2,886 checks, GUID1,199개 중 중복0, 신규 missing meta0. 자세한 요구별 판정은 ART000_COMPLETION_AUDIT.md.
@@ -856,7 +856,7 @@ Append-only log for guarded automation and dry-run loop work.
 ## 2026-09-07 — VS-PRESENT-001 P0 / PASS · STOP
 
 - 별도 PA_DepartureTutorial 씬에서 실제 키보드 이동→나무 상호작용→열매3→ShopSlot 진열→ShopPriceUI 7G 확정→NPC 접근/평가→기존 Economy 0G→7G→출항 인증 완료를 연속 통과했다.
-- Runtime/Editor compile 오류0(기존 CS8785/CS0414 경고 유지), D3D11 Play Mode, serialized reference 검사와 1920×1080 실캡처 PASS. 근거 Docs/Presentation/2026-09-08/P0-validation-excerpt.txt, P0-validation.json, P0-integrity.json.
+- Runtime/Editor compile 오류0(기존 CS8785/CS0414 경고 유지), D3D11 Play Mode, serialized reference 검사와 1920×1080 실캡처 PASS. 근거 Docs/90_PRESENTATION/Evidence/2026-09-08/P0-validation-excerpt.txt, P0-validation.json, P0-integrity.json.
 - Blender 기존 Departure 자산5종과 ART-000 tree/cargo를 적용했다. 최종 화면은 01_PA_Company_FirstView.png / 02_Tutorial_PriceAndReaction.png. 전체보기는 실제 씬에서 HUD만 숨긴 캡처, 가격/반응은 실제 판매 후 남은 열매1개 재진열 상태다.
 - 개발 진입: Project PA > Presentation > Open Departure Tutorial > Play. WASD/SPACE, 실습 가격7G. 튜토리얼 세션만 유지하며 SaveManager가 없어 기존 campaign save를 쓰지 않는다. NEW GAME/standalone 통합 및 저장 재개는 이번에 확인 못 함.
 - 기존 dirty CONTENT/Save/World 코드를 수정하거나 이 checkpoint에 넣지 않았다. 이 작업은 현재 working tree의 기존 ShopPriceUI.OnPriceConfirmed 및 PurchaseFeedbackPresentationController.OnDecisionRecorded 관찰 seam을 사용하므로, checkpoint 단독 checkout은 기존 CONTENT 작업의 별도 checkpoint 없이는 재현 가능한 clean baseline이 아니다.
@@ -867,7 +867,7 @@ Append-only log for guarded automation and dry-run loop work.
 - 사람의 recovery ticket으로 이전 STOP 해제. 기존 P1 코드/후보/프리팹을 보존하고 공용 GameView 캡처 lifecycle과 PrototypeWorldLabel/ShopOpenSign 초기화만 최소 교정했다. OnValidate 구조 생성 제거, ShopOpenSign 초기화 Start로 이동. 새 label/캡처 framework 없음.
 - Runtime → Editor 순차 build 오류0, 기존 CS8785/CS0414 경고만 유지. D3D11 실제 GameView 첫 recovery 실행 PASS. P0 미인증 보호, 후보3/선택2, 0·1명 확정/unknown ID/3번째 거부, 취소·교체·참조, 확정 ID 1회 전달·동결 모두 PASS.
 - 새 03_CompanionSelection.png 1920×1080, 229720 bytes, 2026-09-09T01:35:56Z. 기존 파일 기준선과 새 쓰기/연속 크기 안정화 확인. Camera.Render 호출 없음. blocking Console/OnValidate 오류/native crash 0. 종료 시 기존 JobTempAlloc 진단은 별도 기존 Editor 종료 부채로 남긴다.
-- 증거: Docs/Presentation/2026-09-08/P1-validation.json, P1-recovery-excerpt.txt. 전체 로그와 순차 compile: Logs/VS_PRESENT_001/P1_Recovery_Editor.log, Recovery_RuntimeCompile.log, Recovery_EditorCompile.log.
+- 증거: Docs/90_PRESENTATION/Evidence/2026-09-08/P1-validation.json, P1-recovery-excerpt.txt. 전체 로그와 순차 compile: Logs/VS_PRESENT_001/P1_Recovery_Editor.log, Recovery_RuntimeCompile.log, Recovery_EditorCompile.log.
 - 범위: 기존 미커밋 P1 구현과 이번 recovery만 local checkpoint, 개인 .claude/settings.json 제외. P0/CONTENT/Blender/씬/Save/ProjectSettings 변경 없음. 실제 P0 인증 완료부터 연결은 이번 개발용 진입 검사에서 확인 못 함.
 - 다음: 사용자 §13 승인에 따라 P1 local commit 후 VS-PRESENT-001-P2 자동 진행. 배/WorldGrid 재사용, 신규 권위 없음, push 금지.
 
@@ -875,6 +875,6 @@ Append-only log for guarded automation and dry-run loop work.
 
 - P1 recovery 첫 실행 PASS 및 6b283c1 local commit 후 명시 승인된 P2 자동 진행. P1 선택 ID → 기존 배/실제 NPC2 → 갑판 WASD → 12초 항해 → fade → 같은 NPC2와 WorldGrid 섬 도착 → 섬 이동 PASS. 최종 캡처 조합은 광부·농부이며 벌목꾼·농부 조합도 앞선 P2 검사에서 PASS했다.
 - 기존 WorldGridService/WorldChunkTerrain/WorldPlayerTraversalGuard/PlayerController/CameraController와 ART-000/P0 자산만 재사용. 새 presentation+전용 checks, 기존 continuation setup/prefab 연결. P0/Golden/MainGame/WorldSandbox 씬 및 WorldGrid·Save·경제 권위 소스, Packages/ProjectSettings 변경 없음.
-- Runtime/Editor compile 오류0(기존 CS8785/CS0414 경고), D3D11 blocking Console 오류0/native crash0, 필수 참조/모델/청크 collider PASS. 최종 PNG2장 fresh stable write/1920×1080 확인. 증거 Docs/Presentation/2026-09-08/P2-validation.json, P2-validation-excerpt.txt; 전체 Logs/VS_PRESENT_001/P2_Presentation_Editor.log.
+- Runtime/Editor compile 오류0(기존 CS8785/CS0414 경고), D3D11 blocking Console 오류0/native crash0, 필수 참조/모델/청크 collider PASS. 최종 PNG2장 fresh stable write/1920×1080 확인. 증거 Docs/90_PRESENTATION/Evidence/2026-09-08/P2-validation.json, P2-validation-excerpt.txt; 전체 Logs/VS_PRESENT_001/P2_Presentation_Editor.log.
 - P0 인증부터 연결한 전체 연속 플레이·standalone·save/load는 이번에 확인 못 함. P0 validator 재실행 없음. 생산 실행/입주/고용/채집 보상/placement preview/저장 확장은 DEFER. 개발용 메뉴 Play Companion Selection (Development Entry)로 바로 확인 가능.
 - 이번 P2 변경만 local checkpoint 후 STOP. 개인 .claude/settings.json 보존/미포함, push 없음. 다음은 사람의 전체 첫 플레이 연결과 화면/조작감 확인이다.

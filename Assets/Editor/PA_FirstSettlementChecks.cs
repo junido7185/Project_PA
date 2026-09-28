@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 public static class PA_FirstSettlementChecks
 {
     const string Key = "PA.FirstSettlement.Checks";
-    const string Output = "Docs/Presentation/2026-09-09/P3";
+    const string Output = "Docs/90_PRESENTATION/Evidence/2026-09-09/P3";
     const string SaveFolder = "Logs/VS_PRESENT_001/P3/ValidationSave";
     const BindingFlags HiddenStatic = BindingFlags.Static | BindingFlags.NonPublic;
     static Task _task;

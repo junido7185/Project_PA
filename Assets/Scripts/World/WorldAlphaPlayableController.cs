@@ -55,6 +55,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     public bool StartPromptVisible => IsReady && _startPromptVisible;
     public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
     public CampaignOpeningController Opening => GetComponent<CampaignOpeningController>();
+    public DemoRouteController DemoRoute => GetComponent<DemoRouteController>();
     public CampaignFirstShopNightController FirstNight => GetComponent<CampaignFirstShopNightController>();
     public string PlayerControlHint =>
         Opening != null && Opening.HasStarted && !Opening.OpeningComplete
@@ -136,7 +137,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         SubscribeWorldChanges();
         if (!_islandView.DisplayGridSnapshot(_adapter.BoundSeed))
         {
-            _lastAction = "The generated 128x128 projection could not be displayed.";
+            _lastAction = $"The generated {_grid.Definition.Width}x{_grid.Definition.Height} projection could not be displayed.";
             Debug.LogError($"[WORLD-010] RUNTIME_FAIL {_lastAction}");
             yield break;
         }
@@ -147,12 +148,13 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         _startPromptVisible = true;
         ApplyDevelopmentMode(false);
         _lastAction = "새 섬 생활을 시작해 첫날 동선을 익혀 보세요.";
-        Debug.Log("[WORLD-010] RUNTIME_READY playableWorldAlpha=true movement=true projection=64chunks");
+        Debug.Log($"[WORLD-010] RUNTIME_READY playableWorldAlpha=true movement=true projection={_islandView.GeneratedChunkCount}chunks");
     }
 
     void Update()
     {
         if (!IsReady) return;
+        if (DemoRoute != null) return;
         if (WasDevelopmentTogglePressed())
             SetDevelopmentOverlayVisible(!_developmentOverlayVisible);
         if (!HasStartedBeta && (Input.GetKeyDown(KeyCode.Return) ||
@@ -221,8 +223,9 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         controller.center = new Vector3(0f, 0.9f, 0f);
         controller.stepOffset = 0.35f;
         controller.slopeLimit = 45f;
-        if (player.GetComponent<PlayerController>() == null)
-            player.AddComponent<PlayerController>();
+        PlayerController movement = player.GetComponent<PlayerController>();
+        if (movement == null) movement = player.AddComponent<PlayerController>();
+        movement.ApplyOpeningFeel();
         _traversalGuard = player.GetComponent<WorldPlayerTraversalGuard>();
         if (_traversalGuard == null)
             _traversalGuard = player.AddComponent<WorldPlayerTraversalGuard>();
@@ -234,18 +237,16 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         Camera camera = Camera.main;
         if (camera == null || _adapter?.PlayerRoot == null) return;
         Transform target = _adapter.PlayerRoot.transform;
-        camera.orthographic = true;
-        camera.orthographicSize = Opening != null && Opening.HasStarted
-            ? CampaignOpeningController.PlayCameraSize : 22f;
-        if (resetPose)
-        {
-            camera.transform.position = target.position + new Vector3(18f, 26f, -18f);
-            camera.transform.LookAt(target.position + Vector3.up * 0.75f);
-        }
         CameraController follow = camera.GetComponent<CameraController>();
         if (follow == null) follow = camera.gameObject.AddComponent<CameraController>();
-        follow.target = target;
-        follow.smoothSpeed = 6f;
+        if (resetPose || !follow.OpeningFraming || follow.target != target || camera.orthographic)
+        {
+            // T1 visual review: keep the player and held tools readable during normal Demo256 play.
+            // 출항 교육/기존 캠페인의 구도는 유지한다.
+            if (DemoRoute != null) follow.ConfigureOpening(target, 16f, 45f, 40f);
+            else follow.ConfigureOpening(target, 12.5f, 40f, 34f);
+        }
+        if (resetPose) follow.SnapToTarget();
     }
 
     void SubscribeWorldChanges()
@@ -390,6 +391,15 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     {
         if (!IsReady || _adapter?.PlayerRoot == null) return false;
         if (HasStartedBeta) return true;
+        if (DemoRoute != null)
+        {
+            if (!_adapter.BeginPlayableWeek(out _lastAction)) return false;
+            HasStartedBeta = true;
+            _startPromptVisible = false;
+            _movementOrigin = _adapter.PlayerRoot.transform.position;
+            _lastAction = "도구와 건설 키트를 챙겼습니다. 직접 모은 물건으로 첫 영업을 준비하세요.";
+            return true;
+        }
         CampaignOpeningController opening = Opening ?? gameObject.AddComponent<CampaignOpeningController>();
         if (!opening.Begin(this))
         {
@@ -521,11 +531,18 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
             HasReachedShop = true;
             _lastAction = "잡화점 위치를 확인했습니다. 낮에 준비한 상품은 이곳에서 밤에 판매합니다.";
         }
-        if (!HasReachedWorkbench && _adapter.RuntimeWorkbench != null &&
-            FlatDistance(player, _adapter.RuntimeWorkbench.transform.position) <= LandmarkReachDistance)
+        if (!HasReachedWorkbench)
         {
-            HasReachedWorkbench = true;
-            _lastAction = "제작 작업대 위치를 확인했습니다. 자원을 가공해 더 가치 있는 상품을 만드세요.";
+            // In the standard route the adapter owns the workbench; in the Demo route
+            // the player places their own via DemoSettlementController.PlacedWorkbench.
+            Transform wbTransform = _adapter.RuntimeWorkbench != null
+                ? _adapter.RuntimeWorkbench.transform
+                : DemoSettlementController.Instance?.PlacedWorkbench?.transform;
+            if (wbTransform != null && FlatDistance(player, wbTransform.position) <= LandmarkReachDistance)
+            {
+                HasReachedWorkbench = true;
+                _lastAction = "제작 작업대 위치를 확인했습니다. 자원을 가공해 더 가치 있는 상품을 만드세요.";
+            }
         }
     }
 
@@ -533,6 +550,9 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     {
         if (!IsReady) return "섬 생활을 준비하고 있습니다.";
         if (!HasStartedBeta) return "새 섬 생활을 시작하세요.";
+        if (DemoRoute != null)
+            return DemoRoute.FirstDemoSaleCompleted ? "첫 판매 완료! 섬 생활을 계속하세요." :
+                "숲 목재 · 고지대 광석 · 해안 물고기 · 초원 곤충을 모으고 거점과 잡화점을 설치하세요.";
         if (!HasMoved && (Opening == null || !Opening.HasGreetedBori))
             return "WASD로 움직여 이동 방법을 익히세요.";
         if (Opening != null && Opening.HasStarted && !Opening.OpeningComplete)
@@ -731,6 +751,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
 
     void OnGUI()
     {
+        if (DemoRoute != null) return;
         if (!Application.isPlaying || !IsReady) return;
         if (!HasStartedBeta)
         {
@@ -745,7 +766,7 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
         float left = Mathf.Max(740f, Screen.width - 474f);
         GUILayout.BeginArea(new Rect(left, 18f, 456f, 525f), GUI.skin.box);
         GUILayout.Label("M70 PLAYABLE WORLD ALPHA");
-        GUILayout.Label($"Seed {_adapter.BoundSeed}  |  128x128 cells  |  {_islandView.GeneratedChunkCount} chunks");
+        GUILayout.Label($"Seed {_adapter.BoundSeed}  |  {_grid.Definition.Width}x{_grid.Definition.Height} cells  |  {_islandView.GeneratedChunkCount} chunks");
         GUILayout.Label("WASD move · click a cell · R/F terraform · B/M shed · Q/E rotate · Enter commit");
         GUILayout.Space(4f);
         GUILayout.Label(ChecklistSummary());
@@ -802,6 +823,17 @@ public sealed class WorldAlphaPlayableController : MonoBehaviour
     {
         GUILayout.BeginArea(PlayerFacingHudScreenRect, GUI.skin.box);
         int currentDay = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        if (DemoRoute != null)
+        {
+            GUILayout.Label($"Day {currentDay} · {CurrentPlayerObjective}");
+            GUILayout.Label("WASD 이동 · 숫자 키 도구/키트 선택 · Space 채집/낚시/포획/설치");
+            GUILayout.Label("설치: WASD 위치 · R 회전 · Space 확정 · Esc 취소");
+            GUILayout.Label("모은 물건 선택 → 진열대 Space → Space 가격 설정 → 밤에 간판 Space OPEN");
+            GUILayout.Label(ShopMerchandisingSummary);
+            GUILayout.Label(VillageResponseSummary);
+            GUILayout.EndArea();
+            return;
+        }
         if (Opening != null && Opening.HasStarted && !Opening.OpeningComplete)
         {
             var openingText = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };

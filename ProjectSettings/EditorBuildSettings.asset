@@ -8,6 +8,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Prototype_FirstDay.unity
     guid: 3339555c1aa944946a1565581cc503f6
+  - enabled: 1
+    path: Assets/Scenes/PA_DepartureTutorial.unity
+    guid: 060515c2e0de99c408a66e627e392dc8
+  - enabled: 1
+    path: Assets/Scenes/WorldSandbox.unity
+    guid: 5842a8303a32a29488f11b83be0cb661
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

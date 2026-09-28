@@ -15,7 +15,7 @@
 | 5 | pack/version/date/URL/license/SHA256/formats/usage/derivative 기록 | `EXTERNAL_ASSET_REGISTRY.md`, `asset-inventory.json`, 원본 license 5개 사본. Cube license 파일 부재와 공식 페이지 CC0 증거 명시. |
 | 6 | 모든 형식·모델·texture/material·README/license/preview/animation 조사와 분류 | 550종 `MODEL_INVENTORY.md`, 2,590 파일 inventory, `format-audit.json`. FBX animation metadata와 glTF animation arrays 조사. Cube의 Button은 OBJ/BLEND에만 존재함을 확인. |
 | 7 | 6팩 역할, Cube terrain 비대체 | registry와 production plan. Cube terrain/캐릭터/전투 모델은 Unity 입고하지 않음. WorldGrid source hash 유지. |
-| 8 | PA 공통 미술 방향 | 루트 `PROJECT_PA_ART_STYLE_GRAMMAR.md`, Kenney 가구와 Nature 형태 관찰, PA 팔레트 계약. |
+| 8 | PA 공통 미술 방향 | 루트 `Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md`, Kenney 가구와 Nature 형태 관찰, PA 팔레트 계약. |
 | 9 | 선정 모델 style 측정 | Blender/OBJ polygon·density, smooth face, live bevel, bounds, sampled color/saturation, roughness/metallic, texture 의존, source contact shadows. 원본 primitive 생성 비율·Unity 최종 조명/face는 측정 불가/후속 확인으로 명시. |
 | 10 | Blender library와 namespace | packed `Blender/Library/ProjectPA_AssetLibrary.blend`, 6 reference collections·33 Asset Browser collections, PA_DERIVED_RESERVED. 파일 재개방 PASS. |
 | 11 | Blender CLI/Python 자동화, 원본 보존 | 공식 4.5.13 portable SHA256 검증, 3개 Blender scripts. 원본은 read-only, 이전 생성 library는 Generated/ART000에 보존. |
@@ -39,7 +39,7 @@
 | 4 | 모델/texture/material inventory | `MODEL_INVENTORY.md`, `format-audit.json`, `asset-inventory.json` |
 | 5~7 | 직접/보정 후보, 파생 원본, 비사용 분류 | `selected-assets.json`, 전체 MODEL_INVENTORY |
 | 8 | provenance registry | `EXTERNAL_ASSET_REGISTRY.md`, `Licenses/` |
-| 9 | Project PA Style Grammar | 루트 `PROJECT_PA_ART_STYLE_GRAMMAR.md`, `STYLE_MEASUREMENTS.md` |
+| 9 | Project PA Style Grammar | 루트 `Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md`, `STYLE_MEASUREMENTS.md` |
 | 10 | Blender library | `Blender/Library/ProjectPA_AssetLibrary.blend`, manifest/README |
 | 11 | Unity import 구조 | `Assets/Art/External/`, `Assets/Art/ProjectPA/`, 기존 Nature; `unity-validation.json` |
 | 12~14 | demo requirements, missing list, Blender production plan | `DEMO_ASSET_REQUIREMENTS_AND_PRODUCTION_PLAN.md` |

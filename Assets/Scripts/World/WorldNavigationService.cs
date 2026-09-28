@@ -186,7 +186,7 @@ public sealed class WorldNavigationService : MonoBehaviour
     NavMeshAgent _testAgent;
     Vector3 _testDestination;
     Vector2Int _criticalStart;
-    long _criticalSeed = long.MinValue;
+    WorldGenerationResult _criticalWorld;
     bool _buildingSubscribed;
     bool _placementGateEnabled;
     bool _validationAnchorsConfigured;
@@ -943,9 +943,9 @@ public sealed class WorldNavigationService : MonoBehaviour
             _placementGateEnabled = false;
             return;
         }
-        if (_placementGateEnabled && _criticalSeed == _persistence.ActiveSeed) return;
+        if (_placementGateEnabled && ReferenceEquals(_criticalWorld, _persistence.ActiveGeneratedWorld)) return;
 
-        WorldGenerationResult generated = WorldIslandGenerator.Generate(_persistence.ActiveSeed);
+        WorldGenerationResult generated = _persistence.ActiveGeneratedWorld;
         if (!generated.TryGetAnchor(WorldGenerationAnchorKind.Start,
                 out WorldGenerationAnchor start))
         {
@@ -961,7 +961,7 @@ public sealed class WorldNavigationService : MonoBehaviour
                 : anchor.Coordinate;
             if (!_criticalTargets.Contains(target)) _criticalTargets.Add(target);
         }
-        _criticalSeed = generated.Seed;
+        _criticalWorld = generated;
         _placementGateEnabled = true;
     }
 

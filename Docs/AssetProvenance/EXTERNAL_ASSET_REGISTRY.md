@@ -2,7 +2,7 @@
 
 2026-09-06 · 로컬 원본 기준 · CC0 팩 6개 · 신규 gameplay/씬 적용 없음.
 
-[전체 파일·모델 측정](asset-inventory.json), [선정 모델 계약](selected-assets.json), [모델 분류표](MODEL_INVENTORY.md), [Unity 실측](unity-validation.json), [Blender 실측](blender-validation.json).
+[전체 파일·모델 측정](<asset-inventory.json>), [선정 모델 계약](<selected-assets.json>), [모델 분류표](<MODEL_INVENTORY.md>), [Unity 실측](<unity-validation.json>), [Blender 실측](<blender-validation.json>).
 
 원본은 Downloads에 그대로 있다. ZIP은 COPY→SHA256→경로/CRC/크기 검사→프로젝트 staging 압축 해제→선별 복사 순서로 처리했다. 실행파일·URL·HTML은 에셋으로 실행하지 않았다.
 
@@ -15,7 +15,7 @@
 - Archive SHA256: `6f2e69090e359204ace43e4c98dc3fb8639b75e423109672b5c890d194c45203`
 - 압축 해제 위치: `ExternalAssetSources/Kenney/MiniMarket/Extracted`
 - 확인된 버전/날짜: 1.0 / 2024-10-25 — Google Drive ZIP의 2026-09-06 날짜는 팩 버전이 아니다.
-- 라이선스: CC0-1.0; [MiniMarket_License.txt](Licenses/MiniMarket_License.txt)
+- 라이선스: CC0-1.0; [MiniMarket_License.txt](<Licenses/MiniMarket_License.txt>)
 - 원본 형식·파일 수: `.txt` 1, `.fbx` 20, `.png` 29, `.glb` 20, `.mtl` 20, `.obj` 20, `.html` 1, `.url` 3
 - 선택 형식: Blender GLB / Unity FBX만. 논리 모델 20종; Blender 선정 5종; Unity 5종.
 - 입고일: 2026-09-06. 역할: 상점·판매대·수납 가구의 형태 기준.
@@ -29,7 +29,7 @@
 - Archive SHA256: `cdad90853682499b94c9fda2f87678b24bfd8f3264e0ed323f6b6a27fd7c6f6f`
 - 압축 해제 위치: `ExternalAssetSources/Kenney/FoodKit/Extracted`
 - 확인된 버전/날짜: 2.0 / 2024-06-26 — Google Drive ZIP의 2026-09-06 날짜는 팩 버전이 아니다.
-- 라이선스: CC0-1.0; [FoodKit_License.txt](Licenses/FoodKit_License.txt)
+- 라이선스: CC0-1.0; [FoodKit_License.txt](<Licenses/FoodKit_License.txt>)
 - 원본 형식·파일 수: `.txt` 1, `.fbx` 200, `.png` 204, `.glb` 200, `.mtl` 200, `.obj` 200, `.html` 1, `.url` 3
 - 선택 형식: Blender GLB / Unity FBX만. 논리 모델 200종; Blender 선정 9종; Unity 8종.
 - 입고일: 2026-09-06. 역할: 기존 상품·식재료·가공 결과의 시각 대응.
@@ -43,7 +43,7 @@
 - Archive SHA256: `2acfe5cb44d392e834f77cf5488528c7cd45427cdf5fb941ce99856276158c19`
 - 압축 해제 위치: `ExternalAssetSources/Kenney/MiniArcade/Extracted`
 - 확인된 버전/날짜: 1.2 / 2024-07-22 — Google Drive ZIP의 2026-09-06 날짜는 팩 버전이 아니다.
-- 라이선스: CC0-1.0; [MiniArcade_License.txt](Licenses/MiniArcade_License.txt)
+- 라이선스: CC0-1.0; [MiniArcade_License.txt](<Licenses/MiniArcade_License.txt>)
 - 원본 형식·파일 수: `.txt` 1, `.fbx` 20, `.png` 29, `.glb` 20, `.mtl` 20, `.obj` 20, `.html` 1, `.url` 3
 - 선택 형식: Blender GLB / Unity FBX만. 논리 모델 20종; Blender 선정 2종; Unity 0종.
 - 입고일: 2026-09-06. 역할: 후반 Culture/Luxury 성장 참고; 이번 Unity 입고 없음.
@@ -57,7 +57,7 @@
 - Archive SHA256: `730b1659ea576c7152f8c6e6420b7518bbce35a23147060c09f30f9f9c59f8dd`
 - 압축 해제 위치: `ExternalAssetSources/Quaternius/CuteFish/Extracted`
 - 확인된 버전/날짜: February 2020 (folder/page) — Google Drive ZIP의 2026-09-06 날짜는 팩 버전이 아니다.
-- 라이선스: CC0-1.0; [CuteFish_License.txt](Licenses/CuteFish_License.txt)
+- 라이선스: CC0-1.0; [CuteFish_License.txt](<Licenses/CuteFish_License.txt>)
 - 원본 형식·파일 수: `.blend` 52, `.fbx` 52, `.txt` 1, `.mtl` 52, `.obj` 52, `.jpg` 1
 - 선택 형식: Blender BLEND / Unity FBX만. 논리 모델 52종; Blender 선정 4종; Unity 3종.
 - 입고일: 2026-09-06. 역할: 기존 Fish/낚시의 물고기·낚싯대·물가 형태.
@@ -71,7 +71,7 @@
 - Archive SHA256: `0df62cbd21fadcac32d259c6e5a5fb0961ec2c995a73f79f65a32f226a6ddd55`
 - 압축 해제 위치: `ExternalAssetSources/Quaternius/UltimateNature/Extracted`
 - 확인된 버전/날짜: June 2019 (folder/page) — Google Drive ZIP의 2026-09-06 날짜는 팩 버전이 아니다.
-- 라이선스: CC0-1.0; [UltimateNature_License.txt](Licenses/UltimateNature_License.txt)
+- 라이선스: CC0-1.0; [UltimateNature_License.txt](<Licenses/UltimateNature_License.txt>)
 - 원본 형식·파일 수: `.blend` 150, `.fbx` 150, `.txt` 1, `.mtl` 150, `.obj` 150, `.jpg` 1
 - 선택 형식: Blender BLEND / Unity FBX만. 논리 모델 150종; Blender 선정 8종; Unity 8종.
 - 입고일: 2026-09-06. 역할: 기존 WorldGrid 위의 나무·바위·작물·풀·꽃.
@@ -108,4 +108,4 @@ Unity 6000.3.2f1 D3D11: 28개 FBX hash, mesh, bounds, bottom-centered wrapper, s
 
 ## 다음 작업
 
-ART-001 Material Palette and Unity Import Normalization. 이번 ART-000에서는 ART-001~010 자동 구현을 시작하지 않는다. [제작 계획](DEMO_ASSET_REQUIREMENTS_AND_PRODUCTION_PLAN.md)을 따른다.
+ART-001 Material Palette and Unity Import Normalization. 이번 ART-000에서는 ART-001~010 자동 구현을 시작하지 않는다. [제작 계획](<DEMO_ASSET_REQUIREMENTS_AND_PRODUCTION_PLAN.md>)을 따른다.

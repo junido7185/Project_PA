@@ -4,55 +4,55 @@ Blender Cycles CPU 16 samples, 512×512/model, 동일 조명·카메라, 각 모
 
 ## Sheet 1
 
-![원본 비교 1](Previews/contact-sheet-1.png)
+![원본 비교 1](<Previews/contact-sheet-1.png>)
 
 왼쪽→오른쪽, 윗줄→아랫줄:
 
-- [MiniMarket/cash-register](Previews/PA_REF_MINIMARKET_CASH_REGISTER.png) — USE_WITH_NORMALIZATION
-- [MiniMarket/display-bread](Previews/PA_REF_MINIMARKET_DISPLAY_BREAD.png) — DERIVATIVE_SOURCE
-- [MiniMarket/display-fruit](Previews/PA_REF_MINIMARKET_DISPLAY_FRUIT.png) — DERIVATIVE_SOURCE
-- [MiniMarket/shelf-end](Previews/PA_REF_MINIMARKET_SHELF_END.png) — DERIVATIVE_SOURCE
-- [MiniMarket/shopping-basket](Previews/PA_REF_MINIMARKET_SHOPPING_BASKET.png) — USE_WITH_NORMALIZATION
-- [FoodKit/bag](Previews/PA_REF_FOODKIT_BAG.png) — DERIVATIVE_SOURCE
-- [FoodKit/barrel](Previews/PA_REF_FOODKIT_BARREL.png) — DERIVATIVE_SOURCE
-- [FoodKit/carrot](Previews/PA_REF_FOODKIT_CARROT.png) — USE_WITH_NORMALIZATION
-- [FoodKit/cutting-board](Previews/PA_REF_FOODKIT_CUTTING_BOARD.png) — USE_WITH_NORMALIZATION
-- [FoodKit/fish](Previews/PA_REF_FOODKIT_FISH.png) — DERIVATIVE_SOURCE
-- [FoodKit/loaf](Previews/PA_REF_FOODKIT_LOAF.png) — USE_WITH_NORMALIZATION
-- [FoodKit/mushroom](Previews/PA_REF_FOODKIT_MUSHROOM.png) — REFERENCE_ONLY
+- [MiniMarket/cash-register](<Previews/PA_REF_MINIMARKET_CASH_REGISTER.png>) — USE_WITH_NORMALIZATION
+- [MiniMarket/display-bread](<Previews/PA_REF_MINIMARKET_DISPLAY_BREAD.png>) — DERIVATIVE_SOURCE
+- [MiniMarket/display-fruit](<Previews/PA_REF_MINIMARKET_DISPLAY_FRUIT.png>) — DERIVATIVE_SOURCE
+- [MiniMarket/shelf-end](<Previews/PA_REF_MINIMARKET_SHELF_END.png>) — DERIVATIVE_SOURCE
+- [MiniMarket/shopping-basket](<Previews/PA_REF_MINIMARKET_SHOPPING_BASKET.png>) — USE_WITH_NORMALIZATION
+- [FoodKit/bag](<Previews/PA_REF_FOODKIT_BAG.png>) — DERIVATIVE_SOURCE
+- [FoodKit/barrel](<Previews/PA_REF_FOODKIT_BARREL.png>) — DERIVATIVE_SOURCE
+- [FoodKit/carrot](<Previews/PA_REF_FOODKIT_CARROT.png>) — USE_WITH_NORMALIZATION
+- [FoodKit/cutting-board](<Previews/PA_REF_FOODKIT_CUTTING_BOARD.png>) — USE_WITH_NORMALIZATION
+- [FoodKit/fish](<Previews/PA_REF_FOODKIT_FISH.png>) — DERIVATIVE_SOURCE
+- [FoodKit/loaf](<Previews/PA_REF_FOODKIT_LOAF.png>) — USE_WITH_NORMALIZATION
+- [FoodKit/mushroom](<Previews/PA_REF_FOODKIT_MUSHROOM.png>) — REFERENCE_ONLY
 ## Sheet 2
 
-![원본 비교 2](Previews/contact-sheet-2.png)
+![원본 비교 2](<Previews/contact-sheet-2.png>)
 
 왼쪽→오른쪽, 윗줄→아랫줄:
 
-- [FoodKit/plate](Previews/PA_REF_FOODKIT_PLATE.png) — USE_WITH_NORMALIZATION
-- [FoodKit/pot](Previews/PA_REF_FOODKIT_POT.png) — USE_WITH_NORMALIZATION
-- [MiniArcade/arcade-machine](Previews/PA_REF_MINIARCADE_ARCADE_MACHINE.png) — REFERENCE_ONLY
-- [MiniArcade/prizes](Previews/PA_REF_MINIARCADE_PRIZES.png) — REFERENCE_ONLY
-- [CuteFish/Dock_Long_NoRope](Previews/PA_REF_CUTEFISH_DOCK_LONG_NOROPE.png) — DERIVATIVE_SOURCE
-- [CuteFish/FishingRod_Lvl1](Previews/PA_REF_CUTEFISH_FISHINGROD_LVL1.png) — USE_WITH_NORMALIZATION
-- [CuteFish/Koi](Previews/PA_REF_CUTEFISH_KOI.png) — REFERENCE_ONLY
-- [CuteFish/Tuna](Previews/PA_REF_CUTEFISH_TUNA.png) — USE_WITH_NORMALIZATION
-- [UltimateNature/BirchTree_1](Previews/PA_REF_ULTIMATENATURE_BIRCHTREE_1.png) — USE_WITH_NORMALIZATION
-- [UltimateNature/Bush_1](Previews/PA_REF_ULTIMATENATURE_BUSH_1.png) — USE_WITH_NORMALIZATION
-- [UltimateNature/CommonTree_1](Previews/PA_REF_ULTIMATENATURE_COMMONTREE_1.png) — USE_WITH_NORMALIZATION
-- [UltimateNature/Flowers](Previews/PA_REF_ULTIMATENATURE_FLOWERS.png) — USE_WITH_NORMALIZATION
+- [FoodKit/plate](<Previews/PA_REF_FOODKIT_PLATE.png>) — USE_WITH_NORMALIZATION
+- [FoodKit/pot](<Previews/PA_REF_FOODKIT_POT.png>) — USE_WITH_NORMALIZATION
+- [MiniArcade/arcade-machine](<Previews/PA_REF_MINIARCADE_ARCADE_MACHINE.png>) — REFERENCE_ONLY
+- [MiniArcade/prizes](<Previews/PA_REF_MINIARCADE_PRIZES.png>) — REFERENCE_ONLY
+- [CuteFish/Dock_Long_NoRope](<Previews/PA_REF_CUTEFISH_DOCK_LONG_NOROPE.png>) — DERIVATIVE_SOURCE
+- [CuteFish/FishingRod_Lvl1](<Previews/PA_REF_CUTEFISH_FISHINGROD_LVL1.png>) — USE_WITH_NORMALIZATION
+- [CuteFish/Koi](<Previews/PA_REF_CUTEFISH_KOI.png>) — REFERENCE_ONLY
+- [CuteFish/Tuna](<Previews/PA_REF_CUTEFISH_TUNA.png>) — USE_WITH_NORMALIZATION
+- [UltimateNature/BirchTree_1](<Previews/PA_REF_ULTIMATENATURE_BIRCHTREE_1.png>) — USE_WITH_NORMALIZATION
+- [UltimateNature/Bush_1](<Previews/PA_REF_ULTIMATENATURE_BUSH_1.png>) — USE_WITH_NORMALIZATION
+- [UltimateNature/CommonTree_1](<Previews/PA_REF_ULTIMATENATURE_COMMONTREE_1.png>) — USE_WITH_NORMALIZATION
+- [UltimateNature/Flowers](<Previews/PA_REF_ULTIMATENATURE_FLOWERS.png>) — USE_WITH_NORMALIZATION
 ## Sheet 3
 
-![원본 비교 3](Previews/contact-sheet-3.png)
+![원본 비교 3](<Previews/contact-sheet-3.png>)
 
 왼쪽→오른쪽, 윗줄→아랫줄:
 
-- [UltimateNature/Grass_Short](Previews/PA_REF_ULTIMATENATURE_GRASS_SHORT.png) — USE_WITH_NORMALIZATION
-- [UltimateNature/Rock_1](Previews/PA_REF_ULTIMATENATURE_ROCK_1.png) — DERIVATIVE_SOURCE
-- [UltimateNature/Wheat](Previews/PA_REF_ULTIMATENATURE_WHEAT.png) — USE_WITH_NORMALIZATION
-- [UltimateNature/WoodLog](Previews/PA_REF_ULTIMATENATURE_WOODLOG.png) — USE_WITH_NORMALIZATION
-- [CubeWorldKit/Cart](Previews/PA_REF_CUBEWORLDKIT_CART.png) — REFERENCE_ONLY
-- [CubeWorldKit/Chest_Closed](Previews/PA_REF_CUBEWORLDKIT_CHEST_CLOSED.png) — DERIVATIVE_SOURCE
-- [CubeWorldKit/Chest_Open](Previews/PA_REF_CUBEWORLDKIT_CHEST_OPEN.png) — DERIVATIVE_SOURCE
-- [CubeWorldKit/Axe_Stone](Previews/PA_REF_CUBEWORLDKIT_AXE_STONE.png) — DERIVATIVE_SOURCE
-- [CubeWorldKit/Pickaxe_Stone](Previews/PA_REF_CUBEWORLDKIT_PICKAXE_STONE.png) — DERIVATIVE_SOURCE
+- [UltimateNature/Grass_Short](<Previews/PA_REF_ULTIMATENATURE_GRASS_SHORT.png>) — USE_WITH_NORMALIZATION
+- [UltimateNature/Rock_1](<Previews/PA_REF_ULTIMATENATURE_ROCK_1.png>) — DERIVATIVE_SOURCE
+- [UltimateNature/Wheat](<Previews/PA_REF_ULTIMATENATURE_WHEAT.png>) — USE_WITH_NORMALIZATION
+- [UltimateNature/WoodLog](<Previews/PA_REF_ULTIMATENATURE_WOODLOG.png>) — USE_WITH_NORMALIZATION
+- [CubeWorldKit/Cart](<Previews/PA_REF_CUBEWORLDKIT_CART.png>) — REFERENCE_ONLY
+- [CubeWorldKit/Chest_Closed](<Previews/PA_REF_CUBEWORLDKIT_CHEST_CLOSED.png>) — DERIVATIVE_SOURCE
+- [CubeWorldKit/Chest_Open](<Previews/PA_REF_CUBEWORLDKIT_CHEST_OPEN.png>) — DERIVATIVE_SOURCE
+- [CubeWorldKit/Axe_Stone](<Previews/PA_REF_CUBEWORLDKIT_AXE_STONE.png>) — DERIVATIVE_SOURCE
+- [CubeWorldKit/Pickaxe_Stone](<Previews/PA_REF_CUBEWORLDKIT_PICKAXE_STONE.png>) — DERIVATIVE_SOURCE
 
 ## 관찰과 적용 판단
 

@@ -11,6 +11,7 @@ public class CameraController : MonoBehaviour
     public float OpeningDistance { get; private set; } = 12.5f;
     Vector3 _followVelocity;
     float _zoomVelocity, _pitch = 40f, _fov = 34f, _distance = 12.5f;
+    float _obstructionDistance = 12.5f;
 
     // OPENING-FEEL-001: 같은 follow 권위 안에서만 가까운 플레이/배치 구도를 전환한다.
     public void ConfigureOpening(Transform subject, float distance = 12.5f, float pitch = 40f, float fov = 34f)
@@ -49,7 +50,21 @@ public class CameraController : MonoBehaviour
             _distance = Mathf.SmoothDamp(_distance, OpeningDistance * (OpeningBuildMode ? 1.65f : 1f), ref _zoomVelocity, .22f);
             offset = OpeningOffset(_distance);
             transform.rotation = Quaternion.Euler(_pitch, 0, 0);
-            transform.position = Vector3.SmoothDamp(transform.position, target.position + offset, ref _followVelocity, .16f);
+            Vector3 focus = target.position + Vector3.up * 1.4f;
+            Vector3 desired = target.position + offset;
+            Vector3 ray = desired - focus;
+            float clear = ray.magnitude;
+            foreach (var hit in Physics.SphereCastAll(focus, .22f, ray.normalized, clear, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.transform.IsChildOf(target) || hit.distance < .1f) continue;
+                // 지붕이 걷힌 실내의 플레이어 경계는 보이는 카메라 장애물이 아니다.
+                var interior = hit.collider.GetComponentInParent<DemoShopInterior>();
+                if (interior != null && interior.IsInside) continue;
+                clear = Mathf.Min(clear, Mathf.Max(2.2f, hit.distance - .25f));
+            }
+            _obstructionDistance = clear < _obstructionDistance ? clear : Mathf.MoveTowards(_obstructionDistance, clear, Time.deltaTime * 5f);
+            desired = focus + ray.normalized * Mathf.Min(clear, _obstructionDistance);
+            transform.position = Vector3.SmoothDamp(transform.position, desired, ref _followVelocity, .10f);
             return;
         }
         // 1. 목표 위치 계산 (플레이어 현재 위치 + 아까 저장한 간격)

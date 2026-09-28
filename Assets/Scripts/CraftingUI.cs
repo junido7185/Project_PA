@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -42,7 +43,7 @@ public class CraftingUI : MonoBehaviour
         }
 
         instance = this;
-        allRecipes = Resources.LoadAll<RecipeData>("Recipes");
+        allRecipes = Resources.LoadAll<RecipeData>("Recipes").Concat(Resources.LoadAll<RecipeData>("DemoStructure")).Distinct().ToArray();
         System.Array.Sort(allRecipes, CompareRecipes);
 
         if (craftingPanel == null || slotParent == null || slotPrefab == null)
@@ -321,7 +322,7 @@ public class CraftingUI : MonoBehaviour
 
     bool IsUnlocked(RecipeData recipe)
     {
-        return (TierService.Instance == null || TierService.Instance.IsUnlocked(recipe.requiredTier))
+        return DemoPlaceableCatalog.RecipeUnlocked(recipe) && (TierService.Instance == null || TierService.Instance.IsUnlocked(recipe.requiredTier))
             && (FriendshipService.Instance == null || FriendshipService.Instance.IsRecipeUnlocked(recipe));
     }
 

@@ -4,8 +4,8 @@ using UnityEngine.AI;
 
 // IL/CDN follow-up — 손님 도착 페이싱.
 //
-// 설계 의도 (PROJECT_PA_CREATIVE_NORTH_STAR.md "Shop Operation Fantasy",
-// Docs/IslandLife/GATHERING_AND_SHOP_GATE.md 다음 추천 작업):
+// 설계 의도 (Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md "Shop Operation Fantasy",
+// Docs/02_IMPLEMENTATION/Systems/GATHERING_AND_SHOP_GATE.md 다음 추천 작업):
 // - 플레이어가 밤에 가게를 "열면"(CDN-002 게이트가 손님에게 열리면) 주민 손님이
 //   한 명씩 자연스럽게 가게로 모여들게 한다. 영업 시작이 실제로 손님을 부른다는 체감을 준다.
 // - 구매 확률/경제/PurchaseEvaluator/NPC FSM 내부는 바꾸지 않는다.
@@ -51,6 +51,10 @@ public class CustomerArrivalController : MonoBehaviour
     int _invitedThisOpening;
     int _touristsSpawnedThisOpening;
     int _touristSequence;
+    Shop _operatingShop;
+
+    // Composition supplies a placed shop; invitations and NPC decisions stay here.
+    public void BindOperatingShop(Shop shop) => _operatingShop = shop;
 
     readonly List<NpcController> _npcBuffer = new List<NpcController>();
 
@@ -219,6 +223,7 @@ public class CustomerArrivalController : MonoBehaviour
                 originalShopLocation = npc.shopLocation;
             }
 
+            if (_operatingShop != null) npc.RetargetShop(_operatingShop.transform);
             npc.SetShoppingPriority(true);
             npc.TryForceShop(); // 일시정지/비-Idle 이면 내부에서 무시됨
 
@@ -262,7 +267,7 @@ public class CustomerArrivalController : MonoBehaviour
         if (CountActiveShoppers() >= Mathf.Max(1, maxConcurrentCustomers)) return null;
         if (!TryResolveTouristSource(out NpcController source, out Transform sourceVisual)) return null;
 
-        Transform shop = source.shopLocation;
+        Transform shop = _operatingShop != null ? _operatingShop.transform : source.shopLocation;
         if (shop == null)
         {
             GameObject shopObject = GameObject.FindGameObjectWithTag("Shop");

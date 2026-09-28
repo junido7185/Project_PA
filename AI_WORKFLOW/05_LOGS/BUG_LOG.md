@@ -19,6 +19,14 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 
 ---
 
+## [BLOCKED] 2026-09-11 — P4-R2 정적 검사 스크립트의 UTF-8 읽기 실패
+
+- 증상: `python Logs/P4-R2/check_contract.py`가 50행의 `StarterWorksiteInteraction.cs.read_text()`에서 `UnicodeDecodeError: 'cp949' codec can't decode byte 0x80 in position 557`로 종료 1을 반환했다. C# 계약 assertion이나 Unity 실행 실패가 아니다.
+- 원인: 내가 작성한 검사 스크립트의 일부 `read_text()` 호출에 `encoding='utf-8'`을 빠뜨렸다. 앞선 메서드 비교·거래 순서 등 21 assertions는 예외 없이 진행했지만 최종 결과 파일 작성 전 중단되어 전체 정적 검사는 PASS가 아니다.
+- 시도: Runtime compile 오류 0/기존 CS8785 경고 1; Editor compile 오류 0/기존 CS8785·CS0414 경고 2. 신규 정책을 명시적으로 포함하는 `Logs/P4-R2/IncludePolicy.targets`를 사용했다. 검사 1회 실패 뒤 수정·재실행하지 않았다. 계획한 managed contract harness도 생성/실행 전 중단했다.
+- 중단 이유: AGENTS.md의 실패 시 기록·중단 규칙. 재개 시 검사 스크립트의 모든 UTF-8 읽기를 명시하고 정책 계약 검증 및 최종 diff 검토를 완료해야 한다. 기존 작업은 보존하며 P4-R2 완료/전체 P4 PASS로 판정하지 않는다.
+- 관련: `Logs/P4-R2/static-check-failure.txt`, `check_contract.py`, `runtime-compile.log`, `editor-compile.log`. Unity Play 0회, full opening 0회. SaveData/SaveManager·P3·씬·프리팹 무변경.
+
 ## [BLOCKED] 2026-07-17 — 직접 Camera.Render 검증 경로의 Unity 네이티브 렌더 크래시
 
 - 증상: `PA_ThemeCornerValidator` 첫 D3D11 Play Mode 실행이 빈 진열대 코너 0/월드 라벨 0 판정까지 통과한 뒤 첫 1920×1080 캡처의 `Camera.Render()`에서 Unity 프로세스 자체가 충돌했다. 관리 예외나 C# assertion 실패가 아니다.
@@ -810,6 +818,19 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 
 - 최종 D3D11-07: CANVAS_TWO_SIDED_PASS, fresh reentry exact persisted state, restored companions reached their linked shelters, thin canvas renders both faces, runtime errors zero, P3_VALIDATION_PASS. 03 최종 PNG 1920×1080 직접 확인. RuntimeCompile-Final/EditorCompile-Final은 각각 종료 후 다음 명령을 실행하여 오류0 확인; Compile-06 실행 순서/Temp 충돌 해소.
 
+
+## 2026-09-09 — VS-P4 Blender provenance serialization
+
+- 세 작업터 FBX/blend/reference render 생성 후 JSON에서 Collection is not JSON serializable. bpy library load가 전달 목록을 Collection 객체로 치환한 원인. source collection name을 분리하고 manifest-only 복구로 이미 생성된 모델/렌더를 재사용한다. 첫 실패, 원본 library 해시 유지.
+
+
+## 2026-09-09 — VS-P4 검증 재개
+
+- 컴파일 실행 준비에서 잘못된 csproj 이름(MSB1009), Unity 종료 후 Temp restore 파일 부재(NETSDK1004)를 각각 확인했다. 실제 Assembly-CSharp.csproj와 일반 dotnet build를 사용해 순차 Runtime/Editor 오류 0으로 해소했다. 소스 컴파일 결함은 없었다.
+- D3D11-01: 실제 광부·농부 선택/항해/정착/작업터/직접 채광·파종·수확/기존 생산 타이머/미수령 재고 복원 PASS. 수령 fixture가 순간 이동 직후 목표를 검사한 다음 지형 이동 보호·충돌 보정으로 농부 작업터를 선택하여 광부 수령 assertion 실패. 첫 실패. 기존 WorldPlayerTraversalGuard.TryTeleportTo와 물리 안정 후 대상 검사로 접근 fixture를 교정한다. 생산/Inventory 보상 우회 없음.
+- 첫 화면 검사: 작업터가 거점 뒤에 가려지는 검증 배치와 작업 도착 거리 때문에 역할을 읽기 어려웠다. 첫 focused visual correction으로 검증용 두 작업터를 남쪽 평지에 배치하고 P4 NPC 작업 도착 거리/방향을 정돈한다. 자연물 이동·삭제 없음.
+
+
 ## 2026-09-10 — OPENING-FEEL-001 전환 / 검증 준비
 
 - 사용자 지시로 P4 보류. D3D11-02는 광부 수령 및 중복 방지까지 통과했으나 농부 수령 후 예상 Inventory 수량 assertion 실패. P4 추가 조사/재시도 중지, 미커밋 구현·증거 보존. OPENING-FEEL 작업 전 상태는 Logs/OpeningFeel001/Before에 별도 보존했다.
@@ -836,3 +857,124 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - Isolated-FreshRestore: 새 Editor/Play에서 실제 SaveManager로 P3 exact state/동일 동행자2/SaveManager1 PASS. 반복된 SearchDatabase 예외의 원인은 사본 UserSettings/Search.index 누락이었다. 원본의 Assets 상대경로 인덱스 설정만 사본으로 복사 후 Isolated-FinalRoute Editor 시작에서 해당 예외 0 확인. 저장 gameplay PASS를 반복하지 않고 최종 연속 경로를 한 번 실행한다.
 
 - Isolated-FinalRoute 최종 1회: P0 실제 이동/채집3/진열1/가격확정/PurchaseEvaluator 판매/금액1회, 마우스 CTA, 후보2/Enter 확정, 페이드/배/섬, P3 거점/거처2/NPC 도착, 부두 밖 이동, SaveManager 실제 잔액 및 state 복원, 낙하 복구/정지, 필수 참조, runtime errors0 모두 PASS. CHECKS_PASS. 검색 초기화 예외 없음. 08_P3_GameplayCamera.png 1920×1080 직접 검사 완료. staged diff 공백 PASS; 원래 P4 prefab 공백4줄은 보존.
+
+
+## 2026-09-11 ? P4-R1 static-check line-ending mismatch (resolved)
+
+- First static method comparison stopped at Pause(): Git blob used LF, working file used CRLF, and apply_patch introduced LF on the touched lines. This was a comparison/patch-format issue, not a demonstrated gameplay failure.
+- Inspected before/after/baseline bytes before retrying. Preserved original CRLF with exactly the two authorized replacements; normalized only comparison input when checking baseline method bodies.
+- Corrected check passed once: both methods baseline-identical, all other producer bytes preserved. No Unity Play or gameplay retry. Evidence: Logs/P4-R1/static-checks.txt and producer-r1.diff.
+
+## 2026-09-11 — P4-R3 binding migration compile failure (stopped)
+
+- First Runtime compile failed with CS0103 at `StarterWorksiteInteraction.cs:37` and `:42`: the farming/mining configuration lines still reference the removed `owner` parameter after `Configure` changed to accept `WorksiteBinding`.
+- Cause: the editing script's text replacements did not match these lines. The new profile fields exist, but these activity configuration calls have not yet been migrated to them. This is a new incomplete-edit compile defect, not a demonstrated Unity gameplay failure.
+- Stopped after this first compile, without a repair/retry, following the project failure-stop rule. Evidence: `Logs/P4-R3/runtime-compile.log`. The worktree currently does not compile; P4-R3 is NOT PASS.
+- Editor compile, managed binding checks, profile prefab generation and Unity Play were not run. Existing Producer/ProcurementPolicy/P2/P3/Save sources remain untouched. Milestone/current-state/development-log documents were not updated.
+- Resume point: finish the two profile-backed activity configuration calls and the profile-backed status prompt, then compile and validate the authorized three-runtime-file change. No P4-R4, commit or push.
+
+## 2026-09-11 — P4-R4 atomic restore scope blocker (source inspection)
+
+- Newly identified defect: a spatially invalid P4 payload can reach placement rejection after SaveManager has already changed live state. Two otherwise valid placed owner records with the same anchor pass FirstProductionController.IsValidSave, but the second TryPlace rejects occupied cells. This is source-level evidence; no Unity reproduction was run.
+- Evidence: SaveManager.LoadGameInternalAsync calls FirstIslandSettlementController.PrepareRestoreAsync before restoring money/inventory, then clears worksites and restores settlement/P4 near the end. PrepareRestoreAsync changes confirmed selection and voyage state on fresh entry. FirstProductionController.RestoreState throws on placement failure without rolling back earlier placements or the global restore.
+- Scope blocker: WorldBuildingPlacementService.Evaluate checks the current grid and can ignore only one moving instance; the inspected authority exposes no staging API for an entire saved P3 + P4 layout before live mutation. A real-grid bounds check alone cannot validate overlap, obstacles or navigation atomically. Adding the required authority seam exceeds the three approved runtime files; duplicating world/placement rules would violate the Reuse Map.
+- Stopped before runtime edits under the explicit architecture/scope failure rule. Runtime/Editor compile and automated static/managed checks not run; targeted Unity Play/save 0. Existing dirty v16 remains unapproved. No current-state/development-log update, commit or push. Resume requires an authority/scope decision recorded in CODEX_HANDOFF.md.
+
+## 2026-09-15 — DIRECT-GATHERING-01 discovery scope blocker
+
+- Source inspection: generated-resource TryGatherNext is not a proximity interaction; MiningSpot/FishingSpot use daily stock-prep completion rather than per-spawn depletion. Gatherable.Harvest ignores AddItem failure before Destroy. No runtime reproduction performed.
+- User explicitly requires stopping after discovery if existing gathering materially differs. Stopped before code/assets/Play; proposed three-runtime-file adaptation and two canonical tool assets are recorded in CODEX_HANDOFF.md. Existing world/persistence/Inventory authorities need no replacement. One Windows rg wildcard argument error corrected once; no repeated check failure.
+## 2026-09-15 — DIRECT-GATHERING-01A encoding correction failed / STOP
+
+- First draft write: PowerShell pipe default encoding replaced new Korean strings/comments with question marks. Existing file content was read explicitly as UTF-8 and preserved.
+- One permitted correction set OutputEncoding=UTF8, then Python Path.read_text() used default cp949 and threw UnicodeDecodeError at Gatherable.cs before modifying files. Correction failed; no further implementation attempts.
+- Draft three runtime files and two tool assets preserved. Exact next action and validation budget in CODEX_HANDOFF.md. Compile/Play not run. Resume requires explicit user instruction per failure policy; no scope expansion needed for encoding repair.
+
+## 2026-09-15 - DIRECT-GATHERING-01A authorized recovery resolved
+- Prior encoding blocker resolved under explicit completion-first instructions. Build intermediate assets regenerated; validator-only inaccessible SyncVS removed. No runtime compile errors.
+- Play 1 used an overly restrictive NPC NavMesh criterion for the CharacterController player. Replaced with existing WorldCellReachability + actual interaction selection. Play 2 passed 78 gameplay checks, runtime errors 0 including exit; only optional PNG assertion failed. Raw failure retained, optional capture classification corrected, recorded-evidence audit PASS. No third Play. See development log and Logs/DIRECT-GATHERING-01A/Play/acceptance-audit.txt.
+- Final documentation insertion used a Korean search marker over a legacy PowerShell pipe and could not find it. Completed the two remaining insertions using ASCII anchors; no repeated development entry or runtime change.
+
+## 2026-09-16 DIRECT-GATHERING-01B - early Hotbar refresh
+
+First targeted Play stopped at Net selection (9 checks) with a caught MissingReferenceException in HotbarUI. New adapter composition refreshed the inventory after UI creation but before HotbarUI.Start, causing Start to destroy pre-created slots still held in its list. Repair stays in BindFishingAndBugs: skip the initial refresh and allow existing Start to initialize the UI; keep refresh for an already composed population. First-attempt evidence: Logs/DIRECT-GATHERING-01B/PlayAttempt1/result.txt and play-1.log. User completion-first budget authorizes a second targeted Play; no 01A or HotbarUI changes.
+
+Repair result: compile cycle 2 PASS; targeted Play attempt 2 passed all 64 checks with zero runtime errors/exceptions/asserts including Play exit. Evidence: Logs/DIRECT-GATHERING-01B/Play/result.txt.
+
+## 2026-09-16 - PLACEABLE-01 integrity helper / repaired
+- Post-Play PowerShell helper wrapped ConvertFrom-Json array as one nested object and falsely reported save file-set mismatch. Direct SHA-256 inspection matched both original hashes; no save mutation occurred. One mechanical correction used Python JSON parsing and file-set/hash comparison: both saves unchanged, frozen 13/13 unchanged (Logs/PLACEABLE-01/integrity.txt). No runtime failure or additional Play attempt.
+
+
+## 2026-09-16 - INTEGRATION-01 validator setup / repaired
+- Play attempt 1 stopped after D3D11 check: reflection invocation attempted to isolate a null SaveManager in departure before settlement. Runtime error count 0; captured validator TargetException in Logs/INTEGRATION-01/play-1-result.txt. Added a validator-only null guard; world SaveManager still uses the isolated repository. Attempt 2 completed 90 connected checks with runtime errors 0 including exit; no third Play.
+- Initial integrity helper skipped Git-quoted non-ASCII asset paths; final integrity evidence explicitly covers 820 enumerated source/scene/resource/package/settings paths, not every repository asset. No false whole-repository checksum claim.
+
+## 2026-09-17 — PASS 1 Studio / INCOMPLETE, Play 3/3
+- 1차 ComposeCompanions: NpcDialogue RequireComponent(Collider)에 concrete collider 선행 필요. CapsuleCollider 먼저 생성하여 수정.
+- 2차 Demo256 ready/runtime errors 0; validator FindObjectsByType가 DontSave runtime player를 제외해 권위 assertion 실패. Resources.FindObjectsOfTypeAll+scene/active 필터로 수정했으나 섬 재검증 미도달.
+- 3차 UnityEditor.Connect UnityConnectWebRequestException / Token Exchange failed가 항해 중 발생. validator가 runtime error로 집계해 종료. Logs/FirstDayStudio/Play-20260917-110302/errors.txt 및 result.txt 원문 보존. 추가 Play 없음.
+- GameView gate 미완료: SPACE 표지 잔존, 항해 마감 부족, 항구/보급/탐험 실화면 없음. 정확한 재개 지점은 Docs/00_CURRENT/CODEX_HANDOFF.md.
+
+## 2026-09-18 — Opening Demo structural session / compiled, runtime unverified
+
+- Authorized replacement Play resolved prior Editor authentication blocker: PASS 1 gameplay 84/84, runtime errors 0. Visual acceptance still fails on terrain density/steps and harbor framing; evidence is Play-20260917-134119. Import-axis/UI fixes after capture are compile/edit-mode checked only.
+- Source review during new implementation caught functional ShopSlot prefab used as held model; item references now use visual art. Move source release now refuses an existing preview, preserves original state on failed restoration, clears the restoration target on success, and notifies existing navigation. Grid protection uses a bound cache. Compile gate/logs under Logs/DemoStructure, latest complete-compile.log exit 0.
+- No new A–H Play/validator was requested or executed. Runtime issues, NPC navigation and structural-shell/UI/art quality remain unverified. The latest user explicitly deferred these passes; do not repeat prior visual work automatically.
+
+
+## 2026-09-19 - TUTORIAL HOTBAR diagnostic tooling calibration / recovered
+- Initial queued-input probe did not assert wasPressedThisFrame under the default Editor input update, so its result was not used as gameplay evidence. Explicit Dynamic update required reflection because the typed overload is internal; the direct call produced a diagnostic CodeDom accessibility error. The same bounded diagnostic path was corrected to use reflection and assert the actual key pulse before sampling.
+- A regression tool call during Play transition returned success=false/message=null. The same runner succeeded after readiness. Earlier Console entries included FindObjectsOfTypeAll main-thread exception and MCP WebSocket-not-initialised error; their complete stacks were not retained, so no definitive source classification or error-free whole-session claim is made. Final Console error query returned 0. No gameplay code change was made for these tooling errors and no extra regression run was performed after PASS.
+
+## 2026-09-24 — T0–T1 visual capture / regression tooling / supplemental route QA null resolved
+
+- Capture defect: PA_VisualQACapture requested Full HD but Screen.SetResolution left Editor Free Aspect at 929×1310. Reused existing ConfigureGameView preset; real 1920×1080 PNG decoded/opened. Fixed in existing helper, no new capture framework.
+- MUST PATH first attempt: unfocused Play stayed at frame2, then WorldAlpha adapter startup exceeded 20s. Existing validator gained GameView focus/background execution and batch-only Editor exit; one retry PASS consoleErrors0. First failure and final result preserved under Logs/VisualQA/T1/.
+- Supplemental camera night/interior/side review: in-memory QA continuation hit NullReference twice at the companion UI step. Read-only observation after failures: PA_DepartureTutorial Stage6; tutorial/presentation/CompanionButton present; active FindFirstObjectByType<DepartureCompanionSelection>() null. Both failures terminate in MCPDynamicCode/tool execution with no product-code exception frame. The first proven broken edge was the QA continuation's active-only lookup followed by an unchecked dereference, not Register/SceneLoaded. The continuation prefab is active, its selection component is enabled, and no product path disables or destroys that root. `PA_Integration01Checks` now enumerates loaded-scene selections including inactive objects and asserts exact count, scene ownership, active/enabled state and tutorial CTA references before invoking the existing button. No product lifecycle, scene or prefab change.
+- First A/B before/after and actual 18m W/Space traversal remain valid captured evidence. Later supplemental failure does not erase independent direct-entry MUST PATH PASS, and that PASS does not validate repeatable product-entry/full visual completion.
+- Capture comparison caveat: GameClock ForceSet did not emit minute tick, so after PNG HUD retained old time; exact UI equality unverified. No screenshot edits or visual PASS claim.
+- T1-R1 validation: Runtime/Editor compile and Console checks are recorded in the September log. The previous failed session's exact inactive/missing state remains unobserved, so it is not promoted into a product bug. Resume T1 visual review through the corrected existing QA route; if its explicit lifecycle assertion fails, stop on that assertion rather than dereferencing null. Do not start T2. Evidence: Logs/VisualQA/T1/supplemental-blocker.txt, comparison-conditions.txt; ticket report in Docs/04_DEVELOPMENT_LOG/2026-09.md.
+
+## 2026-09-25 — T1 visual review / unresolved visible-entry and ground-target acceptance
+
+- Fresh-entry lifecycle assertions PASS before CTA (loaded1/scene1/active/enabled/tutorial reference true); no new companion lifecycle failure. T1 review ended PARTIAL, not final visual PASS.
+- Existing PlayerInteraction target search returned false near the visible Shop/Base front at `(254,1.1,90)` facing the root. Placed structures expose zero BuildingEntrance components; the small visible cottage and much wider shop perimeter colliders need a later alignment/interaction review. Do not infer an exact root cause or claim usable entry from the PNG. No mesh/scale/collider fix in T1.
+- Directly-ahead loose Wood overlaps the character at both24m and16m despite a valid E pickup prompt. Actual GameClock20/NightReady images still look daytime in both configurations. These remain visible acceptance defects; no GameClock or lighting edits.
+- Tool-only limits: diagnostic call13 used a nonexistent member and was corrected once in13b; call23 used an unavailable type and was not rerun; its optional tent-contact movement never executed. OS foreground precondition failed, so no key was sent and no workaround built. Pillow was absent; built-in System.Drawing decoded PNG metadata without installation. Dynamic ExitPlaymode was safety-filter rejected; dedicated manage_editor.stop succeeded without disabling safety checks. None is a product runtime exception or additional Play attempt.
+- Exact calls, images, states, limited conclusions and validation are indexed at `Logs/VisualQA/T1/review-20260925/EVIDENCE.md`; outcome is recorded in the September development log. Stop at T1; T2 not started.
+
+## 2026-09-25 - T2-A: visible Shop/Base door has no Demo256 entry chain
+
+- Proven first edge: visible B10 mesh has no selection collider/InteractionAnchor; root perimeter target centers do not match the sampled visible-door approach. Existing T1 empty-hand lookup=false, no new retry.
+- Downstream blocker: DemoPlacedObject routes ShopBase to management, with no BuildingEntrance/interior/return binding in Demo256 builder/placement callback. Legacy Golden Tier1 interior is a different route; a child door alone would also be shadowed by the FirstDay parent resolver.
+- Stopped under AGENTS architecture-assumption rule. No global range increase, progression bypass, new entry authority, product edits or new Play. Normal-movement door/entry/return NOT RUN.
+- One read-only MCP diagnostic returned success=false/message=null without a product stack; not retried or used as proof. Current Console errors/warnings0. Exact source/YAML and original T1 runtime provenance: `Logs/VisualQA/T2-A/review-20260925/EVIDENCE.md`.
+- Remaining dependency: bounded Demo256 destination/progression/return integration preserving placed operating Shop, world placement and traversal authority. T2-B not started.
+
+
+### 2026-09-25 T2-A implementation review
+- Initial missing new-script import resolved by full AssetDatabase refresh. OS foreground input failed twice; no keys sent, method stopped. Existing validator placement bypasses inventory: fixture results retained as such, actual Hotbar acceptance separately passed.
+- Missing front boundary let S overshoot exit; authored boundary/exit alignment corrected. Boundary compressed camera in cutaway; targeted camera exclusion corrected, real GameView verified.
+- Remaining: exterior cottage proportions/flat door panel, sparse room, interior nature overlap and unverified autonomous customer traversal. Functional door roundtrip is not final visual PASS. See Logs/VisualQA/T2-A/implementation-20260925/EVIDENCE.md.
+
+
+### 2026-09-26 T2-A — 동시 페이드에서 문 잠금 유지 재현
+
+실제 ScreenFader.PlayWarpFade가 진행 중일 때 exit.Interact 호출 → 페이드 종료 후 다시 호출해도 IsInside=True/doorWarping=True. 기존 페이더는 요청을 조용히 무시하지만 새 BuildingEntrance의 warping 플래그는 남는 것이 원인. 요청 수락 bool API를 추가하고 거절 시 잠금 해제 수정 완료. 원 callback 1회/거절 시 이동 없음/잠금 해제 후 실제 E 입장·퇴장·재입장 PASS, compile/Console 오류0. 후속 증거 `Logs/VisualQA/T2-A/site-20260926/fade-after.txt`. 근거 `Logs/VisualQA/T2-A/site-20260926/fade-before.txt`. 별도 stale live-site query의 null은 중단 동안 Play가 종료된 상태를 사용한 검증 전제 오류이며, Edit 상태 확인 후 새 review에서 정상 실행.
+
+
+## 2026-09-27 — T2~T7 presentation / Windows candidate
+- FIXED: Demo256에 legacy 야외 market dressing 주입; FirstDay scope 제외. 상점 간판 역방향 수정.
+- FIXED: debug label 일괄 비활성이 실제 ShopSlot 가격/품절 라벨까지 숨김; ShopSlot 자식 보존. 상시 과일 판매대를 빈 소유 counter로 교체. 카운터 item.model은 gameplay root가 아닌 visual child 참조로 held ShopSlot 복제 차단.
+- QA corrected: supplied kit 준비 전 접근, 가구 예약/판매대 점유 셀 접근 실패는 inventory 무소비 상태 확인 후 유효 위치 사용. T5 root.position 컴파일 오타1회 수정 후 PASS. Unity/MCP 장기 중단 중 refresh timeout/연결 끊김; 재접속에서 Editor Edit/idle 확인. 첫 build delayed callback이 직접 재시도 뒤 실행되어2개 output 유지.
+- OPEN / T7 environment: candidate 실행/타이틀 렌더는 성공하나 Windows foreground activation 실패, NEW GAME window mouse messages 무효. 전체 standalone MUST PATH 미검증. 강제 종료 없이 WM_CLOSE exit0. Golden title에서 non-accessible CollisionMeshData tripo_node_0e21523b4건; release-ready 전 조사 필요. Build0errors/185shaderwarnings.
+- Evidence: Logs/VisualQA/Continuation-20260926/EVIDENCE.md and T7/README.md. User-authorized sequence continued through independent work; stopping reason is remaining standalone input path blocked.
+
+
+### 2026-09-27 ShopPolish — resolved presentation/QA incidents
+가격표를 가린 구매 말풍선과 과한 판매대 조명을 실제 GameView에서 확인 후 측면 offset/조명0.8로 수정했다. Report4코멘트의 닫기 버튼 하단 여유는 본문18px로 확보. 최종 관련 거래/화면 검증 PASS; `Logs/VisualQA/ShopPolish-20260927/EVIDENCE.md`. private DisplayName 접근 compile 오류1회는 기존 public profile 사용으로 해결. 중단 전 execute_code null 응답은 script refresh 뒤 해소, 파괴적 재시작/설정 변경 없음. 기존 Windows 문제는 재시도하지 않음.
+
+
+### 2026-09-27 ReportCandidate — standalone STEP1 input boundary / build warning
+
+새 Candidate-ShopPolish-20260927-194240은 실제 마우스 NEW GAME→출항STEP1 진입 성공. foreground=game, SendInput D1.2초 반환성공 후 화면상 이동 확인 실패. 키보드 수신/이동 차단 원인은 미확정; 동일 입력·포커스 재시도 없이 사람 검수 경로 기록. 정착→Report standalone PASS 아님. Player.log 출항 진입 `Failed to create agent because there is no valid NavMesh`1건은 이번 경로에서 관찰했으나 구매 영향 미검증. 기존title collider4건 유지. Build uncompiled-code warning1건, 납품 runtime DLL/PDB143source 일치와 새 숨김 IL 확인; 경고 자체 원인 해소는 미주장. 근거 `Logs/VisualQA/ReportCandidate-20260927/DELIVERY_REPORT.md`. 무관 소스·전역 설정 변경 없음.

@@ -45,6 +45,8 @@ public class SmartphoneUI : MonoBehaviour
     Coroutine _moveCo;
     int       _currentTab;
     Canvas    _canvas; // activePos 계산용 캔버스 참조
+    Vector2 ClosedPosition => PlayerInputHandler.Instance?.FirstDayControls == true && root != null
+        ? new Vector2(24f, -root.rect.height - 24f) : hiddenPos;
     Color[]   _tabBaseColors;
 
     void Awake()
@@ -58,7 +60,7 @@ public class SmartphoneUI : MonoBehaviour
     void Start()
     {
         // 초기 위치: 좌하단 숨김
-        if (root != null) root.anchoredPosition = hiddenPos;
+        if (root != null) root.anchoredPosition = ClosedPosition;
         CacheTabButtonColors();
 
         // P 키 구독
@@ -134,6 +136,11 @@ public class SmartphoneUI : MonoBehaviour
     {
         // 열린 상태에서는 hover peek 동작하지 않음
         if (_isOpen) return;
+        if (PlayerInputHandler.Instance?.FirstDayControls == true)
+        {
+            if (root != null && _moveCo == null) root.anchoredPosition = ClosedPosition;
+            return;
+        }
         if (root == null || hoverTrigger == null) return;
         if (Mouse.current == null) return;
 
@@ -166,7 +173,7 @@ public class SmartphoneUI : MonoBehaviour
         }
 
         // 🚪 열릴 때 activePos 를 캔버스 실제 크기 기준으로 재계산 (Free Aspect 대응)
-        Vector2 target = _isOpen ? ComputeActivePos() : hiddenPos;
+        Vector2 target = _isOpen ? ComputeActivePos() : ClosedPosition;
         StartMove(target, transitionTime);
 
         // 닫힐 때: 홈 복귀 + 커서 정상 복구

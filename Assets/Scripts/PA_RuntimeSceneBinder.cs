@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using Object = UnityEngine.Object;
@@ -16,13 +17,27 @@ using Object = UnityEngine.Object;
 // every time Play mode enters a loaded scene.
 public static class PA_RuntimeSceneBinder
 {
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void BindLoadedScene()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void RegisterSceneBootstrap()
+    {
+        // 도메인 재로드가 꺼져 있어도 구독은 하나만 유지한다.
+        SceneManager.sceneLoaded -= BindLoadedScene;
+        SceneManager.sceneLoaded += BindLoadedScene;
+    }
+
+    static void BindLoadedScene(Scene scene, LoadSceneMode mode)
     {
         // VS-PRESENT-001: 출항 코스는 builder가 기존 권위 컴포넌트를 명시 배치한다.
         // 일반 캠페인의 저장/휴대폰/월드 자동 연결을 개발용 인증 씬에 추가하지 않는다.
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == DepartureTutorialController.SceneName)
+        if (scene.name == DepartureTutorialController.SceneName)
+        {
+            // 출항 씬도 최초 진입과 재진입마다 기존 아이템 조회 권위가 필요하다.
+            var registry = ItemRegistry.Instance;
+            if (registry == null)
+                registry = EnsureComponent<ItemRegistry>(EnsureSceneRoot("[Services]"));
+            EnsureItemRegistry(registry);
             return;
+        }
 
         GameObject services = EnsureSceneRoot("[Services]");
         GameObject uiRoot = EnsureUiRoot();
@@ -149,7 +164,7 @@ public static class PA_RuntimeSceneBinder
         var home = AddUiChild(content.transform, "HomeScreen", typeof(GridLayoutGroup));
         Stretch((RectTransform)home.transform);
         var grid = home.GetComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(166f, 178f);
+        grid.cellSize = new Vector2(142f, 156f);
         grid.spacing = new Vector2(18f, 24f);
         grid.padding = new RectOffset(18, 18, 34, 24);
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;

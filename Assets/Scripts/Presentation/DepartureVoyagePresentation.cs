@@ -39,6 +39,7 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
     string[] _arrivedIds = Array.Empty<string>();
     bool _started;
     Image _fade;
+    Camera _screenBridgeCamera;
     TextMeshProUGUI _objective, _subtitle;
     Vector3 _boatStart = new Vector3(114f, 0f, 97f);
     Vector3 _boatEnd = new Vector3(114f, 0f, 101f);
@@ -67,7 +68,79 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
         _player.GetComponent<PlayerController>().enabled = false;
         _player.GetComponent<PlayerInteraction>().enabled = false;
         BuildHUD();
+        if (FirstDayStudioAssets.Load() != null)
+        { StartCoroutine(PixelVoyage(ids)); return; }
         StartCoroutine(Board(ids));
+    }
+
+    IEnumerator PixelVoyage(IReadOnlyList<string> ids)
+    {
+        DemoRouteController.CarryCompanions(_selection);
+        yield return Fade(0,1);
+        _selection.HideSelection();
+        var assets=FirstDayStudioAssets.Load();
+        _world=new GameObject("Voyage_ArtStage").transform;_world.SetParent(transform);
+        _world.position=new Vector3(1000,0,1000);
+        _boatStart=_world.position;_boatEnd=_boatStart+Vector3.forward*20;
+        BuildBoat(ids);
+        _controller.enabled=false;
+        _player.SetParent(Boat,true);_player.localPosition=new Vector3(0,1.38f,-.8f);
+        _player.localRotation=Quaternion.identity;
+        _player.GetComponent<EquipmentSystem>()?.Holster();
+        _player.GetComponent<PlayerController>().ResetMotionAfterTeleport();
+        var sea=GameObject.CreatePrimitive(PrimitiveType.Plane);
+        sea.name="Voyage_Water";sea.transform.SetParent(_world);sea.transform.position=_world.position-Vector3.up*.1f;
+        sea.transform.localScale=Vector3.one*30;sea.GetComponent<Collider>().enabled=false;
+        sea.GetComponent<Renderer>().sharedMaterial=waterMaterial;
+        // Local rock/tree silhouettes form a cinematic backdrop, never an alternate playable island.
+        for(int i=0;i<9;i++)
+        {
+            var p=_world.position+new Vector3((i-4)*4,-1,50+Mathf.Sin(i)*3);
+            var island=FirstDayStudioAssets.Place(assets.rocks[i%assets.rocks.Length],_world,p,4+i%3);
+            island.transform.localScale=new Vector3(island.transform.localScale.x*2,island.transform.localScale.y,island.transform.localScale.z*2);
+            FirstDayStudioAssets.Place(assets.trees[i%assets.trees.Length],_world,p+Vector3.up*3,4);
+        }
+        var camera=Camera.main;_cameraFollow.enabled=false;
+        camera.fieldOfView=40;camera.farClipPlane=180;
+        var texture=new RenderTexture(480,270,24){filterMode=FilterMode.Point,name="VoyagePixelFrame"};texture.Create();
+        // The voyage camera now renders only into the pixel texture. Keep a real
+        // screen camera alive from this point through the scene handoff.
+        _screenBridgeCamera=_fade.transform.parent.gameObject.AddComponent<Camera>();
+        _screenBridgeCamera.clearFlags=CameraClearFlags.SolidColor;
+        _screenBridgeCamera.backgroundColor=Color.black;
+        _screenBridgeCamera.cullingMask=0;
+        _screenBridgeCamera.depth=-99f;
+        camera.targetTexture=texture;
+        var screen=new GameObject("VoyageImage",typeof(RectTransform),typeof(RawImage));
+        screen.transform.SetParent(_fade.transform.parent,false);screen.transform.SetAsFirstSibling();
+        var rect=(RectTransform)screen.transform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;rect.offsetMin=rect.offsetMax=Vector2.zero;
+        screen.GetComponent<RawImage>().texture=texture;
+        foreach(Transform child in _fade.transform.parent)
+            if(child!=screen.transform && child!=_fade.transform) child.gameObject.SetActive(false);
+        Sailing=true;voyageSeconds=10;Elapsed=0;
+        camera.transform.position=Boat.position+new Vector3(13,8,-16);camera.transform.LookAt(Boat.position+Vector3.up*1.5f);
+        yield return Fade(1,0);
+        while(Elapsed<voyageSeconds)
+        {
+            Elapsed+=Time.unscaledDeltaTime;float t=Mathf.Clamp01(Elapsed/voyageSeconds);
+            Boat.position=Vector3.Lerp(_boatStart,_boatEnd,t)+Vector3.up*(Mathf.Sin(Elapsed*2)*.08f);
+            Boat.rotation=Quaternion.Euler(0,0,Mathf.Sin(Elapsed*1.7f)*1.3f);
+            Vector3 look=Boat.position+Vector3.up*1.8f;
+            Vector3 offset=t<.3f?new Vector3(12,7,-15):t<.6f?new Vector3(6,4,-7):new Vector3(9,10,-15);
+            if(t>.6f)look=Vector3.Lerp(look,_world.position+new Vector3(0,3,47),(t-.6f)*1.5f);
+            camera.transform.position=Vector3.Lerp(camera.transform.position,Boat.position+offset,Time.unscaledDeltaTime*2.5f);
+            camera.transform.LookAt(look);
+            yield return null;
+        }
+        yield return Fade(0,1);
+        Sailing=false;_arrivedIds=ids.ToArray();
+        camera.targetTexture=null;texture.Release();Destroy(texture);screen.SetActive(false);
+        DemoRouteController.TransitionOverlay=_fade.transform.parent.gameObject;
+        DemoRouteController.TransitionOverlay.transform.SetParent(null);
+        // The original camera keeps its listener until unload; the destination
+        // Main Camera owns the listener after unload. The bridge owns none.
+        DontDestroyOnLoad(DemoRouteController.TransitionOverlay);
+        ArrivalFadeFinished=true;
     }
 
     IEnumerator Board(IReadOnlyList<string> ids)

@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43e3bbded178b6342a69d51d690411f8, type: 3}
+  m_Name: Assets
+  m_EditorClassIdentifier: Assembly-CSharp::FirstDayStudioAssets
+  player: {fileID: 919132149155446097, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+  boat: {fileID: 2227741323378753310, guid: a3ca36dd29c7cbd468c5dbf19136d407, type: 3}
+  dock: {fileID: 2826359740306342772, guid: 92df52192f940554a98f8c510f65a7e6, type: 3}
+  chestClosed: {fileID: 5277294008632995306, guid: 1575c64cec9028c42943e849d31ae221, type: 3}
+  chestOpen: {fileID: 635123961339406776, guid: aa5b12d3572b4a349ab407b08628a46f, type: 3}
+  fruit: {fileID: 7828174640731620310, guid: b5a4e8c8c7693c74a840094472a60b51, type: 3}
+  axe: {fileID: 4838830075191285396, guid: 1e5cdaa24cd93a34881368233b6436ec, type: 3}
+  pickaxe: {fileID: 1912750664959970827, guid: e93c1c207ccc541428fca6959dfbaa96, type: 3}
+  rod: {fileID: 1522953231888811742, guid: 6e262416ee91f2148bb967745922e2e7, type: 3}
+  net: {fileID: 2290006216580563138, guid: 609b0110d8bedd54aaafba515842803b, type: 3}
+  fish: {fileID: 919132149155446097, guid: 10c4656d5784f634eb77c2e34492b5b0, type: 3}
+  butterfly: {fileID: 3459969785590044912, guid: 7a9724eea8595fe45922fcaf678334ab, type: 3}
+  trees:
+  - {fileID: 919132149155446097, guid: d32b89390dc1eee4687a66e01e143bf4, type: 3}
+  - {fileID: 919132149155446097, guid: e85ae96e905823745972024e836fd58c, type: 3}
+  - {fileID: 919132149155446097, guid: 77f15f3f7ce628243bba35a81ba4fbf8, type: 3}
+  - {fileID: 919132149155446097, guid: 8dfab6c0abf75544aa2be32917a1ab08, type: 3}
+  - {fileID: 919132149155446097, guid: 36f105f731883304385198f10aa6ec3b, type: 3}
+  rocks:
+  - {fileID: 919132149155446097, guid: 1cf27bd7b16285c46a22a5e262872024, type: 3}
+  - {fileID: 919132149155446097, guid: fa575e189bd99f941b3b361f91d897f5, type: 3}
+  - {fileID: 919132149155446097, guid: 92c35a8cf5c94394e995d80bc40e28a8, type: 3}
+  - {fileID: 919132149155446097, guid: d1cd885d420450049a3dec7ad2a3d3c3, type: 3}
+  grasses:
+  - {fileID: 919132149155446097, guid: e3f266f9bcc8d4046a99b9712f873715, type: 3}
+  - {fileID: 919132149155446097, guid: c0eca93df24f52b488622db2b067115d, type: 3}
+  - {fileID: 919132149155446097, guid: 752cd1663d0dbda418c201b6636b26fe, type: 3}
+  flowers:
+  - {fileID: 919132149155446097, guid: 9930066ee0cb81f4a8fc8e672e6c686c, type: 3}
+  bushes:
+  - {fileID: 919132149155446097, guid: 06a7917f3b0b23e41ab06b2a7ac395e5, type: 3}
+  - {fileID: 919132149155446097, guid: 97a7b440807251744996e6248a36699a, type: 3}
+  supplies:
+  - {fileID: 11400000, guid: 4db4c702f79ab984aa4b24bfe6ebb40c, type: 2}
+  - {fileID: 11400000, guid: 2ead46bed4140594586d70a9092af851, type: 2}
+  - {fileID: 11400000, guid: 9e64a6681df3bd44cac10562bce30aa9, type: 2}
+  - {fileID: 11400000, guid: 046bdb4cce52eef4c8e0d0e6072b4046, type: 2}
+  - {fileID: 11400000, guid: 8650d434b1f0b4f4da4cab39145bb4a8, type: 2}
+  - {fileID: 11400000, guid: d25822e218cd00440b8f6dea175b1344, type: 2}
+  - {fileID: 11400000, guid: 14a73207e757c8548bf4ee6da2e36f4a, type: 2}
+  - {fileID: 11400000, guid: 6b70caad4677103458410e4786e991f0, type: 2}
+  blueprint: {fileID: 5108575975690731935, guid: 6c47913378e24f141ad18b8f10488d08, type: 3}
+  phone: {fileID: 6538322325780610214, guid: e21b2e3e762c2444891e3a6ffe28a49b, type: 3}
+  workbench: {fileID: 919132149155446097, guid: 7ebf171941044cb4081b67401ef38217, type: 3}
+  wood: {fileID: 7279353968124396609, guid: 12abb6945b5cbf44f95d35d6b643d67c, type: 3}

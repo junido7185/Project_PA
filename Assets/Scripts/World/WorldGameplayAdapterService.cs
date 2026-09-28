@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 #if UNITY_EDITOR
 using System.IO;
@@ -14,7 +15,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
-using UnityEngine.UI;
 #endif
 
 public enum WorldGameplayAdapterState
@@ -61,6 +61,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     GameObject _runtimeRoot;
     GameObject _playerRoot;
     GameObject _shopRoot;
+    GameObject _bootstrapShopRoot;
     GameObject _workbenchRoot;
     GameObject _kitchenRoot;
     GameObject _forgeRoot;
@@ -81,6 +82,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     Coroutine _customerVisitRoutine;
     ShopSlot _customerTargetSlot;
     PlayerInteraction _playerInteraction;
+    Transform _directResourceRoot;
+    Transform _demoBugRoot;
+    long _demoBugSeed;
+    Material _demoBugMaterial;
+    Material _directTimberMaterial, _directStoneMaterial;
     Hotbar _playerHotbar;
     DaytimeStockPrepPoint[] _daytimeActivityPoints = Array.Empty<DaytimeStockPrepPoint>();
     FarmPlotInteraction[] _farmPlots = Array.Empty<FarmPlotInteraction>();
@@ -137,6 +143,16 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     public SaveManager RuntimeSaveManager => _saveManager;
     public PlayerInteraction PlayerInteraction => _playerInteraction;
     public Hotbar PlayerHotbar => _playerHotbar;
+
+    public void BindFirstDayOperatingShop(Shop shop)
+    {
+        if (!FirstDay || shop == null) return;
+        _shop = shop;
+        _shopRoot = shop.gameObject;
+        _shopSlots = shop.Slots.Where(slot => slot != null)
+            .OrderBy(slot => slot.name, StringComparer.Ordinal).ToArray();
+        CustomerArrivalController.Instance?.BindOperatingShop(shop);
+    }
     public IReadOnlyList<DaytimeStockPrepPoint> DaytimeActivityPoints => _daytimeActivityPoints;
     public IReadOnlyList<FarmPlotInteraction> FarmPlots => _farmPlots;
     public WorldSalesDisplayReadability SalesDisplayReadability => _salesDisplayReadability;
@@ -197,15 +213,21 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         Instance = this;
     }
 
+    public bool FirstDay => GetComponent<DemoRouteController>() != null;
+
     IEnumerator Start()
     {
         yield return null;
         yield return null;
+        if (FirstDay && ReleaseOrphanedOpeningRoots())
+            yield return null; // Let Unity finish destroying prior runtime roots before binding UI/Inventory.
         if (!InitializeRuntime(out string reason))
         {
             Fail(reason);
             yield break;
         }
+
+        if (FirstDay) { State = WorldGameplayAdapterState.Ready; yield break; }
 
         // Runtime building obstacles become active during InitializeRuntime. Give
         // carving and any queued navigation rebuild a chance to settle before the
@@ -236,7 +258,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
     void Update()
     {
-        if (!IsReady) return;
+        if (!IsReady || FirstDay) return;
+        BindOperatingShop();
 
         if (!ResidentSpawnAnchorsReady)
         {
@@ -255,7 +278,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         }
 
         if (_persistence != null && _persistence.IsProceduralActive &&
-            _persistence.ActiveSeed != _boundSeed)
+            !ReferenceEquals(_persistence.ActiveGeneratedWorld, _generated))
         {
             BindRuntimeObjectsToSeed(_persistence.ActiveSeed);
         }
@@ -293,7 +316,33 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     {
         if (_hiringService != null)
             _hiringService.OnHired -= OnResidentHired;
+        if (_runtimeRoot != null)
+        {
+            _runtimeRoot.SetActive(false);
+            ReleaseRuntimeObject(_runtimeRoot);
+            _runtimeRoot = null;
+        }
+        if (_directTimberMaterial != null) Destroy(_directTimberMaterial);
+        if (_directStoneMaterial != null) Destroy(_directStoneMaterial);
+        if (_demoBugMaterial != null) Destroy(_demoBugMaterial);
         if (Instance == this) Instance = null;
+    }
+
+    static bool ReleaseOrphanedOpeningRoots()
+    {
+        bool found = false;
+        foreach (GameObject root in Resources.FindObjectsOfTypeAll<GameObject>())
+        {
+            if (root == null || root.name != RuntimeRootName || root.transform.parent != null ||
+                root.hideFlags != HideFlags.DontSave || !root.scene.IsValid() || !root.scene.isLoaded ||
+                root.transform.Find(PlayerRootName) == null) continue;
+            // These roots were created by the earlier unparented adapter and are
+            // runtime-only. Never touch a scene-authored player or saved data.
+            root.SetActive(false);
+            ReleaseRuntimeObject(root);
+            found = true;
+        }
+        return found;
     }
 
     bool InitializeRuntime(out string reason)
@@ -317,8 +366,9 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _navigation = GetComponent<WorldNavigationService>();
         if (_navigation == null) _navigation = gameObject.AddComponent<WorldNavigationService>();
 
-        if (!_persistence.StartProceduralWorld(DefaultWorldSeed, out reason)) return false;
-        _generated = WorldIslandGenerator.Generate(DefaultWorldSeed);
+        if (!_persistence.StartProceduralWorld(DefaultWorldSeed,
+                WorldIslandGenerationSettings.Demo256, out reason)) return false;
+        _generated = _persistence.ActiveGeneratedWorld;
         if (!_navigation.BuildAllNow(out reason)) return false;
         if (!BuildGameplayRuntime(out reason)) return false;
         _boundSeed = DefaultWorldSeed;
@@ -337,6 +387,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         {
             hideFlags = HideFlags.DontSave
         };
+        _runtimeRoot.transform.SetParent(transform, false);
         _runtimeRoot.SetActive(false);
 
         // PA_RuntimeSceneBinder is the existing authority composition root for every
@@ -366,6 +417,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _playerRoot.transform.SetParent(_runtimeRoot.transform, false);
         _inventory = _playerRoot.AddComponent<Inventory>();
         _inventory.size = 24;
+
+        if (FirstDay) return BuildFirstDayGameplay(out reason);
 
         if (!TryInstantiateBuilding(MarketBuildingResource, "WORLD009_MarketStall_Runtime",
                 WorldGenerationAnchorKind.Shop, true, out _shopRoot, out reason))
@@ -408,6 +461,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _dayLoop = DayNightShopLoopController.Instance ?? _dayLoop;
         _saveManager = SaveManager.instance ?? _saveManager;
         _shop = _shopRoot != null ? _shopRoot.GetComponentInChildren<Shop>(true) : null;
+        _bootstrapShopRoot = _shopRoot;
         _workbench = _workbenchRoot != null
             ? _workbenchRoot.GetComponentInChildren<Workbench>(true)
             : null;
@@ -453,10 +507,63 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         AddRuntimeLabel(_forgeRoot.transform, "대장간 용광로 · 광석 가공", new Color(1f, 0.48f, 0.34f));
         AddRuntimeLabel(_sewingRoot.transform, "재봉 작업대 · 생활 공예", new Color(0.95f, 0.64f, 0.92f));
         if (!ConfigurePlayerActivityInteraction(out reason) ||
-            !BindDaytimeActivitiesToGeneratedWorld(out reason))
+            !BindDaytimeActivitiesToGeneratedWorld(out reason) ||
+            !BindDirectResources(out reason) || !BindFishingAndBugs(out reason) || !BindPlaceableKits(out reason))
         {
             return false;
         }
+        return true;
+    }
+
+    bool BuildFirstDayGameplay(out string reason)
+    {
+        reason = string.Empty;
+        var assets = FirstDayStudioAssets.Load();
+        if (assets == null) { reason = "FirstDayStudio asset catalog missing. Run Studio Setup."; return false; }
+        _generated.TryGetAnchor(WorldGenerationAnchorKind.Start, out var start);
+        _grid.CellToWorld(start.Coordinate, out var position);
+        _playerRoot.transform.position = position + Vector3.up * .05f;
+        FirstDayStudioAssets.Place(assets.player, _playerRoot.transform, _playerRoot.transform.position, 1.75f).name = "CharacterVisual";
+        _playerHotbar = _playerRoot.AddComponent<Hotbar>(); _inventory.hotbar = _playerHotbar;
+        var body = _playerRoot.AddComponent<CharacterController>(); body.height=1.8f;body.radius=.35f;body.center=Vector3.up*.9f;
+        _playerRoot.AddComponent<PlayerController>().moveSpeed=4.2f;
+        _playerInteraction=_playerRoot.AddComponent<PlayerInteraction>();
+        _playerRoot.AddComponent<EquipmentSystem>();
+        _playerRoot.AddComponent<NpcHumanoidProceduralAnimator>();
+        _runtimeRoot.SetActive(true);
+        _playerRoot.GetComponent<EquipmentSystem>().ConfigureFirstDay();
+        PlayerInputHandler.Instance.FirstDayControls=true;
+        _clock.enabled=false;
+        foreach(var item in assets.supplies)
+            if(!ItemRegistry.Instance.allItems.Contains(item))ItemRegistry.Instance.allItems.Add(item);
+        foreach(var activity in FindObjectsByType<DaytimeStockPrepPoint>(FindObjectsSortMode.None))activity.gameObject.SetActive(false);
+        foreach(var farm in FindObjectsByType<FarmPlotInteraction>(FindObjectsSortMode.None))farm.gameObject.SetActive(false);
+        foreach(var sign in FindObjectsByType<ShopOpenSign>(FindObjectsSortMode.None))sign.gameObject.SetActive(false);
+        foreach(var progress in FindObjectsByType<LongPlayProgressionController>(FindObjectsSortMode.None))progress.enabled=false;
+        foreach(var processing in FindObjectsByType<ProcessingOpportunityController>(FindObjectsSortMode.None))processing.enabled=false;
+        if(!BindDirectResources(out reason))return false;
+        ComposeDirectInventoryUI();
+        var world=new GameObject("FirstDay_WorldPresentation").AddComponent<FirstDayWorldPresentation>();
+        world.transform.SetParent(_runtimeRoot.transform);
+        world.Compose(_grid,_playerRoot);
+        world.gameObject.AddComponent<DemoSettlementController>().Configure(_grid, _inventory);
+        // Existing fishing reward authority and daily activity identity.
+        var shore=new GameObject("FirstDay_ShoreFishing");shore.transform.SetParent(_runtimeRoot.transform);
+        shore.transform.position=world.Harbor+new Vector3(6,0,1);
+        var stock=shore.AddComponent<DaytimeStockPrepPoint>();stock.Configure("shore-forage","Items/Item_Fish",2,"낚시");
+        var fishing=shore.AddComponent<FishingSpot>();fishing.Configure(stock);fishing.ConfigureDirectPlayerDemo();
+        shore.AddComponent<SphereCollider>().isTrigger=true;
+        FirstDayStudioAssets.Place(assets.rocks[0],shore.transform,shore.transform.position,.4f);
+        for(int i=0;i<3;i++)
+        {
+            var bug=new GameObject("FirstDay_Butterfly_"+i);bug.transform.SetParent(_runtimeRoot.transform);
+            bug.transform.position=world.Harbor+new Vector3(12+i*3,1,24+i*3);
+            // 얇은 날개의 높이를 기준으로 25cm까지 키우면 날개 폭이 3m가 된다.
+            FirstDayStudioAssets.Place(assets.butterfly,bug.transform,bug.transform.position,.05f);
+            bug.AddComponent<SphereCollider>().isTrigger=true;
+            bug.AddComponent<BugCritter>().Configure(Resources.Load<Item>("Items/Item_Butterfly"),i);
+        }
+        world.gameObject.AddComponent<DemoPioneerReport>().Configure(world.GetComponent<DemoSettlementController>(), _grid, _inventory);
         return true;
     }
 
@@ -486,6 +593,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             return false;
         }
 
+        if (FirstDay)
+        { _clock.ForceSet(9,1,"First Day harbor control"); _clock.secondsPerGameHour=120; _clock.enabled=true; return true; }
         _clock.secondsPerGameHour = PlayableSecondsPerGameHour;
         _dayLoop.keepDay1TutorialShopOpen = false;
         if (!BindShopSignToRuntimeShop(out reason)) return false;
@@ -493,6 +602,25 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _lastAction = $"Playable week clock started at {_clock.GetTimeString()} " +
                       $"({PlayableSecondsPerGameHour:0} seconds per game hour).";
         return true;
+    }
+
+    void BindOperatingShop()
+    {
+        var placement = _grid != null ? _grid.GetComponent<WorldBuildingPlacementService>() : null;
+        GameObject target = placement != null && placement.TryGetPlacement(WorldPlaceableKitCatalog.ShopId, out var placed)
+            ? placed.GameObject : _bootstrapShopRoot;
+        if (target == null || (target == _shopRoot && _shop != null)) return;
+        _shopRoot = target;
+        _shop = target.GetComponentInChildren<Shop>(true);
+        _shopSlots = target.GetComponentsInChildren<ShopSlot>(true).OrderBy(s => s.name, StringComparer.Ordinal).ToArray();
+        ResolveSalesDisplayRoot();
+        ConfigureSalesDisplayInteractionVolumes();
+        _shop.allowDebugBulkSaleInteraction = false;
+        _salesDisplayReadability = target.GetComponent<WorldSalesDisplayReadability>() ?? target.AddComponent<WorldSalesDisplayReadability>();
+        if (!_salesDisplayReadability.Configure(_salesDisplayRoot, _shopSlots, out string reason) ||
+            !BindShopSignToRuntimeShop(out reason))
+        { Fail(reason); return; }
+        CustomerArrivalController.Instance?.BindOperatingShop(_shop);
     }
 
     bool BindShopSignToRuntimeShop(out string reason)
@@ -514,6 +642,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         Vector3 desired = _shopRoot.transform.position +
                           _shopRoot.transform.forward * 2.0f +
                           _shopRoot.transform.right * 1.5f;
+        if (_shopRoot != _bootstrapShopRoot)
+            desired = _shopRoot.transform.position - _shopRoot.transform.forward * 4f + _shopRoot.transform.right * 2.5f;
         if (NavMesh.SamplePosition(desired, out NavMeshHit hit, 4f, NavMesh.AllAreas))
             desired = hit.position;
         else
@@ -656,6 +786,263 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         }
 
         return _playerInteraction != null && _playerHotbar != null;
+    }
+
+
+    // Composition only. Existing Gatherable/MiningSpot own hits and rewards.
+    bool BindDirectResources(out string reason)
+    {
+        reason = string.Empty;
+        if (_directResourceRoot != null)
+        {
+            _directResourceRoot.gameObject.SetActive(false);
+            Destroy(_directResourceRoot.gameObject);
+        }
+        _directResourceRoot = new GameObject("DirectWorldResources").transform;
+        _directResourceRoot.SetParent(_runtimeRoot.transform, false);
+        foreach (var spawn in _generated.ResourceSpawns)
+        {
+            if (spawn.Kind != WorldResourceKind.Timber && spawn.Kind != WorldResourceKind.Stone) continue;
+            if (!_grid.CellToWorld(spawn.Coordinate, out Vector3 position))
+            { reason = "Direct resource cell is missing: " + spawn.SpawnKey; return false; }
+            bool timber = spawn.Kind == WorldResourceKind.Timber;
+            if (FirstDay)
+            {
+                var assets=FirstDayStudioAssets.Load();
+                var root=new GameObject("Direct_"+spawn.SpawnKey);root.transform.SetParent(_directResourceRoot);
+                root.transform.position=position;
+                var family=timber?assets.trees:assets.rocks;
+                FirstDayStudioAssets.Place(family[Mathf.Abs(spawn.Coordinate.x+spawn.Coordinate.y)%family.Length],root.transform,position,timber?4.5f:1.1f,spawn.Coordinate.x*37);
+                var trigger=root.AddComponent<CapsuleCollider>();trigger.isTrigger=true;trigger.radius=timber?.45f:.7f;trigger.height=2;trigger.center=Vector3.up*.8f;
+                if(timber)root.AddComponent<Gatherable>().ConfigureDirectWorld(_persistence,spawn,Resources.Load<Item>("Items/Item_Wood"));
+                else root.AddComponent<MiningSpot>().ConfigureDirectWorld(_persistence,spawn,Resources.Load<Item>("Items/Item_Ore"));
+                continue;
+            }
+            var resource = GameObject.CreatePrimitive(timber ? PrimitiveType.Cylinder : PrimitiveType.Sphere);
+            resource.name = "Direct_" + spawn.SpawnKey;
+            resource.transform.SetParent(_directResourceRoot, false);
+            resource.transform.position = position + Vector3.up * (timber ? .9f : .5f);
+            resource.transform.localScale = timber ? new Vector3(.55f, .9f, .55f) : new Vector3(1.1f, 1f, 1.1f);
+            // Interaction triggers do not modify the existing navigation authority.
+            resource.GetComponent<Collider>().isTrigger = true;
+            var renderer = resource.GetComponent<Renderer>();
+            if (timber)
+            {
+                if (_directTimberMaterial == null)
+                { _directTimberMaterial = new Material(renderer.sharedMaterial); _directTimberMaterial.color = new Color(.34f,.48f,.21f); }
+                renderer.sharedMaterial = _directTimberMaterial;
+                var crown = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                crown.name = "Crown";
+                crown.transform.SetParent(resource.transform, false);
+                crown.transform.localPosition = Vector3.up * 1.3f;
+                crown.transform.localScale = new Vector3(3.2f, 1.5f, 3.2f);
+                crown.GetComponent<Collider>().isTrigger = true;
+                crown.GetComponent<Renderer>().sharedMaterial = _directTimberMaterial;
+                resource.AddComponent<Gatherable>().ConfigureDirectWorld(_persistence, spawn,
+                    Resources.Load<Item>("Items/Item_Wood"));
+            }
+            else
+            {
+                if (_directStoneMaterial == null)
+                { _directStoneMaterial = new Material(renderer.sharedMaterial); _directStoneMaterial.color = new Color(.43f,.46f,.52f); }
+                renderer.sharedMaterial = _directStoneMaterial;
+                resource.AddComponent<MiningSpot>().ConfigureDirectWorld(_persistence, spawn,
+                    Resources.Load<Item>("Items/Item_Ore"));
+            }
+        }
+        if (FirstDay) return true;
+        foreach (string path in new[] { "Items/Item_Axe", "Items/Item_Pickaxe" })
+        {
+            Item tool = Resources.Load<Item>(path);
+            if (tool == null) { reason = "Canonical tool is missing: " + path; return false; }
+            if (_inventory.CountItems(tool) > 0) continue;
+            if (!_playerHotbar.AddItem(tool) && !_inventory.AddInstance(new ItemInstance(tool)))
+            { reason = "No inventory space for starter tool: " + path; return false; }
+        }
+        _inventory.RefreshAllUI();
+        ComposeDirectInventoryUI();
+        return true;
+    }
+
+    bool BindPlaceableKits(out string reason)
+    {
+        reason = string.Empty;
+        var controller = _playerRoot.GetComponent<WorldHotbarPlacementController>();
+        if (controller != null) return true;
+        foreach (string path in new[] { WorldPlaceableKitCatalog.HubItemPath, WorldPlaceableKitCatalog.ShopItemPath })
+        {
+            var kit = Resources.Load<Item>(path);
+            if (!WorldPlaceableKitCatalog.TryKit(kit, out _, out _))
+            { reason = "Missing placeable kit: " + path; return false; }
+            if (_inventory.CountItems(kit) == 0 && !_playerHotbar.AddItem(kit) && !_inventory.AddInstance(new ItemInstance(kit)))
+            { reason = "No room for placeable kit: " + path; return false; }
+        }
+        controller = _playerRoot.AddComponent<WorldHotbarPlacementController>();
+        controller.Configure(_grid.GetComponent<WorldBuildingPlacementService>(), _inventory);
+        return true;
+    }
+
+    // Composition only: FishingSpot and BugCritter own their interaction state.
+    bool BindFishingAndBugs(out string reason)
+    {
+        reason = string.Empty;
+        var fishing = FindDaytimeActivity("shore-forage")?.GetComponentInChildren<FishingSpot>(true);
+        Item net = Resources.Load<Item>("Items/Item_Net");
+        Item butterfly = Resources.Load<Item>("Items/Item_Butterfly");
+        if (fishing == null || net == null || butterfly == null)
+        { reason = "FishingSpot, Net or Butterfly is missing."; return false; }
+        fishing.ConfigureDirectPlayerDemo();
+        if (_inventory.CountItems(net) == 0 && !_playerHotbar.AddItem(net) &&
+            !_inventory.AddInstance(new ItemInstance(net)))
+        { reason = "No room for demo Net."; return false; }
+        // On initial composition HotbarUI.Start must create its slots before any refresh.
+        if (_demoBugRoot != null) _inventory.RefreshAllUI();
+        // Keep consumed critters on a same-seed runtime rebind. Demo population is session-local.
+        if (_demoBugRoot != null && _demoBugSeed == _persistence.ActiveSeed) return true;
+        if (_demoBugRoot != null)
+        { _demoBugRoot.gameObject.SetActive(false); Destroy(_demoBugRoot.gameObject); }
+        _demoBugRoot = new GameObject("MeadowDemoBugs").transform;
+        _demoBugRoot.SetParent(_runtimeRoot.transform, false);
+        _demoBugSeed = _persistence.ActiveSeed;
+        for (int i = 0; i < 3; i++)
+        {
+            if (!TryResolveAnchorCoordinate(WorldGenerationAnchorKind.MeadowActivity,
+                    new Vector2Int(2 + i * 2, -5), out var cell) || !_grid.CellToWorld(cell, out var ground))
+            { reason = "No walkable Meadow demo bug location."; return false; }
+            var bug = new GameObject("Butterfly_" + i);
+            bug.transform.SetParent(_demoBugRoot, false);
+            bug.transform.position = ground + Vector3.up * .85f;
+            var hit = bug.AddComponent<SphereCollider>();
+            hit.isTrigger = true; hit.radius = .4f;
+            for (int wing = 0; wing < 2; wing++)
+            {
+                var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                visual.name = wing == 0 ? "LeftWing" : "RightWing";
+                visual.transform.SetParent(bug.transform, false);
+                visual.transform.localPosition = new Vector3(wing == 0 ? -.18f : .18f, 0, 0);
+                visual.transform.localScale = new Vector3(.38f, .07f, .48f);
+                visual.GetComponent<Collider>().enabled = false;
+                var renderer = visual.GetComponent<Renderer>();
+                if (_demoBugMaterial == null)
+                { _demoBugMaterial = new Material(renderer.sharedMaterial); _demoBugMaterial.color = new Color(.95f, .64f, .2f); }
+                renderer.sharedMaterial = _demoBugMaterial;
+            }
+            bug.AddComponent<BugCritter>().Configure(butterfly, i * 1.7f);
+        }
+        return true;
+    }
+
+    // WorldSandbox has no authored inventory UI. Compose the existing UI components.
+    public void ComposeDirectInventoryUI() => ComposeInventoryUI(_runtimeRoot, _inventory, _playerHotbar);
+
+    public static void ComposeInventoryUI(GameObject root, Inventory playerInventory, Hotbar playerHotbar)
+    {
+        var existingHotbar = FindFirstObjectByType<HotbarUI>(FindObjectsInactive.Include);
+        if (existingHotbar != null)
+        {
+            // 기존 화면을 재사용해도 새 교육의 실제 권위/변경 콜백/입력을 다시 연결한다.
+            existingHotbar.inventory = playerInventory;
+            existingHotbar.hotbar = playerInventory.hotbar != null ? playerInventory.hotbar : playerHotbar;
+            existingHotbar.gameObject.SetActive(true);
+            if (existingHotbar.rootCanvas != null) existingHotbar.rootCanvas.enabled = true;
+            existingHotbar.enabled = true;
+            existingHotbar.RefreshUI();
+        }
+        Canvas canvas;
+        GameObject slot;
+        if (existingHotbar == null)
+        {
+            var canvasObject = new GameObject("WorldInventoryCanvas", typeof(RectTransform), typeof(Canvas),
+                typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasObject.transform.SetParent(root.transform, false);
+            canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 20;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            var templates = new GameObject("SlotTemplates");
+            templates.transform.SetParent(canvas.transform, false);
+            templates.SetActive(false);
+            slot = new GameObject("InventorySlot", typeof(RectTransform), typeof(Image), typeof(InventorySlotUI));
+            slot.transform.SetParent(templates.transform, false);
+            var icon = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            icon.transform.SetParent(slot.transform, false);
+            var iconRect = (RectTransform)icon.transform;
+            iconRect.anchorMin = Vector2.zero; iconRect.anchorMax = Vector2.one;
+            iconRect.offsetMin = new Vector2(4, 4); iconRect.offsetMax = new Vector2(-4, -4);
+            var count = new GameObject("Count", typeof(RectTransform), typeof(TextMeshProUGUI));
+            count.transform.SetParent(slot.transform, false);
+            var countRect = (RectTransform)count.transform;
+            countRect.anchorMin = Vector2.zero; countRect.anchorMax = Vector2.one;
+            countRect.offsetMin = Vector2.zero; countRect.offsetMax = Vector2.zero;
+            var countText = count.GetComponent<TextMeshProUGUI>();
+            countText.fontSize = 18; countText.alignment = TextAlignmentOptions.BottomRight;
+            countText.raycastTarget = false;
+            var slotUI = slot.GetComponent<InventorySlotUI>();
+            slotUI.icon = icon.GetComponent<Image>(); slotUI.countText = countText;
+
+            RectTransform MakeSlots(string name, Vector2 position, int columns, int rows)
+            {
+                var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(GridLayoutGroup));
+                go.transform.SetParent(canvas.transform, false);
+                var rect = (RectTransform)go.transform;
+                rect.anchorMin = rect.anchorMax = new Vector2(.5f, 0);
+                rect.pivot = new Vector2(.5f, 0); rect.anchoredPosition = position;
+                rect.sizeDelta = new Vector2(columns * 92 + 12, rows * 92 + 12);
+                go.GetComponent<Image>().color = new Color(.12f, .16f, .18f, .96f);
+                var layout = go.GetComponent<GridLayoutGroup>();
+                layout.cellSize = new Vector2(84, 84); layout.spacing = new Vector2(8, 8);
+                layout.padding = new RectOffset(10, 10, 10, 10);
+                layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount; layout.constraintCount = columns;
+                return rect;
+            }
+            var hotbarSlots = MakeSlots("Hotbar_1_to_9", new Vector2(0, 24), 9, 1);
+            var hotbar = hotbarSlots.gameObject.AddComponent<HotbarUI>();
+            hotbar.hotbar = playerHotbar; hotbar.inventory = playerInventory;
+            hotbar.slotParent = hotbarSlots; hotbar.slotPrefab = slot;
+            hotbar.rootCanvas = canvas; hotbar.dragLayer = (RectTransform)canvas.transform;
+            existingHotbar = hotbar;
+        }
+        else
+        {
+            canvas = existingHotbar.rootCanvas;
+            slot = existingHotbar.slotPrefab;
+        }
+
+        var existingInventory = InventoryUI.instance != null ? InventoryUI.instance :
+            FindFirstObjectByType<InventoryUI>(FindObjectsInactive.Include);
+        if (existingInventory != null)
+        {
+            existingInventory.Rebind(playerInventory, playerHotbar);
+        }
+        else if (canvas != null && slot != null)
+        {
+            RectTransform inventorySlots;
+            Transform existingSlots = canvas.transform.Find("Inventory_I_to_close");
+            if (existingSlots != null)
+                inventorySlots = (RectTransform)existingSlots;
+            else
+            {
+                var go = new GameObject("Inventory_I_to_close", typeof(RectTransform), typeof(Image), typeof(GridLayoutGroup));
+                go.transform.SetParent(canvas.transform, false);
+                inventorySlots = (RectTransform)go.transform;
+                inventorySlots.anchorMin = inventorySlots.anchorMax = new Vector2(.5f, 0);
+                inventorySlots.pivot = new Vector2(.5f, 0); inventorySlots.anchoredPosition = new Vector2(0, 150);
+                inventorySlots.sizeDelta = new Vector2(8 * 92 + 12, 3 * 92 + 12);
+                go.GetComponent<Image>().color = new Color(.12f, .16f, .18f, .96f);
+                var layout = go.GetComponent<GridLayoutGroup>();
+                layout.cellSize = new Vector2(84, 84); layout.spacing = new Vector2(8, 8);
+                layout.padding = new RectOffset(10, 10, 10, 10);
+                layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount; layout.constraintCount = 8;
+            }
+            var inventory = inventorySlots.gameObject.AddComponent<InventoryUI>();
+            inventory.inventory = playerInventory; inventory.hotbar = playerHotbar;
+            inventory.slotParent = inventorySlots; inventory.slotPrefab = slot;
+            inventory.rootCanvas = canvas; inventory.dragLayer = (RectTransform)canvas.transform;
+        }
+        // sceneLoaded의 reset 당시에는 화면이 없었으므로 구성 직후 같은 갱신 경로를 사용한다.
+        playerInventory.RefreshAllUI();
     }
 
     bool BindDaytimeActivitiesToGeneratedWorld(out string reason)
@@ -1080,6 +1467,11 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             return false;
         }
 
+        if (_directResourceRoot != null && (kind == WorldResourceKind.Timber || kind == WorldResourceKind.Stone))
+        {
+            reason = "Select Axe/Pickaxe, approach the resource and press Space three times.";
+            return false;
+        }
         int currentDay = _clock != null ? _clock.CurrentDay : 1;
         WorldResourceSpawnRecord? candidate = null;
         foreach (WorldResourceSpawnRecord spawn in _generated.ResourceSpawns
@@ -1390,8 +1782,9 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
     void BindRuntimeObjectsToSeed(long seed)
     {
-        _generated = WorldIslandGenerator.Generate(seed);
-        PositionExistingRuntimeObject(_shopRoot, WorldGenerationAnchorKind.Shop, true);
+        _generated = _persistence.ActiveGeneratedWorld;
+        BindOperatingShop();
+        PositionExistingRuntimeObject(_bootstrapShopRoot, WorldGenerationAnchorKind.Shop, true);
         PositionExistingRuntimeObject(_workbenchRoot, WorldGenerationAnchorKind.MeadowActivity, false);
         TryPositionExistingRuntimeObjectAtOffset(_kitchenRoot,
             WorldGenerationAnchorKind.MeadowActivity, new Vector2Int(6, -2));
@@ -1419,6 +1812,8 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             Fail($"Restored world resident binding failed: {residentReason}");
             return;
         }
+        if (!BindDirectResources(out string directReason)) { Fail(directReason); return; }
+        if (!BindFishingAndBugs(out string catchReason)) { Fail(catchReason); return; }
         VillageCultureVisualController.Instance?.RefreshNow();
         _boundSeed = seed;
         _lastAction = $"Existing gameplay anchors rebound to restored world seed {seed}.";
@@ -1482,7 +1877,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         IReadOnlyList<PlaceableSaveData> restoredFurniture)
     {
         if (_persistence != null && _persistence.IsProceduralActive &&
-            _persistence.ActiveSeed != _boundSeed)
+            !ReferenceEquals(_persistence.ActiveGeneratedWorld, _generated))
         {
             BindRuntimeObjectsToSeed(_persistence.ActiveSeed);
         }
@@ -1556,7 +1951,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         GUILayout.Label($"Inventory wood {CountItem("Items/Item_Wood")} · plank {CountItem("Items/Item_Plank")} · money {(_economy != null ? _economy.Money : 0)}G");
         GUILayout.Label(_lastAction);
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Gather Timber")) TryGatherNext(WorldResourceKind.Timber, out _, out _lastAction);
+        GUILayout.Label("Select Axe - approach a tree - press Space");
         if (GUILayout.Button("Craft Plank")) TryCraftPlank(out _lastAction);
         if (GUILayout.Button("Stock B01")) TryStockCraftedProduct(out _, out _lastAction);
         GUILayout.EndHorizontal();

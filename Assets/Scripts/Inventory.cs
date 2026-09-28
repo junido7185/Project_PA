@@ -12,6 +12,47 @@ public class Inventory : MonoBehaviour
     // ⭐ 핫바 연결 (선택된 아이템을 찾기 위해 필수)
     public Hotbar hotbar;
     public int selectedHotbarIndex = 0; // 현재 핫바에서 선택된 슬롯 번호
+    public event System.Action<int> SelectionChanged;
+    public void SelectHotbarSlot(int index)
+    {
+        if (hotbar == null || index < 0 || index >= hotbar.size) return;
+        selectedHotbarIndex = index;
+        SelectionChanged?.Invoke(index);
+        RefreshAllUI();
+    }
+
+    // 새 출항 데모의 진입/이탈 경계에서만 호출한다. 저장 파일과 Continue는 변경하지 않는다.
+    public void ResetForFreshOpeningSession()
+    {
+        EnsureSlots();
+        foreach (var slot in slots) slot.Clear();
+        if (hotbar != null && hotbar.slots != null)
+            foreach (var slot in hotbar.slots) slot?.Clear();
+        selectedHotbarIndex = 0;
+        SelectionChanged?.Invoke(selectedHotbarIndex);
+        GetComponent<EquipmentSystem>()?.ResetHeldPresentation();
+        RefreshAllUI();
+    }
+
+    // Canon v2 §1/3: keep ItemInstance ownership in the existing inventory.
+    // Successful pickup prefers an empty hotbar slot; failed capacity checks mutate nothing.
+    public bool TryReceiveToHotbar(Item item, int count)
+    {
+        if (item == null || count <= 0) return false;
+        var incoming = new ItemInstance(item, count);
+        var stack = hotbar?.slots.Find(s => !s.IsEmpty && s.instance.CanStackWith(incoming) && s.count + count <= Mathf.Max(1,item.maxStack));
+        if (stack != null) { stack.AddCount(count); RefreshAllUI(); return true; }
+        if (!AddInstance(incoming)) return false;
+        if (hotbar != null)
+        {
+            var source = slots.Find(s => !s.IsEmpty && s.item == item);
+            var target = hotbar.slots.Find(s => s.IsEmpty);
+            if (source != null && target != null)
+            { target.SetInstance(source.instance); source.Clear(); }
+        }
+        RefreshAllUI();
+        return true;
+    }
 
     // UI 갱신용 이벤트 (기존 코드 호환용)
     public delegate void OnItemChanged();
@@ -41,6 +82,11 @@ public class Inventory : MonoBehaviour
         // Play 진입 시 새 List 로 덮어써져 사라지는 사고를 방지한다.
         // size 와 일치하고 각 칸이 null 이 아니면 그대로 둔다.
         EnsureSlots();
+    }
+
+    void OnDestroy()
+    {
+        if (instance == this) instance = null;
     }
 
     static bool IsPlayerObject(GameObject go)
@@ -178,11 +224,13 @@ public class Inventory : MonoBehaviour
     {
         if (onItemChangedCallback != null) onItemChangedCallback.Invoke();
         
-        // 에셋 쪽 UI들도 갱신
-        InventoryUI invUI = FindAnyObjectByType<InventoryUI>();
-        if(invUI) invUI.RefreshUI();
+        // 닫힌 Inventory UI도 현재 플레이어 권위로 다시 묶은 뒤 갱신한다.
+        InventoryUI invUI = InventoryUI.instance;
+        if (invUI == null)
+            invUI = FindAnyObjectByType<InventoryUI>(FindObjectsInactive.Include);
+        if (invUI) invUI.Rebind(this, hotbar);
         
-        HotbarUI hotUI = FindAnyObjectByType<HotbarUI>();
+        HotbarUI hotUI = FindAnyObjectByType<HotbarUI>(FindObjectsInactive.Include);
         if(hotUI) hotUI.RefreshUI();
     }
 

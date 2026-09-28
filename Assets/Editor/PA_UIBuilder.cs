@@ -49,7 +49,7 @@ public static class PA_UIBuilder
 
     const string UI_SLOT_PREFAB_PATH = "Assets/Prefabs/UI_Slot.prefab";
 
-    // ── 스프라이트 경로 (Docs/UI_스프라이트_가이드.md 기준) ─────────────────────
+    // ── 스프라이트 경로 (Docs/02_IMPLEMENTATION/Systems/UI_스프라이트_가이드.md 기준) ─────────────────────
     // 스프라이트가 없어도 빌드는 성공하되 컬러 플랫으로 폴백됨.
     // 파일을 Assets/Art/UI/ 에 떨구고 메뉴를 다시 실행하면 자동으로 주입된다.
     const string SPR_DIR                = "Assets/Art/UI/";

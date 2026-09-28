@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_2014
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2014
+  itemName: "\uC791\uC5C5\uB300 \uD0A4\uD2B8"
+  description: "P.A.\uC5D0\uC11C \uC900\uBE44\uD55C \uC0C8 \uC12C \uC0DD\uD65C\uC744
+    \uC704\uD55C \uBCF4\uAE09\uD488."
+  icon: {fileID: 21300000, guid: fa394d949afd481468b9fe6d735b24b7, type: 3}
+  maxStack: 1
+  model: {fileID: 919132149155446097, guid: 7ebf171941044cb4081b67401ef38217, type: 3}
+  basePrice: 0
+  toolType: 0
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

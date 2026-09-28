@@ -1,7 +1,6 @@
 using UnityEngine;
 
-// §8 DayNightVisual — GameClock.OnHourTick 구독 → Directional Light 색·강도를 시각에 따라 보간.
-// Light 를 Inspector 에서 연결하거나 Awake 에서 씬의 첫 번째 Directional Light 를 자동 탐색.
+// §8 DayNightVisual — GameClock 시각으로 기존 Directional Light와 주변광을 구동한다.
 [RequireComponent(typeof(Light))]
 public class DayNightVisual : MonoBehaviour
 {
@@ -14,10 +13,15 @@ public class DayNightVisual : MonoBehaviour
 
     [Header("시간대별 강도 커브")]
     [Tooltip("X=0~1 (0h→1 = 24h), Y=강도")]
-    public AnimationCurve intensityCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    public AnimationCurve intensityCurve = BuildDefaultIntensityCurve();
 
     [Header("최대 강도")]
     public float maxIntensity = 1.2f;
+
+    [Header("태양 경로")]
+    [Tooltip("X=0~1 (0h→24h), Y=Directional Light의 X 회전각. 시간 사이도 연속 보간")]
+    public AnimationCurve sunPitchCurve = AnimationCurve.Linear(0f, -90f, 1f, 270f);
+    [Range(-180f, 180f)] public float sunAzimuthDegrees = -30f;
 
     // v3 Final Presentation Lock — 청회색 skybox 앰비언트가 코지 톤을 죽이는 문제 보정.
     // Trilight 앰비언트를 시간대에 맞춰 구동한다 (낮=따뜻한 크림, 밤=어두운 남색 유지).
@@ -39,6 +43,8 @@ public class DayNightVisual : MonoBehaviour
         // 기본 강도 커브 — 낮은 환하고 밤은 어두움
         if (intensityCurve == null || intensityCurve.length == 0)
             intensityCurve = BuildDefaultIntensityCurve();
+        if (sunPitchCurve == null || sunPitchCurve.length == 0)
+            sunPitchCurve = AnimationCurve.Linear(0f, -90f, 1f, 270f);
 
         // v3 — 앰비언트 그라디언트 기본값
         if (ambientSkyGradient == null || ambientSkyGradient.colorKeys.Length == 0)
@@ -83,31 +89,30 @@ public class DayNightVisual : MonoBehaviour
     void Start()
     {
         if (GameClock.Instance != null)
-        {
-            GameClock.Instance.OnHourTick += ApplyHour;
-            ApplyHour(GameClock.Instance.CurrentHourInt);
-        }
+            ApplyTime(GameClock.Instance.CurrentHour);
     }
 
-    void OnDestroy()
+    void LateUpdate()
     {
         if (GameClock.Instance != null)
-            GameClock.Instance.OnHourTick -= ApplyHour;
+            ApplyTime(GameClock.Instance.CurrentHour);
     }
 
-    // v3 — 캡처 툴/검증기가 GameClock.ForceSet 후 즉시 재적용할 수 있도록 public.
-    public void ApplyHour(int hour)
+    // 기존 캡처 툴/검증기의 수동 호출 계약을 유지한다.
+    public void ApplyHour(int hour) => ApplyTime(hour);
+
+    public void ApplyTime(float hour)
     {
         if (directionalLight == null) return;
 
-        float t = hour / 24f; // 0~1
+        float t = Mathf.Clamp(hour / 24f, 0f, 1f);
 
         directionalLight.color     = lightColorGradient.Evaluate(t);
         directionalLight.intensity = intensityCurve.Evaluate(t) * maxIntensity;
 
-        // 태양 고도: 정오(12h)에 최고, 자정(0h/24h)에 최저
-        float sunAngle   = (hour / 24f) * 360f - 90f; // -90° 오프셋 → 정오에 90°(천정)
-        transform.rotation = Quaternion.Euler(sunAngle, -30f, 0f);
+        // 시각 점프와 일반 시간 진행이 같은 경로를 거쳐 실제 그림자 방향을 바꾼다.
+        directionalLight.transform.rotation = Quaternion.Euler(
+            sunPitchCurve.Evaluate(t), sunAzimuthDegrees, 0f);
 
         // v3 — 따뜻한 Trilight 앰비언트 (밤은 기존처럼 어둡게 유지).
         if (driveAmbient)

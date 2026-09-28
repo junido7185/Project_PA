@@ -2,7 +2,7 @@ using UnityEngine;
 
 // CDN-002 — 플레이어가 밤 영업을 시작하는 가게 간판.
 //
-// 설계 의도 (PROJECT_PA_CREATIVE_NORTH_STAR.md "Shop Operation Fantasy"):
+// 설계 의도 (Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md "Shop Operation Fantasy"):
 // - 밤에 ShopOpen 단계가 되면 플레이어가 직접 간판으로 가게를 "연다".
 // - 영업을 시작해야 손님 NPC 구매가 활성화된다(실제 게이트는 DayNightShopLoopController).
 // - Day 1 튜토리얼은 항상 열림으로 처리되어 기존 첫 판매 루트가 보존된다.

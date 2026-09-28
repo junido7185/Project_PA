@@ -132,6 +132,6 @@ for a in assets:
     a['referenceRender']=str(Path(scene.render.filepath).relative_to(ROOT));collection.hide_render=True
 assert hashlib.sha256(LIB.read_bytes()).hexdigest()==library_hash
 (DOC/'derived-assets.json').write_text(json.dumps({'ticket':'VS-PRESENT-001-P3','librarySha256':library_hash,'libraryPreserved':True,
-    'styleGrammar':'PROJECT_PA_ART_STYLE_GRAMMAR.md','sourceProvenance':'Docs/AssetProvenance/selected-assets.json / CubeWorldKit CC0',
+    'styleGrammar':'Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md','sourceProvenance':'Docs/AssetProvenance/selected-assets.json / CubeWorldKit CC0',
     'blend':str(blend.relative_to(ROOT)),'assets':assets},indent=2)+'\n',encoding='utf-8')
 print('P3_BLENDER_EXPORT_RENDER_PASS',flush=True)
