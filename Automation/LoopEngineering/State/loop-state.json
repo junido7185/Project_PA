@@ -1488,7 +1488,9 @@
         "scope": "One-time snapshot of the current D0-D2 demo-polish implementation and its current-state/validation records on milestone/gameplay-beta-85",
         "localCommitAllowed": true,
         "pushAllowed": true,
-        "futureAutoCommitAllowed": false
+        "futureAutoCommitAllowed": false,
+        "deliveredCommit": "b34370a",
+        "pushedTo": "origin/milestone/gameplay-beta-85"
       }
     ],
     "scopeAdditions": {
