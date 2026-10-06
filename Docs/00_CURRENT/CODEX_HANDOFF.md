@@ -1,19 +1,21 @@
-# CODEX HANDOFF — D2 HARD STOP / BLOCKED_BUDGET
+# CODEX HANDOFF — D2 INCOMPLETE / BLOCKED_BUDGET
 
-Current task/status: demoPolishFinishApproval D2 UI theme INCOMPLETE. demoProductionRouting D2, Unity codex. User D0-D12 sequential, stop FINAL_WINDOWS_HUMAN_REVIEW. D5/D7 only GPT-6 Astra XHigh serial delegation. Existing demoFeedbackFinishApproval results/rejections unchanged.
+Current task/status: demoPolishFinishApproval D2 UI theme. demoProductionRouting D2, Unity Codex. D0-D12 sequential through FINAL_WINDOWS_HUMAN_REVIEW. D3 not started. D5/D7 only GPT-6 Astra XHigh serial delegation; other tickets High.
 
-Baseline: milestone/gameplay-beta-85 @ a92e3e2be21e363bf018f8b8ea74e5b29c64fe04 + preserved dirty/local assets. Contract AI_WORKFLOW/03_TASKS/CODEX_DEMO_POLISH_FINISH_PROMPT.md. Authority Docs/02_IMPLEMENTATION/PROJECT_PA_CODE_REUSE_MAP_v1.md.
+Baseline: milestone/gameplay-beta-85 @ cf8eaadfd2d617659a2aaf75bc72194dc24cc8d2 (already on origin) + preserved unrelated Unity-generated dirty files. Contract AI_WORKFLOW/03_TASKS/CODEX_DEMO_POLISH_FINISH_PROMPT.md. Authority Docs/02_IMPLEMENTATION/PROJECT_PA_CODE_REUSE_MAP_v1.md.
 
-Completed: D0 PASS; D1 icon31/recipe12 PASS30/errors0. D2 shared PAUiTheme and UI palette/slot presentation applied, all native compilation successful. Bag/hotbar/crafting captured1080p+720p. D2 compile3/3, Play2/3, newvalidator1/1. Logs/CodexDemoPolish/D2-20261006-082207/EVIDENCE.md.
+Completed: D0/D1 PASS. User extra D2 compile1/Play2 recorded; original PENDING-TooltipBinding.patch APPLIED in PAUiTheme/HotbarUI/InventoryUI. Native compile successful, real tooltip hover/price works. Latest island PASS31/errors0, departure PASS10/errors0. Actual1080p/720p panels inspected. Evidence Logs/CodexDemoPolish/D2-Resume-20261006-091224/EVIDENCE.md.
 
-Blocker: missing runtime ItemTooltip creation/binding (WorldGameplayAdapterService.ComposeInventoryUI1001/1039 only supplies slots/canvas). Second Play -082709 passed9 assertions/errors0 then tooltip hover Require failed. First -082532 capture set timeScale0 cancelling placement; QA correction compiled/tested. No more compile allowed. Stop, do not start D3 or rename/reset budget.
+Budget: original compile3/Play3/validator1 + additional compile1/Play2. Total USED compile4/4, Play5/5, validator1/1. Resume used3 Plays including original unused1. Do not reset or borrow D3 budget.
 
-Approved files already modified: Assets/Scripts/UI/PAUiTheme.cs(new), HotbarUI/InventorySlotUI/InventoryUI/ItemTooltip/PauseManager/SettingsUI/CraftingUI/StorageUI/FeedUI, UI/DialogueUI/NpcBubbleUI/FirstDayHudStyle/ShopPriceUI/PioneerReportCardUI, Presentation/DepartureTutorialPresentation/DepartureCompanionSelection/DepartureVoyagePresentation/FirstDayFishingMinigame; Assets/Editor/PA_DemoThemeReview.cs(new), PA_P3DirectGatherReview.cs. Source-before snapshots in evidence dir. Pending UNAPPLIED repair only PAUiTheme/HotbarUI/InventoryUI, reuses existing ItemTooltip.
+Blocker: tooltip shows raw Axe/Space instruction despite actual E; dialogue overlaps existing interaction prompt, name top padding insufficient; no NPC present during bubble fixture so bubble screenshot silently skipped. Report fixture key A must be rank.a. Prior native Mouse transition/PackageManager auth error did not recur; no source fix claimed.
 
-Forbidden: Golden, SmartphoneUI.cs, Save schema/KEEP rewrite, external download/package, deletion, ramps, commit/push, second Editor. Protected D0 hashes match. Runtime composition source read only.
+Approved files: current D2 PAUiTheme/HotbarUI/InventoryUI/ItemTooltip/InventorySlotUI/PauseManager/SettingsUI and existing UI/presentation theme files; PA_DemoThemeReview and PA_P3DirectGatherReview. See evidence for exact next symbols. Production edits/Play now require renewed budget. D3 approval additionally permits icon2005/2012/2013 silhouettes and2010 replacement, no data value changes, within D3 budget only.
 
-Validation: compile success/errors0. D2 only partial GameView, remaining pause/phone/feed/settings/dialogue/bubble/report/fishing/intro/companions/voyage not reached. Human UNVERIFIED. Unity114800 Edit WorldSandbox, native Keyboard/Mouse enabled.
+Forbidden: Golden, SmartphoneUI.cs, Save schema/KEEP rewrite, external download/package, deletion, ramps, second Editor. D0 protected hashes all match. User authorized one commit/push snapshot for work through this D2 stop; future auto-commit/push remains disabled.
 
-Exact next action: await explicit extra D2 compile/fix + targetedPlay budget. After approval read/review Logs/CodexDemoPolish/D2-20261006-082207/PENDING-TooltipBinding.patch against current files, apply absent-only existing ItemTooltip factory/binding, compile; run D2 Theme Island Panels and D2 Theme Departure Panels, inspect both resolutions. Need at least one compile and two Plays, not a budget reset. Do not rerun completed D0/D1.
+Validation state: latest island Logs/VisualQA/20261006-135635-P6_APPLIED_UI; departure -135435-P11_INTRO_UI. Overall D2 presentation PARTIAL, human UNVERIFIED. Unity75504 Edit/WorldSandbox, not compiling, ThemeReview=false, native Keyboard/Mouse enabled.
 
-Commit/push/staging: none.
+Exact next action: await extra D2 compile/fix and targeted Play authorization. Then presentation-only tooltip ItemDisplayName/E hint; dialogue/prompt overlap and name inset; existing validator must capture actual NpcBubbleUI and use rank.a fixture. Recheck affected panels at both sizes. Do not repeat passed intro/D0/D1 or reapply TooltipBinding. After D2 PASS continue D3 including approved icon refinement.
+
+Commit/push/staging: user authorized one snapshot commit/push on 2026-10-06 for work through this D2 stop. Exclude unrelated `Assets/Fonts/Jalnan2_SDF.asset` dynamic-atlas rewrite and cleared `ProjectSettings.asset` organization ID. Existing P1-P11 approval/rejections/holds preserved.

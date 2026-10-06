@@ -1,6 +1,6 @@
 # Integration queue
 
-**2026-10-06 현재:** `demoProductionRouting`은 `demoPolishFinishApproval`/D2/Codex. D0/D1 PASS; D2 runtime tooltip 연결 누락과 compile3/3 소진으로 HARD STOP. 추가 compile/fix 및 island+departure 두 Play 예산 승인 뒤 준비된 TooltipBinding patch 검토/적용→D2 검수, 이후 D3~D12 순서. D5/D7 Astra XHigh. commit/push 금지.
+**2026-10-06 현재:** `demoProductionRouting`은 `demoPolishFinishApproval`/D2/Codex. D0/D1 PASS; D2 TooltipBinding 적용 및 섬31/도입10 검사 오류0. 툴팁 E 조작 표시·대화/안내 겹침·NPC 말풍선 검수 누락으로 INCOMPLETE. 추가 포함 compile4/4·Play5/5·validator1/1 소진: 예산 재승인 전 수정/Play 중지. 이후 D3 아이콘2005/2012/2013 구분·2010 교체를 D3 예산에서 수행(아이템 데이터 불변). D5/D7 Astra XHigh, 나머지 High. 사용자가 현재 D2 정지 지점까지 1회성 commit/push를 승인했으며 이후 자동 commit/push는 다시 금지한다.
 
 **최신 실행 우선순위 — 2026-10-05 Codex 인수:** 기존 approval/P1~P11/Q1~Q6를 유지한다. 현재 P11 한정 SFX 음량 수정은 실제 믹스·Windows 출력으로 PASS7. P4 안내문(3compile/2Play), P6 가방/수납 QA(3compile/3Play) 추가1+1 요청은 답변 대기이고 P9 그립(3/3)은 화면 FAIL로 보존한다. 같은 blocker/예산을 새 이름으로 초기화하지 않는다. 독립적인 지지발/자연 NPC/남은 전환을 검토하고, 필요한 제품 수정이 정해진 뒤 최신 동일 Windows 후보의 자연 NEWGAME→Report·격리 저장→정상 종료→새 프로세스 Continue·실제 성능/소리를 검증한다. 최종 사람 검수와 no commit/push 유지. [checkpoint](CODEX_HANDOFF.md).
 

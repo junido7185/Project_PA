@@ -1334,7 +1334,7 @@
     "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
     "approvalSource": "User direct /goal 2026-10-06: D0-D12 in order, ownership returned to Codex; D5/D7 GPT-6 Astra XHigh only.",
     "approvedAt": "2026-10-06T00:53:56.443479+09:00",
-    "status": "in_progress",
+    "status": "blocked_budget",
     "contract": "AI_WORKFLOW/03_TASKS/CODEX_DEMO_POLISH_FINISH_PROMPT.md",
     "approvedTickets": [
       "D0",
@@ -1408,7 +1408,7 @@
     "ticketStatus": {
       "D0": "PASS",
       "D1": "PASS",
-      "D2": "in_progress",
+      "D2": "INCOMPLETE_BLOCKED_BUDGET",
       "D3": "NOT_STARTED",
       "D4": "NOT_STARTED",
       "D5": "NOT_STARTED",
@@ -1450,17 +1450,25 @@
         "evidence": "Logs/CodexDemoPolish/D1-20261006-0103/EVIDENCE.md"
       },
       "D2": {
-        "compileCycles": 3,
-        "targetedPlayRuns": 2,
+        "compileCycles": 4,
+        "targetedPlayRuns": 5,
         "dedicatedValidatorsAdded": 1,
-        "functionality": "PARTIAL; tooltip missing",
-        "presentation": "STRUCTURALLY IMPROVED bag/hotbar; remaining UNVERIFIED",
+        "functionality": "Latest island PASS31/errors0; departure PASS10/errors0; NpcBubbleUI coverage missing",
+        "presentation": "PARTIAL: stale tooltip instruction, dialogue/prompt overlap, missing NPC bubble capture",
         "human": "UNVERIFIED",
-        "blocker": "Tooltip not instantiated/bound by runtime UI composition; extra compile budget required",
-        "evidence": "Logs/CodexDemoPolish/D2-20261006-082207/EVIDENCE.md"
+        "blocker": "Approved compile4/4 and Play5/5 exhausted; remaining presentation corrections and bubble coverage require supplemental budget",
+        "evidence": "Logs/CodexDemoPolish/D2-Resume-20261006-091224/EVIDENCE.md",
+        "latestIslandEvidence": "Logs/VisualQA/20261006-135635-P6_APPLIED_UI",
+        "departureEvidence": "Logs/VisualQA/20261006-135435-P11_INTRO_UI",
+        "resumeFirstFailure": "Logs/VisualQA/20261006-135051-P6_APPLIED_UI",
+        "approvedTotalBudget": {
+          "compileFix": 4,
+          "targetedPlay": 5,
+          "dedicatedValidators": 1
+        }
       }
     },
-    "evidence": "Logs/CodexDemoPolish/D2-20261006-082207",
+    "evidence": "Logs/CodexDemoPolish/D2-Resume-20261006-091224/EVIDENCE.md",
     "supplementalApprovals": [
       {
         "approvedAt": "2026-10-06T09:12:24.502820",
@@ -1473,6 +1481,14 @@
           "targetedPlay": 2,
           "dedicatedValidators": 1
         }
+      },
+      {
+        "approvedAt": "2026-10-06",
+        "source": "User direct: 우선 지금 작업까지를 커밋 및 푸시 승인",
+        "scope": "One-time snapshot of the current D0-D2 demo-polish implementation and its current-state/validation records on milestone/gameplay-beta-85",
+        "localCommitAllowed": true,
+        "pushAllowed": true,
+        "futureAutoCommitAllowed": false
       }
     ],
     "scopeAdditions": {

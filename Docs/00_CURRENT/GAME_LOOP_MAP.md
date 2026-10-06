@@ -1,6 +1,6 @@
 # Actual game-loop map
 
-2026-10-06: D1 제작→가방→수납→진열/가격 PASS30/오류0. D2 테마 변경 후 제작/설치/사용 도구 가방 이동까지9검사·오류0, 툴팁 hover는 runtime 연결 누락으로 실패. 1080p/720p 가방·핫바 개선 확인, 이후 패널/도입 재검수 미완료. HARD STOP compile3/3, native 입력 복원.
+2026-10-06: D2 tooltip 생성/슬롯 연결 복구. 최신 제작→가방 drag/swap→정착 배치→수납→가격→일시정지→폰/피드→설정/대화/보고서/낚시 표현 PASS31/오류0(후반 일부 fixture). 도입 실제 입력→동행→항해→도착 PASS10/오류0. 1080p/720p 확인; 툴팁 설명·대화 겹침은 미해결, NPC 말풍선은 확인 못 함. compile4/4·Play5/5 소진, D2 HARD STOP.
 
 2026-10-05 최신 변경 경로(Editor targeted Play, 접근/배치 fixture 포함): 건조한 육지 이동·점프/수영 차단 → 낚싯대 캐스팅·입질 → 실제 키 입력 미니게임 → 로컬 CuteFish 육지 팔닥임 → 실제 도구 접촉 2회 → 가방 가득 참 유지/재시도 → 기존 하루 활동 보상 1회 VERIFIED25. 미니게임 안내문 겹침은 FAIL이며 자연 NEW GAME→Report 완주를 대체하지 않는다. 허공/잘못된 대상의 axe/pickaxe/net 입력 → 휘두르기/실패 반응 → 자원·내구도 불변 VERIFIED15. 섬 주요 7개 NavMesh 경로 Complete와 동행 단차 점프 fixture는 확인했으나 집/일터/상점/밤 귀가의 자연 전체 루틴은 미검증이다. 기존 candidate4 OS 낚시·정상 저장 종료 증거는 보존하며 최신 변경의 standalone 증거로 쓰지 않는다. [현재 재개](CODEX_HANDOFF.md).
 

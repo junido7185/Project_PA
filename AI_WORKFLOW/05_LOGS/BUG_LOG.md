@@ -1008,3 +1008,7 @@ Pause=false였고 Editor는 응답했으나 `Application.isFocused=false`, `runI
 ## 2026-10-06 — D2 runtime tooltip binding / BLOCKED_BUDGET
 
 WorldGameplayAdapterService.ComposeInventoryUI creates HotbarUI/InventoryUI without ItemTooltip; slot hover cannot open it. Confirmed source1001/1039 + Play -082709 Require failure after9 assertions/errors0. Earlier -082532 QA timeScale capture cancelled placement; corrected. Compile3/3, Play2/3, validator1/1: no further source repair authorized. Pending existing-ItemTooltip factory/binding patch at Logs/CodexDemoPolish/D2-20261006-082207/PENDING-TooltipBinding.patch, unapplied. Needs renewed compile/Play budget; do not reset ticket.
+
+## 2026-10-06 — D2 resume: tooltip binding fixed; presentation/coverage incomplete
+
+Earlier tooltip-binding blocker resolved by approved patch/native compile, real hover/price verified. -135051 island failed when Mouse.current changed from P3Mouse to native Mouse at tent1, plus Package Manager authentication error; cause not proven, did not recur in -135635 PASS31/errors0. Departure -135435 PASS10/errors0. Remaining: tooltip exposes English stale Space description (actual E); DialoguePanel bottom156 overlaps prompt at138/height52; bubble fixture skips absent NPC and therefore supplies no NpcBubbleUI screenshot. Report fixture rankKey=A should be rank.a; C shown is fixture issue, not proven score bug. Total compile4/4, Play5/5, validator1/1 exhausted. No further repair/Play. Logs/CodexDemoPolish/D2-Resume-20261006-091224/EVIDENCE.md

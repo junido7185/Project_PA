@@ -1,6 +1,6 @@
 # Current state
 
-**2026-10-06 최신:** `demoPolishFinishApproval` D0/D1 PASS, D2 INCOMPLETE/BLOCKED_BUDGET. 공통 UI 테마 적용·가방/핫바1080p/720p 개선 확인, runtime ItemTooltip 생성/연결 누락으로 hover 검수 중단. compile3/3·Play2/3·validator1/1. 추가 예산 없이 수정하지 않는다. D3~D12 미착수, D5/D7만 Astra XHigh. [재개 근거](../../Logs/CodexDemoPolish/D2-20261006-082207/EVIDENCE.md).
+**2026-10-06 최신:** `demoPolishFinishApproval` D0/D1 PASS, D2 INCOMPLETE/BLOCKED_BUDGET. 승인된 TooltipBinding 적용·compile 성공. 최신 섬 PASS31/오류0, 도입→동행→항해 PASS10/오류0. 1080p/720p 패널 검수에서 툴팁 Space 오안내·대화/안내 겹침·NPC 말풍선 캡처 누락이 남았다. 추가 포함 compile4/4·Play5/5·validator1/1 소진. D3 아이콘 보완 승인 보존, D3~D12 미착수. D5/D7만 Astra XHigh, 나머지 High. [재개 근거](../../Logs/CodexDemoPolish/D2-Resume-20261006-091224/EVIDENCE.md).
 
 **최신 실행 상태 — 2026-10-05 Codex 직접 인수:** 기존 `demoFeedbackFinishApproval`과 P1~P11/Q1~Q6 결과를 보존하며 [최종 실행 계약](../../AI_WORKFLOW/03_TASKS/CODEX_OPENING_DEMO_FINAL_EXECUTION_PROMPT.md)을 적용한다. Unity 소유자는 Codex 한 세션이다. 사용자 후속 지시에 따라 경사로 없이 블록 단차/점프를 유지하고, 바다는 육지보다 낮게 표현하며 수영 진입은 막는다. 낚시는 기존 권위 위의 미니게임 → 로컬 CuteFish 뭍 팔닥임 → 도구 포획으로 확장됐다. 허공/잘못된 대상 도구 사용도 연결됐다. 최신 기능 증거는 loop-state의 takeover.supplementalResults에 연결되며 전체 presentation/human ACCEPTED가 아니다.
 

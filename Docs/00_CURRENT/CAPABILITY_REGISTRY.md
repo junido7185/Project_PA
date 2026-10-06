@@ -1,5 +1,7 @@
 # Capability registry
 
+2026-10-06 D2 표현 계약: PAUiTheme는 기존 ItemTooltip을 canvas에 없을 때만 생성하고 HotbarUI/InventoryUI 슬롯에 연결한다. 실제 hover/가격 표시 및 섬 UI PASS31, 도입 PASS10(오류0). 툴팁 설명·대화/안내 겹침·NPC 말풍선 검수는 미완료. 데이터/입력/저장 권위는 유지한다.
+
 2026-10-06 D1 표현 계약: `PA_DemoIconBake`는 로컬 모델로 투명 256px 아이콘을 생성하고 기존 Item31/RecipeData12의 표현 참조만 갱신한다. 가격/스택/ID 등 데이터 불변. 핫바·가방·작업대·보관함·가격 창 실제 입력/화면 PASS30, human UNVERIFIED.
 
 2026-10-05 현재 Demo256 한정 계약: `WorldChunkTerrain`의 opening 표현에서 수면을 해변 아래로 두고 기존 dry-cell 진입 가드를 유지한다. 기존 `WorldNavigationService`의 dry one-level 링크와 `FirstDayStepTraversal`은 같은 NPC Agent/FSM의 단차 보행을 연결하며 새 경로 권위가 아니다. `FishingSpot`은 입질 뒤 `FirstDayFishingMinigame` 입력을 거쳐 `FirstDayLandedFish`를 건조한 셀에 올린다. 포획 전 재고 지급 없음, 유효한 도구 접촉 2회 뒤 기존 DayPrepStock으로 선택 종 1개를 지급하며 가방이 가득 차면 물고기를 유지한다. 참치(id8)·도미(3001)·옐로탱(3002)은 로컬 Quaternius CuteFish 모델/기존 ItemRegistry를 사용한다. Save schema/원본/활동 ID는 유지한다. 미니게임 기능 PASS25; 2026-10-06 D0 PASS25 재검수에서 안내문 겹침 해소를 1080p로 확인했다.
