@@ -1,5 +1,13 @@
 # Capability registry
 
+2026-10-06 D1 표현 계약: `PA_DemoIconBake`는 로컬 모델로 투명 256px 아이콘을 생성하고 기존 Item31/RecipeData12의 표현 참조만 갱신한다. 가격/스택/ID 등 데이터 불변. 핫바·가방·작업대·보관함·가격 창 실제 입력/화면 PASS30, human UNVERIFIED.
+
+2026-10-05 현재 Demo256 한정 계약: `WorldChunkTerrain`의 opening 표현에서 수면을 해변 아래로 두고 기존 dry-cell 진입 가드를 유지한다. 기존 `WorldNavigationService`의 dry one-level 링크와 `FirstDayStepTraversal`은 같은 NPC Agent/FSM의 단차 보행을 연결하며 새 경로 권위가 아니다. `FishingSpot`은 입질 뒤 `FirstDayFishingMinigame` 입력을 거쳐 `FirstDayLandedFish`를 건조한 셀에 올린다. 포획 전 재고 지급 없음, 유효한 도구 접촉 2회 뒤 기존 DayPrepStock으로 선택 종 1개를 지급하며 가방이 가득 차면 물고기를 유지한다. 참치(id8)·도미(3001)·옐로탱(3002)은 로컬 Quaternius CuteFish 모델/기존 ItemRegistry를 사용한다. Save schema/원본/활동 ID는 유지한다. 미니게임 기능 PASS25; 2026-10-06 D0 PASS25 재검수에서 안내문 겹침 해소를 1080p로 확인했다.
+
+`PlayerInteraction`/`EquipmentSystem`/`PlayerLocomotionAnimator`가 도끼·곡괭이·잠자리채의 허공 휘두르기와 잘못된 자원 접촉의 실패 반응을 소유한다. 실패 사용은 자원과 내구도를 소모하지 않는다(PASS15, 정상/근접 시점). `FirstDayToolSurface`는 기존 배경 나무/바위의 반응만 담당한다. GatherFeedback 합성음은 기존 AudioManager SFX 풀/음량 설정을 따른다. 실제 E 타격의 볼륨1 믹스 peak .516849→볼륨0 peak0과 Windows 출력 전후 녹음을 확인했다(P11_AUDIO PASS7). 전체 도입/전환 소리와 모션/소리 사람 수락은 UNVERIFIED. [근거](../../Logs/CodexOpeningDemoFinal/P9-ToolUse-20261005-001/EVIDENCE.md).
+
+2026-10-03 데모 D1~D4 계약: `DemoPioneerReport`는 Canon §20 배점(25/30/25/20, S90/A75/B60/C)으로 기존 SalesLog 이벤트에서만 판매/매출을 받는다. 데모 영업은 `DemoSettlementController`가 20:00 OPEN 뒤 60초/게임시간으로 진행, 21:30 예고, 22:00 `TryCloseOpeningShop` 자동 마감한다(관광객 7/동시 3/7초, 가판대 용량 5; Golden 기본값 불변). 전문 분야·영업 시작/마감은 휴대폰 상점 앱(`ShopManagementPhoneUI`), Report는 `PioneerReportCardUI`(E/Esc/Enter 닫기 → 휴대폰 상점 앱). `FirstDayWorldPresentation.Toast(message, record=true)`는 우상단 3.5초 카드이며 `record=false`(획득·지형·대화)는 휴대폰 기록 `DispatchLog`에 남기지 않는다. 데모 `HotbarUI`는 X 빈손일 때 선택 칸을 옅게 표시한다. `DispatchLog`를 그리는 `FeedUI` 탭은 현재 휴대폰 홈에서 진입 불가. [검증](../../Logs/VisualQA/DemoCompletion-20261003-003953/result.txt).
+
 2026-09-27 가격/영업 표시 계약: ShopPriceUI는 현재 가격·±1/±10·드래그·확정/회수만 표시하고 추천가/예상 구매율/유불리를 노출하지 않는다. NPC 반응은 내부 확률 없는 짧은 말풍선. Report는 기존 점수/판매 데이터의 한국어 표시만 변경했다. 구매 계산과 가격 확정 권위 유지. 후속 보정으로 Report-open 동안 뒤쪽 toast를 숨기며 닫은 뒤 일반 알림은 복귀한다. 상품 표시 Item.itemName/내부 id 계약은 그대로다. [관련 회귀·화면](../../Logs/VisualQA/ShopPolish-20260927/EVIDENCE.md).
 
 2026-09-27 presentation contracts: secured acquisition feedback never grants inventory; Demo256 ShopSlot uses local product models and visible price/sold-out labels; held counter references a visual-only child (no second ShopSlot). P Smartphone is fully hidden while closed; 1080p P/I open/close and input restoration verified. Autonomous sale preserves PurchaseEvaluator/Economy/SalesLog authority and matches Report1sale/8G, first-sale event once. [Evidence](../../Logs/VisualQA/Continuation-20260926/EVIDENCE.md).

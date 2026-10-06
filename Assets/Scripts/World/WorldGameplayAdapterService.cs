@@ -529,7 +529,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         _playerRoot.AddComponent<PlayerController>().moveSpeed=4.2f;
         _playerInteraction=_playerRoot.AddComponent<PlayerInteraction>();
         _playerRoot.AddComponent<EquipmentSystem>();
-        _playerRoot.AddComponent<NpcHumanoidProceduralAnimator>();
+        _playerRoot.AddComponent<PlayerLocomotionAnimator>();
         _runtimeRoot.SetActive(true);
         _playerRoot.GetComponent<EquipmentSystem>().ConfigureFirstDay();
         PlayerInputHandler.Instance.FirstDayControls=true;
@@ -1783,6 +1783,12 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
     void BindRuntimeObjectsToSeed(long seed)
     {
         _generated = _persistence.ActiveGeneratedWorld;
+        if (FirstDay)
+        {
+            if (!BindDirectResources(out string firstDayReason)) Fail(firstDayReason);
+            _boundSeed = seed;
+            return;
+        }
         BindOperatingShop();
         PositionExistingRuntimeObject(_bootstrapShopRoot, WorldGenerationAnchorKind.Shop, true);
         PositionExistingRuntimeObject(_workbenchRoot, WorldGenerationAnchorKind.MeadowActivity, false);
@@ -1865,7 +1871,7 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
     public void WriteSaveFields(SaveData data)
     {
-        if (data == null) return;
+        if (data == null || FirstDay) return;
         data.placeables ??= new List<PlaceableSaveData>();
         data.placeables.RemoveAll(record => record != null &&
             record.instanceId == SalesDisplayInstanceId);
@@ -1888,6 +1894,13 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             if (controller != null) controller.enabled = false;
             _playerRoot.transform.position = safePlayerPosition;
             if (controller != null) controller.enabled = true;
+        }
+
+        if (FirstDay)
+        {
+            WorldAlphaPlayableController.Instance?.RequestProjectionRefresh();
+            _lastAction = "Restored FirstDay terrain and player through SaveManager.";
+            return;
         }
 
         PlaceableSaveData display = restoredFurniture?.FirstOrDefault(record =>

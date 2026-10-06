@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 2003
   itemName: Net
   description: Select in the hotbar, face a butterfly and press Space.
-  icon: {fileID: 21300000, guid: 6618c2eba8fba274d9d64ff7ce80c1d2, type: 3}
+  icon: {fileID: 21300000, guid: 8e197af8d01ef4a4a94376305162d73e, type: 3}
   maxStack: 1
-  model: {fileID: 0}
+  model: {fileID: 2290006216580563138, guid: 609b0110d8bedd54aaafba515842803b, type: 3}
   basePrice: 0
   toolType: 7
   category: 4

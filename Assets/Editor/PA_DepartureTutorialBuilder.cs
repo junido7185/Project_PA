@@ -25,6 +25,41 @@ public static class PA_DepartureTutorialBuilder
     static readonly Dictionary<string, Material> Palette = new Dictionary<string, Material>();
     static TMP_FontAsset _font;
 
+    // Connect only the missing tutorial icon; do not rebuild or save any scene.
+    public static async System.Threading.Tasks.Task PrepareFruitIcon()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+            throw new InvalidOperationException("Prepare the fruit icon in Edit mode.");
+        var item = Require<Item>(FruitPath);
+        if (item.icon != null) return;
+        var model = FirstDayStudioAssets.Load()?.fruit;
+        if (model == null) throw new InvalidOperationException("Local tutorial apple model is missing.");
+        Texture2D preview = null;
+        for (int attempt = 0; attempt < 30 && preview == null; attempt++)
+        {
+            preview = AssetPreview.GetAssetPreview(model);
+            if (preview == null) await System.Threading.Tasks.Task.Delay(200);
+        }
+        if (preview == null) throw new InvalidOperationException("Local apple preview is unavailable.");
+        string folder = ResourceRoot + "/Icons";
+        string path = folder + "/TutorialApple.png";
+        if (File.Exists(path)) throw new InvalidOperationException("Preserve the existing apple icon for review.");
+        Directory.CreateDirectory(folder);
+        File.WriteAllBytes(path, preview.EncodeToPNG());
+        AssetDatabase.ImportAsset(path);
+        var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.SaveAndReimport();
+        item.icon = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (item.icon == null) throw new InvalidOperationException("Tutorial apple sprite import failed.");
+        EditorUtility.SetDirty(item);
+        AssetDatabase.SaveAssetIfDirty(item);
+        Debug.Log("[P11-INTRO] Local apple icon connected; scenes untouched.");
+    }
+
     [MenuItem("Project PA/Presentation/Build Departure Tutorial")]
     public static void Build()
     {
@@ -212,7 +247,7 @@ public static class PA_DepartureTutorialBuilder
         go.tag = "Player";
         go.transform.position = new Vector3(-8f, 0.04f, -3f);
         go.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
-        GameObject visual = Place(Require<GameObject>("Assets/Art/Character/C-01.fbx"), go.transform, "CharacterVisual", Vector3.zero, true);
+        GameObject visual = Place(Require<GameObject>("Assets/Art/Character/C-01_LegFix_Player.prefab"), go.transform, "CharacterVisual", Vector3.zero, true);
         ScaleToHeight(visual.transform, 1.75f);
         var controller = go.AddComponent<CharacterController>();
         controller.height = 1.8f;

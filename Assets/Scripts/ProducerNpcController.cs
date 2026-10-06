@@ -33,6 +33,10 @@ public class ProducerNpcController : MonoBehaviour
     public ItemInstance DemoEquippedTool { get; private set; }
     float _demoToolEfficiency = 1f;
     bool _exchangingDemoTool;
+    // P7 데모 표현·검수용 읽기 전용 상태. 생산 FSM과 계산식은 바꾸지 않는다.
+    public State CurrentState => _currentState;
+    public float EffectiveInterval => CalculateEffectiveInterval();
+    public float DemoToolEfficiency => _demoToolEfficiency;
     public void ConfigureDemoTool(Item starter)
     {
         if (DemoEquippedTool == null && starter != null) DemoEquippedTool = new ItemInstance(starter, 1);
@@ -204,6 +208,9 @@ public class ProducerNpcController : MonoBehaviour
         _debugProductionTimer = _productionTimer;
         _debugSchedulePaused = _schedulePaused;
 
+        // 데모 동행은 이동 컴포넌트를 생산자보다 늦게 받을 수 있다(P7). 없을 때만 다시 찾는다.
+        if (_agent == null) _agent = GetComponent<NavMeshAgent>();
+
         // 스케줄에 의해 일시 정지 중이면 처리 차단
         if (_schedulePaused || (_procurement != null && _procurement.HoldProduction)) return;
 
@@ -280,10 +287,22 @@ public class ProducerNpcController : MonoBehaviour
     {
         if (_agent == null || !_agent.isOnNavMesh) { ChangeState(State.Idle); return; }
 
-        if (!_agent.pathPending && _agent.remainingDistance < arriveDistance)
+        if (Arrived(workSpot))
         {
             ChangeState(State.Working);
         }
+    }
+
+    // 목적지를 정한 직후 경로가 아직 없는 프레임에는 remainingDistance가 0으로 읽힌다(P7: 109m 떨어진 작업장을 '도착'으로 판정).
+    // 경로가 있을 때만 남은 거리로, 없으면 실제 거리로 도착을 판정하고, 경로를 잃었으면 1초마다 다시 요청한다.
+    float _repathAt;
+    bool Arrived(Transform target)
+    {
+        if (_agent.pathPending) return false;
+        if (_agent.hasPath) return _agent.remainingDistance < arriveDistance;
+        if (target == null || Vector3.ProjectOnPlane(target.position - transform.position, Vector3.up).magnitude < arriveDistance + .75f) return true;
+        if (Time.time >= _repathAt) { _repathAt = Time.time + 1f; _agent.SetDestination(target.position); }
+        return false;
     }
 
     // -------- 상태: Working --------
@@ -373,7 +392,7 @@ public class ProducerNpcController : MonoBehaviour
     {
         if (_agent == null || !_agent.isOnNavMesh) { ChangeState(State.Idle); return; }
 
-        if (!_agent.pathPending && _agent.remainingDistance < arriveDistance)
+        if (Arrived(dropOffPoint))
         {
             ChangeState(State.OfferingItems);
         }

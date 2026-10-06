@@ -38,19 +38,21 @@ public sealed class DepartureTutorialController : MonoBehaviour
 
     string HandObjective => _handLesson switch
     {
-        HandLesson.SelectApple => "1–9로 사과가 있는 슬롯을 선택하세요.",
-        HandLesson.HolsterApple => "X를 눌러 빈손으로 바꿔보세요. 사과는 그대로 남아요.",
-        HandLesson.ReselectApple => "사과 슬롯의 숫자를 다시 눌러 손에 들어보세요.",
-        _ => "사과를 든 채 가판대에서 E로 진열하세요."
+        HandLesson.SelectApple => "사과 슬롯의 숫자로 손에 들어보세요.",
+        HandLesson.HolsterApple => "X로 빈손을 만들어보세요.",
+        HandLesson.ReselectApple => "사과 슬롯의 숫자를 다시 누르세요.",
+        _ => "사과를 들고 가판대 앞에서 E로 진열하세요."
     };
 
     public string ObjectiveText => Stage switch
     {
-        1 => "WASD로 표식까지 이동 · Space로 점프해보세요.",
-        2 => $"빈손으로 나무 E → 떨어진 사과 E 줍기 ({Mathf.Min(FruitCount, 3)}/3)",
+        1 => "WASD로 표식까지 이동하고\nSpace로 점프하세요.",
+        2 => !fruitTree.FruitDropped ? "빈손으로 나무 앞에서 E로 흔드세요."
+            : $"사과를 향해 E로 줍기 ({Mathf.Min(FruitCount, 3)}/3)\n" +
+              (EquipmentSystem.CurrentHeld(player.gameObject) != null ? "X로 손을 비운 뒤 주울 수 있어요." : "가까이 다가가 사과를 바라보세요."),
         3 => _handLessonRequired ? HandObjective : "열매를 실습 진열대에 올려보세요.",
-        4 => "판매 가격을 정하세요.",
-        5 => "손님의 반응을 확인하세요.",
+        4 => "가판대 앞에서 E로 가격을 정하세요.",
+        5 => "손님의 반응과 판매 금액을 확인하세요.",
         _ => "출항 인증 완료"
     };
 
@@ -98,6 +100,8 @@ public sealed class DepartureTutorialController : MonoBehaviour
             fruitTree.ConfigurePhysicalFruit();
             var equipment = player.GetComponent<EquipmentSystem>() ?? player.gameObject.AddComponent<EquipmentSystem>();
             equipment.ConfigureFirstDay();
+            // 씬에 직렬화된 NPC 절차 애니메이터 대신 Demo256과 같은 클립 로코모션을 사용한다.
+            if (player.GetComponent<PlayerLocomotionAnimator>() == null) player.gameObject.AddComponent<PlayerLocomotionAnimator>();
             WorldGameplayAdapterService.ComposeInventoryUI(gameObject, _inventory, _inventory.hotbar);
             // Equipment 콜백 뒤에서 선택/빈손의 실제 결과를 관찰한다. 아이템은 변경하지 않는다.
             _handLessonRequired = true;

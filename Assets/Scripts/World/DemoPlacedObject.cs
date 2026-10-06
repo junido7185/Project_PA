@@ -36,7 +36,7 @@ public sealed class DemoPlacedObject : MonoBehaviour, IInteractable
         player.GetComponent<WorldHotbarPlacementController>()?.TryMoveExisting(this) == true;
     public void Interact(GameObject player)
     {
-        if (Entry?.kind == DemoPlaceableKind.ShopBase) { DemoSettlementController.Instance?.OpenManagement(); return; }
+        if (Entry?.kind == DemoPlaceableKind.ShopBase) { FirstDayWorldPresentation.Toast("상점 관리는 P키 스마트폰에서 할 수 있어요."); return; }
         var slot = GetComponentInChildren<ShopSlot>();
         if (slot != null)
         {
@@ -46,12 +46,16 @@ public sealed class DemoPlacedObject : MonoBehaviour, IInteractable
         }
         var bench = GetComponentInChildren<Workbench>();
         if (bench != null) { bench.Interact(player); return; }
-        FirstDayWorldPresentation.Toast(Entry?.item?.itemName ?? name);
+        FirstDayWorldPresentation.Toast(Entry?.item != null ? ItemDisplayName.For(Entry.item) : name);
     }
     public string GetInteractPrompt()
     {
+        if (Entry?.kind == DemoPlaceableKind.ShopBase)
+            return "상점 관리: P키 스마트폰" + (CanMove ? " / E 길게: 이동" : "");
         var slot = GetComponentInChildren<ShopSlot>();
         if (slot != null) return slot.GetInteractPrompt() + (CanMove ? " / E 길게: 이동" : "");
-        return (Entry?.item?.itemName ?? name) + (CanMove ? " · 사용 / E 길게: 이동" : " · 관리");
+        // 작업대 E = 제작(Canon v2 §10). 상점 운영은 P폰, 가판대는 진열/가격으로 구분한다.
+        if (GetComponentInChildren<Workbench>() != null) return "작업대 · 제작" + (CanMove ? " / E 길게: 이동" : "");
+        return (Entry?.item != null ? ItemDisplayName.For(Entry.item) : name) + (CanMove ? " · 사용 / E 길게: 이동" : " · 사용");
     }
 }

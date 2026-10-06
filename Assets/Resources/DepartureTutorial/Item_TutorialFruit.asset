@@ -16,7 +16,7 @@ MonoBehaviour:
   itemName: "\uC2E4\uC2B5\uC6A9 \uC5F4\uB9E4"
   description: "TEMP \xB7 VS-PRESENT-001 \uCD9C\uD56D \uC778\uC99D\uC6A9 \uC5F4\uB9E4.
     \uAE30\uC874 Item/Inventory/Shop \uAC00\uACA9 \uC815\uCC45 \uC0AC\uC6A9."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 8cf0d4562bf63984590d8a487deb829c, type: 3}
   maxStack: 20
   model: {fileID: 7828174640731620310, guid: b5a4e8c8c7693c74a840094472a60b51, type: 3}
   basePrice: 10

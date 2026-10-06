@@ -62,6 +62,7 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
             dockPrefab == null || cratePrefab == null || waterMaterial == null)
             throw new InvalidOperationException("[VS-P2] Missing existing voyage asset reference.");
         _started = true;
+        AudioManager.PlayBGM(AudioManager.OpeningVoyageAmbience);
         _player = _selection.Tutorial.player;
         _controller = _player.GetComponent<CharacterController>();
         _cameraFollow = Camera.main.GetComponent<CameraController>();
@@ -342,8 +343,8 @@ public sealed class DepartureVoyagePresentation : MonoBehaviour
         var scaler = root.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        var paper = new Color(.97f, .94f, .85f, .97f);
-        var ink = new Color(.17f, .23f, .23f);
+        var paper = PAUiTheme.Cream;
+        var ink = PAUiTheme.Ink;
         var header = DepartureCompanionSelection.Panel(root.transform, "Objective", 32, 28, 715, 117, paper);
         _subtitle = _selection.Label(header, "Stage", "P.A. COMPANY  /  DEPARTURE", 22, 12, 665, 26, 19, ink);
         _objective = _selection.Label(header, "Objective", "선택한 동료들과 섬으로 향하고 있습니다.", 22, 50, 670, 46, 27, ink);

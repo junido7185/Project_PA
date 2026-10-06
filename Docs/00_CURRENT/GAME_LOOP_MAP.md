@@ -1,5 +1,12 @@
 # Actual game-loop map
 
+2026-10-06: D1 제작→가방→수납→진열/가격 PASS30/오류0. D2 테마 변경 후 제작/설치/사용 도구 가방 이동까지9검사·오류0, 툴팁 hover는 runtime 연결 누락으로 실패. 1080p/720p 가방·핫바 개선 확인, 이후 패널/도입 재검수 미완료. HARD STOP compile3/3, native 입력 복원.
+
+2026-10-05 최신 변경 경로(Editor targeted Play, 접근/배치 fixture 포함): 건조한 육지 이동·점프/수영 차단 → 낚싯대 캐스팅·입질 → 실제 키 입력 미니게임 → 로컬 CuteFish 육지 팔닥임 → 실제 도구 접촉 2회 → 가방 가득 참 유지/재시도 → 기존 하루 활동 보상 1회 VERIFIED25. 미니게임 안내문 겹침은 FAIL이며 자연 NEW GAME→Report 완주를 대체하지 않는다. 허공/잘못된 대상의 axe/pickaxe/net 입력 → 휘두르기/실패 반응 → 자원·내구도 불변 VERIFIED15. 섬 주요 7개 NavMesh 경로 Complete와 동행 단차 점프 fixture는 확인했으나 집/일터/상점/밤 귀가의 자연 전체 루틴은 미검증이다. 기존 candidate4 OS 낚시·정상 저장 종료 증거는 보존하며 최신 변경의 standalone 증거로 쓰지 않는다. [현재 재개](CODEX_HANDOFF.md).
+
+2026-10-05 한정 후속: 교육 안내 지속/실제 사과 아이콘/반응 가림 수정 → 교육 실제 입력 → 동행2 Enter → 항구 PASS10. 실제 E 채집 효과음 → 기존 AudioManager SFX pool → 볼륨0 믹스 무음/Windows 출력 전후 녹음 PASS7. 가방 드래그/취소/교환 메타 보존은 기존 화면에서 확인했으나 새 패널 화면과 수납 극한 검수는 QA 장치 충돌/예산 소진으로 남아 있다. 이 증거는 최종 같은 Windows 후보 완주를 대체하지 않는다.
+2026-10-03 Demo256 첫 영업 경로(Editor Play, QA fixture 포함): 정착 → P 휴대폰 → 상점 앱 → 광업 → 일몰 → X 빈손 → E 상점 입장 → P → 영업 시작 → 관광객 자율 구매 6/거절 3 → 21:30 예고 → 22:00 자동 마감 → Report 카드 → E → 휴대폰 상점 기록 → Esc → 이동 복귀 VERIFIED. 휴대폰 피드(놓친 알림 기록)는 홈 타일이 없어 UNREACHABLE. 직행·배치 API·재고 지급·가속 일몰은 fixture이며 NEW GAME 연속 사람 플레이와 standalone은 미검증. [결과](../../Logs/VisualQA/DemoCompletion-20261003-003953/result.txt).
+
 2026-09-27 새 standalone Candidate-ShopPolish-20260927-194240: 실제 타이틀 → NEW GAME → 기존 저장 확인 → PA_DepartureTutorial STEP1 화면까지 VERIFIED. 이후 OS D키 입력의 실제 이동 확인 실패; 섬 정착→Report standalone 미검증. [실행 증거/중단 경계](../../Logs/VisualQA/ReportCandidate-20260927/DELIVERY_REPORT.md). 아래 Editor 루프 근거는 standalone 완주를 대체하지 않는다.
 
 Demo256 entrance (2026-09-25): real Hotbar Shop/Base + two tents -> Established -> child BuildingEntrance -> same-footprint cutaway -> exit -> reentry VERIFIED with InputSystem E/S/W. Same operating Shop/world placement/traversal; Golden Tier1 unchanged. 2026-09-26 site overlap cleared with pickup preservation; competing fade rejection then real door retry/roundtrip PASS. Natural16→20 sun/ambient change and NightReady/clock stop also verified. 2026-09-27: actual pickup→E stock→E price/confirm→OPEN action→autonomous tourist reject/buy→CLOSE action→Report is verified, stock1→0 and money/report8G. OPEN/CLOSE used public management UI actions; NPC purchase was autonomous, unlike the earlier direct API proof. Full continuous human route remains HUMAN-UNVERIFIED. [Evidence](../../Logs/VisualQA/T2-A/implementation-20260925/EVIDENCE.md).

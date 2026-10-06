@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Recipe_Clothes
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uC758\uB958 \uC81C\uC791"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4f2a10fcb59ce6b479694397f7ef0948, type: 3}
   description: Tier 2 tailoring product.
   ingredients:
   - item: {fileID: 11400000, guid: f09473d97a45ad04d9b309533695a0de, type: 2}

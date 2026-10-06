@@ -31,6 +31,8 @@ public static class PA_RuntimeSceneBinder
         // 일반 캠페인의 저장/휴대폰/월드 자동 연결을 개발용 인증 씬에 추가하지 않는다.
         if (scene.name == DepartureTutorialController.SceneName)
         {
+            if (AudioManager.Instance == null)
+                EnsureComponent<AudioManager>(EnsureSceneRoot("AudioManager"));
             // 출항 씬도 최초 진입과 재진입마다 기존 아이템 조회 권위가 필요하다.
             var registry = ItemRegistry.Instance;
             if (registry == null)

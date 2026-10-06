@@ -17,6 +17,10 @@ public class ItemInstance
     // (JsonUtility가 Nullable<int>을 직렬화하지 못하므로 sentinel=0을 사용)
     public int currentPrice = 0;
 
+    // Canon v2 §5.1: 도구가 성공한 작업 결과로 쓴 횟수(ToolDurability가 최대치를 정한다).
+    // 런타임 상태만 둔다 — 저장 schema(SlotSaveData)에는 없어 이어하기 시 새 도구로 돌아온다.
+    public int durabilityUsed;
+
     public ItemInstance(Item data, int count = 1)
     {
         this.instanceId = Guid.NewGuid().ToString();

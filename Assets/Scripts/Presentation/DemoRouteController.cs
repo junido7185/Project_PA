@@ -11,11 +11,34 @@ public sealed class DemoRouteController : MonoBehaviour
 {
     public const string WorldScene = "WorldSandbox";
     static bool _arrivalPending;
+    static bool _continuePending;
+    static string _continueError;
     public static DepartureCompanionSelection.Candidate[] SelectedCompanions { get; private set; } = Array.Empty<DepartureCompanionSelection.Candidate>();
     public static string[] SelectedCompanionIds => SelectedCompanions.Select(c => c.id).ToArray();
     public static GameObject TransitionOverlay;
     public static void CarryCompanions(DepartureCompanionSelection selection)
     { SelectedCompanions = selection.ConfirmedIds.Select(id => selection.candidates.First(c => c.id == id)).ToArray(); }
+    public static string ConsumeContinueError()
+    { string error = _continueError; _continueError = null; return error; }
+
+    public static bool PrepareContinue(string[] companionIds, out string reason)
+    {
+        reason = string.Empty;
+        var ids = companionIds ?? Array.Empty<string>();
+        if (ids.Length > 0)
+        {
+            var source = Resources.Load<GameObject>("DepartureTutorial/DepartureContinuation")
+                ?.GetComponent<DepartureCompanionSelection>();
+            if (source?.candidates == null || ids.Length != 2 || ids.Distinct().Count() != 2 ||
+                ids.Any(id => !source.candidates.Any(candidate => candidate.id == id)))
+            { reason = "저장된 동행자를 현재 후보에 대응할 수 없습니다."; return false; }
+            SelectedCompanions = ids.Select(id => source.candidates.First(candidate => candidate.id == id)).ToArray();
+        }
+        else SelectedCompanions = Array.Empty<DepartureCompanionSelection.Candidate>();
+        _continuePending = true;
+        _arrivalPending = true;
+        return true;
+    }
     public bool FirstDemoSaleCompleted { get; private set; }
     public event Action DemoSucceeded;
     public bool IsPlayable { get; private set; }
@@ -25,6 +48,8 @@ public sealed class DemoRouteController : MonoBehaviour
     static void Register()
     {
         _arrivalPending = false;
+        _continuePending = false;
+        _continueError = null;
         SelectedCompanions = Array.Empty<DepartureCompanionSelection.Candidate>();
         TransitionOverlay = null;
         SceneManager.sceneLoaded -= OnSceneLoaded;
@@ -81,7 +106,21 @@ public sealed class DemoRouteController : MonoBehaviour
             _alpha = GetComponent<WorldAlphaPlayableController>();
             yield return null;
         }
-        if (!_alpha.BeginNewGame()) throw new InvalidOperationException("Demo256 playable clock could not start.");
+        if (_continuePending)
+        {
+            _continuePending = false;
+            var load = _alpha.Adapter.RuntimeSaveManager.TryLoadGameAsync();
+            while (!load.IsCompleted) yield return null;
+            if (load.IsFaulted || !load.Result)
+            {
+                _continueError = load.IsFaulted ? load.Exception?.GetBaseException().Message :
+                    _alpha.Adapter.RuntimeSaveManager.LastLoadError;
+                if (string.IsNullOrEmpty(_continueError)) _continueError = "저장 데이터를 복원하지 못했습니다.";
+                SceneManager.LoadScene("Prototype_FirstDay", LoadSceneMode.Single);
+                yield break;
+            }
+        }
+        else if (!_alpha.BeginNewGame()) throw new InvalidOperationException("Demo256 playable clock could not start.");
         _alpha.SetDevelopmentOverlayVisible(false);
         IsPlayable = true;
         SalesLogManager.OnSaleRecorded -= OnSale;

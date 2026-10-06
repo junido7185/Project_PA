@@ -1,0 +1,333 @@
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+// §2 ShopPriceUI — 문라이터2 스타일 가격 탐색 UI.
+//
+// ShopSlot.Interact() 가 호출하는 싱글톤 패널.
+// ─ 빈 슬롯:    인벤토리 선택 모드 (핫바 아이템 → 슬롯에 진열)
+// ─ 찬 슬롯:    가격 조정 모드 (현재 진열 아이템의 displayPrice 변경 + 회수)
+//
+// 🐾 자기완결 싱글톤: Awake 에서 Canvas 를 직접 빌드한다.
+// 가격은 플레이어가 정한다. 구매 판단의 내부 수치는 노출하지 않는다.
+//
+// PlayerController 이동 차단: PlayerController.Update() 에
+//   if (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) return;
+// 이미 추가돼 있어야 한다. (기능_명세서.md §씬구성 참조)
+public class ShopPriceUI : MonoBehaviour
+{
+    public Slider TutorialPriceDrag { get; private set; }
+    public bool TutorialPriceDragged { get; private set; }
+    bool FirstDayTutorial => gameObject.scene.name == DepartureTutorialController.SceneName && FirstDayStudioAssets.Load() != null;
+    void ConfigureTutorialPriceDrag()
+    {
+        if (TutorialPriceDrag != null) return;
+        var root = new GameObject("PriceDrag", typeof(RectTransform), typeof(Image), typeof(Slider));
+        root.transform.SetParent(_panel, false);
+        var rect = (RectTransform)root.transform;
+        rect.sizeDelta = new Vector2(320, 20);
+        rect.anchoredPosition = new Vector2(0, -20);
+        root.GetComponent<Image>().color = new Color(.28f, .36f, .34f);
+        var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        handle.transform.SetParent(root.transform, false);
+        var handleRect = (RectTransform)handle.transform;
+        handleRect.anchorMin = handleRect.anchorMax = new Vector2(0, .5f);
+        handleRect.sizeDelta = new Vector2(24, 34);
+        handle.GetComponent<Image>().color = C_Gold;
+        TutorialPriceDrag = root.GetComponent<Slider>();
+        TutorialPriceDrag.minValue = 1;
+        TutorialPriceDrag.maxValue = FirstDayTutorial ? 40 : 100;
+        TutorialPriceDrag.wholeNumbers = true;
+        TutorialPriceDrag.handleRect = handleRect;
+        TutorialPriceDrag.targetGraphic = handle.GetComponent<Image>();
+        TutorialPriceDrag.onValueChanged.AddListener(v =>
+        {
+            _pendingPrice = Mathf.RoundToInt(v);
+            TutorialPriceDragged = true;
+            RefreshUI();
+        });
+    }
+    public static ShopPriceUI instance;
+
+    public bool IsOpen { get; private set; }
+    public int ConfirmCount { get; private set; }
+    public static event System.Action<ShopSlot> OnPriceConfirmed;
+
+    // ── UI 참조 ─────────────────────────────────────────────────────────────────
+    Canvas          _canvas;
+    RectTransform   _panel;
+    TextMeshProUGUI _titleTxt;       // "가격 설정" / "진열하기"
+    TextMeshProUGUI _itemNameTxt;    // 아이템 이름
+    TextMeshProUGUI _priceTxt;       // 현재 설정 가격
+    Button          _confirmBtn;
+    Button          _retrieveBtn;
+    Button          _closeBtn;
+
+    // ── 상태 ─────────────────────────────────────────────────────────────────────
+    ShopSlot _slot;
+    int      _pendingPrice;
+
+    // ── 색상 팔레트 (레퍼런스.html 기준) ────────────────────────────────────────
+    static readonly Color C_PanelBG     = new Color(0.13f, 0.13f, 0.13f, 1f);
+    static readonly Color C_Header      = new Color(0.941f, 0.502f, 0.439f, 1f);  // #F08070 coral
+    static readonly Color C_Gold        = new Color(1f,    0.92f,  0.38f,  1f);   // #FFEB61
+    static readonly Color C_BtnGreen    = new Color(0.28f, 0.68f,  0.40f,  1f);
+    static readonly Color C_BtnOrange   = new Color(0.86f, 0.48f,  0.22f,  1f);
+    static readonly Color C_BtnGray     = new Color(0.30f, 0.30f,  0.30f,  1f);
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    void Awake()
+    {
+        if (instance != null && instance != this) { Destroy(gameObject); return; }
+        instance = this;
+        BuildUI();
+        SetCanvasActive(false);
+    }
+
+    // ── UI 빌드 ─────────────────────────────────────────────────────────────────
+    void BuildUI()
+    {
+        // 🎯 항상 전용 Canvas 생성 — sortOrder 200 으로 다른 UI 위에 표시.
+        // PA_UIRoot 에 붙이면 sortOrder 가 0 이어서 다른 UI 에 가릴 수 있으므로 독립 생성.
+        var cGO = new GameObject("ShopPriceUI_Canvas",
+            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        _canvas                       = cGO.GetComponent<Canvas>();
+        _canvas.renderMode            = RenderMode.ScreenSpaceOverlay;
+        _canvas.sortingOrder          = 200; // 최상위 — ScreenFader(9999) 보다는 낮음
+        var scaler                    = cGO.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode            = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution    = new Vector2(1920, 1080);
+        scaler.screenMatchMode        = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight     = 0.5f;
+        Transform canvasParent        = cGO.transform;
+
+        // ── 배경 블로커 (클릭 시 닫기) ────────────────────────────────────────
+        var blockerGO = new GameObject("Blocker", typeof(RectTransform), typeof(Image), typeof(Button));
+        var blockerRT = (RectTransform)blockerGO.transform;
+        blockerRT.SetParent(canvasParent, false);
+        StretchFull(blockerRT);
+        blockerGO.GetComponent<Image>().color = new Color(0, 0, 0, 0.45f);
+        blockerGO.GetComponent<Button>().onClick.AddListener(Close);
+
+        // ── 메인 패널 (중앙 고정, 400×390) ────────────────────────────────────
+        var panelGO = new GameObject("ShopPricePanel", typeof(RectTransform), typeof(Image));
+        _panel      = (RectTransform)panelGO.transform;
+        _panel.SetParent(canvasParent, false);
+        _panel.anchorMin        = new Vector2(0.5f, 0.5f);
+        _panel.anchorMax        = new Vector2(0.5f, 0.5f);
+        _panel.pivot            = new Vector2(0.5f, 0.5f);
+        _panel.sizeDelta        = new Vector2(400, 390);
+        _panel.anchoredPosition = Vector2.zero;
+        panelGO.GetComponent<Image>().color = C_PanelBG;
+
+        _titleTxt = CreateLabel(_panel, "TitleTxt", "가격 설정",
+            new Rect(-180, 166, 360, 36), 24, FontStyles.Bold, C_Header, TextAlignmentOptions.Center);
+        _itemNameTxt = CreateLabel(_panel, "ItemNameTxt", "—",
+            new Rect(-180, 116, 360, 32), 20, FontStyles.Normal, Color.white, TextAlignmentOptions.Center);
+        _priceTxt = CreateLabel(_panel, "PriceTxt", "0 G",
+            new Rect(-180, 70, 360, 48), 34, FontStyles.Bold, C_Gold, TextAlignmentOptions.Center);
+        ConfigureTutorialPriceDrag();
+        BuildAdjustRow(_panel, -76, new[] { -10, -1, 1, 10 });
+        CreateLabel(_panel, "DragHint", "버튼 또는 드래그로 가격 조절",
+            new Rect(-180, -106, 360, 26), 16, FontStyles.Normal,
+            new Color(.82f, .85f, .81f), TextAlignmentOptions.Center);
+        _confirmBtn = BuildActionBtn(_panel, "가격 확정", C_BtnGreen, new Vector2(-124, -158), OnConfirm);
+        _retrieveBtn = BuildActionBtn(_panel, "상품 회수", C_BtnOrange, new Vector2(0, -158), OnRetrieve);
+        _closeBtn = BuildActionBtn(_panel, "닫기", C_BtnGray, new Vector2(124, -158), Close);
+    }
+
+    // ── UI 헬퍼 ─────────────────────────────────────────────────────────────────
+    void BuildAdjustRow(Transform parent, float y, int[] deltas)
+    {
+        float totalW = 320f;
+        float btnW   = totalW / deltas.Length - 4;
+        float startX = -totalW * 0.5f + btnW * 0.5f;
+
+        for (int i = 0; i < deltas.Length; i++)
+        {
+            int d = deltas[i];
+            string label = d > 0 ? $"+{d}" : $"{d}";
+            Color col    = d > 0
+                ? new Color(0.25f, 0.55f, 0.82f)   // 파랑 계열
+                : new Color(0.72f, 0.28f, 0.28f);  // 빨강 계열
+
+            var btn = BuildActionBtn(parent, label, col,
+                new Vector2(startX + i * (btnW + 4), y), null);
+            btn.GetComponentInChildren<TextMeshProUGUI>().fontSize = 20;
+            var rt  = (RectTransform)btn.transform;
+            rt.sizeDelta = new Vector2(btnW, 40);
+
+            btn.onClick.AddListener(() => AdjustPrice(d));
+        }
+    }
+
+    Button BuildActionBtn(Transform parent, string label, Color bg,
+                          Vector2 pos, UnityEngine.Events.UnityAction onClick)
+    {
+        var go  = new GameObject(label + "Btn", typeof(RectTransform), typeof(Image), typeof(Button));
+        var rt  = (RectTransform)go.transform;
+        rt.SetParent(parent, false);
+        rt.anchorMin        = new Vector2(0.5f, 0.5f);
+        rt.anchorMax        = new Vector2(0.5f, 0.5f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta        = new Vector2(112, 40);
+        rt.anchoredPosition = pos;
+
+        go.GetComponent<Image>().color = bg;
+
+        var txt = new GameObject("Text", typeof(TextMeshProUGUI));
+        txt.transform.SetParent(go.transform, false);
+        StretchFull((RectTransform)txt.transform);
+        var tmp     = txt.GetComponent<TextMeshProUGUI>();
+        tmp.font = TMP_Settings.defaultFontAsset;
+        tmp.text    = label;
+        tmp.fontSize = 15;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color   = Color.white;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.raycastTarget = false;
+
+        var btn = go.GetComponent<Button>();
+        if (onClick != null) btn.onClick.AddListener(onClick);
+        return btn;
+    }
+
+    TextMeshProUGUI CreateLabel(Transform parent, string name, string text,
+                                Rect rect, float size, FontStyles style,
+                                Color color, TextAlignmentOptions align)
+    {
+        var go = new GameObject(name, typeof(TextMeshProUGUI));
+        var rt = (RectTransform)go.transform;
+        rt.SetParent(parent, false);
+        rt.anchorMin        = new Vector2(0.5f, 0.5f);
+        rt.anchorMax        = new Vector2(0.5f, 0.5f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta        = new Vector2(rect.width, rect.height);
+        rt.anchoredPosition = new Vector2(rect.x + rect.width * 0.5f, rect.y - rect.height * 0.5f);
+
+        var tmp           = go.GetComponent<TextMeshProUGUI>();
+        tmp.font          = TMP_Settings.defaultFontAsset;
+        tmp.text          = text;
+        tmp.fontSize      = size;
+        tmp.fontStyle     = style;
+        tmp.color         = color;
+        tmp.alignment     = align;
+        tmp.raycastTarget = false;
+        return tmp;
+    }
+
+    static void StretchFull(RectTransform rt)
+    {
+        rt.anchorMin  = Vector2.zero;
+        rt.anchorMax  = Vector2.one;
+        rt.offsetMin  = Vector2.zero;
+        rt.offsetMax  = Vector2.zero;
+    }
+
+    // ── 공개 API ─────────────────────────────────────────────────────────────────
+
+    // SlotSlot.Interact() 에서 호출. 이미 진열된 아이템의 가격을 조정하거나 회수한다.
+    public void Open(ShopSlot slot)
+    {
+        ConfigureTutorialPriceDrag();
+        _slot        = slot;
+        _pendingPrice = (slot.displayPrice > 0)
+            ? slot.displayPrice
+            : (slot.currentItem?.data != null ? slot.currentItem.data.basePrice : 100);
+
+        IsOpen = true;
+        SetCanvasActive(true);
+
+        // 커서 잠금 해제 (UI 조작 가능)
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
+        // 인벤토리/스마트폰 열려있으면 닫기 (상호배타)
+        if (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf)
+            InventoryUI.instance.Toggle();
+        if (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen)
+            SmartphoneUI.instance.Toggle();
+
+        RefreshUI();
+        if (TutorialPriceDrag != null) TutorialPriceDrag.SetValueWithoutNotify(_pendingPrice);
+    }
+
+    public void Close()
+    {
+        _slot  = null;
+        IsOpen = false;
+        SetCanvasActive(false);
+        PlayerInputHandler.RestoreGameplayCursor();
+    }
+
+    // ── 내부 로직 ────────────────────────────────────────────────────────────────
+
+    void AdjustPrice(int delta)
+    {
+        _pendingPrice = Mathf.Max(1, _pendingPrice + delta);
+        RefreshUI();
+    }
+
+    void OnConfirm()
+    {
+        if (_slot == null) { Close(); return; }
+        _slot.displayPrice = _pendingPrice;
+        _slot.RefreshDisplay();
+        ConfirmCount++;
+        Debug.Log($"🏷️ 가격 확정: {_slot.currentItem?.data?.itemName} @ {_pendingPrice}G");
+        ShopSlot confirmedSlot = _slot;
+        Close();
+        OnPriceConfirmed?.Invoke(confirmedSlot);
+    }
+
+    void OnRetrieve()
+    {
+        if (_slot == null) { Close(); return; }
+        _slot.RetrieveItem(); // ShopSlot 에 공개 메서드 추가됨
+        Close();
+    }
+
+    void RefreshUI()
+    {
+        if (_slot == null) return;
+
+        // 타이틀
+        bool occupied = !_slot.IsEmpty;
+        if (_titleTxt != null)
+            _titleTxt.text = occupied ? "가격 설정" : "진열하기";
+
+        // 아이템 이름
+        string itemName = occupied && _slot.currentItem?.data != null
+            ? _slot.currentItem.data.itemName : "—";
+        if (_itemNameTxt != null)
+        {
+            // Task 018 — 이미 저장·판매에 쓰이는 실제 진열 수량을 가격 결정 화면에 노출한다.
+            // 별도 재고 모델을 만들지 않고 ShopSlot.currentItem.count를 그대로 읽는다.
+            _itemNameTxt.text = occupied
+                ? $"{itemName}  ·  재고 {_slot.currentItem.count:N0}개"
+                : itemName;
+        }
+
+        // 회수 버튼 활성 (빈 슬롯이면 회수 불필요)
+        if (_retrieveBtn != null)
+            _retrieveBtn.gameObject.SetActive(occupied);
+
+        // 가격 표시
+        if (_priceTxt != null)
+            _priceTxt.text = $"{_pendingPrice:N0} G";
+
+        if (TutorialPriceDrag != null)
+        {
+            // 버튼으로 범위를 넘겼을 때만 확장한다. 드래그 중 눈금은 고정한다.
+            if (_pendingPrice > TutorialPriceDrag.maxValue)
+                TutorialPriceDrag.maxValue = _pendingPrice * 2f;
+            TutorialPriceDrag.SetValueWithoutNotify(_pendingPrice);
+        }
+    }
+
+    void SetCanvasActive(bool active)
+    {
+        if (_canvas != null) _canvas.gameObject.SetActive(active);
+    }
+}

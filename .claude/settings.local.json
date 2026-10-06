@@ -1,10 +1,54 @@
 {
+  "model": "opus",
+  "effortLevel": "xhigh",
   "permissions": {
+    "defaultMode": "acceptEdits",
     "allow": [
       "Bash(python *)",
-      "Bash(C:/Users/sdjsd/AppData/Local/Programs/Python/Python312/python.exe -m pip install python-pptx -q)",
       "Bash(C:/Users/sdjsd/AppData/Local/Programs/Python/Python312/python.exe *)",
-      "Bash(npm i *)"
+      "Bash(dotnet build *)",
+      "Bash(rg *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git rev-parse *)",
+      "mcp__serena",
+      "mcp__unityMCP__read_console",
+      "mcp__unityMCP__manage_editor",
+      "mcp__unityMCP__execute_menu_item",
+      "mcp__unityMCP__manage_scene",
+      "mcp__unityMCP__refresh_unity",
+      "mcp__unityMCP__find_gameobjects",
+      "mcp__unityMCP__manage_script",
+      "mcp__unityMCP__script_apply_edits",
+      "mcp__unityMCP__apply_text_edits",
+      "mcp__unityMCP__validate_script"
+    ],
+    "deny": [
+      "Bash(rm *)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(git reset *)",
+      "Bash(git clean *)",
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(pip install *)",
+      "Bash(python * -m pip install *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(git push *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git reset *)",
+      "PowerShell(git clean *)",
+      "mcp__unityMCP__manage_packages"
     ]
+  },
+  "enabledMcpjsonServers": [
+    "serena",
+    "unityMCP"
+  ],
+  "disabledMcpjsonServers": [],
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "xhigh"
+    }
   }
 }

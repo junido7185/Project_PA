@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 7
   itemName: Plank
   description: Processed wood for furniture and tools.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2add73470ac2d5743b7d519092b73770, type: 3}
   maxStack: 99
-  model: {fileID: 0}
+  model: {fileID: 6389996120118971418, guid: 4846b4675cce2e54ab0ce9805943d989, type: 3}
   basePrice: 25
   toolType: 0
   category: 1

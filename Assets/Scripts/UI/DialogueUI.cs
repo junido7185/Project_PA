@@ -109,6 +109,15 @@ public class DialogueUI : MonoBehaviour
     {
         if (_panel == null) return;
         _panel.SetActive(true);
+        if (PAUiTheme.Active)
+        {
+            PAUiTheme.Surface(_panel.GetComponent<Image>(), PAUiTheme.Cream);
+            var panel = (RectTransform)_panel.transform;
+            panel.anchorMin = panel.anchorMax = new Vector2(.5f,0);
+            panel.sizeDelta = new Vector2(840,146); panel.anchoredPosition = new Vector2(0,156);
+            nameText.color = PAUiTheme.Teal; nameText.fontSize = PAUiTheme.BodySize;
+            bodyText.color = PAUiTheme.Ink; bodyText.fontSize = PAUiTheme.BodySize;
+        }
 
         if (nameText != null) nameText.text = npcName;
 

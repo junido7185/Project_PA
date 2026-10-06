@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43e3bbded178b6342a69d51d690411f8, type: 3}
   m_Name: Assets
   m_EditorClassIdentifier: Assembly-CSharp::FirstDayStudioAssets
-  player: {fileID: 919132149155446097, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+  player: {fileID: 2266055103997781323, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
   boat: {fileID: 2227741323378753310, guid: a3ca36dd29c7cbd468c5dbf19136d407, type: 3}
   dock: {fileID: 2826359740306342772, guid: 92df52192f940554a98f8c510f65a7e6, type: 3}
   chestClosed: {fileID: 5277294008632995306, guid: 1575c64cec9028c42943e849d31ae221, type: 3}
@@ -57,3 +57,4 @@ MonoBehaviour:
   phone: {fileID: 6538322325780610214, guid: e21b2e3e762c2444891e3a6ffe28a49b, type: 3}
   workbench: {fileID: 919132149155446097, guid: 7ebf171941044cb4081b67401ef38217, type: 3}
   wood: {fileID: 7279353968124396609, guid: 12abb6945b5cbf44f95d35d6b643d67c, type: 3}
+  plank: {fileID: 6389996120118971418, guid: 4846b4675cce2e54ab0ce9805943d989, type: 3}

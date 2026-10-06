@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Recipe_Furniture
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uBAA9\uC81C \uAC00\uAD6C \uC81C\uC791"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: eddd2e465cb02394e94b7be0b69f4aa0, type: 3}
   description: Tier 2 luxury woodcraft.
   ingredients:
   - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}

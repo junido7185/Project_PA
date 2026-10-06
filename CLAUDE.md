@@ -14,7 +14,24 @@ Do not modify, copy, merge, or import anything from the reference project.
 
 ## First Documents
 
-Read the four documents under `Docs/00_CURRENT/` first: CURRENT_STATE, CAPABILITY_REGISTRY, GAME_LOOP_MAP, INTEGRATION_QUEUE. Follow `AI_WORKFLOW/00_START_HERE/ONE_PAGE_WORKFLOW.md`; select only task-relevant references through `Docs/AgentWorkflow/CONTEXT_INDEX.md`.
+Read the four documents under `Docs/00_CURRENT/` first: CURRENT_STATE, CAPABILITY_REGISTRY, GAME_LOOP_MAP, INTEGRATION_QUEUE, then CODEX_HANDOFF. Follow `AI_WORKFLOW/00_START_HERE/ONE_PAGE_WORKFLOW.md`; select only task-relevant references through `AI_WORKFLOW/00_START_HERE/DOCS_INDEX.md`.
+
+## Demo Production Entry
+
+For "데모 완성해줘" or an Opening Demo production request, load `/pa-demo-factory`.
+Its canonical instructions are `.agents/skills/pa-demo-factory/SKILL.md`.
+Use `demoProductionRouting` in the existing loop-state.json to select exactly one approval and respect the Unity Editor owner. Historical ACTIVE records do not authorize a second worker or old campaign work.
+Configuration readiness, live Editor connection, gameplay verification and human visual acceptance are separate results.
+
+## Task Observer Activation
+
+Before the first tool call of any multi-step or agentic session — and before writing or proposing a plan, not merely before executing one — invoke the `task-observer` skill AND execute its Session Start Protocol (storage check, frontmatter scan, review trigger) as defined in `.claude/skills/task-observer/SKILL.md`. Loading the skill and running the protocol are separate steps; a session that only reads or loads the skill has activated nothing. Any turn that will involve a tool call counts; do not classify a session as "too simple" from its opening message. Re-run the protocol after a compaction or resume.
+
+After completing each task, report a one-line summary of the observation records written this session (ids and titles, or "none logged and why").
+
+Task Observer workspace (stable project-scope path; never derive it from the cwd):
+`C:/Users/sdjsd/Desktop/Unity/Project_PA/.agents/task-observer`
+(log: `<workspace>/skill-observations/observation-log/`). Both agents use this existing project-local anchor; all writes remain inside Project_PA. Probe it in the first skill/tool batch, never infer that a configured directory exists.
 
 ## Project Identity
 
@@ -57,6 +74,8 @@ Before running validators:
 - Run validators from the open Editor menu or document that validation is blocked by the open Editor.
 
 If Unity crashed recently, read the latest `PROJECT_PA_CRASH_REPORT_*.md` before launching or validating.
+
+For an explicitly approved player-facing Studio task, AGENTS.md's Studio repair budget and scene/experience rules take precedence over the general bounded defaults. Core save/economy/data tasks retain the safe bounded policy.
 
 ## Validation Rules
 

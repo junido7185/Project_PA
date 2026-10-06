@@ -27,12 +27,12 @@ public class SettingsUI : MonoBehaviour
         vlg.spacing   = 14f;
         vlg.padding   = new RectOffset(12, 12, 16, 12);
 
-        AddLabel("설정", 22, FontStyles.Bold, new Color(1f, 0.85f, 0.4f));
+        AddLabel("설정", 22, FontStyles.Bold, (PAUiTheme.Active ? PAUiTheme.Teal : new Color(1f, 0.85f, 0.4f)));
 
-        AddLabel("BGM 볼륨", 17, FontStyles.Normal, Color.white);
+        AddLabel("BGM 볼륨", 17, FontStyles.Normal, PAUiTheme.Active ? PAUiTheme.Ink : Color.white);
         bgmSlider = AddSlider("BGMSlider", 0.6f, v => AudioManager.SetBGMVolume(v));
 
-        AddLabel("SFX 볼륨", 17, FontStyles.Normal, Color.white);
+        AddLabel("SFX 볼륨", 17, FontStyles.Normal, PAUiTheme.Active ? PAUiTheme.Ink : Color.white);
         sfxSlider = AddSlider("SFXSlider", 1.0f, v => AudioManager.SetSFXVolume(v));
 
         AddButton("저장 (F5)", new Color(0.2f, 0.6f, 0.3f), () =>
@@ -99,7 +99,7 @@ public class SettingsUI : MonoBehaviour
         fillRT.anchorMin = Vector2.zero;
         fillRT.anchorMax = new Vector2(defaultVal, 1f);
         fillRT.sizeDelta = Vector2.zero;
-        fill.GetComponent<Image>().color = new Color(0.2f, 0.6f, 1f);
+        fill.GetComponent<Image>().color = PAUiTheme.Active ? PAUiTheme.Teal : new Color(0.2f, 0.6f, 1f);
 
         var slider          = go.AddComponent<Slider>();
         slider.minValue     = 0f;
@@ -116,7 +116,8 @@ public class SettingsUI : MonoBehaviour
         go.transform.SetParent(transform, false);
         var le = go.AddComponent<LayoutElement>();
         le.preferredHeight = 40f;
-        go.GetComponent<Image>().color = color;
+        if (PAUiTheme.Active) PAUiTheme.Button(go.GetComponent<Button>(), PAUiTheme.Teal);
+        else go.GetComponent<Image>().color = color;
 
         var textGO = new GameObject("Label", typeof(TextMeshProUGUI));
         textGO.transform.SetParent(go.transform, false);

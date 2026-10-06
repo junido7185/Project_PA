@@ -216,8 +216,8 @@ public static class PA_SaveRoundTripValidator
 
         await save.SaveGameAsync();
 
-        string saveFile = Path.Combine(output, "savegame.json");
-        Require(File.Exists(saveFile), "isolated savegame.json was written");
+        string saveFile = Path.Combine(output, "savegame-v17.json");
+        Require(File.Exists(saveFile), "isolated savegame-v17.json was written");
         var savedData = JsonUtility.FromJson<SaveData>(File.ReadAllText(saveFile));
         Require(savedData != null && savedData.version == SaveManager.CurrentSaveVersion,
             $"saved JSON uses gameplay schema v{SaveManager.CurrentSaveVersion}");

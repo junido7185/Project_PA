@@ -8,6 +8,8 @@ public sealed class FirstDayStudioAssets : ScriptableObject
     public GameObject[] trees, rocks, grasses, flowers, bushes;
     public Item[] supplies;
     public GameObject blueprint, phone, workbench, wood;
+    // P6: 판재(Plank)는 전용 모델이 없어 열매 모델로 보였다. 로컬 나무 판(FoodKit cutting board)을 판재 표시로 쓴다.
+    public GameObject plank;
     public static FirstDayStudioAssets Load() => Resources.Load<FirstDayStudioAssets>("FirstDayStudio/Assets");
     public GameObject ModelFor(Item item)
     {
@@ -23,6 +25,7 @@ public sealed class FirstDayStudioAssets : ScriptableObject
         if (item.id == 2014) return workbench;
         if (item.id == 2012 || item.id == 2013) return blueprint;
         if (item.itemName == "Wood") return wood;
+        if (item.id == 7 && plank != null) return plank;
         if (item.itemName == "Ore") return rocks[0];
         if (item.itemName == "Fish") return fish;
         if (item.itemName == "Butterfly") return butterfly;

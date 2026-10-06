@@ -1,0 +1,203 @@
+--- a/Assets/Scripts/StorageUI.cs
++++ b/Assets/Scripts/StorageUI.cs
+@@ -100,7 +100,7 @@
+         uiPanel.transform.SetAsLastSibling();
+         uiPanel.SetActive(true);
+         UpdateUI();
+-        SetStatus("핫바에서 물품을 선택해 아래 버튼으로 1개씩 보관하세요.");
++        SetStatus("보관은 선택 핫바에서 1개씩 · 꺼내기는 선택한 칸의 수량만큼 가방으로 이동해요.");
+ 
+         Cursor.lockState = CursorLockMode.None;
+         Cursor.visible = true;
+@@ -159,7 +159,7 @@
+ 
+         int itemCount = currentBox.items != null ? currentBox.items.Count : 0;
+         int visibleSlots = _runtimeGenerated
+-            ? Mathf.Max(1, currentBox.maxSlotCount)
++            ? Mathf.Max(1, Mathf.Max(currentBox.maxSlotCount, itemCount))
+             : itemCount;
+ 
+         for (int i = 0; i < visibleSlots; i++)
+@@ -184,6 +184,10 @@
+ 
+             if (newSlot.TryGetComponent(out Button btn))
+                 btn.onClick.AddListener(() => OnClickTakeItem(index));
++
++            TMP_Text label = newSlot.GetComponentInChildren<TMP_Text>(true);
++            if (label != null)
++                label.text = $"{ItemDisplayName.For(inst.data)} ×{inst.count}\n{BuildMetadataText(inst)}";
+         }
+ 
+         RefreshHeader();
+@@ -207,45 +211,62 @@
+         var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+         iconGo.transform.SetParent(slot.transform, false);
+         RectTransform iconRt = (RectTransform)iconGo.transform;
+-        SetFixed(iconRt, new Vector2(-37f, 10f), new Vector2(42f, 42f));
++        SetFixed(iconRt, new Vector2(-64f, 31f), new Vector2(36f, 36f));
+         Image itemIcon = iconGo.GetComponent<Image>();
+         itemIcon.preserveAspect = true;
+         itemIcon.raycastTarget = false;
+         itemIcon.sprite = occupied ? inst.data.icon : null;
+         itemIcon.enabled = itemIcon.sprite != null;
+ 
+-        string itemName = occupied ? inst.data.itemName : "빈 칸";
++        string itemName = occupied ? ItemDisplayName.For(inst.data) : "빈 칸";
+         var nameText = CreateText(slot.transform, "ItemName", itemName,
+-            new Vector2(25f, 14f), new Vector2(72f, 38f), 14f,
++            new Vector2(22f, 31f), new Vector2(118f, 44f), 16f,
+             occupied ? Color.white : new Color(0.52f, 0.61f, 0.55f, 1f), FontStyles.Bold);
+         nameText.alignment = TextAlignmentOptions.MidlineLeft;
+         nameText.textWrappingMode = TextWrappingModes.Normal;
+         nameText.overflowMode = TextOverflowModes.Ellipsis;
+ 
+         string detail = occupied
+-            ? $"×{inst.count} · 품질 {Mathf.RoundToInt(inst.quality * 100f)}% · {inst.EffectivePrice}G"
+-            : $"{index + 1:00}";
++            ? $"×{inst.count} · 클릭해 꺼내기\n{BuildMetadataText(inst)}"
++            : $"{index + 1:00} · 보관 가능";
+         var detailText = CreateText(slot.transform, "ItemDetail", detail,
+-            new Vector2(0f, -28f), new Vector2(116f, 24f), 10.5f,
++            new Vector2(0f, -29f), new Vector2(158f, 62f), 13f,
+             occupied ? new Color(0.78f, 0.86f, 0.80f, 1f) : new Color(0.38f, 0.45f, 0.40f, 1f),
+             FontStyles.Normal);
+         detailText.alignment = TextAlignmentOptions.Center;
+         detailText.overflowMode = TextOverflowModes.Ellipsis;
+     }
+ 
++    // 책정 가격과 미책정 기본값을 구분하며 판매 수익을 예측하지 않는다.
++    static string BuildMetadataText(ItemInstance inst)
++    {
++        string price = inst.currentPrice > 0
++            ? $"책정 {inst.currentPrice}G"
++            : $"기본 {inst.EffectivePrice}G · 미책정";
++        return $"품질 {Mathf.RoundToInt(inst.quality * 100f)}%\n{price}";
++    }
++
+     void RefreshHeader()
+     {
+         if (currentBox == null) return;
+ 
+         int occupied = 0;
++        int quantity = 0;
+         if (currentBox.items != null)
+             foreach (ItemInstance item in currentBox.items)
+-                if (item != null && item.data != null && item.count > 0) occupied++;
++                if (item != null && item.data != null && item.count > 0)
++                {
++                    occupied++;
++                    quantity += item.count;
++                }
+ 
+         int max = Mathf.Max(1, currentBox.maxSlotCount);
+-        if (titleText != null) titleText.text = $"{currentBox.boxName} · {occupied}/{max}칸";
++        int used = currentBox.items != null ? currentBox.items.Count : 0;
++        string boxName = currentBox.boxName == "Storage" ? "보관함" : currentBox.boxName;
++        if (titleText != null) titleText.text = $"{boxName} · 사용 {used}/{max}칸";
+         if (_capacityText != null)
+-            _capacityText.text = "물품 칸을 클릭하면 가방으로 꺼냅니다 · 품질과 책정 가격이 그대로 보존됩니다";
++            _capacityText.text = $"물품 {quantity}개 · {occupied}칸 · 빈칸 {Mathf.Max(0, max - used)}칸\n" +
++                "보관 1개 / 꺼내기 한 칸 · 품질과 책정 가격 보존";
+     }
+ 
+     void RefreshStoreControl()
+@@ -259,11 +280,11 @@
+ 
+         _storeButton.interactable = hasSelected && hasSpace;
+         if (!hasSelected)
+-            _storeButtonText.text = "선택 핫바 보관 · 선택된 물품 없음";
++            _storeButtonText.text = "핫바에서 보관할 물품을 선택하세요";
+         else if (!hasSpace)
+-            _storeButtonText.text = "창고가 가득 찼습니다";
++            _storeButtonText.text = $"{ItemDisplayName.For(selected.item)} · 빈칸이 없어 보관할 수 없어요";
+         else
+-            _storeButtonText.text = $"선택 핫바 보관 · {selected.item.itemName} 1개";
++            _storeButtonText.text = $"{ItemDisplayName.For(selected.item)} 1개 보관 · 핫바 {selected.count}개 보유";
+     }
+ 
+     // 창고 한 칸을 클릭하면 해당 ItemInstance 스택을 가방으로 옮긴다.
+@@ -280,7 +301,7 @@
+         ItemInstance inst = currentBox.items[index];
+         if (inst == null || inst.data == null || inst.count <= 0) return;
+ 
+-        string itemName = inst.data.itemName;
++        string itemName = ItemDisplayName.For(inst.data);
+         int beforeCount = inst.count;
+         bool added = Inventory.instance.AddInstance(inst);
+         int remaining = Mathf.Max(0, inst.count);
+@@ -292,7 +313,7 @@
+         }
+         else if (remaining < beforeCount)
+         {
+-            SetStatus($"{itemName} 일부를 꺼냈습니다. 창고에 {remaining}개 남았습니다.");
++            SetStatus($"{itemName} ×{beforeCount - remaining} 꺼냄 · 보관함에 {remaining}개 남았어요. 가방 공간을 확보하세요.");
+         }
+         else
+         {
+@@ -335,7 +356,7 @@
+             return;
+         }
+ 
+-        string itemName = heldInst.data.itemName;
++        string itemName = ItemDisplayName.For(heldInst.data);
+         selected.AddCount(-1);
+         SetStatus($"{itemName} 1개를 창고에 보관했습니다.");
+         UpdateUI();
+@@ -387,21 +408,41 @@
+         closeButton.GetComponentInChildren<TextMeshProUGUI>().fontSize = 16f;
+ 
+         _capacityText = CreateText(panel.transform, "CapacityText", "",
+-            new Vector2(0f, 258f), new Vector2(850f, 34f), 15f,
++            new Vector2(0f, 256f), new Vector2(850f, 52f), 16f,
+             new Color(0.72f, 0.84f, 0.76f, 1f), FontStyles.Normal);
+         _capacityText.alignment = TextAlignmentOptions.Center;
+ 
+-        var grid = new GameObject("StorageGrid", typeof(RectTransform), typeof(GridLayoutGroup));
+-        grid.transform.SetParent(panel.transform, false);
++        var scrollGo = new GameObject("StorageScroll", typeof(RectTransform), typeof(ScrollRect));
++        scrollGo.transform.SetParent(panel.transform, false);
++        SetFixed((RectTransform)scrollGo.transform, new Vector2(0f, 16f), new Vector2(820f, 404f));
++        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
++        viewport.transform.SetParent(scrollGo.transform, false);
++        Stretch((RectTransform)viewport.transform);
++        viewport.GetComponent<Image>().color = Color.white;
++        viewport.GetComponent<Mask>().showMaskGraphic = false;
++
++        var grid = new GameObject("StorageGrid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
++        grid.transform.SetParent(viewport.transform, false);
+         RectTransform gridRt = (RectTransform)grid.transform;
+-        SetFixed(gridRt, new Vector2(0f, 18f), new Vector2(820f, 390f));
++        gridRt.anchorMin = new Vector2(0f, 1f);
++        gridRt.anchorMax = Vector2.one;
++        gridRt.pivot = new Vector2(0.5f, 1f);
++        gridRt.sizeDelta = Vector2.zero;
+         var layout = grid.GetComponent<GridLayoutGroup>();
+-        layout.cellSize = new Vector2(126f, 88f);
+-        layout.spacing = new Vector2(10f, 10f);
++        layout.cellSize = new Vector2(178f, 130f);
++        layout.spacing = new Vector2(12f, 12f);
++        layout.padding = new RectOffset(10, 10, 10, 10);
+         layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+-        layout.constraintCount = 6;
++        layout.constraintCount = 4;
+         layout.childAlignment = TextAnchor.UpperCenter;
+         itemsParent = grid.transform;
++        grid.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
++        var scroll = scrollGo.GetComponent<ScrollRect>();
++        scroll.viewport = (RectTransform)viewport.transform;
++        scroll.content = gridRt;
++        scroll.horizontal = false;
++        scroll.vertical = true;
++        scroll.scrollSensitivity = 34f;
+ 
+         _statusText = CreateText(panel.transform, "StatusText", "",
+             new Vector2(0f, -244f), new Vector2(850f, 52f), 16f,
+@@ -410,7 +451,7 @@
+         _statusText.textWrappingMode = TextWrappingModes.Normal;
+ 
+         _storeButton = CreateButton(panel.transform, "StoreSelectedButton", "선택 핫바 보관",
+-            new Vector2(0f, -309f), new Vector2(500f, 58f),
++            new Vector2(0f, -309f), new Vector2(760f, 58f),
+             new Color(0.12f, 0.48f, 0.30f, 1f), OnClickStoreItem);
+         _storeButtonText = _storeButton.GetComponentInChildren<TextMeshProUGUI>();
+ 

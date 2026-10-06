@@ -321,6 +321,116 @@
       "expectedRuntimeSeconds": 120,
       "onFailure": "Stop and inspect scene/startup blockers.",
       "humanFollowUp": "Use only after visual staging work is approved."
+    },
+    {
+      "id": "demo-completion-d1-d4-checks",
+      "executeMethod": "PA_DemoCompletionChecks.RunFromMenu",
+      "sourceFile": "Assets/Editor/PA_DemoCompletionChecks.cs",
+      "purpose": "D1 Pioneer Report scoring matches Canon v2 §20 (25/30/25/20, S90/A75/B60, activity-proportional commerce); D2 demo-only customer density and tourist purchase profile, Golden defaults unchanged, auto-close inside ShopOpen phase.",
+      "workflowTypes": ["demo-completion", "report", "shop", "regression"],
+      "preconditions": ["Edit mode. Can run from the open Editor menu: Project PA/Validation/Demo Completion Checks (D1-D4)."],
+      "expectedRuntimeSeconds": 2,
+      "onFailure": "Inspect the first failing D1/D2 assertion message in the Console.",
+      "humanFollowUp": "None; numeric only, not visual quality."
+    },
+    {
+      "id": "demo-completion-business-play-review",
+      "executeMethod": "PA_DemoBusinessPlayReview.Run",
+      "sourceFile": "Assets/Editor/PA_DemoBusinessPlayReview.cs",
+      "purpose": "Real Play-mode review on WorldSandbox Demo256 for D1-D4: HUD/clock/money/toast/prompt layout and values, phone 상점 app specialization and OPEN by injected P key + uGUI clicks, E door entry, untouched tourist flow for ~120s with stuck detection, 21:30 warning, 22:00 auto-close, Report == SalesLog == money delta == stock decrease, card close by E, phone record, Esc phone close, movement return, toast duration. QA fixtures (direct Demo256 entry, placement API, granted stand stock, accelerated sunset) are labeled FIXTURE in result.txt. Writes each run to a new Logs/VisualQA/DemoCompletion-yyyyMMdd-HHmmss/ folder; earlier evidence is never overwritten.",
+      "workflowTypes": ["demo-completion", "shop", "customer", "ui", "gameview", "regression"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo Completion D2 Business Play Review). Opens WorldSandbox without saving (check the open scene is not dirty first). Adds and removes a virtual keyboard; focuses the GameView. Uses runtime-only placements; does not save scenes or the player save. P2: evidence goes to Logs/VisualQA/<stamp>-P2_PHONE_GUIDE_D4/; menu 'Project PA/Validation/Demo P2 Manual Close Check' (PA_DemoBusinessPlayReview.RunManualClose) runs the short OPEN -> phone 영업 마감 path into <stamp>-P2_PHONE_GUIDE_D4-manual-close/."],
+      "expectedRuntimeSeconds": 260,
+      "onFailure": "Read the newest result.txt (FAIL lines and problem=...). Placement failure reports the footprint; door FAIL usually means hands were not empty (doors need empty hands in demo controls).",
+      "humanFollowUp": "Not a continuous human NEW GAME run. Visual quality of HUD, report card, phone and night shop remains HUMAN-UNVERIFIED. Since P2 (2026-10-04) the phone record is opened through the home 기록 tile (no QA SelectTab)."
+    },
+    {
+      "id": "demo-p3-direct-gather-review",
+      "executeMethod": "PA_P3DirectGatherReview.Run",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs",
+      "purpose": "P3 real-input Play review on WorldSandbox Demo256: supply E without duplicates, 1-9/wheel/X held tool, air/wrong-target swings cost no durability, hit at swing contact with SFX/chips, rapid E gives one hit per swing, felled/mined drop + X/E pickup, full bag keeps the drop, depleted resource ignored, success-only durability margin and break, ground pickup.",
+      "workflowTypes": ["demo-production", "gathering", "inventory", "gameview", "regression"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P3 Direct Gather Review). Opens WorldSandbox without saving; adds/removes a virtual keyboard and mouse; runtime-only state; does not touch the player save."],
+      "expectedRuntimeSeconds": 150,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P3_DIRECT_GATHER/result.txt FAIL lines and failure-context.png; approach fixtures pick a same-level side of each resource.",
+      "humanFollowUp": "Teleport approach fixture: on-foot route timing and swing/hit feel remain HUMAN-UNVERIFIED (motion rework is P9)."
+    },
+    {
+      "id": "demo-p4-fishing-review",
+      "executeMethod": "PA_P3DirectGatherReview.RunFishing",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs",
+      "purpose": "P4 real-input Play review on WorldSandbox Demo256 after the same supply: rod by number key, shore spot with fish shadow, E cast bobber + splash, too-early pull, missed bite, X cancel, full bag keeps the fish hooked, rapid E lands once (daily 2 Fish, 1 rod durability), completed spot gives nothing.",
+      "workflowTypes": ["demo-production", "fishing", "inventory", "gameview", "regression"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P4 Fishing Review). Opens WorldSandbox without saving; virtual keyboard/mouse; runtime-only state; does not touch the player save."],
+      "expectedRuntimeSeconds": 90,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P4_FISHING/result.txt FAIL lines and failure-context.png; bite timing is random 1.6-3.2 s, the review waits up to 5 s.",
+      "humanFollowUp": "Teleport approach fixture; bite-window feel and bobber readability at the default camera remain HUMAN-UNVERIFIED."
+    },
+    {
+      "id": "demo-p5-bug-catch-review",
+      "executeMethod": "PA_P3DirectGatherReview.RunBugs",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs",
+      "purpose": "P5 real-input Play review on WorldSandbox Demo256 after the same supply: empty hands/axe show the net hint and catch nothing, net prompt, full bag releases the butterfly, far swing misses and it flees (uncatchable while fleeing), close rapid E catches once with sound and 1 net durability, nothing after the catch.",
+      "workflowTypes": ["demo-production", "bug-catch", "inventory", "gameview", "regression"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P5 Bug Catch Review). Opens WorldSandbox without saving; virtual keyboard/mouse; runtime-only state; does not touch the player save."],
+      "expectedRuntimeSeconds": 80,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P5_BUG_CATCH/result.txt FAIL lines and failure-context.png; the far-swing case relies on the 1.6 m net reach versus the 2.05 m prompt reach.",
+      "humanFollowUp": "Teleport approach fixture; swing/catch feel and butterfly readability among trees remain HUMAN-UNVERIFIED."
+    },
+    {
+      "id": "demo-p6-craft-place-storage-review",
+      "executeMethod": "PA_P3DirectGatherReview.RunCraft",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs",
+      "purpose": "P6 real-input Play review on WorldSandbox Demo256: placement grammar (mouse aim/clamp, blocked spot, R, right-click cancel, E place, hold-E move + Esc), workbench crafting UI (locks, 재료 부족, mouse-click crafting, modal/close/walk), shop + 2 tents with the build view, 광업 unlock, 개선 곡괭이 craft and direct mining, 판재 on a stand (Korean label, board model, price above), interior chest store/take/full/walk-away and save record.",
+      "workflowTypes": ["demo-production", "crafting", "placement", "storage", "gameview", "regression"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P6 Craft Place Storage Review). Opens WorldSandbox without saving; virtual keyboard/mouse; runtime-only state; does not touch the player save."],
+      "expectedRuntimeSeconds": 170,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P6_CRAFT_PLACE_STORAGE/result.txt FAIL lines and failure-context.png; sites are found with the product placement evaluation, stands only inside the established shop.",
+      "humanFollowUp": "Teleport approach and material/root fixtures; mouse placement feel, price label contrast over the stand top and individual blocking reasons (wall/NPC/door/customer path) remain HUMAN-UNVERIFIED."
+    },
+    {
+      "id": "demo-p7-companion-growth-review",
+      "executeMethod": "PA_P3DirectGatherReview.RunCompanions",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs",
+      "purpose": "P7 real-input Play review on WorldSandbox Demo256: companions walk at the harbour and face the player, own tents after mouse placement, the Miner walks to a reachable work spot and works with the starter pickaxe, the 개선 곡괭이 gift returns the old tool and shortens the interval, the batch is claimed, the phone shop app wheel-scrolls to four roots with synergy and the chosen next step, the Farmer heads out, event lines are spoken.",
+      "workflowTypes": ["demo-production", "companions", "npc-production", "phone-ui", "gameview", "regression"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P7 Companion Growth Review). Confirm the latest script assembly is newer than edited sources before starting (a recompile during Play resets the run). Opens WorldSandbox without saving; virtual keyboard/mouse; runtime-only state; does not touch the player save."],
+      "expectedRuntimeSeconds": 240,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P7_COMPANION_GROWTH/result.txt FAIL lines plus the MINER/ROCK/SCROLL notes; the Miner walks about 100 m to the quarry point.",
+      "humanFollowUp": "Teleport approaches and a given upgrade tool; night return home, the departure selection card and whether the C-02/C-04 looks read as farmer/miner remain HUMAN-UNVERIFIED (P11 continuous route covers the selection screen)."
+    },
+    {
+      "id": "demo-p8-business-report-review",
+      "executeMethod": "PA_P3DirectGatherReview.RunBusiness",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs",
+      "purpose": "P8 real-input Play review on WorldSandbox Demo256: goods only from fishing, a net catch and felled trees crafted into 판재; mouse placement of shop, tents and 3 stands; stocking from the hotbar; price UI; phone OPEN; tourist limits, resident companions as customers, decisions, price change during evaluation, sold out, move lock, bubbles, one close, customers leaving, money = sales log = close event = Report, Report activities and comments, no daytime score.",
+      "workflowTypes": ["demo-production", "business", "customers", "report", "gameview", "regression"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P8 Business Report Review). Confirm the latest assemblies are newer than edited sources before starting. Opens WorldSandbox without saving; virtual keyboard/mouse; runtime-only state; does not touch the player save."],
+      "expectedRuntimeSeconds": 330,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P8_BUSINESS_REPORT/result.txt FAIL lines plus COMPANION/DECISIONS/REVENUE notes and failure-context.png.",
+      "humanFollowUp": "Teleport approaches, 광업 fixture and the accelerated sunset; business feel, customer readability at night and the companions offscreen hop across terraces remain HUMAN-UNVERIFIED."
+    },
+    {
+      "id": "demo-p9-character-feel-capture",
+      "executeMethod": "PA_P3DirectGatherReview.RunFeelBefore / RunFeelAfter",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs (+ Assets/Scripts/QA/FrameSequenceCapture.cs)",
+      "purpose": "P9 real-speed 30 fps frame capture of one real-input motion timeline (idle, run, stop, turn, sprint, jump, running jump/land, axe carry, axe/pickaxe strikes, rod cast, net sweep) from the product camera and a QA close 3/4 view; frames go to %TEMP%/PA_P9_frames, side-by-side mp4 is assembled with ffmpeg.",
+      "workflowTypes": ["demo-production", "motion", "capture", "gameview"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P9 Character Feel Capture (before|after)). Uses Time.captureFramerate 30 and ScreenCapture only (no RenderTexture/Camera.Render); runtime-only state; does not touch the player save."],
+      "expectedRuntimeSeconds": 120,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P9_CHARACTER_FEEL-*/result.txt; marks.txt in each frame folder lists the segment frame indices.",
+      "humanFollowUp": "Motion quality is judged by a person from the side-by-side videos; capture PASS only means frames were produced."
+    },
+    {
+      "id": "demo-p10-island-survey",
+      "executeMethod": "PA_P3DirectGatherReview.RunTour",
+      "sourceFile": "Assets/Editor/PA_P3DirectGatherReview.cs",
+      "purpose": "P10 island survey on WorldSandbox Demo256: anchors with biome/level, NavMesh path status from the harbor, debug labels/primitives, first-tree line check with cell levels, discovery distances, 16:00/20:30 lighting and a product-camera shot at every landmark.",
+      "workflowTypes": ["demo-production", "world-presentation", "gameview"],
+      "preconditions": ["Edit mode in the open Editor (menu: Project PA/Validation/Demo P10 Island Survey). Opens WorldSandbox without saving; teleports and clock moves are QA fixtures; does not touch the player save."],
+      "expectedRuntimeSeconds": 80,
+      "onFailure": "Read the newest Logs/VisualQA/<stamp>-P10_ISLAND_SURVEY/result.txt notes.",
+      "humanFollowUp": "Whether the island reads as a living/exploration space is a human judgement; the survey only gathers views and numbers."
     }
   ]
 }

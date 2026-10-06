@@ -12,7 +12,7 @@ public class Gatherable : MonoBehaviour, IInteractable
     Item _directReward;
     string _directSpawnKey;
     int _directHits;
-    bool _directDepleted, _directRewardPending;
+    bool _directDepleted, _contactPending, _felledPendingClaim;
     float _directHitAt = -10f;
     Vector3 _directBaseScale;
     string _directFeedback;
@@ -48,7 +48,8 @@ public class Gatherable : MonoBehaviour, IInteractable
         var states = _directPersistence.CaptureState(transform.position, null).resourceStates;
         var state = states?.Find(entry => entry != null && entry.spawnKey == _directSpawnKey);
         int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
-        _directDepleted = state != null && state.consumed && day < state.respawnDay;
+        // 베어 낸 뒤 드롭을 줍기 전까지는 세션에서만 사라진 상태다(저장에는 줍기 후 확정).
+        _directDepleted = _felledPendingClaim || state != null && state.consumed && day < state.respawnDay;
         foreach (var renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = !_directDepleted;
         foreach (var collider in GetComponentsInChildren<Collider>()) collider.enabled = !_directDepleted;
         return !_directDepleted;
@@ -58,7 +59,7 @@ public class Gatherable : MonoBehaviour, IInteractable
 
     void InteractDirect(GameObject interactor)
     {
-        if (_directRewardPending || !RefreshDirectState() || interactor == null) return;
+        if (_contactPending || !RefreshDirectState() || interactor == null) return;
         var inventory = interactor.GetComponent<Inventory>();
         Vector3 delta = interactor.transform.position - transform.position;
         if (inventory == null || inventory != Inventory.instance ||
@@ -69,31 +70,41 @@ public class Gatherable : MonoBehaviour, IInteractable
             return;
         }
         if (Time.time - _directHitAt < .25f) return;
+        StartCoroutine(DirectContact(interactor, inventory));
+    }
+
+    // 스윙이 나무에 닿는 순간 타격이 성립한다. 그 사이의 연타·도구 교체는 타격/보상을 만들지 않는다.
+    System.Collections.IEnumerator DirectContact(GameObject interactor, Inventory inventory)
+    {
+        _contactPending = true;
+        yield return new WaitForSeconds(GatherFeedback.ContactDelay);
+        _contactPending = false;
+        if (interactor == null || _directDepleted || EquipmentSystem.CurrentHeld(interactor)?.toolType != ToolType.Axe) yield break;
+        _directHitAt = Time.time;
+        Vector3 contact = Vector3.Lerp(transform.position, interactor.transform.position, .35f) + Vector3.up * 1.0f;
+        GatherFeedback.Hit(contact, false);
         if (_directHits > 1)
         {
             _directHits--;
-            _directHitAt = Time.time;
             _directFeedback = "도끼 타격";
-            return;
+            yield break;
         }
-        // AddInstance accepts the whole reward or changes nothing. Keep the final hit on failure.
-        _directRewardPending = true;
-        bool added = inventory.AddInstance(new ItemInstance(_directReward, 1));
-        if (!added)
-        {
-            _directRewardPending = false;
-            _directFeedback = "Inventory full - free a slot and try again";
-            return;
-        }
+        // 성공한 작업 결과: 나무가 쓰러지고 Wood가 바닥에 떨어진다. 도구 내구도는 이 결과에만 줄어든다.
         _directHits = 0;
-        _directDepleted = true;
-        // Persist depletion only after successful reward; direct resources do not auto-regrow.
-        if (!_directPersistence.SetResourceState(_directSpawnKey, true, int.MaxValue))
-            Debug.LogError("Direct resource persistence rejected a previously validated spawn: " + _directSpawnKey);
-        _directFeedback = "Wood +1 - gathered";
-        FirstDayWorldPresentation.Acquired(_directReward, 1, transform.position);
+        _felledPendingClaim = true;
         RefreshDirectState();
-        _directRewardPending = false;
+        _directFeedback = "나무를 베었어요";
+        ToolDurability.ConsumeSuccess(inventory, inventory.GetSelectedInstance());
+        GatherFeedback.SpawnDrop(_directReward, transform.position, interactor.transform.position, ClaimDirectDrop);
+    }
+
+    void ClaimDirectDrop()
+    {
+        _felledPendingClaim = false;
+        // Persist depletion only after the dropped reward is in the bag; direct resources do not auto-regrow.
+        if (_directPersistence == null || !_directPersistence.SetResourceState(_directSpawnKey, true, int.MaxValue))
+            Debug.LogError("Direct resource persistence rejected a previously validated spawn: " + _directSpawnKey);
+        RefreshDirectState();
     }
 
     void Update()

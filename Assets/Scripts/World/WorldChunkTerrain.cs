@@ -85,6 +85,50 @@ public sealed class WorldChunkMeshData
 
 public static class WorldChunkMeshBuilder
 {
+    public static float OpeningWaterHeight(WorldGridDefinition definition, WorldCellData cell)
+    {
+        // Render shallow water beside the L0 beach, instead of an opaque L1 wall.
+        // Cell data, water occupancy, bed collider and save schema are unchanged.
+        return definition.WorldOrigin.y + (cell.WaterSurfaceLevel-1.08f)*definition.ElevationStep;
+    }
+
+    static bool PathAt(WorldGridDefinition definition, IReadOnlyList<WorldCellData> cells, int x, int z)
+    {
+        return x>=0 && x<definition.Width && z>=0 && z<definition.Height &&
+            cells[z*definition.Width+x].HasPath && !cells[z*definition.Width+x].HasWater;
+    }
+
+    static void AddOpeningPath(WorldGridDefinition definition, IReadOnlyList<WorldCellData> cells,
+        int x, int z, Vector3 centre, List<Vector3> vertices, List<Vector3> normals,
+        List<Vector2> uvs, List<int>[] visualIndices)
+    {
+        bool west=PathAt(definition,cells,x-1,z), east=PathAt(definition,cells,x+1,z);
+        bool south=PathAt(definition,cells,x,z-1), north=PathAt(definition,cells,x,z+1);
+        float half=definition.CellSize*.5f, inset=definition.CellSize*.13f, bevel=definition.CellSize*.18f;
+        float left=-half+(west?0:inset), right=half-(east?0:inset);
+        float bottom=-half+(south?0:inset), top=half-(north?0:inset);
+        float sw=!west&&!south?bevel:0, nw=!west&&!north?bevel:0;
+        float ne=!east&&!north?bevel:0, se=!east&&!south?bevel:0;
+        var inner=new[] {new Vector2(left+sw,bottom),new Vector2(left,bottom+sw),
+            new Vector2(left,top-nw),new Vector2(left+nw,top),new Vector2(right-ne,top),
+            new Vector2(right,top-ne),new Vector2(right,bottom+se),new Vector2(right-se,bottom)};
+        var outer=new[] {new Vector2(-half,-half),new Vector2(-half,-half),new Vector2(-half,half),
+            new Vector2(-half,half),new Vector2(half,half),new Vector2(half,half),new Vector2(half,-half),new Vector2(half,-half)};
+        var cell=cells[z*definition.Width+x];
+        int ground=(int)cell.GroundType;
+        int path=ResolveTopMaterialSlot(cell);
+        for(int i=0;i<8;i++)
+        {
+            int j=(i+1)%8, first=vertices.Count;
+            var a=centre+new Vector3(inner[i].x,0,inner[i].y);
+            var b=centre+new Vector3(inner[j].x,0,inner[j].y);
+            vertices.Add(centre); vertices.Add(a); vertices.Add(b);
+            for(int k=0;k<3;k++) {normals.Add(Vector3.up); visualIndices[path].Add(first+k);}
+            uvs.Add(new Vector2(.5f,.5f)); uvs.Add(inner[i]/definition.CellSize+Vector2.one*.5f); uvs.Add(inner[j]/definition.CellSize+Vector2.one*.5f);
+            AddQuad(vertices,normals,uvs,visualIndices[ground],
+                centre+new Vector3(outer[i].x,0,outer[i].y),centre+new Vector3(outer[j].x,0,outer[j].y),b,a,Vector3.up,1f);
+        }
+    }
     public static WorldCliffMask ComputeCliffMask(
         WorldGridDefinition definition,
         IReadOnlyList<WorldCellData> cells,
@@ -133,7 +177,8 @@ public static class WorldChunkMeshBuilder
     public static WorldChunkMeshData Build(
         WorldGridDefinition definition,
         IReadOnlyList<WorldCellData> cells,
-        Vector2Int chunkCoordinate)
+        Vector2Int chunkCoordinate,
+        bool openingArt = false)
     {
         if (definition == null) throw new ArgumentNullException(nameof(definition));
         if (cells == null) throw new ArgumentNullException(nameof(cells));
@@ -173,6 +218,8 @@ public static class WorldChunkMeshBuilder
                 float centerX = definition.WorldOrigin.x + x * definition.CellSize;
                 float centerZ = definition.WorldOrigin.z + z * definition.CellSize;
                 float topY = definition.WorldOrigin.y + cell.ElevationLevel * definition.ElevationStep;
+                if(openingArt && cell.HasWater)
+                    topY=OpeningWaterHeight(definition,cell)-definition.ElevationStep;
 
                 Vector3 southWest = new Vector3(centerX - halfCell, topY, centerZ - halfCell);
                 Vector3 northWest = new Vector3(centerX - halfCell, topY, centerZ + halfCell);
@@ -181,9 +228,10 @@ public static class WorldChunkMeshBuilder
                 int topVertexStart = vertices.Count;
                 AddQuad(vertices, normals, uvs, topIndices,
                     southWest, northWest, northEast, southEast, Vector3.up, 1f);
-                AddQuadIndices(
-                    visualSubmeshIndices[ResolveTopMaterialSlot(cell)],
-                    topVertexStart);
+                if(openingArt && cell.HasPath && !cell.HasWater)
+                    AddOpeningPath(definition,cells,x,z,new Vector3(centerX,topY,centerZ),vertices,normals,uvs,visualSubmeshIndices);
+                else
+                    AddQuadIndices(visualSubmeshIndices[ResolveTopMaterialSlot(cell)],topVertexStart);
 
                 AddCliffIfNeeded(definition, cells, x, z, -1, 0, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
@@ -194,7 +242,7 @@ public static class WorldChunkMeshBuilder
                         new Vector3(centerX - halfCell, bottomY, centerZ + halfCell),
                         northWest,
                         southWest
-                    }, Vector3.left);
+                    }, Vector3.left, openingArt);
                 AddCliffIfNeeded(definition, cells, x, z, 1, 0, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
                     visualSubmeshIndices[WorldSurfaceMaterialSlots.Cliff],
@@ -204,7 +252,7 @@ public static class WorldChunkMeshBuilder
                         southEast,
                         northEast,
                         new Vector3(centerX + halfCell, bottomY, centerZ + halfCell)
-                    }, Vector3.right);
+                    }, Vector3.right, openingArt);
                 AddCliffIfNeeded(definition, cells, x, z, 0, -1, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
                     visualSubmeshIndices[WorldSurfaceMaterialSlots.Cliff],
@@ -214,7 +262,7 @@ public static class WorldChunkMeshBuilder
                         southWest,
                         southEast,
                         new Vector3(centerX + halfCell, bottomY, centerZ - halfCell)
-                    }, Vector3.back);
+                    }, Vector3.back, openingArt);
                 AddCliffIfNeeded(definition, cells, x, z, 0, 1, outsideBaseY, topY,
                     vertices, normals, uvs, cliffIndices,
                     visualSubmeshIndices[WorldSurfaceMaterialSlots.Cliff],
@@ -224,7 +272,7 @@ public static class WorldChunkMeshBuilder
                         new Vector3(centerX + halfCell, bottomY, centerZ + halfCell),
                         northEast,
                         northWest
-                    }, Vector3.forward);
+                    }, Vector3.forward, openingArt);
 
                 if (cell.HasWater)
                 {
@@ -244,7 +292,7 @@ public static class WorldChunkMeshBuilder
                         waterIndices,
                         visualSubmeshIndices[WorldSurfaceMaterialSlots.Water],
                         ref waterSurfaceFaceCount,
-                        ref shorelineFaceCount);
+                        ref shorelineFaceCount, openingArt);
                 }
             }
         }
@@ -294,7 +342,8 @@ public static class WorldChunkMeshBuilder
         List<int> indices,
         List<int> visualIndices,
         Func<float, Vector3[]> corners,
-        Vector3 normal)
+        Vector3 normal,
+        bool openingArt = false)
     {
         int neighborX = x + offsetX;
         int neighborZ = z + offsetZ;
@@ -304,6 +353,8 @@ public static class WorldChunkMeshBuilder
         {
             WorldCellData neighbor = cells[neighborZ * definition.Width + neighborX];
             bottomY = definition.WorldOrigin.y + neighbor.ElevationLevel * definition.ElevationStep;
+            if(openingArt && neighbor.HasWater)
+                bottomY=OpeningWaterHeight(definition,neighbor)-definition.ElevationStep;
         }
 
         if (bottomY >= topY - 0.0001f) return;
@@ -331,10 +382,12 @@ public static class WorldChunkMeshBuilder
         List<int> waterIndices,
         List<int> visualWaterIndices,
         ref int waterSurfaceFaceCount,
-        ref int shorelineFaceCount)
+        ref int shorelineFaceCount,
+        bool openingArt = false)
     {
         float waterY = definition.WorldOrigin.y +
                        cell.WaterSurfaceLevel * definition.ElevationStep;
+        if(openingArt) waterY=OpeningWaterHeight(definition,cell);
         Vector3 southWest = new Vector3(centerX - halfCell, waterY, centerZ - halfCell);
         Vector3 northWest = new Vector3(centerX - halfCell, waterY, centerZ + halfCell);
         Vector3 northEast = new Vector3(centerX + halfCell, waterY, centerZ + halfCell);

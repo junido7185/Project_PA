@@ -25,6 +25,8 @@ public class CraftingUI : MonoBehaviour
     private TextMeshProUGUI _modeText;
     private TextMeshProUGUI _statusText;
     private PlayerInputHandler _input;
+    private bool _runtimeGenerated;
+    private ScrollRect _recipeScroll;
     private bool _cursorCaptured;
     private CursorLockMode _cursorLockBeforeOpen = CursorLockMode.Locked;
     private bool _cursorVisibleBeforeOpen;
@@ -92,6 +94,7 @@ public class CraftingUI : MonoBehaviour
         EnsureOpenState();
         _activeWorkbench = wb;
         GenerateSlotsForContext();
+        if (_recipeScroll != null) _recipeScroll.verticalNormalizedPosition = 1f;
         SetStatus($"{wb.displayName}에서 만들 상품을 선택하세요.");
     }
 
@@ -104,7 +107,8 @@ public class CraftingUI : MonoBehaviour
         EnsureOpenState();
         _activeWorkbench = null;
         GenerateSlotsForContext();
-        SetStatus("도감에서는 제작할 수 없습니다. 월드의 작업대 앞에서 [Space]를 누르세요.");
+        if (_recipeScroll != null) _recipeScroll.verticalNormalizedPosition = 1f;
+        SetStatus("도감은 확인만 할 수 있어요. 작업대 앞에서 [E]를 눌러 제작하세요.");
     }
 
     public void ToggleUI()
@@ -183,8 +187,13 @@ public class CraftingUI : MonoBehaviour
     {
         if (slotParent == null || slotPrefab == null) return;
 
-        // 기존 자식 슬롯 제거
-        foreach (Transform child in slotParent) Destroy(child.gameObject);
+        float scrollPosition = _recipeScroll != null ? _recipeScroll.verticalNormalizedPosition : 1f;
+        // Destroy는 프레임 끝에 실행된다. 먼저 숨겨서 재제작 때 이전 카드가 레이아웃에 섞이지 않게 한다.
+        foreach (Transform child in slotParent)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
 
         if (allRecipes == null) return;
 
@@ -205,7 +214,7 @@ public class CraftingUI : MonoBehaviour
 
             TMP_Text slotText = newSlot.GetComponentInChildren<TMP_Text>(true);
             if (slotText != null)
-                slotText.text = BuildSlotLabel(recipe, unlocked);
+                slotText.text = BuildSlotLabel(recipe, unlocked, hasIngredients, canCraftHere);
 
             Transform iconTransform = newSlot.transform.Find("Icon");
             if (iconTransform != null && iconTransform.TryGetComponent(out Image icon))
@@ -222,7 +231,7 @@ public class CraftingUI : MonoBehaviour
             Button btn = newSlot.GetComponent<Button>();
             if (btn != null)
             {
-                btn.interactable = unlocked && canCraftHere;
+                btn.interactable = unlocked && hasIngredients && canCraftHere;
                 RecipeData captured = recipe;
                 Workbench wbCaptured = _activeWorkbench;
                 btn.onClick.AddListener(() => TryCraftRecipe(captured, wbCaptured));
@@ -233,8 +242,21 @@ public class CraftingUI : MonoBehaviour
         // layout now so the first visible frame has non-zero content/card geometry.
         Canvas.ForceUpdateCanvases();
         if (slotParent is RectTransform contentRect)
+        {
+            // 긴 재료/잠금 설명도 카드 안에 들어가도록 실제 텍스트 폭으로 높이를 계산한다.
+            foreach (Transform child in slotParent)
+            {
+                TMP_Text label = child.GetComponentInChildren<TMP_Text>(true);
+                LayoutElement element = child.GetComponent<LayoutElement>();
+                if (label == null || element == null) continue;
+                float width = Mathf.Max(1f, label.rectTransform.rect.width);
+                element.preferredHeight = Mathf.Max(_runtimeGenerated ? 124f : 112f,
+                    label.GetPreferredValues(label.text, width, 0f).y + 28f);
+            }
             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+        }
         Canvas.ForceUpdateCanvases();
+        if (_recipeScroll != null) _recipeScroll.verticalNormalizedPosition = scrollPosition;
 
         if (_titleText != null)
             _titleText.text = _activeWorkbench == null
@@ -243,8 +265,8 @@ public class CraftingUI : MonoBehaviour
 
         if (_modeText != null)
             _modeText.text = _activeWorkbench == null
-                ? $"전체 레시피 {visibleCount}개 · 작업대에서 [Space]로 제작"
-                : $"{GetWorkbenchLabel(_activeWorkbench.workbenchType)} · 가능한 레시피 {visibleCount}개";
+                ? $"레시피 {visibleCount}개 · 확인 전용 · 작업대에서 [E]로 제작"
+                : $"{GetWorkbenchLabel(_activeWorkbench.workbenchType)} · 레시피 {visibleCount}개 · 재료 보유 / 필요";
     }
 
     // 컨텍스트(작업대 종류)에 맞는지 판정한다.
@@ -257,17 +279,30 @@ public class CraftingUI : MonoBehaviour
         return ContextMatches(recipe, _activeWorkbench);
     }
 
-    string BuildSlotLabel(RecipeData recipe, bool unlocked)
+    string BuildSlotLabel(RecipeData recipe, bool unlocked, bool hasIngredients, bool canCraftHere)
     {
-        string recipeName = string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
-        string outputName = recipe.outputItem != null ? recipe.outputItem.itemName : "결과 누락";
-        string lockMark = unlocked ? "" : $"<color=#E9A59A>잠김 · Tier {recipe.requiredTier}</color>  ";
+        string outputName = recipe.outputItem != null ? ItemDisplayName.For(recipe.outputItem) : "결과 정보 없음";
+        string recipeName = recipe.outputItem != null ? outputName
+            : string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
         string station = GetWorkbenchLabel(recipe.requiredWorkbench);
         string ingredients = BuildIngredientText(recipe);
+        string warning = _runtimeGenerated ? "#9C462C" : "#F0B39E";
+        string muted = _runtimeGenerated ? "#526461" : "#C8D8CA";
+        string ready = _runtimeGenerated ? "#226B56" : "#CDE7C9";
+        string state = !unlocked ? $"<color={warning}>잠김 · {BuildLockReason(recipe)}</color>"
+            : !canCraftHere ? $"<color={muted}>도감 · 작업대에서 제작하세요</color>"
+            : !hasIngredients ? $"<color={warning}>재료 부족</color>"
+            : $"<color={ready}>제작 가능 · 클릭하여 만들기</color>";
 
-        return $"{lockMark}<b>{recipeName}</b>  →  {outputName} ×{Mathf.Max(1, recipe.outputCount)}\n" +
-               $"<size=78%><color=#C8D8CA>재료: {ingredients}</color></size>\n" +
-               $"<size=72%><color=#91B69A>{station}</color></size>";
+        if (_runtimeGenerated)
+            return $"<b>{recipeName}</b>  <size=75%>완성 ×{recipe.outputCount}</size>\n" +
+                   $"<size=78%>{state}\n재료 (보유 / 필요) · {ingredients}</size>" +
+                   (_activeWorkbench == null ? $"\n<size=75%><color={muted}>{station}</color></size>" : "");
+
+        return $"<b>{recipeName}</b>  <size=85%>완성 ×{recipe.outputCount}</size>\n" +
+               $"<size=85%>{state}</size>\n" +
+               $"<size=85%><color=#C8D8CA>재료 (보유/필요): {ingredients}</color></size>\n" +
+               $"<size=80%><color=#91B69A>{station}</color></size>";
     }
 
     string BuildIngredientText(RecipeData recipe)
@@ -282,8 +317,10 @@ public class CraftingUI : MonoBehaviour
             if (result.Length > 0) result.Append(" · ");
 
             int owned = Inventory.instance != null ? Inventory.instance.CountItems(ingredient.item) : 0;
-            string color = owned >= ingredient.count ? "#CDE7C9" : "#F0B39E";
-            result.Append($"<color={color}>{ingredient.item.itemName} {owned}/{ingredient.count}</color>");
+            string color = owned >= ingredient.count
+                ? (_runtimeGenerated ? "#226B56" : "#CDE7C9")
+                : (_runtimeGenerated ? "#9C462C" : "#F0B39E");
+            result.Append($"<color={color}>{ItemDisplayName.For(ingredient.item)} {owned}/{ingredient.count}</color>");
         }
 
         return result.Length > 0 ? result.ToString() : "재료 정보 없음";
@@ -298,18 +335,21 @@ public class CraftingUI : MonoBehaviour
         }
 
         bool success = CraftingService.TryCraft(recipe, workbench);
+        // P6 데모: 제작 결과도 줍기처럼 핫바를 우선한다(Inventory 안에서 칸만 옮김).
+        int hotbarSlot = success ? DemoHotbarPreference.Prefer(recipe.outputItem) : -1;
         GenerateSlotsForContext();
 
-        string recipeName = string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
         SetStatus(success
-            ? $"{recipeName} 제작 완료 · 가방과 핫바를 갱신했습니다."
+            ? $"{ItemDisplayName.For(recipe.outputItem)} ×{recipe.outputCount} 제작 완료 · " +
+              (hotbarSlot >= 0 ? $"핫바 {hotbarSlot + 1}번에서 바로 쓸 수 있어요." : "가방에서 확인하세요.")
             : BuildFailureMessage(recipe), !success);
     }
+
 
     string BuildFailureMessage(RecipeData recipe)
     {
         if (!IsUnlocked(recipe))
-            return $"Tier {recipe.requiredTier} 또는 주민 교류 조건이 아직 잠겨 있습니다.";
+            return BuildLockReason(recipe);
 
         if (Inventory.instance == null)
             return "플레이어 인벤토리를 찾지 못했습니다.";
@@ -317,7 +357,35 @@ public class CraftingUI : MonoBehaviour
         if (!HasAllIngredients(recipe))
             return "재료가 부족합니다. 카드의 보유량/필요량을 확인하세요.";
 
-        return "제작하지 못했습니다. 결과물을 받을 가방 공간을 확인하세요.";
+        return "제작하지 못했습니다. 작업대와 레시피 정보, 가방 공간을 확인하세요.";
+    }
+
+    // 권위의 실제 실패 순서를 그대로 읽는다. 잠김 이유는 성장 규칙을 바꾸지 않는다.
+    string BuildLockReason(RecipeData recipe)
+    {
+        if (!DemoPlaceableCatalog.RecipeUnlocked(recipe))
+        {
+            var upgrade = DemoPlaceableCatalog.Load()?.upgrades?.FirstOrDefault(u => u.recipe == recipe);
+            string root = upgrade == null ? "해당" : GetRootLabel(upgrade.root);
+            return $"{root} 전문 분야를 선택해야 해요.";
+        }
+        if (TierService.Instance != null && !TierService.Instance.IsUnlocked(recipe.requiredTier))
+            return $"본사 승인 등급 {recipe.requiredTier} 필요 · 현재 {TierService.Instance.CurrentTier}";
+        if (FriendshipService.Instance != null && !FriendshipService.Instance.IsRecipeUnlocked(recipe))
+            return "주민과 교류해 비법을 전수받아야 해요.";
+        return "";
+    }
+
+    static string GetRootLabel(DemoSpecialization root)
+    {
+        switch (root)
+        {
+            case DemoSpecialization.Forestry: return "임업";
+            case DemoSpecialization.Mining: return "광업";
+            case DemoSpecialization.Fisheries: return "수산업";
+            case DemoSpecialization.Agriculture: return "농업";
+            default: return "해당";
+        }
     }
 
     bool IsUnlocked(RecipeData recipe)
@@ -349,6 +417,11 @@ public class CraftingUI : MonoBehaviour
 
     Color ResolveCardColor(bool unlocked, bool hasIngredients, bool canCraftHere)
     {
+        if (_runtimeGenerated)
+            return !unlocked ? new Color(.90f, .88f, .82f)
+                : !canCraftHere ? new Color(.94f, .93f, .88f)
+                : hasIngredients ? new Color(1f, 1f, .98f)
+                : new Color(.99f, .90f, .81f);
         if (!unlocked) return lockedColor;
         if (!canCraftHere) return new Color(0.12f, 0.16f, 0.14f, 0.90f);
         return hasIngredients
@@ -360,9 +433,9 @@ public class CraftingUI : MonoBehaviour
     {
         if (_statusText == null) return;
         _statusText.text = message;
-        _statusText.color = isError
-            ? new Color(1f, 0.67f, 0.57f, 1f)
-            : new Color(0.77f, 0.88f, 0.79f, 1f);
+        _statusText.color = _runtimeGenerated
+            ? (isError ? new Color(.61f, .27f, .17f) : PAUiTheme.Ink)
+            : (isError ? new Color(1f, .67f, .57f) : new Color(.77f, .88f, .79f));
     }
 
     static int CompareRecipes(RecipeData left, RecipeData right)
@@ -392,6 +465,7 @@ public class CraftingUI : MonoBehaviour
 
     void BuildRuntimeUI()
     {
+        _runtimeGenerated = true;
         // 씬의 부분 직렬화 패널이 세 참조를 모두 갖추지 못했다면 화면만 숨기고
         // 재현 가능한 런타임 제품 UI를 별도로 구성한다.
         if (craftingPanel != null)
@@ -403,16 +477,26 @@ public class CraftingUI : MonoBehaviour
         var overlayRT = (RectTransform)craftingPanel.transform;
         overlayRT.SetParent(parent, false);
         Stretch(overlayRT);
-        craftingPanel.GetComponent<Image>().color = new Color(0.015f, 0.025f, 0.02f, 0.78f);
+        craftingPanel.GetComponent<Image>().color = new Color(.04f, .07f, .08f, .38f);
 
         var window = new GameObject("CraftingPanel", typeof(RectTransform), typeof(Image));
         var panelRT = (RectTransform)window.transform;
         panelRT.SetParent(craftingPanel.transform, false);
         panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
         panelRT.pivot = new Vector2(0.5f, 0.5f);
-        panelRT.sizeDelta = new Vector2(720f, 720f);
+        panelRT.sizeDelta = new Vector2(960f, 780f);
         panelRT.anchoredPosition = Vector2.zero;
-        window.GetComponent<Image>().color = new Color(0.055f, 0.085f, 0.068f, 0.985f);
+        SetSurface(window.GetComponent<Image>(), PAUiTheme.Cream);
+
+        var header = new GameObject("Header", typeof(RectTransform), typeof(Image));
+        var headerRT = (RectTransform)header.transform;
+        headerRT.SetParent(window.transform, false);
+        headerRT.anchorMin = new Vector2(0f, 1f);
+        headerRT.anchorMax = Vector2.one;
+        headerRT.pivot = new Vector2(.5f, 1f);
+        headerRT.sizeDelta = new Vector2(0f, 84f);
+        SetSurface(header.GetComponent<Image>(), PAUiTheme.Teal);
+        header.GetComponent<Image>().raycastTarget = false;
 
         var titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
         var titleRT = (RectTransform)titleGO.transform;
@@ -420,14 +504,17 @@ public class CraftingUI : MonoBehaviour
         titleRT.anchorMin = new Vector2(0f, 1f);
         titleRT.anchorMax = new Vector2(1f, 1f);
         titleRT.pivot = new Vector2(0.5f, 1f);
-        titleRT.sizeDelta = new Vector2(0f, 48f);
-        titleRT.anchoredPosition = new Vector2(0f, -12f);
+        titleRT.sizeDelta = new Vector2(-200f, 60f);
+        titleRT.anchoredPosition = new Vector2(-76f, -12f);
 
         _titleText = titleGO.GetComponent<TextMeshProUGUI>();
         _titleText.text = "제작 도감";
-        _titleText.fontSize = 30;
+        _titleText.fontSize = 34;
         _titleText.fontStyle = FontStyles.Bold;
-        _titleText.alignment = TextAlignmentOptions.Center;
+        _titleText.alignment = TextAlignmentOptions.MidlineLeft;
+        _titleText.enableAutoSizing = true;
+        _titleText.fontSizeMin = 24f;
+        _titleText.fontSizeMax = 34f;
         _titleText.color = Color.white;
         _titleText.raycastTarget = false;
 
@@ -437,14 +524,14 @@ public class CraftingUI : MonoBehaviour
         modeRT.anchorMin = new Vector2(0f, 1f);
         modeRT.anchorMax = new Vector2(1f, 1f);
         modeRT.pivot = new Vector2(0.5f, 1f);
-        modeRT.sizeDelta = new Vector2(-100f, 30f);
-        modeRT.anchoredPosition = new Vector2(0f, -57f);
+        modeRT.sizeDelta = new Vector2(-56f, 36f);
+        modeRT.anchoredPosition = new Vector2(0f, -98f);
 
         _modeText = modeGO.GetComponent<TextMeshProUGUI>();
         _modeText.text = "전체 레시피";
-        _modeText.fontSize = 16f;
+        _modeText.fontSize = 20f;
         _modeText.alignment = TextAlignmentOptions.Center;
-        _modeText.color = new Color(0.65f, 0.78f, 0.68f, 1f);
+        _modeText.color = PAUiTheme.Ink;
         _modeText.raycastTarget = false;
 
         var closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -452,17 +539,17 @@ public class CraftingUI : MonoBehaviour
         closeRT.SetParent(window.transform, false);
         closeRT.anchorMin = closeRT.anchorMax = new Vector2(1f, 1f);
         closeRT.pivot = new Vector2(1f, 1f);
-        closeRT.sizeDelta = new Vector2(72f, 36f);
-        closeRT.anchoredPosition = new Vector2(-12f, -10f);
-        closeGO.GetComponent<Image>().color = new Color(0.55f, 0.27f, 0.22f, 0.96f);
+        closeRT.sizeDelta = new Vector2(112f, 42f);
+        closeRT.anchoredPosition = new Vector2(-24f, -21f);
+        SetSurface(closeGO.GetComponent<Image>(), new Color(1f, 1f, 1f, .18f));
 
         var closeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         var closeTextRT = (RectTransform)closeTextGO.transform;
         closeTextRT.SetParent(closeGO.transform, false);
         Stretch(closeTextRT);
         var closeText = closeTextGO.GetComponent<TextMeshProUGUI>();
-        closeText.text = "닫기";
-        closeText.fontSize = 16;
+        closeText.text = "닫기  Esc";
+        closeText.fontSize = 18;
         closeText.fontStyle = FontStyles.Bold;
         closeText.alignment = TextAlignmentOptions.Center;
         closeText.color = Color.white;
@@ -474,8 +561,8 @@ public class CraftingUI : MonoBehaviour
         scrollRT.SetParent(window.transform, false);
         scrollRT.anchorMin = Vector2.zero;
         scrollRT.anchorMax = Vector2.one;
-        scrollRT.offsetMin = new Vector2(20f, 76f);
-        scrollRT.offsetMax = new Vector2(-20f, -96f);
+        scrollRT.offsetMin = new Vector2(24f, 96f);
+        scrollRT.offsetMax = new Vector2(-24f, -144f);
 
         var viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
         var viewportRT = (RectTransform)viewportGO.transform;
@@ -497,8 +584,8 @@ public class CraftingUI : MonoBehaviour
         var layout = contentGO.GetComponent<VerticalLayoutGroup>();
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        layout.spacing = 8f;
-        layout.padding = new RectOffset(4, 4, 4, 4);
+        layout.spacing = 10f;
+        layout.padding = new RectOffset(4, 22, 4, 4);
         contentGO.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var scroll = scrollGO.GetComponent<ScrollRect>();
@@ -507,6 +594,38 @@ public class CraftingUI : MonoBehaviour
         scroll.horizontal = false;
         scroll.vertical = true;
         scroll.scrollSensitivity = 34f;
+        _recipeScroll = scroll;
+
+        var rail = new GameObject("RecipeScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        var railRT = (RectTransform)rail.transform;
+        railRT.SetParent(scrollGO.transform, false);
+        railRT.anchorMin = new Vector2(1f, 0f);
+        railRT.anchorMax = Vector2.one;
+        railRT.pivot = new Vector2(1f, .5f);
+        railRT.sizeDelta = new Vector2(10f, -8f);
+        SetSurface(rail.GetComponent<Image>(), new Color(.85f, .84f, .76f));
+        var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        var handleRT = (RectTransform)handle.transform;
+        handleRT.SetParent(rail.transform, false);
+        Stretch(handleRT);
+        SetSurface(handle.GetComponent<Image>(), PAUiTheme.Teal);
+        var scrollbar = rail.GetComponent<Scrollbar>();
+        scrollbar.handleRect = handleRT;
+        scrollbar.targetGraphic = handle.GetComponent<Image>();
+        scrollbar.direction = Scrollbar.Direction.BottomToTop;
+        scroll.verticalScrollbar = scrollbar;
+        scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+
+        var feedback = new GameObject("Feedback", typeof(RectTransform), typeof(Image));
+        var feedbackRT = (RectTransform)feedback.transform;
+        feedbackRT.SetParent(window.transform, false);
+        feedbackRT.anchorMin = Vector2.zero;
+        feedbackRT.anchorMax = new Vector2(1f, 0f);
+        feedbackRT.pivot = new Vector2(.5f, 0f);
+        feedbackRT.sizeDelta = new Vector2(-48f, 64f);
+        feedbackRT.anchoredPosition = new Vector2(0f, 16f);
+        SetSurface(feedback.GetComponent<Image>(), new Color(.86f, .93f, .86f));
+        feedback.GetComponent<Image>().raycastTarget = false;
 
         var statusGO = new GameObject("Status", typeof(RectTransform), typeof(TextMeshProUGUI));
         var statusRT = (RectTransform)statusGO.transform;
@@ -514,14 +633,14 @@ public class CraftingUI : MonoBehaviour
         statusRT.anchorMin = new Vector2(0f, 0f);
         statusRT.anchorMax = new Vector2(1f, 0f);
         statusRT.pivot = new Vector2(0.5f, 0f);
-        statusRT.sizeDelta = new Vector2(-40f, 56f);
-        statusRT.anchoredPosition = new Vector2(0f, 12f);
+        statusRT.sizeDelta = new Vector2(-76f, 64f);
+        statusRT.anchoredPosition = new Vector2(0f, 16f);
 
         _statusText = statusGO.GetComponent<TextMeshProUGUI>();
-        _statusText.text = "작업대에서 [Space]를 누르면 제작할 수 있습니다.";
-        _statusText.fontSize = 15f;
+        _statusText.text = "작업대에서 [E]를 누르면 제작할 수 있어요.";
+        _statusText.fontSize = 20f;
         _statusText.alignment = TextAlignmentOptions.Center;
-        _statusText.color = new Color(0.77f, 0.88f, 0.79f, 1f);
+        _statusText.color = PAUiTheme.Ink;
         _statusText.textWrappingMode = TextWrappingModes.Normal;
         _statusText.raycastTarget = false;
 
@@ -535,16 +654,23 @@ public class CraftingUI : MonoBehaviour
         var go = new GameObject("RecipeSlot_RuntimePrefab", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         go.transform.SetParent(parent, false);
         go.SetActive(false);
-        go.GetComponent<Image>().color = new Color(0.13f, 0.20f, 0.16f, 0.96f);
-        go.GetComponent<LayoutElement>().preferredHeight = 96f;
+        SetSurface(go.GetComponent<Image>(), Color.white);
+        go.GetComponent<LayoutElement>().preferredHeight = 124f;
+        ColorBlock colors = go.GetComponent<Button>().colors;
+        colors.highlightedColor = new Color(.88f, .96f, .90f);
+        colors.pressedColor = new Color(.76f, .88f, .81f);
+        // 잠금/재료 부족 카드는 배경과 문구로 구분한다. 비활성 틴트로 설명까지 흐리지 않는다.
+        colors.disabledColor = Color.white;
+        colors.fadeDuration = .08f;
+        go.GetComponent<Button>().colors = colors;
 
         var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
         var iconRT = (RectTransform)iconGO.transform;
         iconRT.SetParent(go.transform, false);
         iconRT.anchorMin = iconRT.anchorMax = new Vector2(0f, 0.5f);
         iconRT.pivot = new Vector2(0f, 0.5f);
-        iconRT.anchoredPosition = new Vector2(14f, 0f);
-        iconRT.sizeDelta = new Vector2(68f, 68f);
+        iconRT.anchoredPosition = new Vector2(16f, 0f);
+        iconRT.sizeDelta = new Vector2(80f, 80f);
         var icon = iconGO.GetComponent<Image>();
         icon.preserveAspect = true;
         icon.raycastTarget = false;
@@ -555,18 +681,25 @@ public class CraftingUI : MonoBehaviour
         labelRT.SetParent(go.transform, false);
         labelRT.anchorMin = Vector2.zero;
         labelRT.anchorMax = Vector2.one;
-        labelRT.offsetMin = new Vector2(94f, 8f);
-        labelRT.offsetMax = new Vector2(-14f, -8f);
+        labelRT.offsetMin = new Vector2(112f, 12f);
+        labelRT.offsetMax = new Vector2(-20f, -12f);
 
         var label = labelGO.GetComponent<TextMeshProUGUI>();
-        label.fontSize = 16.5f;
+        label.fontSize = 24f;
         label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.color = Color.white;
+        label.color = PAUiTheme.Ink;
         label.textWrappingMode = TextWrappingModes.Normal;
-        label.overflowMode = TextOverflowModes.Ellipsis;
+        label.overflowMode = TextOverflowModes.Overflow;
         label.raycastTarget = false;
 
         return go;
+    }
+
+    static void SetSurface(Image image, Color color)
+    {
+        image.sprite = PAUiTheme.RoundedSprite;
+        image.type = Image.Type.Sliced;
+        image.color = color;
     }
 
     Transform ResolveUiParent()

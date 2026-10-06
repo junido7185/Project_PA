@@ -2815,7 +2815,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -4407,7 +4407,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -4696,7 +4696,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2ad8415e97d1bf49be5729f4dfc4088, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopOpenSign
 --- !u!1 &500158829
 GameObject:
@@ -5148,7 +5148,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -5920,7 +5920,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -7407,7 +7407,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -8496,7 +8496,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -9764,7 +9764,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshSurface
   m_SerializedVersion: 0
   m_AgentTypeID: 0
@@ -9831,7 +9831,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3aec5103ae7fd6344a6c7fc774d0e9e9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shop
   allowDebugBulkSaleInteraction: 0
   managedSlots:
@@ -11089,7 +11089,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b57007bedd094b14dbfa144da52140bd, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DaytimeStockPrepPoint
   activityId: departure-tutorial-fruit
   itemResourcePath: DepartureTutorial/Item_TutorialFruit
@@ -11483,7 +11483,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc19aba102905b84489f35d8d6b9a58e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   target: {fileID: 1935221698}
   smoothSpeed: 5
@@ -11912,10 +11912,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43cbb1f748354184e9d0a4dc7915cf9f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopSlot
   currentItem:
-    instanceId:
+    instanceId: 
     data: {fileID: 0}
     count: 0
     quality: 0
@@ -12697,7 +12697,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
   m_SendPointerHoverToParent: 1
   m_MoveRepeatDelay: 0.5
@@ -12728,7 +12728,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
@@ -13415,7 +13415,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -13893,59 +13893,59 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1935221698}
     m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalScale.x
       value: 1.5904673
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalScale.y
       value: 1.5904673
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalScale.z
       value: 1.5904673
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0.1597572
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+    - target: {fileID: 2266055103997781323, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
       propertyPath: m_Name
       value: CharacterVisual
       objectReference: {fileID: 0}
@@ -13953,10 +13953,10 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+  m_SourcePrefab: {fileID: 100100000, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
 --- !u!4 &1673290926 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: e6ed18842807e464f904b3f0be2a83f4, type: 3}
+  m_CorrespondingSourceObject: {fileID: 1457325357258506225, guid: dab1f5372a0a8e54fb82a8b65c5fcaa2, type: 3}
   m_PrefabInstance: {fileID: 1673290925}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1682352527
@@ -14579,7 +14579,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01b043b78b919ea44a4207a74e35ff04, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcController
   currentState: 0
   profile: {fileID: 11400000, guid: 17d1032925b01c047a0d0a8c193cdd67, type: 2}
@@ -14592,7 +14592,7 @@ MonoBehaviour:
   slotArriveDistance: 1.2
   shopArriveDistance: 1.5
   debugShoppingProbability: 0
-  debugLastDecision:
+  debugLastDecision: 
   debugSchedulePaused: 0
   debugShoppingPriority: 0
 --- !u!114 &1735646770
@@ -14605,7 +14605,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f3fc25ca6d94924a802d4e75ad2b2cd, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcHumanoidProceduralAnimator
   autoApplyCharacterPreset: 1
   autoCalibrateDirections: 1
@@ -14661,7 +14661,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d9f6d3b3d7a4d0d9a0f4425f0b21a3c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcPresentationNormalizer
   animatorController: {fileID: 0}
   animationMode: 1
@@ -15276,7 +15276,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -16188,7 +16188,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f3fc25ca6d94924a802d4e75ad2b2cd, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcHumanoidProceduralAnimator
   autoApplyCharacterPreset: 1
   autoCalibrateDirections: 1
@@ -16221,7 +16221,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90303f153af7d3644bd17f20f53b9669, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
   size: 24
   slots: []
@@ -16237,7 +16237,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 976599b42df75874a93948bd69e4577e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hotbar
   size: 9
   slots: []
@@ -16251,7 +16251,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 923bfa1f3ea3c1043862fee174006283, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
   interactDistance: 3
   interactRadius: 0.75
@@ -16271,7 +16271,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 487f210ec809fcc42b5af91deb7cef07, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 4.2
   acceleration: 18
@@ -16861,7 +16861,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a4eab9e890ce4644ab4016b66f38807, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DepartureTutorialPresentation
   tutorial: {fileID: 1987303919}
   font: {fileID: 11400000, guid: 3afe92293a7925a498df5910f03da54c, type: 2}
@@ -16875,7 +16875,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cb83a11e30ad2fc42858035bbe20e892, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DepartureTutorialController
   player: {fileID: 1935221698}
   movementCheckpoint: {fileID: 1587168544}
@@ -16903,7 +16903,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f908b8dbf70190f4f909f5eb0d66e55d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VillageCultureVisualController
   autoCreateVisual: 0
   autoCreateHint: 0
@@ -16921,7 +16921,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: acbb20a45a7c63a449fadbd03fb2bb4c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopCustomizationController
 --- !u!114 &1987303922
 MonoBehaviour:
@@ -16933,7 +16933,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7b1a0d7b3f84e7d8e176b14e6b0a4d1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OutdoorPlacementController
 --- !u!114 &1987303923
 MonoBehaviour:
@@ -16945,7 +16945,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4fd7774623384284a9ed5ac438c78042, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopCustomerApproachController
 --- !u!114 &1987303924
 MonoBehaviour:
@@ -16957,7 +16957,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d958b4ea598595f4884ecc8922bae469, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PurchaseFeedbackPresentationController
   autoCreateUI: 0
   maxVisibleEntries: 3
@@ -16972,7 +16972,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0959735e557bf284fb0732b5e1800add, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InteractPromptUI
   promptText: {fileID: 0}
 --- !u!114 &1987303926
@@ -16985,7 +16985,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 228acb8c771da4c42b9d16686d06217b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopPriceUI
 --- !u!114 &1987303927
 MonoBehaviour:
@@ -16997,7 +16997,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 82e8ba391eb956c46a18b9486a3c74c5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DayNightShopLoopController
   dayStartHour: 6
   shopOpenHour: 18
@@ -17021,7 +17021,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2489141785c61724fb716bdd90a2bd22, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SalesLogManager
   maxRecords: 100
 --- !u!114 &1987303929
@@ -17034,7 +17034,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41040747c1c855449b1109486c60a5db, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameClock
   secondsPerGameHour: 3600
   startHour: 9
@@ -17052,7 +17052,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4dd9b89838c782948845358d20c09939, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputHandler
 --- !u!114 &1987303931
 MonoBehaviour:
@@ -17064,7 +17064,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 54fd50b60877642469a2edb56fa91b47, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EconomyService
   _money: 0
   _cumulativeRevenue: 0
@@ -17429,7 +17429,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -17834,7 +17834,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

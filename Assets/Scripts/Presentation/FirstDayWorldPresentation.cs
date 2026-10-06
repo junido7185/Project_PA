@@ -19,8 +19,14 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
     WorldGridService _grid;
     FirstDayStudioAssets _assets;
     TextMeshProUGUI _toast;
+    RectTransform _toastCard;
+    // Canon v2 §22: HUD = 순간 알림, Smartphone = 기록. 최근 알림을 휴대폰 피드에서 다시 볼 수 있게 남긴다.
+    public static readonly List<string> DispatchLog = new List<string>();
+    // 기록이 남은 횟수(최근 8줄 보관과 별개로 계속 증가). 휴대폰 홈의 '새 기록' 표시가 비교한다.
+    public static int DispatchSerial { get; private set; }
     float _toastUntil, _refreshAt;
     string _lastBiome;
+    string _ambience;
     static readonly Color Ink = new Color(.14f,.24f,.25f);
     void Awake() => Instance = this;
     void OnDestroy() { if (Instance == this) Instance = null; }
@@ -28,6 +34,7 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
     public void Compose(WorldGridService grid, GameObject player)
     {
         _grid = grid; _player = player.transform; _assets = FirstDayStudioAssets.Load();
+        RefreshAmbience();
         var generated = WorldPersistenceService.Instance.ActiveGeneratedWorld;
         generated.TryGetAnchor(WorldGenerationAnchorKind.Start, out var start);
         int x = start.Coordinate.x;
@@ -49,22 +56,47 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         supply.transform.SetParent(transform); supply.transform.position = harbor + new Vector3(2.8f,0,3);
         supply.GetComponent<BoxCollider>().size = new Vector3(1.2f,1,1.2f);
         supply.GetComponent<BoxCollider>().center = Vector3.up * .5f;
+        // A waiting companion must walk around the visible chest, not stand inside it and intercept E.
+        var supplyObstacle = supply.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+        supplyObstacle.shape = UnityEngine.AI.NavMeshObstacleShape.Box;
+        supplyObstacle.center = Vector3.up * .5f;
+        supplyObstacle.size = new Vector3(1.4f, 1, 1.4f);
+        supplyObstacle.carving = true;
         Supply = supply.GetComponent<FirstDaySupplyBox>();
         ComposeCompanions();
         ComposeDressing(generated);
         ComposeApproachDressing(generated);
+        ComposeSettlementEdgeDressing(generated);
         ComposeGroundPickups();
+        // P3: 채집 중 캐릭터·도구가 큰 나무 수관에 가리지 않게(장식 나무 + 직접 채집 나무).
+        var foliage = GetComponent<FoliageOcclusion>();
+        if (foliage == null) foliage = gameObject.AddComponent<FoliageOcclusion>();
+        foliage.Configure(_player, _chunks);
         var canvas = new GameObject("FirstDay_Dispatch",typeof(Canvas),typeof(CanvasScaler));
         canvas.transform.SetParent(transform); canvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.GetComponent<Canvas>().sortingOrder = 30;
         var scaler = canvas.GetComponent<CanvasScaler>(); scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution=new Vector2(1920,1080);
+        // D4: 화면 중앙 글자 대신 우상단(돈 칩 아래) 크림색 알림 카드. 배경이 있어 어떤 지형 위에서도 읽힌다.
+        var card = new GameObject("DispatchToastCard",typeof(RectTransform),typeof(Image));
+        card.transform.SetParent(canvas.transform,false);
+        _toastCard=(RectTransform)card.transform; _toastCard.anchorMin=_toastCard.anchorMax=_toastCard.pivot=new Vector2(1,1);
+        _toastCard.anchoredPosition=new Vector2(-24,-96); _toastCard.sizeDelta=new Vector2(440,72);
+        var cardImage=card.GetComponent<Image>(); cardImage.sprite=SmartphoneUI.RoundedSprite; cardImage.type=Image.Type.Sliced;
+        cardImage.color=new Color(.98f,.95f,.87f,.96f); cardImage.raycastTarget=false;
+        var accent = new GameObject("Accent",typeof(RectTransform),typeof(Image));
+        accent.transform.SetParent(card.transform,false);
+        var accentRect=(RectTransform)accent.transform; accentRect.anchorMin=new Vector2(0,0); accentRect.anchorMax=new Vector2(0,1);
+        accentRect.offsetMin=new Vector2(10,12); accentRect.offsetMax=new Vector2(16,-12);
+        var accentImage=accent.GetComponent<Image>(); accentImage.color=SmartphoneUI.Teal; accentImage.raycastTarget=false;
         var label = new GameObject("DispatchToast",typeof(RectTransform),typeof(TextMeshProUGUI));
-        label.transform.SetParent(canvas.transform,false);
-        var rect=(RectTransform)label.transform; rect.anchorMin=rect.anchorMax=new Vector2(.5f,1);
-        rect.anchoredPosition=new Vector2(0,-70);rect.sizeDelta=new Vector2(1000,85);
+        label.transform.SetParent(card.transform,false);
+        var rect=(RectTransform)label.transform; rect.anchorMin=Vector2.zero; rect.anchorMax=Vector2.one;
+        rect.offsetMin=new Vector2(28,10); rect.offsetMax=new Vector2(-16,-10);
         _toast=label.GetComponent<TextMeshProUGUI>();_toast.font=TMP_Settings.defaultFontAsset;
-        _toast.fontSize=26;_toast.color=Ink;_toast.alignment=TextAlignmentOptions.Center;_toast.raycastTarget=false;
+        _toast.fontSize=21;_toast.color=Ink;_toast.alignment=TextAlignmentOptions.MidlineLeft;_toast.raycastTarget=false;
+        gameObject.AddComponent<FirstDayHudStyle>();
+        DispatchLog.Clear(); DispatchSerial = 0; // 새 Opening 세션의 기록만 휴대폰에 남긴다.
         Toast("DAY 1 · 새로운 섬\n항구의 P.A. 보급 상자를 열어보세요.");
         RenderSettings.ambientLight=new Color(.74f,.8f,.81f);
         RenderSettings.fog=true; RenderSettings.fogMode=FogMode.Linear;
@@ -96,7 +128,7 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
             var dialogue=npc.AddComponent<NpcDialogue>();dialogue.overrideProfile=candidate.profile;
             dialogue.interactPrompt=candidate.displayName+"와 대화";
             dialogue.dialogueData=Resources.Load<DialogueData>("Dialogues/Dialogue_"+candidate.id.Split('_')[0]);
-            dialogue.GreetingInteracted+=(d,p)=>Toast(d.LastLine);
+            dialogue.GreetingInteracted+=(d,p)=>Toast(d.LastLine,false);
         }
     }
     void ComposeDressing(WorldGenerationResult generated)
@@ -118,7 +150,8 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
             if(steepOrCoastal)continue;
             _grid.CellToWorld(c,out var p);
             if(Vector3.Distance(p,Harbor)<13 || Mathf.Abs(p.x-Harbor.x)<3.5f && p.z>Harbor.z && p.z<Harbor.z+85) continue;
-            if(generated.Anchors.Any(a=>Vector2Int.Distance(a.Coordinate,c)<9)) continue;
+            // P10: 정착 자리(시작·상점)만 넓게 비우고 활동 랜드마크는 가까이까지 채운다(빈 원이 '테스트 맵'처럼 보였다).
+            if(generated.Anchors.Any(a=>Vector2Int.Distance(a.Coordinate,c)<(a.Kind==WorldGenerationAnchorKind.Start||a.Kind==WorldGenerationAnchorKind.Shop?9:4))) continue;
             var key=new Vector2Int(x/16,z/16);
             if(!chunks.TryGetValue(key,out var parent))
             { parent=new GameObject("Nature_"+key).transform;parent.SetParent(transform);parent.position=new Vector3(key.x*32+16,0,key.y*32+16);chunks.Add(key,parent);_chunks.Add(parent); }
@@ -136,7 +169,8 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
             p+=new Vector3((float)random.NextDouble()*2-1,0,(float)random.NextDouble()*2-1);
             var go=FirstDayStudioAssets.Place(prefab,parent,p,height,random.Next(360));
             if(height>2.8f)
-            {var col=go.AddComponent<CapsuleCollider>();float scale=go.transform.lossyScale.x;col.height=2/scale;col.radius=.25f/scale;col.center=Vector3.up/scale;}
+            {var col=go.AddComponent<CapsuleCollider>();float scale=go.transform.lossyScale.x;col.height=2/scale;col.radius=.25f/scale;col.center=Vector3.up/scale;FirstDayToolSurface.Attach(go,false);}
+            else if(System.Array.IndexOf(_assets.rocks,prefab)>=0) FirstDayToolSurface.Attach(go,true);
             // Small clusters break the repeated sample spacing without blocking paths.
             if(roll<.65f)
                 for(int j=0;j<3;j++) FirstDayStudioAssets.Place(_assets.grasses[j%_assets.grasses.Length],parent,p+new Vector3((float)random.NextDouble()*3-1.5f,0,(float)random.NextDouble()*3-1.5f),.25f,random.Next(360));
@@ -185,6 +219,37 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
                 if (!_grid.TryGetCell(coordinate + new Vector2Int(x, z), out var cell) ||
                     !cell.IsWalkable || cell.HasPath) { clear = false; break; }
             if (plant.activeSelf != clear) plant.SetActive(clear);
+        }
+    }
+
+    void ComposeSettlementEdgeDressing(WorldGenerationResult generated)
+    {
+        if (!generated.TryGetAnchor(WorldGenerationAnchorKind.Start,out var start)) return;
+        _grid.CellToWorld(start.Coordinate,out var centre);
+        var parent=new GameObject("SettlementEdgeNature").transform;
+        parent.SetParent(transform); parent.position=centre; _chunks.Add(parent);
+        var random=new System.Random(9011);
+        var resources=new HashSet<Vector2Int>(generated.ResourceSpawns.Select(r=>r.Coordinate));
+        // Low, nonblocking clusters suggest the edges of the initial clearing.
+        // Existing placement occupancy hides them; they own no resource state.
+        for(int sector=0;sector<10;sector++)
+        for(int plant=0;plant<7;plant++)
+        {
+            float angle=(sector*.6283f)+(float)random.NextDouble()*.18f;
+            float radius=8f+(float)random.NextDouble()*6f;
+            var point=centre+new Vector3(Mathf.Cos(angle)*radius,0,Mathf.Sin(angle)*radius);
+            if (!_grid.WorldToCell(point,out var cell) || resources.Contains(cell) ||
+                !_grid.TryGetCell(cell,out var data) || !data.IsWalkable || data.HasWater || data.HasPath ||
+                !_grid.CellToWorld(cell,out var ground)) continue;
+            point.y=ground.y;
+            bool edgeTree=plant==6 && sector%2==1;
+            var prefab=edgeTree?_assets.trees[sector%_assets.trees.Length]:plant==0?_assets.bushes[sector%_assets.bushes.Length]:
+                plant==1?_assets.flowers[sector%_assets.flowers.Length]:_assets.grasses[plant%_assets.grasses.Length];
+            var go=FirstDayStudioAssets.Place(prefab,parent,point,edgeTree?3.7f:plant==0?.62f:.25f+(float)random.NextDouble()*.12f,random.Next(360));
+            go.name="SettlementEdge_"+prefab.name;
+            foreach(var collider in go.GetComponentsInChildren<Collider>()) collider.enabled=false;
+            if(edgeTree) FirstDayToolSurface.Attach(go,false);
+            _approachPlants.Add(go);
         }
     }
 
@@ -237,14 +302,47 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
             pickup.item=Resources.Load<Item>(i%3==0?"Items/Item_Ore":"Items/Item_Wood");
         }
     }
-    public static void Toast(string message)
-    { if(Instance==null||Instance._toast==null)return;Instance._toast.text=message;Instance._toastUntil=Time.unscaledTime+4; }
+    // P7: 동행 대사는 진행 안내 토스트를 덮지 않도록 카드가 비었을 때만 말한다.
+    public static bool ToastBusy => Instance != null && Time.unscaledTime < Instance._toastUntil;
+
+    // record=false: 획득·지형·대화처럼 자주 뜨는 순간 피드백은 휴대폰 기록(놓친 목표 확인용)을 밀어내지 않게 남기지 않는다.
+    public static void Toast(string message, bool record = true)
+    {
+        if(Instance==null||Instance._toast==null||string.IsNullOrEmpty(message))return;
+        string shown=WrapWords(Instance._toast,message,392);
+        Instance._toast.text=shown;Instance._toastUntil=Time.unscaledTime+3.5f;
+        // 카드 높이를 문장 길이에 맞춘다(1~3줄).
+        float height=Instance._toast.GetPreferredValues(shown,396,0).y+20;
+        Instance._toastCard.sizeDelta=new Vector2(440,Mathf.Clamp(height,60,140));
+        if(!record)return;
+        string clock=GameClock.Instance!=null?$"{GameClock.Instance.CurrentHourInt:D2}:{Mathf.FloorToInt((GameClock.Instance.CurrentHour-GameClock.Instance.CurrentHourInt)*60):D2}  ":"";
+        DispatchLog.Insert(0,clock+message.Replace("\n"," "));DispatchSerial++;
+        if(DispatchLog.Count>8)DispatchLog.RemoveAt(DispatchLog.Count-1);
+    }
+
+    // TMP는 한글을 글자 단위로 줄바꿈한다("고/르세요"). 토스트는 띄어쓰기 단위로 미리 줄을 나눈다.
+    internal static string WrapWords(TextMeshProUGUI label,string message,float width)
+    {
+        var result=new System.Text.StringBuilder();
+        foreach(var paragraph in message.Split('\n'))
+        {
+            string line="";
+            foreach(var word in paragraph.Split(' '))
+            {
+                string next=line.Length==0?word:line+" "+word;
+                if(line.Length>0&&label.GetPreferredValues(next).x>width){result.Append(line).Append('\n');line=word;}
+                else line=next;
+            }
+            result.Append(line).Append('\n');
+        }
+        return result.ToString().TrimEnd('\n');
+    }
 
     // 성공한 기존 Inventory 지급을 표현한다. 표시 모델에는 보상/줍기 컴포넌트를 추가하지 않는다.
     public static void Acquired(Item item, int amount, Vector3 source)
     {
         if (Instance == null || item == null) return;
-        Toast($"{item.itemName} +{amount} · 보유 {Inventory.instance.CountItems(item)}");
+        Toast($"{ItemDisplayName.For(item)} +{amount} · 보유 {Inventory.instance.CountItems(item)}", false);
         Instance.StartCoroutine(Instance.ShowAcquisition(item, source));
     }
 
@@ -255,6 +353,15 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         var visual = FirstDayStudioAssets.Place(model, transform, source + Vector3.up * .6f, .24f);
         visual.name = "AcquisitionVisual";
         foreach (var collider in visual.GetComponentsInChildren<Collider>()) collider.enabled = false;
+        // 얇은 모델(나비 등)은 높이 기준으로 키우면 폭이 수 m가 된다. 가장 긴 변을 0.5m로 제한한다.
+        var renderers = visual.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
+        {
+            Bounds bounds = renderers[0].bounds;
+            foreach (var r in renderers) bounds.Encapsulate(r.bounds);
+            float longest = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
+            if (longest > .5f) visual.transform.localScale *= .5f / longest;
+        }
         Vector3 start = visual.transform.position;
         float elapsed = 0;
         while (elapsed < .65f && _player != null)
@@ -271,8 +378,9 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         if(_player==null)return;
         var settlement = DemoSettlementController.Instance;
         bool reportOpen = settlement != null && settlement.IsPanelOpen && settlement.PioneerReport != null;
-        if(_toast!=null)_toast.gameObject.SetActive(!reportOpen && Time.unscaledTime<_toastUntil);
+        if(_toastCard!=null)_toastCard.gameObject.SetActive(!reportOpen && Time.unscaledTime<_toastUntil);
         if(Time.unscaledTime<_refreshAt)return;_refreshAt=Time.unscaledTime+.4f;
+        RefreshAmbience();
         RefreshApproachDressing();
         foreach(var chunk in _chunks)chunk.gameObject.SetActive(Vector3.SqrMagnitude(chunk.position-_player.position)<155*155);
         if(DemoSettlementController.Instance==null && GameClock.Instance!=null && GameClock.Instance.CurrentHour>=16)GameClock.Instance.enabled=false;
@@ -304,7 +412,17 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         string biome="초원";
         if(_grid.WorldToCell(_player.position,out var coordinate)&&WorldPersistenceService.Instance.ActiveGeneratedWorld.TryGetCell(coordinate,out var cell))
             biome=cell.Biome==WorldBiomeType.Coast?"해안":cell.Biome==WorldBiomeType.Forest?"숲":cell.Biome==WorldBiomeType.Highland?"고지대":"초원";
-        if(biome!=_lastBiome){_lastBiome=biome;if(Time.unscaledTime>_toastUntil)Toast(biome+" · 자유롭게 둘러보세요");}
+        if(biome!=_lastBiome){_lastBiome=biome;if(Time.unscaledTime>_toastUntil)Toast(biome+" · 자유롭게 둘러보세요",false);}
+    }
+
+    void RefreshAmbience()
+    {
+        if (AudioManager.Instance == null) return;
+        float hour = GameClock.Instance != null ? GameClock.Instance.CurrentHour : 9f;
+        string next = hour >= 18f || hour < 6f ? AudioManager.OpeningNightAmbience : AudioManager.OpeningDayAmbience;
+        if (_ambience == next) return;
+        _ambience = next;
+        AudioManager.PlayBGM(next);
     }
 }
 

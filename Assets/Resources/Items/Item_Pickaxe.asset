@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 2002
   itemName: Pickaxe
   description: Select in the hotbar and press Space beside a resource.
-  icon: {fileID: 21300000, guid: c3bdb8c03d832774596482b69a3134ec, type: 3}
+  icon: {fileID: 21300000, guid: 7c5cf4c53994c54449e855aa3e500ecf, type: 3}
   maxStack: 1
-  model: {fileID: 0}
+  model: {fileID: 1912750664959970827, guid: e93c1c207ccc541428fca6959dfbaa96, type: 3}
   basePrice: 0
   toolType: 2
   category: 4

@@ -28,7 +28,9 @@ enabled_tools = [
     "run_tests",
     "get_test_job",
     "find_gameobjects",
-    "manage_scene"
+    "manage_scene",
+    "manage_editor",
+    "execute_menu_item"
 ]
 
 [mcp_servers.unityMCP.tools.read_console]

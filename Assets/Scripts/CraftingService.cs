@@ -18,6 +18,9 @@ using UnityEngine;
 //   6) 재료 차감 → Inventory.AddInstance 로 메타 보존 결과 추가
 public static class CraftingService
 {
+    // P8: 제작 성공 알림(관찰 전용). Report가 '제작' 행동을 댓글에 반영한다. 재고·결과 권위는 그대로다.
+    public static event System.Action<RecipeData> Crafted;
+
     public static bool TryCraft(RecipeData recipe, Workbench workbench)
     {
         if (recipe == null || recipe.outputItem == null || recipe.outputCount <= 0)
@@ -130,6 +133,7 @@ public static class CraftingService
         }
 
         workbench?.PlayCraftFeedback(recipe.outputItem.itemName);
+        Crafted?.Invoke(recipe);
         Debug.Log($"✅ 가공 완료: {recipe.outputItem.itemName} ×{recipe.outputCount} " +
                   $"(품질 {resultQuality:F2})");
         return true;

@@ -43,6 +43,12 @@ public class CustomerArrivalController : MonoBehaviour
     public float touristExitTimeout = 20f;
     [Tooltip("가게에서 관광객 진입점을 찾는 기본 반경")]
     public float touristSpawnRadius = 14f;
+    [Tooltip("관광객 가격 민감도 배율(주민 프로필 대비). 1이면 주민과 같다")]
+    public float touristPriceSensitivityScale = 1f;
+    [Tooltip("관광객 사치품 소비 배율(주민 프로필 대비)")]
+    public float touristLuxuryScale = 1f;
+    [Tooltip("관광객 생활용품 소비 배율(주민 프로필 대비)")]
+    public float touristUtilityScale = 1f;
 
     bool _wasOpen;
     float _nextPollAt;
@@ -302,6 +308,10 @@ public class CustomerArrivalController : MonoBehaviour
         NpcProfile runtimeProfile = Instantiate(source.profile);
         runtimeProfile.name = $"Runtime_TouristProfile_{sequence:00}";
         runtimeProfile.npcName = $"여행 손님 {sequence:00}";
+        // 관광객은 주민 외형만 빌리고 구매 성향은 따로 둔다. 판단 자체는 기존 PurchaseEvaluator가 한다.
+        runtimeProfile.priceSensitivity *= Mathf.Max(0.1f, touristPriceSensitivityScale);
+        runtimeProfile.luxuryConsumption *= Mathf.Max(0f, touristLuxuryScale);
+        runtimeProfile.utilityConsumption *= Mathf.Max(0f, touristUtilityScale);
 
         NpcController npc = root.AddComponent<NpcController>();
         npc.profile = runtimeProfile;

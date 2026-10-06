@@ -50,6 +50,16 @@ public class DayNightShopLoopController : MonoBehaviour
         if (!IsOpeningDemo || !IsShopOpenForCustomers || sale == null) return;
         _openingSales++; _openingRevenue += sale.price;
     }
+    // Continue: 마감 뒤 저장(Report 있음)을 불러오면 같은 첫 영업을 다시 열 수 없게 완료 상태만 되돌린다.
+    public void RestoreOpeningSessionCompleted()
+    {
+        if (!IsOpeningDemo) return;
+        OpeningSessionCompleted = true;
+        _playerOpenedShopToday = false;
+        _openedShopDay = -1;
+        RefreshUI();
+    }
+
     public bool TryCloseOpeningShop()
     {
         if (!IsOpeningDemo || OpeningSessionCompleted || !IsShopOpenForCustomers) return false;

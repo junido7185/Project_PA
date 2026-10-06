@@ -27,10 +27,12 @@ VERIFIED WORKING requires Human Play/runtime evidence.
 Code existence alone is not verification.
 
 If the cause is proven, use the smallest existing authority-preserving fix.
-If runtime evidence is missing, stop and request only that evidence.
+If runtime evidence is missing, collect narrowly scoped evidence with the connected Editor within the approved ticket. Request evidence only when it cannot be obtained within that scope.
 
-One edge per turn.
-Never continue automatically to the next step.
+One active edge at a time. Default: stop after this bounded ticket.
+Under AGENTS.md's recorded PREAPPROVED_MILESTONE_CONTINUATION, use
+`demoProductionRouting` and `pa-demo-factory` to continue only the approved next
+ticket, with per-ticket evidence and the recorded owner/milestone limits.
 
 Broad visual/UI polish is forbidden before demo completion.
 Structural visual fixes are allowed when required by the selected edge.

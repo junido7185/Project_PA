@@ -8,6 +8,8 @@ public class ShopSlot : MonoBehaviour, IInteractable
     [Header("진열 상태")]
     public ItemInstance currentItem;
     public int displayPrice = 0;
+    [Tooltip("같은 상품을 한 가판대에 쌓을 수 있는 최대 수량. 1이면 기존처럼 한 개만 진열한다")]
+    public int stockCapacity = 1;
 
     [Header("프로토타입 표시")]
     public Vector3 displayOffset = new Vector3(0f, 0.45f, 0f);
@@ -98,6 +100,10 @@ public class ShopSlot : MonoBehaviour, IInteractable
         {
             TryStockFromPlayer();
         }
+        else if (CanTopUpFromHeld(out var heldSlot))
+        {
+            TopUp(heldSlot);
+        }
         else
         {
             if (ShopPriceUI.instance != null)
@@ -111,8 +117,15 @@ public class ShopSlot : MonoBehaviour, IInteractable
     {
         if (IsEmpty)
             return IsSoldOutToday ? "판매대에 상품 진열 (오늘 품절)" : "판매대에 상품 진열";
-        return $"가격 확정/조정 ({currentItem.data.itemName} / {EffectiveDisplayPrice}G)";
+        if (CanTopUpFromHeld(out _))
+            return $"{ShownName(currentItem.data)} 더 진열 ({currentItem.count}/{Capacity})";
+        string stockText = currentItem.count > 1 ? $" ×{currentItem.count}" : "";
+        return $"가격 확정/조정 ({ShownName(currentItem.data)}{stockText} / {EffectiveDisplayPrice}G)";
     }
+
+    // P6: 데모 화면은 저장 ID/이름을 그대로 두고 표시 계층에서만 한국어 이름을 쓴다.
+    static string ShownName(Item item) =>
+        WorldGameplayAdapterService.Instance?.FirstDay == true ? ItemDisplayName.For(item) : item.itemName;
 
     void TryStockFromPlayer()
     {
@@ -131,13 +144,14 @@ public class ShopSlot : MonoBehaviour, IInteractable
         if (!CanStock(sourceInstance.data, logReason: true))
             return;
 
-        currentItem = new ItemInstance(sourceInstance.data, 1)
+        int moved = Mathf.Clamp(sourceInstance.count, 1, Capacity);
+        currentItem = new ItemInstance(sourceInstance.data, moved)
         {
             quality = sourceInstance.quality,
             currentPrice = sourceInstance.currentPrice
         };
 
-        sourceSlot.AddCount(-1);
+        sourceSlot.AddCount(-moved);
         if (displayPrice <= 0) displayPrice = currentItem.data.basePrice;
 
         Inventory.instance.RefreshAllUI();
@@ -225,6 +239,31 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public void RetrieveItem() => TryTakeBackToPlayer();
 
+    int Capacity => Mathf.Max(1, stockCapacity);
+
+    // 같은 상품을 손에 들고 있고 자리가 남으면 가격 UI 대신 보충한다(D2 영업 밀도).
+    bool CanTopUpFromHeld(out InventorySlot heldSlot)
+    {
+        heldSlot = null;
+        if (IsEmpty || currentItem.count >= Capacity || Inventory.instance == null) return false;
+        var inv = Inventory.instance;
+        var selected = inv.hotbar != null ? inv.hotbar.GetSlot(inv.selectedHotbarIndex) : null;
+        if (selected == null || selected.IsEmpty || selected.instance == null || selected.instance.data != currentItem.data) return false;
+        heldSlot = selected;
+        return true;
+    }
+
+    void TopUp(InventorySlot heldSlot)
+    {
+        int moved = Mathf.Min(heldSlot.instance.count, Capacity - currentItem.count);
+        if (moved <= 0) return;
+        currentItem.count += moved;
+        heldSlot.AddCount(-moved);
+        Inventory.instance.RefreshAllUI();
+        RefreshDisplay();
+        Debug.Log($"진열 보충: {currentItem.data.itemName} ×{currentItem.count}");
+    }
+
     void TryTakeBackToPlayer()
     {
         if (_purchaseInProgress) return;
@@ -259,8 +298,9 @@ public class ShopSlot : MonoBehaviour, IInteractable
             if (EconomyService.Instance == null || SalesLogManager.Instance == null) return false;
             _purchaseInProgress = true;
 
+            // 손님 한 명은 한 개를 산다. 쌓인 재고는 다음 손님에게 남는다(용량 1이면 기존과 동일).
             int unitPrice = EffectiveDisplayPrice;
-            long total = (long)unitPrice * currentItem.count;
+            long total = unitPrice;
             if (total < 0 || total > int.MaxValue - (long)EconomyService.Instance.Money) return false;
             int amount = (int)total;
 
@@ -282,8 +322,12 @@ public class ShopSlot : MonoBehaviour, IInteractable
                     hour);
             }
 
-            currentItem = null;
-            _soldOutDay = day; // Task 019 — 오늘 다 팔린 슬롯 표시
+            currentItem.count -= 1;
+            if (currentItem.count <= 0)
+            {
+                currentItem = null;
+                _soldOutDay = day; // Task 019 — 오늘 다 팔린 슬롯 표시
+            }
             RefreshDisplay();
             return true;
         }
@@ -377,9 +421,19 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
         var labelGo = new GameObject("ItemLabel");
         labelGo.transform.SetParent(root.transform, false);
-        labelGo.transform.localPosition = new Vector3(0f, 0.55f, 0f);
+        // 이름·가격은 진열 모델 꼭대기 위에 띄운다(모델이 가격을 가리지 않게).
+        float labelHeight = 0.55f;
+        var shown = visual.GetComponentsInChildren<Renderer>();
+        if (firstDay && shown.Length > 0)
+        {
+            Bounds top = shown[0].bounds;
+            foreach (var renderer in shown) top.Encapsulate(renderer.bounds);
+            labelHeight = Mathf.Max(labelHeight, root.transform.InverseTransformPoint(new Vector3(top.center.x, top.max.y, top.center.z)).y + 0.65f);
+        }
+        labelGo.transform.localPosition = new Vector3(0f, labelHeight, 0f);
         var label = labelGo.AddComponent<PrototypeWorldLabel>();
-        label.Set($"{currentItem.data.itemName}\n{EffectiveDisplayPrice}G", new Color(1f, 0.94f, 0.62f), firstDay ? 2.6f : 1.8f);
+        string stock = currentItem.count > 1 ? $" ×{currentItem.count}" : "";
+        label.Set($"{ShownName(currentItem.data)}{stock}\n{EffectiveDisplayPrice}G", new Color(1f, 0.94f, 0.62f), firstDay ? 2.6f : 1.8f);
     }
 
     void ClearDisplay()

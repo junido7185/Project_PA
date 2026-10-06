@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 4
   itemName: Ore
   description: Raw mineral used at the forge.
-  icon: {fileID: 21300000, guid: d0ea2ec653dd331458a02626c7a02955, type: 3}
+  icon: {fileID: 21300000, guid: 1980666d464be0f4ba2d0cabe41e19d2, type: 3}
   maxStack: 99
-  model: {fileID: 0}
+  model: {fileID: 919132149155446097, guid: 1cf27bd7b16285c46a22a5e262872024, type: 3}
   basePrice: 15
   toolType: 0
   category: 0

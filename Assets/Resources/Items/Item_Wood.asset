@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 3
   itemName: Wood
   description: Basic construction and crafting material.
-  icon: {fileID: 21300000, guid: 9ad171c11e1a7364398407640d2cb08b, type: 3}
+  icon: {fileID: 21300000, guid: 95184cdcd5508b34199d9c499b1e7771, type: 3}
   maxStack: 99
-  model: {fileID: 0}
+  model: {fileID: 7279353968124396609, guid: 12abb6945b5cbf44f95d35d6b643d67c, type: 3}
   basePrice: 8
   toolType: 0
   category: 0

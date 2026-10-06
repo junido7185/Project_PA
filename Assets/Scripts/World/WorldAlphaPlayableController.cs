@@ -940,7 +940,11 @@ public sealed class WorldPlayerTraversalGuard : MonoBehaviour
         {
             return false;
         }
-        if (position.y < ground.y - 1.25f || position.y > ground.y + 4f)
+        float highestSafeY=ground.y+4f;
+        if (_grid.GetComponent<DemoRouteController>() != null)
+            highestSafeY=Mathf.Max(highestSafeY,_grid.Definition.WorldOrigin.y+
+                _grid.Definition.MaxElevationLevel*_grid.Definition.ElevationStep+2f);
+        if (position.y < ground.y - 1.25f || position.y > highestSafeY)
             return false;
         safe = new Vector3(position.x, ground.y + 0.05f, position.z);
         return true;

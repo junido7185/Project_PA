@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Recipe_IronBar
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: IronBar
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 846308c9c9a7fb740914236a01d6bd1a, type: 3}
   description: 2 Ore -> 1 IronBar
   ingredients:
   - item: {fileID: 11400000, guid: 8283f21f84e1134458262a89b7e29984, type: 2}

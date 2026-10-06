@@ -257,6 +257,17 @@ public sealed class WorldNavigationService : MonoBehaviour
         if (_rebuildRoutine == null && _dirtyQueue.Count > 0)
             _rebuildRoutine = StartCoroutine(ProcessDirtyQueue());
         UpdateTestAgentState();
+        BindDemoStepTraversal();
+    }
+
+    float _nextDemoAgentBind;
+    void BindDemoStepTraversal()
+    {
+        if (GetComponent<DemoRouteController>() == null || Time.unscaledTime < _nextDemoAgentBind) return;
+        _nextDemoAgentBind = Time.unscaledTime + 1f;
+        foreach (var agent in GetComponentsInChildren<NavMeshAgent>())
+            if (agent != _testAgent && agent.GetComponent<FirstDayStepTraversal>() == null)
+                agent.gameObject.AddComponent<FirstDayStepTraversal>();
     }
 
     void OnDisable()
@@ -729,6 +740,60 @@ public sealed class WorldNavigationService : MonoBehaviour
             CreateVerticalSeamLinks(rightX - 1, rightX);
         for (int northZ = sectorCells; northZ < definition.Height; northZ += sectorCells)
             CreateHorizontalSeamLinks(northZ - 1, northZ);
+        // Retain block terrain. Only an actual adjacent dry, one-level step can
+        // connect terraces; agents cross it visibly instead of warping offscreen.
+        if (GetComponent<DemoRouteController>() != null) CreateDemoTerraceStepLinks();
+    }
+
+    void CreateDemoTerraceStepLinks()
+    {
+        var definition = _grid.Definition;
+        for (int axis = 0; axis < 2; axis++)
+        {
+            int boundaries = axis == 0 ? definition.Width : definition.Height;
+            int length = axis == 0 ? definition.Height : definition.Width;
+            for (int boundary = 1; boundary < boundaries; boundary++)
+            {
+                int first = -1, lowLevel = 0, highLevel = 0;
+                for (int along = 0; along <= length; along++)
+                {
+                    var a = axis == 0 ? new Vector2Int(boundary - 1, along) : new Vector2Int(along, boundary - 1);
+                    var b = axis == 0 ? new Vector2Int(boundary, along) : new Vector2Int(along, boundary);
+                    WorldCellData ca = default, cb = default;
+                    bool valid = along < length && _grid.TryGetCell(a, out ca) && ca.IsWalkable &&
+                        _grid.TryGetCell(b, out cb) && cb.IsWalkable && Mathf.Abs(ca.ElevationLevel - cb.ElevationLevel) == 1;
+                    if (valid && first >= 0 && ca.ElevationLevel == lowLevel && cb.ElevationLevel == highLevel && along-first < 4) continue;
+                    if (first >= 0) CreateDemoStepLink(axis == 0, boundary, first, along - 1, lowLevel, highLevel);
+                    first = valid ? along : -1;
+                    lowLevel = valid ? ca.ElevationLevel : 0;
+                    highLevel = valid ? cb.ElevationLevel : 0;
+                }
+            }
+        }
+    }
+
+    void CreateDemoStepLink(bool vertical, int boundary, int first, int last, int firstLevel, int secondLevel)
+    {
+        var definition = _grid.Definition;
+        float middle = (first+last)*.5f;
+        float edge = (boundary-.5f)*definition.CellSize;
+        float inset = definition.CellSize*.36f;
+        Vector3 a = definition.WorldOrigin + (vertical
+            ? new Vector3(edge-inset, firstLevel*definition.ElevationStep+.02f, middle*definition.CellSize)
+            : new Vector3(middle*definition.CellSize, firstLevel*definition.ElevationStep+.02f, edge-inset));
+        Vector3 b = definition.WorldOrigin + (vertical
+            ? new Vector3(edge+inset, secondLevel*definition.ElevationStep+.02f, middle*definition.CellSize)
+            : new Vector3(middle*definition.CellSize, secondLevel*definition.ElevationStep+.02f, edge+inset));
+        if (!NavMesh.SamplePosition(a, out var start, .2f, NavMesh.AllAreas) ||
+            !NavMesh.SamplePosition(b, out var end, .2f, NavMesh.AllAreas) ||
+            Mathf.Abs(start.position.y-a.y)>.1f || Mathf.Abs(end.position.y-b.y)>.1f) return;
+        var go = new GameObject("DemoTerraceStepLink_"+_linkCount) { hideFlags=HideFlags.DontSave };
+        go.SetActive(false); go.transform.SetParent(_linkRoot.transform,false);
+        var link = go.AddComponent<NavMeshLink>();
+        link.agentTypeID=ResolveAgentTypeId(); link.startPoint=start.position; link.endPoint=end.position;
+        link.width=Mathf.Max(.7f,(last-first+1)*definition.CellSize-.6f);
+        link.bidirectional=true; link.costModifier=1.4f; link.autoUpdate=false;
+        go.SetActive(true); _linkCount++;
     }
 
     void CreateVerticalSeamLinks(int leftX, int rightX)

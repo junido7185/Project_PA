@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Recipe_ImprovedPickaxe
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: Improved Pickaxe
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: ff07b4fef9481db4ba5d25638b626077, type: 3}
   description: 
   ingredients:
   - item: {fileID: 11400000, guid: 9e64a6681df3bd44cac10562bce30aa9, type: 2}

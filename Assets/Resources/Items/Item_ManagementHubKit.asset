@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 2005
   itemName: Management Hub Kit
   description: Select in the hotbar and press Space to place the management hub.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: feec06a5c751ef841863071ccf6cabd6, type: 3}
   maxStack: 99
-  model: {fileID: 0}
+  model: {fileID: 5108575975690731935, guid: 6c47913378e24f141ad18b8f10488d08, type: 3}
   basePrice: 0
   toolType: 4
   category: 4

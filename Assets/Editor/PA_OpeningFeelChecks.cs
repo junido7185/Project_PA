@@ -226,7 +226,8 @@ public static class PA_OpeningFeelChecks
         Check(Mathf.Abs(speeds[1]/speeds[0]-1)<.12f,"cardinal="+speeds[0].ToString("F2")+" diagonal="+speeds[1].ToString("F2")+" cellSeconds="+(2/speeds[0]).ToString("F3"));
         Pose(p,origin);var blocker=GameObject.CreatePrimitive(PrimitiveType.Cube);blocker.transform.position=origin+Vector3.right*1.2f+Vector3.up;blocker.transform.localScale=new Vector3(.2f,2,2);
         InputSystem.QueueStateEvent(_keyboard,new KeyboardState(UnityEngine.InputSystem.Key.D));await Task.Delay(600);
-        Check(controller.ActualPlanarSpeed<.15f&&p.GetComponent<NpcHumanoidProceduralAnimator>().CurrentPlanarSpeed<.15f,"collision stop drives idle from actual velocity");
+        var locomotion=p.GetComponent<PlayerLocomotionAnimator>();
+        Check(controller.ActualPlanarSpeed<.15f&&(locomotion!=null?locomotion.MoveSpeed:p.GetComponent<NpcHumanoidProceduralAnimator>().CurrentPlanarSpeed)<.15f,"collision stop drives idle from actual velocity");
         InputSystem.QueueStateEvent(_keyboard,new KeyboardState());Object.Destroy(blocker);await Task.Delay(200);
         var safety=Object.FindFirstObjectByType<OpeningFeelPresentation>();int beforeRecovery=safety.Recoveries;Pose(p,new Vector3(origin.x,-8,origin.z));await Task.Delay(200);
         Check(p.position.y>-.5f&&safety.Recoveries==beforeRecovery+1,"P0 forced fall recovers exactly once");Pose(p,origin);

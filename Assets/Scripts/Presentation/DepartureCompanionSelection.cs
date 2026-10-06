@@ -23,6 +23,9 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
     }
 
     public Candidate[] candidates;
+
+    static string SynergyRoot(string id) =>
+        id.StartsWith("Lumberjack") ? "임업" : id.StartsWith("Miner") ? "광업" : id.StartsWith("Fisher") ? "수산업" : id.StartsWith("Farmer") ? "농업" : "-";
     public TMP_FontAsset font;
     public IReadOnlyList<string> SelectedIds => _selected.AsReadOnly();
     public IReadOnlyList<string> ConfirmedIds => Array.AsReadOnly(_confirmed);
@@ -39,11 +42,12 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
     Image[] _cards;
     TextMeshProUGUI[] _selectionLabels;
     TextMeshProUGUI _count;
+    TextMeshProUGUI _departureLabel;
     bool _hooked;
     float _certifiedAt = -1f;
-    static readonly Color Ink = new Color(.17f, .23f, .23f);
-    static readonly Color Paper = new Color(.97f, .94f, .85f);
-    static readonly Color Teal = new Color(.22f, .45f, .44f);
+    static readonly Color Ink = PAUiTheme.Ink;
+    static readonly Color Paper = PAUiTheme.Cream;
+    static readonly Color Teal = PAUiTheme.Teal;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Register()
@@ -166,15 +170,39 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
 
     void Refresh()
     {
-        _count.text = $"동행 {_selected.Count} / 2명  ·  함께 시작할 생산 분야를 선택하세요";
+        string names = string.Join(" · ", _selected.Select(id => CandidateName(candidates.First(c => c.id == id))));
+        _count.text = _selected.Count == 0 ? "동행 0 / 2명 · 직업과 첫 상품을 보고 골라 주세요"
+            : $"동행 {_selected.Count} / 2명 · {names}";
+        if (_departureLabel != null)
+            _departureLabel.text = _selected.Count == 2 ? "선택 확정 후 출항 [Enter]"
+                : $"{2 - _selected.Count}명을 더 선택하세요";
         DepartureButton.interactable = _selected.Count == 2;
         DepartureButton.GetComponent<Image>().color = _selected.Count == 2 ? Teal : new Color(.58f, .61f, .56f);
         for (int i = 0; i < candidates.Length; i++)
         {
             bool selected = _selected.Contains(candidates[i].id);
             _cards[i].color = selected ? new Color(.83f, .90f, .79f) : Color.white;
-            _selectionLabels[i].text = selected ? "✓  동행 선택됨  ·  다시 눌러 취소" : _selected.Count == 2 ? "2명 선택 완료" : "+  함께 출발하기";
+            _selectionLabels[i].text = selected ? "선택됨 · 다시 눌러 해제"
+                : _selected.Count == 2 ? "다른 동행을 해제하면 선택 가능" : "+  동행으로 선택";
         }
+    }
+
+    // 이전 C3 후보의 표시 개선만 재사용한다. 프로필·저장 이름·ID는 변경하지 않는다.
+    static string CandidateName(Candidate candidate)
+    {
+        string name = candidate.displayName;
+        if (string.IsNullOrWhiteSpace(name) && candidate.profile != null) name = candidate.profile.npcName;
+        return PlayerText(name, "이름 미확인");
+    }
+
+    static string PlayerText(string value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        const string suffix = " · TEMP";
+        string text = value.Trim();
+        if (text.EndsWith(suffix, StringComparison.Ordinal))
+            text = text.Substring(0, text.Length - suffix.Length).TrimEnd();
+        return string.IsNullOrWhiteSpace(text) ? fallback : text;
     }
 
     void BuildUI()
@@ -189,9 +217,9 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = .5f;
         RectTransform background = Panel(root.transform, "Paper", 0, 0, 1920, 1080, Paper);
-        Label(background, "Company", "P.A. COMPANY   /   PIONEER PARTNER", 70, 32, 1300, 35, 22, Teal);
+        Label(background, "Company", "P.A. COMPANY   /   개척 동행", 70, 32, 1300, 35, 22, Teal);
         Label(background, "Title", "누구와 함께 개척을 시작할까요?", 70, 83, 1750, 70, 45, Ink);
-        Label(background, "Context", "3명 중 2명  ·  당신의 선택으로 시작할 생산 분야가 달라집니다.", 74, 166, 1730, 45, 27, Ink);
+        Label(background, "Context", "3명 중 2명을 선택하세요 · 함께할 직업과 준비할 첫 상품을 비교해 보세요.", 74, 166, 1730, 45, 27, Ink);
         CandidateButtons = new Button[3];
         _cards = new Image[3];
         _selectionLabels = new TextMeshProUGUI[3];
@@ -213,25 +241,28 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
             });
             CandidateButtons[i] = button;
             Panel(card, "Accent", 0, 0, 580, 10, c.accent);
-            Label(card, "Number", "PARTNER 0" + (i + 1), 30, 29, 510, 30, 20, Teal);
-            Label(card, "Profession", c.profession, 30, 83, 510, 67, 48, Ink);
-            Label(card, "Name", c.displayName, 32, 159, 510, 36, 26, Ink);
-            Label(card, "Field", "생산 분야     " + c.production, 32, 232, 510, 40, 26, Ink);
-            Label(card, "Goods", "첫 상품         " + c.firstGoods, 32, 280, 510, 40, 26, Ink);
-            Label(card, "Future", "향후 연결     " + c.future, 32, 328, 516, 40, 25, Ink);
-            Label(card, "Personality", "성격 · TEMP\n" + c.personality, 32, 394, 516, 70, 23, Ink);
-            Label(card, "MBTI", "MBTI  " + c.Mbti + "   ·  기존 성향값 / ? 미확정", 32, 474, 516, 40, 19, Teal);
-            _selectionLabels[i] = Label(card, "Selection", "", 32, 543, 516, 42, 23, Teal);
+            Label(card, "Number", "동행 후보 0" + (i + 1), 30, 29, 510, 30, 20, Teal);
+            Label(card, "Profession", PlayerText(c.profession, "직업 미확인"), 30, 78, 510, 64, 44, Ink);
+            Label(card, "Name", CandidateName(c), 32, 148, 510, 40, 28, Ink);
+            Label(card, "Field", "생산 분야  ·  " + PlayerText(c.production, "정보 미확인"), 32, 222, 510, 44, 26, Ink);
+            Label(card, "Goods", "첫 상품  ·  " + PlayerText(c.firstGoods, "정보 미확인"), 32, 275, 510, 62, 27, Ink);
+            // P7: 이 동행과 궁합이 맞는 전문 분야(Root)를 선택 카드에서 바로 읽게 한다.
+            Label(card, "Future", "성장 방향  ·  " + PlayerText(c.future, "정보 미확인") + "  ·  ★" + SynergyRoot(c.id), 32, 345, 516, 50, 22, Teal);
+            Label(card, "Personality", PlayerText(c.personality, "소개 정보 미확인"), 32, 407, 516, 64, 24, Ink);
+            string temperament = c.profile == null || c.Mbti.Contains("?") ? "성향 정보 미확인" : "성향  ·  " + c.Mbti;
+            Label(card, "MBTI", temperament, 32, 480, 516, 36, 20, Teal);
+            Panel(card, "SelectionDivider", 32, 528, 516, 2, c.accent);
+            _selectionLabels[i] = Label(card, "Selection", "", 32, 548, 516, 38, 23, Teal);
         }
         _count = Label(background, "Count", "", 74, 904, 1250, 48, 28, Ink);
-        Label(background, "Note", "동행자를 정하는 단계입니다. 향후 연결 직업은 성장 방향 안내입니다.", 74, 966, 1260, 36, 22, Teal);
+        Label(background, "Note", "선택을 바꾸려면 카드를 다시 누르세요 · 성장 방향은 이후의 직업 안내예요.", 74, 966, 1260, 36, 22, Teal);
         var depart = Panel(background, "Depart", 1420, 908, 430, 96, Teal);
         depart.GetComponent<Image>().raycastTarget = true;
         DepartureButton = depart.gameObject.AddComponent<Button>();
         DepartureButton.targetGraphic = depart.GetComponent<Image>();
         DepartureButton.onClick.AddListener(Confirm);
-        var title = Label(depart, "Label", "이 두 사람과 출항  →", 20, 20, 390, 56, 28, Paper);
-        title.alignment = TextAlignmentOptions.Center;
+        _departureLabel = Label(depart, "Label", "동행 2명을 선택하세요", 16, 20, 398, 56, 25, Paper);
+        _departureLabel.alignment = TextAlignmentOptions.Center;
     }
 
     public static RectTransform Panel(Transform parent, string name, float x, float y, float w, float h, Color color)
@@ -242,7 +273,8 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
         rect.anchoredPosition = new Vector2(x, -y);
         rect.sizeDelta = new Vector2(w, h);
-        go.GetComponent<Image>().color = color;
+        if (w < 1900 && h > 10) PAUiTheme.Surface(go.GetComponent<Image>(), color);
+        else go.GetComponent<Image>().color = color;
         go.GetComponent<Image>().raycastTarget = false;
         return rect;
     }

@@ -42,25 +42,22 @@ Project P.A.의 정체성은 다음과 같다.
 
 ## 2. 현재 졸업 데모의 제품 목표
 
-현재 목표는 Full Game 전체가 아니라 **10~15분짜리 finished-feeling vertical slice**다.
+현재 목표는 Opening Demo Canon v2의 **12~15분짜리 finished-feeling vertical slice**다. 아래 경로는 `Docs/01_GAME_DESIGN/Canon/PROJECT_PA_OPENING_DEMO_CANON_V2_2026-09-16.md`의 MUST PATH를 따른다.
 
 권장 플레이 흐름:
 
-1. 출발/도착
-2. Demo256 섬 진입
-3. Forest → Axe → Wood
-4. Highland → Pickaxe → Ore
-5. Coast → Fishing → Fish
-6. Meadow → Net → Bug
-7. Management Hub 배치
-8. B01 Shop 배치
-9. 실제 채집한 아이템 진열
-10. 가격 설정
-11. OPEN
-12. 실제 NPC의 구매/거절
-13. Economy 증가 + SalesLog 기록
-14. FIRST BUSINESS DAY 성공 연출
-15. DEMO END / 다음 성장 티저
+1. 기존 타이틀 NEW GAME → 출항 교육/가격 인증
+2. 후보 3명 중 동행 2명 확정 → Pixel Voyage
+3. Demo256 도착 → Supply Box
+4. Forest → Axe → Wood / Highland → Pickaxe → Stone 계열 채집
+5. Pioneer Shop/Base + Resident Tent ×2 실제 배치
+6. Settlement Established → License Point → Specialization Root 선택
+7. 자유 행동/대표 도구 제작 → 자연 일몰 → 밤 영업 준비
+8. 기존 Display Stand에 실제 상품 진열 → 플레이어 가격 확정
+9. OPEN → 실제 NPC 구매/거절 → Economy/SalesLog 일치
+10. CLOSE → Pioneer Report → 데모 종료
+
+Fish/Bug와 NPC 도구 지급은 선택 행동·Rank 보너스다. 별도 Management Hub, Day 2, 실제 Agriculture 시스템은 필수 경로에 추가하지 않는다. 이 제품 목표는 기존 티켓의 승인 범위를 자동 확장하지 않는다.
 
 목표 감각:
 - Dinkum처럼 직접 걷고, 들고, 사용하고, 배치한다.

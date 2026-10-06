@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 2004
   itemName: Butterfly
   description: A butterfly caught in the meadow.
-  icon: {fileID: 21300000, guid: 0981e268a07170640b47b8e4fcf1b686, type: 3}
+  icon: {fileID: 21300000, guid: 51f78cbde83c44244870f921be5cc472, type: 3}
   maxStack: 20
-  model: {fileID: 0}
+  model: {fileID: 3459969785590044912, guid: 7a9724eea8595fe45922fcaf678334ab, type: 3}
   basePrice: 12
   toolType: 0
   category: 0

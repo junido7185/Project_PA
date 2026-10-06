@@ -26,8 +26,8 @@ public class ShopPriceUI : MonoBehaviour
         var root = new GameObject("PriceDrag", typeof(RectTransform), typeof(Image), typeof(Slider));
         root.transform.SetParent(_panel, false);
         var rect = (RectTransform)root.transform;
-        rect.sizeDelta = new Vector2(320, 20);
-        rect.anchoredPosition = new Vector2(0, -20);
+        rect.sizeDelta = new Vector2(440, 20);
+        rect.anchoredPosition = new Vector2(0, -62);
         root.GetComponent<Image>().color = new Color(.28f, .36f, .34f);
         var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
         handle.transform.SetParent(root.transform, false);
@@ -60,6 +60,11 @@ public class ShopPriceUI : MonoBehaviour
     TextMeshProUGUI _titleTxt;       // "가격 설정" / "진열하기"
     TextMeshProUGUI _itemNameTxt;    // 아이템 이름
     TextMeshProUGUI _priceTxt;       // 현재 설정 가격
+    TextMeshProUGUI _currentPriceTxt;
+    TextMeshProUGUI _pendingLabelTxt;
+    TextMeshProUGUI _modeHintTxt;
+    Image          _itemIcon;
+    Button[]       _adjustButtons;
     Button          _confirmBtn;
     Button          _retrieveBtn;
     Button          _closeBtn;
@@ -69,12 +74,12 @@ public class ShopPriceUI : MonoBehaviour
     int      _pendingPrice;
 
     // ── 색상 팔레트 (레퍼런스.html 기준) ────────────────────────────────────────
-    static readonly Color C_PanelBG     = new Color(0.13f, 0.13f, 0.13f, 1f);
-    static readonly Color C_Header      = new Color(0.941f, 0.502f, 0.439f, 1f);  // #F08070 coral
-    static readonly Color C_Gold        = new Color(1f,    0.92f,  0.38f,  1f);   // #FFEB61
-    static readonly Color C_BtnGreen    = new Color(0.28f, 0.68f,  0.40f,  1f);
-    static readonly Color C_BtnOrange   = new Color(0.86f, 0.48f,  0.22f,  1f);
-    static readonly Color C_BtnGray     = new Color(0.30f, 0.30f,  0.30f,  1f);
+    static readonly Color C_PanelBG     = PAUiTheme.Cream;
+    static readonly Color C_Header      = PAUiTheme.Teal;
+    static readonly Color C_Gold        = new Color(.96f, .84f, .43f);
+    static readonly Color C_BtnGreen    = PAUiTheme.Teal;
+    static readonly Color C_BtnOrange   = new Color(.71f, .36f, .26f);
+    static readonly Color C_BtnGray     = new Color(.42f, .45f, .43f);
 
     // ──────────────────────────────────────────────────────────────────────────────
     void Awake()
@@ -107,58 +112,107 @@ public class ShopPriceUI : MonoBehaviour
         var blockerRT = (RectTransform)blockerGO.transform;
         blockerRT.SetParent(canvasParent, false);
         StretchFull(blockerRT);
-        blockerGO.GetComponent<Image>().color = new Color(0, 0, 0, 0.45f);
+        blockerGO.GetComponent<Image>().color = new Color(.04f, .07f, .08f, .38f);
         blockerGO.GetComponent<Button>().onClick.AddListener(Close);
 
-        // ── 메인 패널 (중앙 고정, 400×390) ────────────────────────────────────
+        // 기존 C4 표시 개선을 최신 가격/커서 계약에 통합한다. 거래 경로는 그대로다.
         var panelGO = new GameObject("ShopPricePanel", typeof(RectTransform), typeof(Image));
         _panel      = (RectTransform)panelGO.transform;
         _panel.SetParent(canvasParent, false);
         _panel.anchorMin        = new Vector2(0.5f, 0.5f);
         _panel.anchorMax        = new Vector2(0.5f, 0.5f);
         _panel.pivot            = new Vector2(0.5f, 0.5f);
-        _panel.sizeDelta        = new Vector2(400, 390);
+        _panel.sizeDelta        = new Vector2(680, 640);
         _panel.anchoredPosition = Vector2.zero;
-        panelGO.GetComponent<Image>().color = C_PanelBG;
+        SetSurface(panelGO.GetComponent<Image>(), C_PanelBG);
+
+        var header = new GameObject("Header", typeof(RectTransform), typeof(Image));
+        var headerRT = (RectTransform)header.transform;
+        headerRT.SetParent(_panel, false);
+        headerRT.anchorMin = new Vector2(0f, 1f);
+        headerRT.anchorMax = Vector2.one;
+        headerRT.pivot = new Vector2(.5f, 1f);
+        headerRT.sizeDelta = new Vector2(0f, 88f);
+        SetSurface(header.GetComponent<Image>(), C_Header);
+        header.GetComponent<Image>().raycastTarget = false;
+
+        var preview = new GameObject("PendingPriceCard", typeof(RectTransform), typeof(Image));
+        var previewRT = (RectTransform)preview.transform;
+        previewRT.SetParent(_panel, false);
+        previewRT.anchorMin = previewRT.anchorMax = new Vector2(.5f, .5f);
+        previewRT.pivot = new Vector2(.5f, .5f);
+        previewRT.sizeDelta = new Vector2(624f, 120f);
+        previewRT.anchoredPosition = new Vector2(0f, 36f);
+        SetSurface(preview.GetComponent<Image>(), new Color(.98f, .91f, .66f));
+        preview.GetComponent<Image>().raycastTarget = false;
+
+        var icon = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image));
+        var iconRT = (RectTransform)icon.transform;
+        iconRT.SetParent(_panel, false);
+        iconRT.anchorMin = iconRT.anchorMax = new Vector2(.5f, .5f);
+        iconRT.pivot = new Vector2(.5f, .5f);
+        iconRT.sizeDelta = new Vector2(80f, 80f);
+        iconRT.anchoredPosition = new Vector2(-244f, 181f);
+        _itemIcon = icon.GetComponent<Image>();
+        _itemIcon.preserveAspect = true;
+        _itemIcon.raycastTarget = false;
+        _itemIcon.enabled = false;
 
         _titleTxt = CreateLabel(_panel, "TitleTxt", "가격 설정",
-            new Rect(-180, 166, 360, 36), 24, FontStyles.Bold, C_Header, TextAlignmentOptions.Center);
+            new Rect(-300, 300, 600, 56), 32, FontStyles.Bold, Color.white, TextAlignmentOptions.MidlineLeft);
         _itemNameTxt = CreateLabel(_panel, "ItemNameTxt", "—",
-            new Rect(-180, 116, 360, 32), 20, FontStyles.Normal, Color.white, TextAlignmentOptions.Center);
+            new Rect(-178, 222, 478, 66), 26, FontStyles.Bold, PAUiTheme.Ink, TextAlignmentOptions.MidlineLeft);
+        _itemNameTxt.enableAutoSizing = true;
+        _itemNameTxt.fontSizeMin = 20f;
+        _itemNameTxt.fontSizeMax = 26f;
+        _currentPriceTxt = CreateLabel(_panel, "CurrentPriceTxt", "",
+            new Rect(-300, 133, 600, 30), 20, FontStyles.Normal,
+            PAUiTheme.Teal, TextAlignmentOptions.Center);
+        _pendingLabelTxt = CreateLabel(_panel, "PendingPriceLabel", "확정 전 임시 가격",
+            new Rect(-300, 88, 600, 26), 19, FontStyles.Normal,
+            PAUiTheme.Ink, TextAlignmentOptions.Center);
         _priceTxt = CreateLabel(_panel, "PriceTxt", "0 G",
-            new Rect(-180, 70, 360, 48), 34, FontStyles.Bold, C_Gold, TextAlignmentOptions.Center);
+            new Rect(-300, 58, 600, 62), 48, FontStyles.Bold, PAUiTheme.Ink, TextAlignmentOptions.Center);
+        _priceTxt.enableAutoSizing = true;
+        _priceTxt.fontSizeMin = 30f;
+        _priceTxt.fontSizeMax = 48f;
         ConfigureTutorialPriceDrag();
-        BuildAdjustRow(_panel, -76, new[] { -10, -1, 1, 10 });
-        CreateLabel(_panel, "DragHint", "버튼 또는 드래그로 가격 조절",
-            new Rect(-180, -106, 360, 26), 16, FontStyles.Normal,
-            new Color(.82f, .85f, .81f), TextAlignmentOptions.Center);
-        _confirmBtn = BuildActionBtn(_panel, "가격 확정", C_BtnGreen, new Vector2(-124, -158), OnConfirm);
-        _retrieveBtn = BuildActionBtn(_panel, "상품 회수", C_BtnOrange, new Vector2(0, -158), OnRetrieve);
-        _closeBtn = BuildActionBtn(_panel, "닫기", C_BtnGray, new Vector2(124, -158), Close);
+        BuildAdjustRow(_panel, -120, new[] { -10, -1, 1, 10 });
+        _modeHintTxt = CreateLabel(_panel, "DragHint", "버튼 또는 드래그로 가격 조절",
+            new Rect(-300, -160, 600, 62), 18, FontStyles.Normal,
+            PAUiTheme.Ink, TextAlignmentOptions.Center);
+        _confirmBtn = BuildActionBtn(_panel, "가격 확정", C_BtnGreen, new Vector2(-210, -272), OnConfirm);
+        _retrieveBtn = BuildActionBtn(_panel, "상품 회수", C_BtnOrange, new Vector2(0, -272), OnRetrieve);
+        _closeBtn = BuildActionBtn(_panel, "닫기", C_BtnGray, new Vector2(210, -272), Close);
+        // 기존 GameObject 이름과 listener를 유지하고 화면 문구만 명확히 한다.
+        _confirmBtn.GetComponentInChildren<TextMeshProUGUI>().text = "가격 적용";
+        _closeBtn.GetComponentInChildren<TextMeshProUGUI>().text = "취소 / 닫기";
     }
 
     // ── UI 헬퍼 ─────────────────────────────────────────────────────────────────
     void BuildAdjustRow(Transform parent, float y, int[] deltas)
     {
-        float totalW = 320f;
-        float btnW   = totalW / deltas.Length - 4;
+        float totalW = 440f;
+        float btnW   = totalW / deltas.Length - 8;
         float startX = -totalW * 0.5f + btnW * 0.5f;
 
+        _adjustButtons = new Button[deltas.Length];
         for (int i = 0; i < deltas.Length; i++)
         {
             int d = deltas[i];
             string label = d > 0 ? $"+{d}" : $"{d}";
             Color col    = d > 0
-                ? new Color(0.25f, 0.55f, 0.82f)   // 파랑 계열
-                : new Color(0.72f, 0.28f, 0.28f);  // 빨강 계열
+                ? PAUiTheme.Teal
+                : new Color(.67f, .38f, .28f);
 
             var btn = BuildActionBtn(parent, label, col,
-                new Vector2(startX + i * (btnW + 4), y), null);
-            btn.GetComponentInChildren<TextMeshProUGUI>().fontSize = 20;
+                new Vector2(startX + i * (btnW + 8), y), null);
+            btn.GetComponentInChildren<TextMeshProUGUI>().fontSize = 22;
             var rt  = (RectTransform)btn.transform;
-            rt.sizeDelta = new Vector2(btnW, 40);
+            rt.sizeDelta = new Vector2(btnW, 48);
 
             btn.onClick.AddListener(() => AdjustPrice(d));
+            _adjustButtons[i] = btn;
         }
     }
 
@@ -171,10 +225,10 @@ public class ShopPriceUI : MonoBehaviour
         rt.anchorMin        = new Vector2(0.5f, 0.5f);
         rt.anchorMax        = new Vector2(0.5f, 0.5f);
         rt.pivot            = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta        = new Vector2(112, 40);
+        rt.sizeDelta        = new Vector2(196, 56);
         rt.anchoredPosition = pos;
 
-        go.GetComponent<Image>().color = bg;
+        SetSurface(go.GetComponent<Image>(), bg);
 
         var txt = new GameObject("Text", typeof(TextMeshProUGUI));
         txt.transform.SetParent(go.transform, false);
@@ -182,13 +236,19 @@ public class ShopPriceUI : MonoBehaviour
         var tmp     = txt.GetComponent<TextMeshProUGUI>();
         tmp.font = TMP_Settings.defaultFontAsset;
         tmp.text    = label;
-        tmp.fontSize = 15;
+        tmp.fontSize = 21;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color   = Color.white;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.raycastTarget = false;
 
         var btn = go.GetComponent<Button>();
+        ColorBlock colors = btn.colors;
+        colors.highlightedColor = new Color(.90f, .96f, .93f);
+        colors.pressedColor = new Color(.78f, .86f, .82f);
+        colors.disabledColor = new Color(.58f, .62f, .60f);
+        colors.fadeDuration = .08f;
+        btn.colors = colors;
         if (onClick != null) btn.onClick.AddListener(onClick);
         return btn;
     }
@@ -215,6 +275,13 @@ public class ShopPriceUI : MonoBehaviour
         tmp.alignment     = align;
         tmp.raycastTarget = false;
         return tmp;
+    }
+
+    static void SetSurface(Image image, Color color)
+    {
+        image.sprite = PAUiTheme.RoundedSprite;
+        image.type = Image.Type.Sliced;
+        image.color = color;
     }
 
     static void StretchFull(RectTransform rt)
@@ -295,11 +362,12 @@ public class ShopPriceUI : MonoBehaviour
         // 타이틀
         bool occupied = !_slot.IsEmpty;
         if (_titleTxt != null)
-            _titleTxt.text = occupied ? "가격 설정" : "진열하기";
+            _titleTxt.text = occupied ? "진열 상품 · 가격 설정" : "진열하기";
 
         // 아이템 이름
         string itemName = occupied && _slot.currentItem?.data != null
-            ? _slot.currentItem.data.itemName : "—";
+            ? (WorldGameplayAdapterService.Instance?.FirstDay == true ? ItemDisplayName.For(_slot.currentItem.data) : _slot.currentItem.data.itemName)
+            : "진열된 상품이 없어요";
         if (_itemNameTxt != null)
         {
             // Task 018 — 이미 저장·판매에 쓰이는 실제 진열 수량을 가격 결정 화면에 노출한다.
@@ -313,12 +381,30 @@ public class ShopPriceUI : MonoBehaviour
         if (_retrieveBtn != null)
             _retrieveBtn.gameObject.SetActive(occupied);
 
+        if (_itemIcon != null)
+        {
+            _itemIcon.sprite = occupied ? _slot.currentItem.data.icon : null;
+            _itemIcon.enabled = _itemIcon.sprite != null;
+        }
+        if (_currentPriceTxt != null)
+            _currentPriceTxt.text = occupied ? $"현재 적용 가격  {_slot.EffectiveDisplayPrice:N0} G / 개" : "상품 진열 후 가격을 설정할 수 있어요";
+        if (_pendingLabelTxt != null)
+            _pendingLabelTxt.text = occupied ? "확정 전 임시 가격 · 적용 버튼으로 확정" : "먼저 상품을 진열하세요";
+        if (_modeHintTxt != null)
+            _modeHintTxt.text = occupied
+                ? "±1 / ±10 또는 드래그로 1개 가격을 정하세요.\n취소하면 임시 가격만 버리고 상품은 유지해요."
+                : "상품을 선택해 진열대를 이용하세요.\n이 화면을 닫아도 재고와 가격은 바뀌지 않아요.";
+        if (_confirmBtn != null) _confirmBtn.interactable = occupied;
+        if (_adjustButtons != null)
+            foreach (Button button in _adjustButtons) button.interactable = occupied;
+
         // 가격 표시
         if (_priceTxt != null)
-            _priceTxt.text = $"{_pendingPrice:N0} G";
+            _priceTxt.text = occupied ? $"{_pendingPrice:N0} G / 개" : "—";
 
         if (TutorialPriceDrag != null)
         {
+            TutorialPriceDrag.interactable = occupied;
             // 버튼으로 범위를 넘겼을 때만 확장한다. 드래그 중 눈금은 고정한다.
             if (_pendingPrice > TutorialPriceDrag.maxValue)
                 TutorialPriceDrag.maxValue = _pendingPrice * 2f;

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: 2020
   itemName: Starter Display Stand
   description: 
-  icon: {fileID: 21300000, guid: c829b6eb39ed48648beb2bbb645bde49, type: 3}
+  icon: {fileID: 21300000, guid: deb8584e98d795f4f977862365884249, type: 3}
   maxStack: 3
   model: {fileID: 5940832217553501373, guid: 54cc51d5fb9a46149bd9a31806d53c51, type: 3}
   basePrice: 10

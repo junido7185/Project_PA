@@ -1,0 +1,729 @@
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+// 제작 패널. C 키는 모든 기존 레시피와 필요한 작업대를 보여 주는 읽기 전용 도감,
+// Workbench.Interact는 해당 작업대에서 실제 제작하는 제품 진입점이다.
+// 재료 차감·결과 생성의 단일 권위는 계속 CraftingService.TryCraft에 둔다.
+public class CraftingUI : MonoBehaviour
+{
+    public static CraftingUI instance;
+
+    [Header("UI 참조")]
+    public GameObject craftingPanel;
+    public Transform slotParent;
+    public GameObject slotPrefab;
+
+    [Header("표시 옵션")]
+    [Tooltip("티어/워크샵으로 잠긴 레시피를 회색으로 표시할 색상")]
+    public Color lockedColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+
+    private RecipeData[] allRecipes;
+    private Workbench _activeWorkbench;
+    private TextMeshProUGUI _titleText;
+    private TextMeshProUGUI _modeText;
+    private TextMeshProUGUI _statusText;
+    private PlayerInputHandler _input;
+    private bool _runtimeGenerated;
+    private ScrollRect _recipeScroll;
+    private bool _cursorCaptured;
+    private CursorLockMode _cursorLockBeforeOpen = CursorLockMode.Locked;
+    private bool _cursorVisibleBeforeOpen;
+
+    public bool IsOpen => craftingPanel != null && craftingPanel.activeSelf;
+    public bool IsRecipeBookMode => IsOpen && _activeWorkbench == null;
+    public Workbench ActiveWorkbench => _activeWorkbench;
+
+    void Awake()
+    {
+        if (instance != null && instance != this)
+        {
+            // PA_RuntimeUI의 다른 UI 컴포넌트까지 파괴하지 않는다.
+            Destroy(this);
+            return;
+        }
+
+        instance = this;
+        allRecipes = Resources.LoadAll<RecipeData>("Recipes").Concat(Resources.LoadAll<RecipeData>("DemoStructure")).Distinct().ToArray();
+        System.Array.Sort(allRecipes, CompareRecipes);
+
+        if (craftingPanel == null || slotParent == null || slotPrefab == null)
+            BuildRuntimeUI();
+    }
+
+    void Start()
+    {
+        if (craftingPanel != null) craftingPanel.SetActive(false);
+
+        _input = PlayerInputHandler.Instance;
+        if (_input == null) return;
+
+        _input.OnCraftToggle += ToggleUI;
+        _input.OnInventoryToggle += CloseForOtherPanel;
+        _input.OnPhoneToggle += CloseForOtherPanel;
+    }
+
+    void OnDestroy()
+    {
+        if (_input != null)
+        {
+            _input.OnCraftToggle -= ToggleUI;
+            _input.OnInventoryToggle -= CloseForOtherPanel;
+            _input.OnPhoneToggle -= CloseForOtherPanel;
+        }
+
+        if (_cursorCaptured) RestoreCursor();
+        if (instance == this) instance = null;
+    }
+
+    // -------- 외부 진입점 --------
+
+    // Workbench.Interact 에서 호출. 해당 작업대 종류에 맞는 레시피만 표시한다.
+    public void OpenForWorkbench(Workbench wb)
+    {
+        if (wb == null)
+        {
+            OpenRecipeBook();
+            return;
+        }
+
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
+        EnsureOpenState();
+        _activeWorkbench = wb;
+        GenerateSlotsForContext();
+        if (_recipeScroll != null) _recipeScroll.verticalNormalizedPosition = 1f;
+        SetStatus($"{wb.displayName}에서 만들 상품을 선택하세요.");
+    }
+
+    // C 키는 원격 제작이 아니라 전체 레시피와 요구 작업대를 확인하는 도감이다.
+    public void OpenRecipeBook()
+    {
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
+        EnsureOpenState();
+        _activeWorkbench = null;
+        GenerateSlotsForContext();
+        if (_recipeScroll != null) _recipeScroll.verticalNormalizedPosition = 1f;
+        SetStatus("도감은 확인만 할 수 있어요. 작업대 앞에서 [E]를 눌러 제작하세요.");
+    }
+
+    public void ToggleUI()
+    {
+        if (IsOpen) Close();
+        else OpenRecipeBook();
+    }
+
+    public void Close()
+    {
+        Close(restoreCursor: true);
+    }
+
+    void Close(bool restoreCursor)
+    {
+        if (craftingPanel != null) craftingPanel.SetActive(false);
+        _activeWorkbench = null;
+
+        if (restoreCursor) RestoreCursor();
+        else _cursorCaptured = false;
+    }
+
+    void CloseForOtherPanel()
+    {
+        if (IsOpen)
+            Close(restoreCursor: false);
+    }
+
+    void EnsureOpenState()
+    {
+        if (craftingPanel == null || slotParent == null || slotPrefab == null)
+            BuildRuntimeUI();
+
+        if (!IsOpen)
+        {
+            CloseConflictingPanels();
+            CaptureCursor();
+        }
+
+        craftingPanel.transform.SetAsLastSibling();
+        craftingPanel.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    void CloseConflictingPanels()
+    {
+        if (StorageUI.instance != null && StorageUI.instance.IsOpen)
+            StorageUI.instance.CloseBox();
+
+        if (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen)
+            SmartphoneUI.instance.Toggle();
+
+        if (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf)
+            InventoryUI.instance.Toggle();
+    }
+
+    void CaptureCursor()
+    {
+        _cursorLockBeforeOpen = Cursor.lockState;
+        _cursorVisibleBeforeOpen = Cursor.visible;
+        _cursorCaptured = true;
+    }
+
+    void RestoreCursor()
+    {
+        if (!_cursorCaptured) return;
+        Cursor.lockState = _cursorLockBeforeOpen;
+        Cursor.visible = _cursorVisibleBeforeOpen;
+        _cursorCaptured = false;
+    }
+
+    // -------- 슬롯 생성 (컨텍스트 필터 적용) --------
+
+    void GenerateSlotsForContext()
+    {
+        if (slotParent == null || slotPrefab == null) return;
+
+        float scrollPosition = _recipeScroll != null ? _recipeScroll.verticalNormalizedPosition : 1f;
+        // Destroy는 프레임 끝에 실행된다. 먼저 숨겨서 재제작 때 이전 카드가 레이아웃에 섞이지 않게 한다.
+        foreach (Transform child in slotParent)
+        {
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+
+        if (allRecipes == null) return;
+
+        int visibleCount = 0;
+        foreach (RecipeData recipe in allRecipes)
+        {
+            if (recipe == null) continue;
+            if (!PassesWorkbenchFilter(recipe)) continue;
+            visibleCount++;
+
+            bool unlocked = IsUnlocked(recipe);
+            bool hasIngredients = HasAllIngredients(recipe);
+            bool canCraftHere = _activeWorkbench != null && ContextMatches(recipe, _activeWorkbench);
+
+            GameObject newSlot = Instantiate(slotPrefab, slotParent);
+            newSlot.SetActive(true);
+            newSlot.name = $"Recipe_{recipe.name}";
+
+            TMP_Text slotText = newSlot.GetComponentInChildren<TMP_Text>(true);
+            if (slotText != null)
+                slotText.text = BuildSlotLabel(recipe, unlocked, hasIngredients, canCraftHere);
+
+            Transform iconTransform = newSlot.transform.Find("Icon");
+            if (iconTransform != null && iconTransform.TryGetComponent(out Image icon))
+            {
+                icon.sprite = recipe.icon != null
+                    ? recipe.icon
+                    : recipe.outputItem != null ? recipe.outputItem.icon : null;
+                icon.enabled = icon.sprite != null;
+            }
+
+            if (newSlot.TryGetComponent(out Image card))
+                card.color = ResolveCardColor(unlocked, hasIngredients, canCraftHere);
+
+            Button btn = newSlot.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.interactable = unlocked && hasIngredients && canCraftHere;
+                RecipeData captured = recipe;
+                Workbench wbCaptured = _activeWorkbench;
+                btn.onClick.AddListener(() => TryCraftRecipe(captured, wbCaptured));
+            }
+        }
+
+        // Runtime-generated cards are created while the panel is being opened. Force the
+        // layout now so the first visible frame has non-zero content/card geometry.
+        Canvas.ForceUpdateCanvases();
+        if (slotParent is RectTransform contentRect)
+        {
+            // 긴 재료/잠금 설명도 카드 안에 들어가도록 실제 텍스트 폭으로 높이를 계산한다.
+            foreach (Transform child in slotParent)
+            {
+                TMP_Text label = child.GetComponentInChildren<TMP_Text>(true);
+                LayoutElement element = child.GetComponent<LayoutElement>();
+                if (label == null || element == null) continue;
+                float width = Mathf.Max(1f, label.rectTransform.rect.width);
+                element.preferredHeight = Mathf.Max(_runtimeGenerated ? 124f : 112f,
+                    label.GetPreferredValues(label.text, width, 0f).y + 28f);
+            }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+        }
+        Canvas.ForceUpdateCanvases();
+        if (_recipeScroll != null) _recipeScroll.verticalNormalizedPosition = scrollPosition;
+
+        if (_titleText != null)
+            _titleText.text = _activeWorkbench == null
+                ? "제작 도감"
+                : $"{_activeWorkbench.displayName} 제작";
+
+        if (_modeText != null)
+            _modeText.text = _activeWorkbench == null
+                ? $"레시피 {visibleCount}개 · 확인 전용 · 작업대에서 [E]로 제작"
+                : $"{GetWorkbenchLabel(_activeWorkbench.workbenchType)} · 레시피 {visibleCount}개 · 재료 보유 / 필요";
+    }
+
+    // 컨텍스트(작업대 종류)에 맞는지 판정한다.
+    bool PassesWorkbenchFilter(RecipeData recipe)
+    {
+        // 도감은 전체 레시피를 보여 주되 버튼을 비활성화해 원격 제작을 차단한다.
+        if (_activeWorkbench == null)
+            return true;
+
+        return ContextMatches(recipe, _activeWorkbench);
+    }
+
+    string BuildSlotLabel(RecipeData recipe, bool unlocked, bool hasIngredients, bool canCraftHere)
+    {
+        string outputName = recipe.outputItem != null ? ItemDisplayName.For(recipe.outputItem) : "결과 정보 없음";
+        string recipeName = recipe.outputItem != null ? outputName
+            : string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
+        string station = GetWorkbenchLabel(recipe.requiredWorkbench);
+        string ingredients = BuildIngredientText(recipe);
+        string warning = _runtimeGenerated ? "#9C462C" : "#F0B39E";
+        string muted = _runtimeGenerated ? "#526461" : "#C8D8CA";
+        string ready = _runtimeGenerated ? "#226B56" : "#CDE7C9";
+        string state = !unlocked ? $"<color={warning}>잠김 · {BuildLockReason(recipe)}</color>"
+            : !canCraftHere ? $"<color={muted}>도감 · 작업대에서 제작하세요</color>"
+            : !hasIngredients ? $"<color={warning}>재료 부족</color>"
+            : $"<color={ready}>제작 가능 · 클릭하여 만들기</color>";
+
+        if (_runtimeGenerated)
+            return $"<b>{recipeName}</b>  <size=75%>완성 ×{recipe.outputCount}</size>\n" +
+                   $"<size=78%>{state}\n재료 (보유 / 필요) · {ingredients}</size>" +
+                   (_activeWorkbench == null ? $"\n<size=75%><color={muted}>{station}</color></size>" : "");
+
+        return $"<b>{recipeName}</b>  <size=85%>완성 ×{recipe.outputCount}</size>\n" +
+               $"<size=85%>{state}</size>\n" +
+               $"<size=85%><color=#C8D8CA>재료 (보유/필요): {ingredients}</color></size>\n" +
+               $"<size=80%><color=#91B69A>{station}</color></size>";
+    }
+
+    string BuildIngredientText(RecipeData recipe)
+    {
+        if (recipe.ingredients == null || recipe.ingredients.Count == 0)
+            return "재료 정보 없음";
+
+        System.Text.StringBuilder result = new System.Text.StringBuilder();
+        foreach (RecipeIngredient ingredient in recipe.ingredients)
+        {
+            if (ingredient == null || ingredient.item == null || ingredient.count <= 0) continue;
+            if (result.Length > 0) result.Append(" · ");
+
+            int owned = Inventory.instance != null ? Inventory.instance.CountItems(ingredient.item) : 0;
+            string color = owned >= ingredient.count
+                ? (_runtimeGenerated ? "#226B56" : "#CDE7C9")
+                : (_runtimeGenerated ? "#9C462C" : "#F0B39E");
+            result.Append($"<color={color}>{ItemDisplayName.For(ingredient.item)} {owned}/{ingredient.count}</color>");
+        }
+
+        return result.Length > 0 ? result.ToString() : "재료 정보 없음";
+    }
+
+    void TryCraftRecipe(RecipeData recipe, Workbench workbench)
+    {
+        if (recipe == null || workbench == null)
+        {
+            SetStatus("도감에서는 제작할 수 없습니다. 필요한 작업대를 이용하세요.", true);
+            return;
+        }
+
+        bool success = CraftingService.TryCraft(recipe, workbench);
+        // P6 데모: 제작 결과도 줍기처럼 핫바를 우선한다(Inventory 안에서 칸만 옮김).
+        int hotbarSlot = success ? DemoHotbarPreference.Prefer(recipe.outputItem) : -1;
+        GenerateSlotsForContext();
+
+        SetStatus(success
+            ? $"{ItemDisplayName.For(recipe.outputItem)} ×{recipe.outputCount} 제작 완료 · " +
+              (hotbarSlot >= 0 ? $"핫바 {hotbarSlot + 1}번에서 바로 쓸 수 있어요." : "가방에서 확인하세요.")
+            : BuildFailureMessage(recipe), !success);
+    }
+
+
+    string BuildFailureMessage(RecipeData recipe)
+    {
+        if (!IsUnlocked(recipe))
+            return BuildLockReason(recipe);
+
+        if (Inventory.instance == null)
+            return "플레이어 인벤토리를 찾지 못했습니다.";
+
+        if (!HasAllIngredients(recipe))
+            return "재료가 부족합니다. 카드의 보유량/필요량을 확인하세요.";
+
+        return "제작하지 못했습니다. 작업대와 레시피 정보, 가방 공간을 확인하세요.";
+    }
+
+    // 권위의 실제 실패 순서를 그대로 읽는다. 잠김 이유는 성장 규칙을 바꾸지 않는다.
+    string BuildLockReason(RecipeData recipe)
+    {
+        if (!DemoPlaceableCatalog.RecipeUnlocked(recipe))
+        {
+            var upgrade = DemoPlaceableCatalog.Load()?.upgrades?.FirstOrDefault(u => u.recipe == recipe);
+            string root = upgrade == null ? "해당" : GetRootLabel(upgrade.root);
+            return $"{root} 전문 분야를 선택해야 해요.";
+        }
+        if (TierService.Instance != null && !TierService.Instance.IsUnlocked(recipe.requiredTier))
+            return $"본사 승인 등급 {recipe.requiredTier} 필요 · 현재 {TierService.Instance.CurrentTier}";
+        if (FriendshipService.Instance != null && !FriendshipService.Instance.IsRecipeUnlocked(recipe))
+            return "주민과 교류해 비법을 전수받아야 해요.";
+        return "";
+    }
+
+    static string GetRootLabel(DemoSpecialization root)
+    {
+        switch (root)
+        {
+            case DemoSpecialization.Forestry: return "임업";
+            case DemoSpecialization.Mining: return "광업";
+            case DemoSpecialization.Fisheries: return "수산업";
+            case DemoSpecialization.Agriculture: return "농업";
+            default: return "해당";
+        }
+    }
+
+    bool IsUnlocked(RecipeData recipe)
+    {
+        return DemoPlaceableCatalog.RecipeUnlocked(recipe) && (TierService.Instance == null || TierService.Instance.IsUnlocked(recipe.requiredTier))
+            && (FriendshipService.Instance == null || FriendshipService.Instance.IsRecipeUnlocked(recipe));
+    }
+
+    bool HasAllIngredients(RecipeData recipe)
+    {
+        if (Inventory.instance == null || recipe.ingredients == null || recipe.ingredients.Count == 0)
+            return false;
+
+        foreach (RecipeIngredient ingredient in recipe.ingredients)
+        {
+            if (ingredient == null || ingredient.item == null || ingredient.count <= 0) continue;
+            if (!Inventory.instance.HasItems(ingredient.item, ingredient.count)) return false;
+        }
+
+        return true;
+    }
+
+    static bool ContextMatches(RecipeData recipe, Workbench workbench)
+    {
+        return recipe != null && workbench != null
+            && (recipe.requiredWorkbench == WorkbenchType.None
+                || recipe.requiredWorkbench == workbench.workbenchType);
+    }
+
+    Color ResolveCardColor(bool unlocked, bool hasIngredients, bool canCraftHere)
+    {
+        if (_runtimeGenerated)
+            return !unlocked ? new Color(.90f, .88f, .82f)
+                : !canCraftHere ? new Color(.94f, .93f, .88f)
+                : hasIngredients ? new Color(1f, 1f, .98f)
+                : new Color(.99f, .90f, .81f);
+        if (!unlocked) return lockedColor;
+        if (!canCraftHere) return new Color(0.12f, 0.16f, 0.14f, 0.90f);
+        return hasIngredients
+            ? new Color(0.15f, 0.34f, 0.23f, 0.98f)
+            : new Color(0.31f, 0.22f, 0.15f, 0.96f);
+    }
+
+    void SetStatus(string message, bool isError = false)
+    {
+        if (_statusText == null) return;
+        _statusText.text = message;
+        _statusText.color = _runtimeGenerated
+            ? (isError ? new Color(.61f, .27f, .17f) : SmartphoneUI.Ink)
+            : (isError ? new Color(1f, .67f, .57f) : new Color(.77f, .88f, .79f));
+    }
+
+    static int CompareRecipes(RecipeData left, RecipeData right)
+    {
+        if (ReferenceEquals(left, right)) return 0;
+        if (left == null) return 1;
+        if (right == null) return -1;
+
+        int workbench = left.requiredWorkbench.CompareTo(right.requiredWorkbench);
+        if (workbench != 0) return workbench;
+        int tier = left.requiredTier.CompareTo(right.requiredTier);
+        if (tier != 0) return tier;
+        return string.Compare(left.recipeName, right.recipeName, System.StringComparison.Ordinal);
+    }
+
+    static string GetWorkbenchLabel(WorkbenchType type)
+    {
+        switch (type)
+        {
+            case WorkbenchType.BasicWorkbench: return "목재 가공 작업대";
+            case WorkbenchType.Kitchen: return "주방 작업대";
+            case WorkbenchType.Forge: return "대장간 작업대";
+            case WorkbenchType.SewingTable: return "재봉 작업대";
+            default: return "기본 제작";
+        }
+    }
+
+    void BuildRuntimeUI()
+    {
+        _runtimeGenerated = true;
+        // 씬의 부분 직렬화 패널이 세 참조를 모두 갖추지 못했다면 화면만 숨기고
+        // 재현 가능한 런타임 제품 UI를 별도로 구성한다.
+        if (craftingPanel != null)
+            craftingPanel.SetActive(false);
+
+        Transform parent = ResolveUiParent();
+
+        craftingPanel = new GameObject("CraftingOverlay", typeof(RectTransform), typeof(Image));
+        var overlayRT = (RectTransform)craftingPanel.transform;
+        overlayRT.SetParent(parent, false);
+        Stretch(overlayRT);
+        craftingPanel.GetComponent<Image>().color = new Color(.04f, .07f, .08f, .38f);
+
+        var window = new GameObject("CraftingPanel", typeof(RectTransform), typeof(Image));
+        var panelRT = (RectTransform)window.transform;
+        panelRT.SetParent(craftingPanel.transform, false);
+        panelRT.anchorMin = panelRT.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRT.pivot = new Vector2(0.5f, 0.5f);
+        panelRT.sizeDelta = new Vector2(960f, 780f);
+        panelRT.anchoredPosition = Vector2.zero;
+        SetSurface(window.GetComponent<Image>(), SmartphoneUI.Cream);
+
+        var header = new GameObject("Header", typeof(RectTransform), typeof(Image));
+        var headerRT = (RectTransform)header.transform;
+        headerRT.SetParent(window.transform, false);
+        headerRT.anchorMin = new Vector2(0f, 1f);
+        headerRT.anchorMax = Vector2.one;
+        headerRT.pivot = new Vector2(.5f, 1f);
+        headerRT.sizeDelta = new Vector2(0f, 84f);
+        SetSurface(header.GetComponent<Image>(), SmartphoneUI.Teal);
+        header.GetComponent<Image>().raycastTarget = false;
+
+        var titleGO = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var titleRT = (RectTransform)titleGO.transform;
+        titleRT.SetParent(window.transform, false);
+        titleRT.anchorMin = new Vector2(0f, 1f);
+        titleRT.anchorMax = new Vector2(1f, 1f);
+        titleRT.pivot = new Vector2(0.5f, 1f);
+        titleRT.sizeDelta = new Vector2(-200f, 60f);
+        titleRT.anchoredPosition = new Vector2(-76f, -12f);
+
+        _titleText = titleGO.GetComponent<TextMeshProUGUI>();
+        _titleText.text = "제작 도감";
+        _titleText.fontSize = 34;
+        _titleText.fontStyle = FontStyles.Bold;
+        _titleText.alignment = TextAlignmentOptions.MidlineLeft;
+        _titleText.enableAutoSizing = true;
+        _titleText.fontSizeMin = 24f;
+        _titleText.fontSizeMax = 34f;
+        _titleText.color = Color.white;
+        _titleText.raycastTarget = false;
+
+        var modeGO = new GameObject("Mode", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var modeRT = (RectTransform)modeGO.transform;
+        modeRT.SetParent(window.transform, false);
+        modeRT.anchorMin = new Vector2(0f, 1f);
+        modeRT.anchorMax = new Vector2(1f, 1f);
+        modeRT.pivot = new Vector2(0.5f, 1f);
+        modeRT.sizeDelta = new Vector2(-56f, 36f);
+        modeRT.anchoredPosition = new Vector2(0f, -98f);
+
+        _modeText = modeGO.GetComponent<TextMeshProUGUI>();
+        _modeText.text = "전체 레시피";
+        _modeText.fontSize = 20f;
+        _modeText.alignment = TextAlignmentOptions.Center;
+        _modeText.color = SmartphoneUI.Ink;
+        _modeText.raycastTarget = false;
+
+        var closeGO = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        var closeRT = (RectTransform)closeGO.transform;
+        closeRT.SetParent(window.transform, false);
+        closeRT.anchorMin = closeRT.anchorMax = new Vector2(1f, 1f);
+        closeRT.pivot = new Vector2(1f, 1f);
+        closeRT.sizeDelta = new Vector2(112f, 42f);
+        closeRT.anchoredPosition = new Vector2(-24f, -21f);
+        SetSurface(closeGO.GetComponent<Image>(), new Color(1f, 1f, 1f, .18f));
+
+        var closeTextGO = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var closeTextRT = (RectTransform)closeTextGO.transform;
+        closeTextRT.SetParent(closeGO.transform, false);
+        Stretch(closeTextRT);
+        var closeText = closeTextGO.GetComponent<TextMeshProUGUI>();
+        closeText.text = "닫기  Esc";
+        closeText.fontSize = 18;
+        closeText.fontStyle = FontStyles.Bold;
+        closeText.alignment = TextAlignmentOptions.Center;
+        closeText.color = Color.white;
+        closeText.raycastTarget = false;
+        closeGO.GetComponent<Button>().onClick.AddListener(Close);
+
+        var scrollGO = new GameObject("RecipeScroll", typeof(RectTransform), typeof(ScrollRect));
+        var scrollRT = (RectTransform)scrollGO.transform;
+        scrollRT.SetParent(window.transform, false);
+        scrollRT.anchorMin = Vector2.zero;
+        scrollRT.anchorMax = Vector2.one;
+        scrollRT.offsetMin = new Vector2(24f, 96f);
+        scrollRT.offsetMax = new Vector2(-24f, -144f);
+
+        var viewportGO = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        var viewportRT = (RectTransform)viewportGO.transform;
+        viewportRT.SetParent(scrollGO.transform, false);
+        Stretch(viewportRT);
+        // Mask uses the graphic alpha when writing its stencil. showMaskGraphic hides the
+        // viewport background, so the mask graphic itself must stay opaque for its children.
+        viewportGO.GetComponent<Image>().color = Color.white;
+        viewportGO.GetComponent<Mask>().showMaskGraphic = false;
+
+        var contentGO = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        var contentRT = (RectTransform)contentGO.transform;
+        contentRT.SetParent(viewportGO.transform, false);
+        contentRT.anchorMin = new Vector2(0f, 1f);
+        contentRT.anchorMax = new Vector2(1f, 1f);
+        contentRT.pivot = new Vector2(0.5f, 1f);
+        contentRT.sizeDelta = Vector2.zero;
+
+        var layout = contentGO.GetComponent<VerticalLayoutGroup>();
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.spacing = 10f;
+        layout.padding = new RectOffset(4, 22, 4, 4);
+        contentGO.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var scroll = scrollGO.GetComponent<ScrollRect>();
+        scroll.viewport = viewportRT;
+        scroll.content = contentRT;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.scrollSensitivity = 34f;
+        _recipeScroll = scroll;
+
+        var rail = new GameObject("RecipeScrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+        var railRT = (RectTransform)rail.transform;
+        railRT.SetParent(scrollGO.transform, false);
+        railRT.anchorMin = new Vector2(1f, 0f);
+        railRT.anchorMax = Vector2.one;
+        railRT.pivot = new Vector2(1f, .5f);
+        railRT.sizeDelta = new Vector2(10f, -8f);
+        SetSurface(rail.GetComponent<Image>(), new Color(.85f, .84f, .76f));
+        var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        var handleRT = (RectTransform)handle.transform;
+        handleRT.SetParent(rail.transform, false);
+        Stretch(handleRT);
+        SetSurface(handle.GetComponent<Image>(), SmartphoneUI.Teal);
+        var scrollbar = rail.GetComponent<Scrollbar>();
+        scrollbar.handleRect = handleRT;
+        scrollbar.targetGraphic = handle.GetComponent<Image>();
+        scrollbar.direction = Scrollbar.Direction.BottomToTop;
+        scroll.verticalScrollbar = scrollbar;
+        scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+
+        var feedback = new GameObject("Feedback", typeof(RectTransform), typeof(Image));
+        var feedbackRT = (RectTransform)feedback.transform;
+        feedbackRT.SetParent(window.transform, false);
+        feedbackRT.anchorMin = Vector2.zero;
+        feedbackRT.anchorMax = new Vector2(1f, 0f);
+        feedbackRT.pivot = new Vector2(.5f, 0f);
+        feedbackRT.sizeDelta = new Vector2(-48f, 64f);
+        feedbackRT.anchoredPosition = new Vector2(0f, 16f);
+        SetSurface(feedback.GetComponent<Image>(), new Color(.86f, .93f, .86f));
+        feedback.GetComponent<Image>().raycastTarget = false;
+
+        var statusGO = new GameObject("Status", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var statusRT = (RectTransform)statusGO.transform;
+        statusRT.SetParent(window.transform, false);
+        statusRT.anchorMin = new Vector2(0f, 0f);
+        statusRT.anchorMax = new Vector2(1f, 0f);
+        statusRT.pivot = new Vector2(0.5f, 0f);
+        statusRT.sizeDelta = new Vector2(-76f, 64f);
+        statusRT.anchoredPosition = new Vector2(0f, 16f);
+
+        _statusText = statusGO.GetComponent<TextMeshProUGUI>();
+        _statusText.text = "작업대에서 [E]를 누르면 제작할 수 있어요.";
+        _statusText.fontSize = 20f;
+        _statusText.alignment = TextAlignmentOptions.Center;
+        _statusText.color = SmartphoneUI.Ink;
+        _statusText.textWrappingMode = TextWrappingModes.Normal;
+        _statusText.raycastTarget = false;
+
+        slotParent = contentRT;
+        slotPrefab = CreateRuntimeSlotPrefab(window.transform);
+        craftingPanel.SetActive(false);
+    }
+
+    GameObject CreateRuntimeSlotPrefab(Transform parent)
+    {
+        var go = new GameObject("RecipeSlot_RuntimePrefab", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+        go.transform.SetParent(parent, false);
+        go.SetActive(false);
+        SetSurface(go.GetComponent<Image>(), Color.white);
+        go.GetComponent<LayoutElement>().preferredHeight = 124f;
+        ColorBlock colors = go.GetComponent<Button>().colors;
+        colors.highlightedColor = new Color(.88f, .96f, .90f);
+        colors.pressedColor = new Color(.76f, .88f, .81f);
+        // 잠금/재료 부족 카드는 배경과 문구로 구분한다. 비활성 틴트로 설명까지 흐리지 않는다.
+        colors.disabledColor = Color.white;
+        colors.fadeDuration = .08f;
+        go.GetComponent<Button>().colors = colors;
+
+        var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        var iconRT = (RectTransform)iconGO.transform;
+        iconRT.SetParent(go.transform, false);
+        iconRT.anchorMin = iconRT.anchorMax = new Vector2(0f, 0.5f);
+        iconRT.pivot = new Vector2(0f, 0.5f);
+        iconRT.anchoredPosition = new Vector2(16f, 0f);
+        iconRT.sizeDelta = new Vector2(80f, 80f);
+        var icon = iconGO.GetComponent<Image>();
+        icon.preserveAspect = true;
+        icon.raycastTarget = false;
+        icon.enabled = false;
+
+        var labelGO = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var labelRT = (RectTransform)labelGO.transform;
+        labelRT.SetParent(go.transform, false);
+        labelRT.anchorMin = Vector2.zero;
+        labelRT.anchorMax = Vector2.one;
+        labelRT.offsetMin = new Vector2(112f, 12f);
+        labelRT.offsetMax = new Vector2(-20f, -12f);
+
+        var label = labelGO.GetComponent<TextMeshProUGUI>();
+        label.fontSize = 24f;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+        label.color = SmartphoneUI.Ink;
+        label.textWrappingMode = TextWrappingModes.Normal;
+        label.overflowMode = TextOverflowModes.Overflow;
+        label.raycastTarget = false;
+
+        return go;
+    }
+
+    static void SetSurface(Image image, Color color)
+    {
+        image.sprite = SmartphoneUI.RoundedSprite;
+        image.type = Image.Type.Sliced;
+        image.color = color;
+    }
+
+    Transform ResolveUiParent()
+    {
+        var uiRoot = GameObject.Find("PA_UIRoot");
+        if (uiRoot != null) return uiRoot.transform;
+
+        var canvasGO = new GameObject("CraftingUI_Canvas",
+            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvas = canvasGO.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 90;
+        var scaler = canvasGO.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight = 0.5f;
+        return canvasGO.transform;
+    }
+
+    static void Stretch(RectTransform rt)
+    {
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+    }
+}

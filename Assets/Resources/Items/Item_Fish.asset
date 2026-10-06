@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 8
   itemName: Fish
   description: Fresh fish for cooking.
-  icon: {fileID: 21300000, guid: 33cddcd61e69144449b696d94a079e64, type: 3}
+  icon: {fileID: 21300000, guid: 4418fc79e29067240be9b515f2193b02, type: 3}
   maxStack: 99
-  model: {fileID: 0}
+  model: {fileID: 919132149155446097, guid: 10c4656d5784f634eb77c2e34492b5b0, type: 3}
   basePrice: 18
   toolType: 0
   category: 0

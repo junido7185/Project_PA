@@ -241,6 +241,7 @@ public sealed class WorldBuildingPlacementService : MonoBehaviour
     public Func<WorldPlacedBuildingRuntime, bool> MoveAllowed { get; set; }
 
     public int RegisteredCount => _placements.Count;
+    public IReadOnlyCollection<WorldPlacedBuildingRuntime> Placements => _placements.Values;
     public int Revision => _revision;
     public bool HasPreview => _hasPreview;
     public bool PreviewIsMove => _previewIsMove;

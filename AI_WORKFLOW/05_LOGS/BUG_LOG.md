@@ -978,3 +978,33 @@ Repair result: compile cycle 2 PASS; targeted Play attempt 2 passed all 64 check
 ### 2026-09-27 ReportCandidate — standalone STEP1 input boundary / build warning
 
 새 Candidate-ShopPolish-20260927-194240은 실제 마우스 NEW GAME→출항STEP1 진입 성공. foreground=game, SendInput D1.2초 반환성공 후 화면상 이동 확인 실패. 키보드 수신/이동 차단 원인은 미확정; 동일 입력·포커스 재시도 없이 사람 검수 경로 기록. 정착→Report standalone PASS 아님. Player.log 출항 진입 `Failed to create agent because there is no valid NavMesh`1건은 이번 경로에서 관찰했으나 구매 영향 미검증. 기존title collider4건 유지. Build uncompiled-code warning1건, 납품 runtime DLL/PDB143source 일치와 새 숨김 IL 확인; 경고 자체 원인 해소는 미주장. 근거 `Logs/VisualQA/ReportCandidate-20260927/DELIVERY_REPORT.md`. 무관 소스·전역 설정 변경 없음.
+## 2026-09-29 — PHONE-SHOP GameView 정지 판정 정정
+
+Pause=false였고 Editor는 응답했으나 `Application.isFocused=false`, `runInBackground=false`라 프레임이 멈춘 상태였다. Play 중 `runInBackground=true`로 임시 전환하자 frameCount가 즉시 증가하고 GameView 캡처가 갱신됐다. 게임 자체 정지로 판정했던 이전 기록은 철회한다. 촬영 후 설정을 false로 복원했다. 세로 GameView 프리셋 변경 중 화면 크기가 재변경되어 해당 캡처는 무효이며 세로 화면비 품질은 미검증이다.
+## 2026-09-30 — 타이틀 이어하기 / 구 저장과 FirstDay 섬 경로 불일치
+- OPEN: v16 `savegame.json`은 파싱되지만 빈 `firstSettlement` 기록 때문에 타이틀 씬에서 `[SaveManager] Settlement saves require the departure entry.`로 거부된다.
+- 격리 백업 후 월드 진입 순서를 시험했으나 저장된 B01 고정 진열 참조 3개가 현재 FirstDay 섬에 없어 shop-sign binding과 ShopSlot 복원이 실패했다. 위치·시간·상점 전체 복원 PASS 아님. 우회 코드는 되돌렸고 원본 저장 해시는 불변이다.
+- 저장 마이그레이션 또는 구 저장용 호환 경로 결정이 필요하다. 증거: `Logs/VisualQA/TitleScreen-20260929/SaveBackups/`, Unity Console 경고.
+
+## 2026-10-03 — D4 GameView evidence review: business clock display (RETRACTED: image-reading error)
+
+- 앞선 Codex 검수에서 축소된 캡처를 보고 영업 중 시계를 `0:13` 등으로 읽어 첫 자리 누락을 보고했다. 같은 증거 `Logs/VisualQA/DemoCompletion-20261003-003953/D2_open_12s.png`를 원본 해상도로 다시 확인하면 `20:13`으로 정상이다. Claude의 현재 Handoff도 원본 표시가 정상임을 확인했다. 첫 자리 누락이라는 버그 판정과 그에 따른 수정 요구를 철회한다.
+- 이 정정은 캡처 판독에 관한 것이다. fixture의 GameClock.ForceSet 이후 ClockHUD가 갱신되지 않던 별도 문제는 P1에서 수정·검증한 기록을 따른다. 휴대폰 알림 진입 불가와 마감 뒤 시작 문구 잔류는 P2의 실제 플레이 검증 대상이다.
+- 이번 정정에서 Unity/게임 소스 변경 또는 재실행은 하지 않았다.
+
+## 2026-10-03 — FEEDBACK-REVIEW-001 environment doctor acknowledgement error (RESOLVED: preparation docs)
+
+- Read-only `python -X utf8 Tools/LoopEngineering/Test-ProjectPADemoEnvironment.py --agent codex` exited 1: configurationReady=false, runtimeReady=true, Editor connection verified. Two errors require CODEX_HANDOFF.md and INTEGRATION_QUEUE.md to acknowledge routing.
+- The check at lines 163-165 requires literal `demoProductionRouting`; the current D4 closeout documents describe the selected approval/Claude owner but omit that literal. Separately, the launcher correctly refuses the stopped D4 milestone. This is not evidence that the live Unity connection is broken.
+- No repair/retry or approval mutation performed. At an authorized resume, reconcile actual approval/status and document acknowledgements, then rerun the failed preparation check once. Do not clear the human-review gate merely to launch.
+- 2026-10-03 completion-instruction preparation: updated the Handoff/Queue to identify `demoProductionRouting` and the proposed P1-P11 contract while preserving the stopped D4 approval. Failed doctor check rerun once: configurationReady=true/errors=[], runtimeReady=true/Editor connection verified. Preparation mode is separate from production activation; approval remains inactive.
+
+## 2026-10-03 — CLAUDE-LAUNCHER-ENCODING-001 (FIXED)
+
+- Windows PowerShell5.1/codepage949가 BOM 없는 UTF8 실행기의 inline Korean here-string을 잘못 읽어 preparation prompt가 깨졌다. AST/CheckOnly만으로 실제 prompt 경계를 검증하지 못한 원인이다.
+- 한글 준비 문장을 별도 Markdown에서 명시적 UTF8로 읽도록 수정. 실제 host/native capture에서 전체426자 exact match PASS, approval hash 불변, 실제 Claude/Unity 미실행. CheckOnly의 UTF8/한글 검사 PASS.
+- 검증 fixture의 native stub 해석 guard는 PATH에 두 후보를 찾아 중단했다. PATH를 격리하는 한 번의 교정 뒤 같은 검사 PASS. 증거 Logs/ClaudeLauncherEncoding-20261003-060607-335/result.json. 기존 깨진 Claude 대화 입력은 수동 교정하거나 그 준비 세션을 정상 종료 후 새로 시작해야 한다.
+
+## 2026-10-06 — D2 runtime tooltip binding / BLOCKED_BUDGET
+
+WorldGameplayAdapterService.ComposeInventoryUI creates HotbarUI/InventoryUI without ItemTooltip; slot hover cannot open it. Confirmed source1001/1039 + Play -082709 Require failure after9 assertions/errors0. Earlier -082532 QA timeScale capture cancelled placement; corrected. Compile3/3, Play2/3, validator1/1: no further source repair authorized. Pending existing-ItemTooltip factory/binding patch at Logs/CodexDemoPolish/D2-20261006-082207/PENDING-TooltipBinding.patch, unapplied. Needs renewed compile/Play budget; do not reset ticket.

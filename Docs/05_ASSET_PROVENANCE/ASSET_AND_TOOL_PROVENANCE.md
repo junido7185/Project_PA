@@ -26,6 +26,7 @@ URP 17.3.0, Shader Graph 17.3.0, Render Pipeline Core 17.3.0, AI Navigation 2.0.
 | Ultimate Nature Pack | `Assets/Art/Ultimate Nature Pack - Jun 2019` | 폴더 내 `License.txt`: Quaternius, CC0 1.0 Universal/Public Domain Dedication | 사용 가능, 원문 보존 |
 | C-01~C-09 캐릭터 | `Assets/Art/Character` | 파일명/문서상 Tripo 계열로 추정, 에셋별 증빙 없음 | 임시. 외형 보존 우선, 최종 배포 전 계정/생성 기록 확인 |
 | Tripo walking 변환 | `Assets/Art/Character/tripo_convert_...@Walking.fbx` | 파일명으로 Tripo 변환 확인 | 임시. 리깅/라이선스 증빙 필요 |
+| Quaternius Universal Animation Library 1 (Standard, 무료) | `Assets/Art/External/Quaternius/UniversalAnimationLibrary/UAL1_Standard.fbx` (+`License.txt`, `README.txt`) | 2026-09-28 공식 itch.io `quaternius.itch.io/universal-animation-library` 무료 Standard zip(업로드 2026-06-16, 15,904,933 B, SHA256 `cc73fc4e495b82958207316596317a3f40b9fa38065bde1027937452da537724`). 팩 내 License.txt: CC0 1.0. 루트모션 없는 Unity FBX만 반입(SHA256 `21b32d912da3cb93426d974fb945e86f5b2e86970acd2ce89905e0fbf9f1dcc2`), import에서 Idle/Walk/Jog_Fwd/Sprint/Jump_Start/Jump_Loop/Jump_Land 7클립만 사용 | 사용 가능(CC0). UAL2 Standard(업로드 2026-06-16, CC0)는 확인만 하고 반입 안 함 |
 | B01~B12 건물 | `Assets/Models/Buildings` | 프로젝트 문서상 Tripo 추정 생성 에셋, 개별 계정/생성일/약관 증빙 없음. 별도 `.blend`/GLB 원본도 미발견 | B01~B05/B09/B10은 외형 유지·Unity 통합 1차 최종화. B06~B08은 기능/격자 통합 완료·시각 최종화 대기. B11은 Visual mesh 물리 정합 구현·실제 이동 확인 대기. B12는 Visual bounds 기반 Box/Obstacle 축소 보정 구현·해안 이동 확인 대기. 증빙 전 최종 배포 확정 아님 |
 | Froggy Chair | `Assets/Art/animal-crossing-froggy-chair/source/FroggyChair.fbx` → `Resources/PA_DemoProps/Prop_FroggyChair.prefab` | `source` 폴더만 존재, 라이선스 문서 미발견 | Task 094에서 플레이어 런타임 생성 참조 2곳 제거. Resource/원본은 보존되어 최종 빌드 전 증빙 확보 또는 Resource 격리·검증된 대체물 교체가 계속 필요 |
 | Jinxish Inventory Framework | `Assets/Jinxish/...` | 폴더 내 `readme.md` | 기존 시스템 의존성. 구매/라이선스 기록 별도 확인 필요 |
@@ -65,3 +66,7 @@ URP 17.3.0, Shader Graph 17.3.0, Render Pipeline Core 17.3.0, AI Navigation 2.0.
 - 생성형 텍스처·모델은 프롬프트만으로 출처를 대체하지 않는다. 서비스 약관, 생성 계정, 생성일, 상업 이용 범위를 기록한다.
 - 유료 결제·로그인·약관 동의가 필요한 항목은 사용자 승인 전 실행하지 않는다.
 - 최종 빌드 전 `미확인` 항목을 사용자 증빙 또는 대체 에셋으로 해소한다.
+
+2026-09-29 TASK 01-C 모션 재작업: `Assets/Art/Animation/PlayerMotionStyle/`의 PA_Style_Idle/Run/Sprint 클립은 Project P.A. 자체 제작(`Assets/Editor/PA_PlayerMotionStyleLab.cs`의 머슬 키 포즈 데이터로 생성)이며 외부 애니메이션 데이터를 복사하지 않았다. 높이 맞춤에만 UAL1 Idle(CC0)을 참조한다. 딩컴 영상(YouTube 5DKXglQAdNc 공식 트레일러, rxWrM7h4LT4 플레이 영상)은 모션 참고용으로 세션 스크래치에 임시 저장(yt-dlp를 uvx로 임시 실행, 프로젝트 설치 없음)하고 내부 비교 영상 `Logs/VisualQA/Task01C-Locomotion/StyleRework-20260929/`에만 잘라 썼다. Assets·빌드에 포함하지 않으며 외부 배포 금지.
+
+2026-09-29 C-01 다리 리그 수정: 공식 blender.org Blender 4.5.14 LTS Windows 포터블 zip(sha256 b9533d23…c8b9 공식 값과 일치)을 프로젝트 밖 스크래치에서 설치 없이 실행했다. 기본 내장 FBX 입출력만 사용했고 추가 애드온·리깅 서비스는 쓰지 않았다. 원본 `C-01.fbx`·메타는 변경하지 않았고, 파생 `Assets/Art/Character/C-01_LegFix.fbx`와 작업 원본 `Blender/Generated/C01_LegFix/C-01_LegFix.blend`(재현 스크립트 `legfix.py` 포함)를 별도로 만들었다. C-01의 Tripo 생성/라이선스 증빙 게이트는 그대로다.

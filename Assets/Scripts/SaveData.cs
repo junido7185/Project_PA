@@ -9,6 +9,7 @@ public class SaveData
     public int version = 0;
     public FirstProductionSaveData firstProduction = new FirstProductionSaveData(); // v16 explicit opening state
     public FirstSettlementSaveData firstSettlement; // v15: optional opening settlement only
+    public DemoSessionSaveData demoSession; // v17: FirstDay dynamic placements and session progress
 
     // 플레이어 정보
     public int money;
@@ -328,6 +329,22 @@ public class FirstProductionSaveData
     public bool started;
     public bool completed;
     public List<StarterWorksiteSaveData> worksites = new List<StarterWorksiteSaveData>();
+}
+
+[System.Serializable]
+public class DemoSessionSaveData
+{
+    public int version = 1;
+    public List<WorldPlacedBuildingSaveData> placedBuildings = new List<WorldPlacedBuildingSaveData>();
+    public string shopId;
+    public string[] companionIds = new string[0];
+    public int selectedRoot;
+    public int grantedStands;
+    public bool established;
+    public bool nightReady;
+    public bool sunsetStarted;
+    public DemoPioneerReportData pioneerReport;
+    public bool relocatedFromV16;
 }
 
 [System.Serializable]

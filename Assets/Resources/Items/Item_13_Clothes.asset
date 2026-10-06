@@ -16,9 +16,9 @@ MonoBehaviour:
   itemName: "\uC758\uB958"
   description: "\uAC10\uC131 \uC131\uD5A5 NPC\uAC00 \uBC18\uC751\uD558\uAE30 \uC88B\uC740
     \uC7AC\uB2E8 \uC0C1\uD488."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4f2a10fcb59ce6b479694397f7ef0948, type: 3}
   maxStack: 8
-  model: {fileID: 0}
+  model: {fileID: 3557087997526621242, guid: ec6e6ddbcb360f741816a5c70a0efda6, type: 3}
   basePrice: 165
   toolType: 0
   category: 3

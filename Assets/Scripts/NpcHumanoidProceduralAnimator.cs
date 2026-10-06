@@ -40,6 +40,7 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
     Animator _animator;
     NavMeshAgent _agent;
     PlayerController _player;
+    FirstDayStepTraversal _stepTraversal;
     HumanPoseHandler _handler;
     HumanPose _basePose;
     HumanPose _pose;
@@ -88,6 +89,23 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
     float _rightKneeBendSign = -1f;
     float _leftFootLiftSign = -1f;
     float _rightFootLiftSign = -1f;
+
+    // FirstDay 플레이어 전용 보행 상태. NPC와 Golden 씬 경로는 사용하지 않는다.
+    bool _playerMode;
+    bool _playerCalibrated;
+    CharacterController _body;
+    Transform _hipsBone, _leftFootBone, _rightFootBone;
+    float _baseFootHeight;
+    float _legReach = 0.45f;
+    float _legForwardSign = 1f;
+    float _armForwardSign = 1f;
+    float _spineForwardSign = 1f;
+    float _spineRollSign = 1f;
+    float _gaitPhase, _gaitWeight, _stanceFraction = 0.5f;
+    float _airWeight, _airTime, _peakFall;
+    float _landTimer = 1f, _landStrength;
+    float _hipOffset, _lastYaw, _turnLean, _lastSpeed, _accelLean, _idleTime;
+    bool _yawInitialized;
 
     void Awake()
     {
@@ -181,6 +199,7 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         // 원본 rig/절차 pose를 유지하며 기본 idle을 작은 호흡으로 제한한다.
         if (gameObject.scene.name == DepartureTutorialController.SceneName)
         { idleBreath = .008f; idleHeadNod = .004f; elbowRestBend = .10f; if (_player == null) armRestDrop = 1f; }
+        _playerMode = _player != null && _playerCalibrated && PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.FirstDayControls;
         ApplyPose();
     }
 
@@ -190,6 +209,15 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         Array.Copy(_basePose.muscles, _pose.muscles, _basePose.muscles.Length);
         _pose.bodyPosition = _basePose.bodyPosition;
         _pose.bodyRotation = _basePose.bodyRotation;
+
+        if (_playerMode)
+        {
+            ApplyPlayerLocomotion(Time.deltaTime);
+            ApplyPlayerHeldAndAction();
+            _handler.SetHumanPose(ref _pose);
+            ApplyPlayerGrounding(Time.deltaTime);
+            return;
+        }
 
         float idlePhase = _cycle * Mathf.PI * 2f;
         float walkPhase = _cycle * Mathf.PI * 2f;
@@ -212,8 +240,18 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         AddMuscle(_rightShoulderDownUp, shoulderRelax * _rightShoulderDropSign);
         AddMuscle(_leftShoulderFrontBack, -0.03f + -stride * 0.025f * _walkBlend);
         AddMuscle(_rightShoulderFrontBack, -0.03f + stride * 0.025f * _walkBlend);
-        AddMuscle(_leftArmDownUp, armRestDrop * _leftArmDropSign);
-        AddMuscle(_rightArmDownUp, armRestDrop * _rightArmDropSign);
+        // P10: 바인드(T) 자세에 더하면 팔이 수평 근처에 머문다(데모 동행·손님의 '팔 벌림').
+        // 데모 월드에서는 팔 내림 근육을 내림 방향 절대값으로 둔다. 다른 씬(골든 등)의 표현은 그대로다.
+        if (FirstDayWorldPresentation.Instance != null)
+        {
+            SetMuscle(_leftArmDownUp, armRestDrop * _leftArmDropSign);
+            SetMuscle(_rightArmDownUp, armRestDrop * _rightArmDropSign);
+        }
+        else
+        {
+            AddMuscle(_leftArmDownUp, armRestDrop * _leftArmDropSign);
+            AddMuscle(_rightArmDownUp, armRestDrop * _rightArmDropSign);
+        }
         AddMuscle(_leftArmTwist, -0.035f);
         AddMuscle(_rightArmTwist, 0.035f);
         AddMuscle(_leftForearmStretch, (elbowRestBend + leftArmPump * elbowWalkPump * _walkBlend) * _leftElbowBendSign);
@@ -251,6 +289,20 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
                 float swing = Mathf.Sin(action / .5f * Mathf.PI);
                 AddMuscle(_rightArmFrontBack, swing * .65f);
                 AddMuscle(_chestFrontBack, swing * .12f);
+            }
+        }
+        if (_player == null)
+        {
+            if (_stepTraversal == null) _stepTraversal=GetComponent<FirstDayStepTraversal>();
+            if (_stepTraversal != null && _stepTraversal.IsJumping)
+            {
+                float tuck=Mathf.Sin(_stepTraversal.Progress*Mathf.PI);
+                SetMuscle(_leftUpperLegFrontBack,.18f*tuck);
+                SetMuscle(_rightUpperLegFrontBack,.24f*tuck);
+                SetMuscle(_leftLowerLegStretch,.32f*tuck*_leftKneeBendSign);
+                SetMuscle(_rightLowerLegStretch,.40f*tuck*_rightKneeBendSign);
+                AddMuscle(_leftArmFrontBack,.10f*tuck);
+                AddMuscle(_rightArmFrontBack,.10f*tuck);
             }
         }
         _handler.SetHumanPose(ref _pose);
@@ -449,7 +501,248 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
             _rightFootLiftSign = Mathf.Sign(footLiftSign);
         }
 
+        if (GetComponent<PlayerController>() != null)
+            CalibratePlayerGait();
+
         SetBasePose();
+    }
+
+    // 리그마다 근육 부호와 다리 길이가 다르므로 실제 뼈 이동을 측정해 보폭을 맞춘다.
+    void CalibratePlayerGait()
+    {
+        _playerCalibrated = false;
+        _hipsBone = _animator.GetBoneTransform(HumanBodyBones.Hips);
+        _leftFootBone = _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+        _rightFootBone = _animator.GetBoneTransform(HumanBodyBones.RightFoot);
+        Transform leftHand = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
+        Transform head = _animator.GetBoneTransform(HumanBodyBones.Head);
+        if (_hipsBone == null || _leftFootBone == null || _rightFootBone == null || leftHand == null || head == null
+            || _leftUpperLegFrontBack < 0 || _rightUpperLegFrontBack < 0 || _leftArmFrontBack < 0 || _spineFrontBack < 0)
+            return;
+
+        SetBasePose();
+        Transform leftHip = _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
+        Transform rightHip = _animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
+        if (leftHip == null || rightHip == null)
+            return;
+        Vector3 right = Vector3.ProjectOnPlane(rightHip.position - leftHip.position, Vector3.up).normalized;
+        if (right.sqrMagnitude < 0.5f)
+            return;
+        Vector3 forward = Vector3.Cross(right, Vector3.up);
+        _baseFootHeight = Mathf.Min(_leftFootBone.position.y, _rightFootBone.position.y) - transform.position.y;
+        float footBase = Vector3.Dot(_leftFootBone.position - transform.position, forward);
+        float handBase = Vector3.Dot(leftHand.position - transform.position, forward);
+        float headForwardBase = Vector3.Dot(head.position - transform.position, forward);
+        float headRightBase = Vector3.Dot(head.position - transform.position, right);
+
+        SetProbePose(_leftUpperLegFrontBack, 0.3f);
+        float footFront = Vector3.Dot(_leftFootBone.position - transform.position, forward) - footBase;
+        SetProbePose(_leftUpperLegFrontBack, -0.3f);
+        float footBack = Vector3.Dot(_leftFootBone.position - transform.position, forward) - footBase;
+        _legForwardSign = footFront >= footBack ? 1f : -1f;
+        _legReach = Mathf.Clamp((Mathf.Abs(footFront) + Mathf.Abs(footBack)) / 0.6f, 0.15f, 1.5f);
+
+        SetProbePose(_leftArmFrontBack, 0.3f);
+        _armForwardSign = Vector3.Dot(leftHand.position - transform.position, forward) - handBase >= 0f ? 1f : -1f;
+        SetProbePose(_spineFrontBack, 0.3f);
+        _spineForwardSign = Vector3.Dot(head.position - transform.position, forward) - headForwardBase >= 0f ? 1f : -1f;
+        if (_spineLeftRight >= 0)
+        {
+            SetProbePose(_spineLeftRight, 0.3f);
+            _spineRollSign = Vector3.Dot(head.position - transform.position, right) - headRightBase >= 0f ? 1f : -1f;
+        }
+        _playerCalibrated = true;
+    }
+
+    void AddLayer(int index, float value)
+    {
+        if (index < 0 || _pose.muscles == null || index >= _pose.muscles.Length)
+            return;
+        _pose.muscles[index] = Mathf.Clamp(_pose.muscles[index] + value, -1f, 1f);
+    }
+
+    static float Smooth01(float x)
+    {
+        x = Mathf.Clamp01(x);
+        return x * x * (3f - 2f * x);
+    }
+
+    // phase 0..stance: 발이 앞→뒤로 몸 속도에 맞춰 이동(지지), 이후: 무릎을 들며 앞으로 복귀(공중 스윙).
+    void LegCycle(float phase, float stance, out float forward, out float lift, out float load)
+    {
+        phase = Mathf.Repeat(phase, 1f);
+        if (phase < stance)
+        {
+            float s = phase / stance;
+            forward = 1f - 2f * s;
+            lift = 0f;
+            load = Mathf.Sin(s * Mathf.PI);
+        }
+        else
+        {
+            float s = (phase - stance) / (1f - stance);
+            forward = -1f + 2f * Smooth01(s);
+            lift = Mathf.Sin(s * Mathf.PI);
+            load = 0f;
+        }
+    }
+
+    void ApplyPlayerLocomotion(float dt)
+    {
+        dt = Mathf.Max(dt, 0.0001f);
+        float speed = CurrentPlanarSpeed;
+        float walkSpeed = Mathf.Max(0.5f, _player.moveSpeed);
+        float runT = Mathf.InverseLerp(walkSpeed, walkSpeed * 1.6f, speed);
+        float moveT = Mathf.Clamp01(speed / walkSpeed);
+
+        // 경사/단차의 한두 프레임 isGrounded 끊김은 점프 자세로 보지 않는다.
+        if (_body == null) _body = GetComponent<CharacterController>();
+        bool airborne = _player.enabled && _body != null && _body.enabled && _player.IsAirborne;
+        float verticalSpeed = _player.VerticalSpeed;
+        if (airborne)
+        {
+            _airTime += dt;
+            _peakFall = Mathf.Min(_peakFall, verticalSpeed);
+        }
+        else
+        {
+            if (_airTime > 0.2f)
+            {
+                _landTimer = 0f;
+                _landStrength = Mathf.Clamp(-_peakFall / 6.5f, 0.35f, 1f);
+            }
+            _airTime = 0f;
+            _peakFall = 0f;
+        }
+        bool jumping = airborne && (_airTime > 0.08f || verticalSpeed > 1f);
+        _airWeight = Mathf.MoveTowards(_airWeight, jumping ? 1f : 0f, dt / (jumping ? 0.09f : 0.07f));
+        _landTimer += dt;
+        float landT = _landTimer / 0.26f;
+        float landWeight = landT >= 1f ? 0f : _landStrength * (landT < 0.3f ? Smooth01(landT / 0.3f) : 1f - Smooth01((landT - 0.3f) / 0.7f));
+
+        float yaw = transform.eulerAngles.y;
+        if (!_yawInitialized) { _lastYaw = yaw; _yawInitialized = true; }
+        float yawRate = Mathf.DeltaAngle(_lastYaw, yaw) / dt;
+        _lastYaw = yaw;
+        float targetGait = Smooth01(Mathf.InverseLerp(0.05f, 0.7f, speed)) * (1f - _airWeight);
+        _gaitWeight = Mathf.MoveTowards(_gaitWeight, targetGait, dt * 7f);
+        _turnLean = Mathf.Lerp(_turnLean, Mathf.Clamp(yawRate / 540f, -1f, 1f) * _gaitWeight, 1f - Mathf.Exp(-10f * dt));
+        _accelLean = Mathf.Lerp(_accelLean, Mathf.Clamp((speed - _lastSpeed) / dt / 30f, -1f, 1f), 1f - Mathf.Exp(-8f * dt));
+        _lastSpeed = speed;
+        _idleTime += dt;
+
+        // 지지 구간에서 발이 이동한 거리 = 몸이 이동한 거리가 되도록 보폭·주기를 정한다.
+        float cadence = Mathf.Lerp(Mathf.Lerp(1.9f, 2.8f, moveT), 3.3f, runT);
+        float amplitude = Mathf.Lerp(0.46f, 0.6f, runT);
+        float forwardLimit = Mathf.Min(amplitude, 0.4f);
+        float travel = _legReach * 0.5f * (amplitude + forwardLimit) * 2f;
+        float stance = speed > 0.05f ? travel * cadence / speed : 0.62f;
+        if (stance > 0.62f)
+        {
+            float scale = 0.62f / stance;
+            amplitude *= scale; forwardLimit *= scale; stance = 0.62f;
+        }
+        _stanceFraction = Mathf.Clamp(stance, 0.22f, 0.62f);
+        _gaitPhase += cadence * dt * Mathf.Max(_gaitWeight, speed > 0.05f ? 1f : 0f);
+        CurrentCadence = cadence * _gaitWeight;
+
+        LegCycle(_gaitPhase, _stanceFraction, out float lf, out float lLift, out float lLoad);
+        LegCycle(_gaitPhase + 0.5f, _stanceFraction, out float rf, out float rLift, out float rLoad);
+        float g = _gaitWeight;
+        float kneeSwing = Mathf.Lerp(0.5f, 0.85f, runT);
+        float kneeLoad = Mathf.Lerp(0.12f, 0.2f, runT);
+        float leftLeg = (lf >= 0f ? lf * forwardLimit : lf * amplitude) * g;
+        float rightLeg = (rf >= 0f ? rf * forwardLimit : rf * amplitude) * g;
+        float leftKnee = (lLift * kneeSwing + lLoad * kneeLoad) * g;
+        float rightKnee = (rLift * kneeSwing + rLoad * kneeLoad) * g;
+
+        float idle = (1f - g) * (1f - _airWeight);
+        float breath = Mathf.Sin(_idleTime * Mathf.PI * 2f * 0.28f);
+        float sway = Mathf.Sin(_idleTime * Mathf.PI * 2f * 0.11f);
+        leftKnee += 0.07f * idle;
+        rightKnee += 0.07f * idle;
+
+        // 점프: 상승 중 다리를 모으고, 하강 중 착지를 준비한다.
+        float rise = Mathf.InverseLerp(-3f, 3f, verticalSpeed);
+        float air = _airWeight;
+        leftLeg = Mathf.Lerp(leftLeg, Mathf.Lerp(0.12f, 0.34f, rise), air);
+        rightLeg = Mathf.Lerp(rightLeg, Mathf.Lerp(-0.04f, 0.14f, rise), air);
+        leftKnee = Mathf.Lerp(leftKnee, Mathf.Lerp(0.22f, 0.62f, rise), air);
+        rightKnee = Mathf.Lerp(rightKnee, Mathf.Lerp(0.16f, 0.4f, rise), air);
+
+        // 착지: 무릎을 굽혀 충격을 받고 골반 보정이 몸을 낮춘다.
+        leftKnee += 0.55f * landWeight;
+        rightKnee += 0.55f * landWeight;
+        leftLeg += 0.18f * landWeight;
+        rightLeg += 0.18f * landWeight;
+
+        AddLayer(_leftUpperLegFrontBack, leftLeg * _legForwardSign);
+        AddLayer(_rightUpperLegFrontBack, rightLeg * _legForwardSign);
+        AddLayer(_leftLowerLegStretch, leftKnee * _leftKneeBendSign);
+        AddLayer(_rightLowerLegStretch, rightKnee * _rightKneeBendSign);
+        AddLayer(_leftFootUpDown, (lLift * 0.12f * g + 0.1f * air) * _leftFootLiftSign);
+        AddLayer(_rightFootUpDown, (rLift * 0.12f * g + 0.1f * air) * _rightFootLiftSign);
+
+        // 팔: 반대쪽 다리와 함께 흔들고, 빠를수록 팔꿈치를 더 접는다. 정지 시 몸통 옆으로 내린다.
+        // 달리기 팔은 앞으로 크게, 뒤로는 작게 흔들어야 어깨 높이로 뒤로 뻗지 않는다.
+        float armSwingAmp = Mathf.Lerp(0.26f, 0.4f, runT) * g;
+        float leftArmSwing = rf * armSwingAmp * (rf < 0f ? 0.55f : 1f);
+        float rightArmSwing = lf * armSwingAmp * (lf < 0f ? 0.55f : 1f);
+        float armDrop = 1.05f - 0.3f * air * rise - 0.15f * air * (1f - rise);
+        float elbow = 0.2f + Mathf.Lerp(0.14f, 0.42f, runT) * g + 0.12f * air + 0.1f * landWeight;
+        AddLayer(_leftArmDownUp, armDrop * _leftArmDropSign);
+        AddLayer(_rightArmDownUp, armDrop * _rightArmDropSign);
+        AddLayer(_leftShoulderDownUp, (0.07f - 0.04f * air) * _leftShoulderDropSign);
+        AddLayer(_rightShoulderDownUp, (0.07f - 0.04f * air) * _rightShoulderDropSign);
+        AddLayer(_leftArmFrontBack, (leftArmSwing + 0.05f + 0.12f * air + 0.08f * landWeight) * _armForwardSign);
+        AddLayer(_rightArmFrontBack, (rightArmSwing + 0.05f + 0.12f * air + 0.08f * landWeight) * _armForwardSign);
+        AddLayer(_leftForearmStretch, elbow * _leftElbowBendSign);
+        AddLayer(_rightForearmStretch, elbow * _rightElbowBendSign);
+        AddLayer(_leftArmTwist, -0.035f);
+        AddLayer(_rightArmTwist, 0.035f);
+        AddLayer(_leftHandDownUp, wristRelax * _leftWristRelaxSign);
+        AddLayer(_rightHandDownUp, wristRelax * _rightWristRelaxSign);
+        AddLayer(_leftHandInOut, 0.025f);
+        AddLayer(_rightHandInOut, -0.025f);
+
+        // 몸통: 속도·가속만큼 앞으로, 회전 방향으로 기울이고 대기 중에는 호흡과 체중 이동만 남긴다.
+        float lean = (0.05f + 0.07f * runT) * g + 0.06f * _accelLean * g + 0.1f * landWeight + 0.03f * air;
+        AddLayer(_spineFrontBack, (lean + breath * 0.012f * idle) * _spineForwardSign);
+        AddLayer(_chestFrontBack, (breath * 0.03f * idle + 0.02f * g) * _spineForwardSign);
+        AddLayer(_spineLeftRight, (_turnLean * 0.08f + sway * 0.018f * idle) * _spineRollSign);
+        AddLayer(_neckNod, (-lean * 0.35f + breath * 0.008f * idle) * _spineForwardSign);
+        AddLayer(_headNod, -lean * 0.25f * _spineForwardSign);
+    }
+
+    // 손 장착/도구 동작은 다음 작업 범위이므로 기존 덮어쓰기 규칙을 그대로 유지한다.
+    void ApplyPlayerHeldAndAction()
+    {
+        var equipment = _player.GetComponent<EquipmentSystem>();
+        if (equipment != null && equipment.HeldItem != null)
+        { AddMuscle(_rightForearmStretch, .28f * _rightElbowBendSign); AddMuscle(_rightArmFrontBack, .14f); }
+        float action = equipment != null ? Time.time - equipment.ActionStartedAt : 10;
+        if (action < .5f)
+        {
+            float swing = Mathf.Sin(action / .5f * Mathf.PI);
+            AddMuscle(_rightArmFrontBack, swing * .65f);
+            AddMuscle(_chestFrontBack, swing * .12f);
+        }
+    }
+
+    // 지지발이 기본 자세의 발 높이에 오도록 골반을 내린다. 공중에서는 보정하지 않는다.
+    void ApplyPlayerGrounding(float dt)
+    {
+        float rootY = transform.position.y;
+        float leftY = _leftFootBone.position.y - rootY;
+        float rightY = _rightFootBone.position.y - rootY;
+        LegCycle(_gaitPhase, _stanceFraction, out _, out float lLift, out _);
+        LegCycle(_gaitPhase + 0.5f, _stanceFraction, out _, out float rLift, out _);
+        float contactY = Mathf.Min(leftY, rightY);
+        bool flight = lLift > 0f && rLift > 0f;
+        float contactWeight = Mathf.Lerp(1f, flight ? 0.45f : 1f, _gaitWeight) * (1f - _airWeight);
+        float target = Mathf.Clamp(-(contactY - _baseFootHeight) * contactWeight, -0.3f, 0.08f);
+        _hipOffset = Mathf.Lerp(_hipOffset, target, 1f - Mathf.Exp(-35f * Mathf.Max(dt, 0.0001f)));
+        _hipsBone.position += Vector3.up * _hipOffset;
     }
 
     float PickHandLoweringSign(int muscle, HumanBodyBones handBone)
@@ -583,6 +876,12 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         }
 
         return -1;
+    }
+
+    void SetMuscle(int index, float value)
+    {
+        if (index < 0 || _pose.muscles == null || index >= _pose.muscles.Length) return;
+        _pose.muscles[index] = Mathf.Clamp(value, -1f, 1f);
     }
 
     void AddMuscle(int index, float value)

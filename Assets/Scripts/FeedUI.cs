@@ -21,6 +21,7 @@ public class FeedUI : MonoBehaviour
     public int VisibleSaleCardCount { get; private set; }
     public bool HasVisibleEmptyState { get; private set; }
     public string CurrentVillageSummary { get; private set; } = string.Empty;
+    static bool OpeningDemo => DemoSettlementController.Instance != null;
 
     void OnEnable()
     {
@@ -48,6 +49,10 @@ public class FeedUI : MonoBehaviour
                          : scrollRect != null ? scrollRect.content
                          : transform;
 
+        // Canon v2 §22: 놓친 알림은 휴대폰에서 다시 본다(데모 경로에서 알림이 있을 때만).
+        if (FirstDayWorldPresentation.DispatchLog.Count > 0)
+            _cards.Add(BuildDispatchCard(parent));
+
         if (SalesLogManager.Instance == null)
         {
             BuildEmptyState(parent, "판매 기록 서비스를 불러오는 중입니다.");
@@ -62,8 +67,9 @@ public class FeedUI : MonoBehaviour
         List<SaleRecord> records = SalesLogManager.Instance.GetRecent(displayCount);
         if (records.Count == 0)
         {
-            BuildEmptyState(parent,
-                "아직 판매 기록이 없습니다.\n밤에 상품을 판매하면 주민 반응과 마을 방향이 여기에 쌓입니다.");
+            BuildEmptyState(parent, OpeningDemo
+                ? "판매 기록은 밤 영업 뒤 여기에 쌓여요."
+                : "아직 판매 기록이 없습니다.\n밤에 상품을 판매하면 주민 반응과 마을 방향이 여기에 쌓입니다.");
             RebuildLayout();
             return;
         }
@@ -88,14 +94,58 @@ public class FeedUI : MonoBehaviour
         HasVisibleEmptyState = false;
     }
 
+    GameObject BuildDispatchCard(Transform parent)
+    {
+        var lines = FirstDayWorldPresentation.DispatchLog;
+        int shown = Mathf.Min(5, lines.Count);
+        var card = new GameObject("DispatchCard", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        var rt = (RectTransform)card.transform;
+        rt.SetParent(parent, false);
+        var image = card.GetComponent<Image>();
+        image.sprite = PAUiTheme.RoundedSprite; image.type = Image.Type.Sliced;
+        image.color = new Color(.91f, .95f, .88f, 1f);
+        // 제목과 기록을 줄마다 따로 두고, 각 안내는 실제 너비에서 필요한 줄 수만큼 높이를 준다.
+        // 한 줄 말줄임(…)으로는 놓친 목표를 다시 읽을 수 없다.
+        float width = ((RectTransform)parent).rect.width;
+        width = width > 100f ? width - 44f : 260f; // 카드 좌우 여백·레이아웃 패딩을 넉넉히 뺀 안쪽 폭
+        float top = 8f + AddDispatchLine(card.transform, "<b><color=#1F6365>P.A. 안내 · 최근</color></b>", 17, 8f, width, false) + 6f;
+        for (int i = 0; i < shown; i++) top += AddDispatchLine(card.transform, lines[i], 15, top, width, true) + 4f;
+        float height = top + 6f;
+        rt.sizeDelta = new Vector2(0f, height);
+        card.GetComponent<LayoutElement>().preferredHeight = height;
+        return card;
+    }
+
+    static float AddDispatchLine(Transform card, string text, float size, float top, float width, bool wrapWords)
+    {
+        var line = new GameObject("DispatchLine", typeof(TextMeshProUGUI));
+        var rt = (RectTransform)line.transform;
+        rt.SetParent(card, false);
+        var tmp = line.GetComponent<TextMeshProUGUI>();
+        tmp.text = text; tmp.fontSize = size; tmp.color = PAUiTheme.Ink;
+        tmp.alignment = TextAlignmentOptions.TopLeft;
+        tmp.textWrappingMode = TextWrappingModes.Normal; tmp.overflowMode = TextOverflowModes.Ellipsis;
+        tmp.raycastTarget = false;
+        // 한글은 TMP가 글자 단위로 끊는다("빈/손"). 토스트와 같은 띄어쓰기 단위 줄바꿈을 쓴다.
+        if (wrapWords) { text = FirstDayWorldPresentation.WrapWords(tmp, text, width); tmp.text = text; }
+        float lineHeight = Mathf.Clamp(Mathf.Ceil(tmp.GetPreferredValues(text, width, 0f).y) + 2f, size + 6f, size * 5f);
+        rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f); rt.pivot = new Vector2(.5f, 1f);
+        rt.offsetMin = new Vector2(12f, -top - lineHeight); rt.offsetMax = new Vector2(-12f, -top);
+        return lineHeight;
+    }
+
     GameObject BuildCard(Transform parent, SaleRecord r)
     {
         var card = new GameObject("FeedCard", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         var rt   = (RectTransform)card.transform;
         rt.SetParent(parent, false);
-        rt.sizeDelta = new Vector2(0f, 112f);
-        card.GetComponent<LayoutElement>().preferredHeight = 112f;
-        card.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.9f);
+        bool demo = OpeningDemo;
+        float cardHeight = demo ? 74f : 112f;
+        rt.sizeDelta = new Vector2(0f, cardHeight);
+        card.GetComponent<LayoutElement>().preferredHeight = cardHeight;
+        var cardImage = card.GetComponent<Image>();
+        cardImage.color = demo ? new Color(.95f, .96f, .91f, 1f) : new Color(0.12f, 0.12f, 0.18f, 0.9f);
+        if (demo) { cardImage.sprite = PAUiTheme.RoundedSprite; cardImage.type = Image.Type.Sliced; }
 
         // 아이템명 + 가격
         var topGO  = new GameObject("TopLine", typeof(TextMeshProUGUI));
@@ -109,7 +159,7 @@ public class FeedUI : MonoBehaviour
         topTmp.text            = $"{r.itemName}  {r.price:N0} G";
         topTmp.fontSize        = 17;
         topTmp.fontStyle       = FontStyles.Bold;
-        topTmp.color           = Color.white;
+        topTmp.color           = demo ? PAUiTheme.Ink : Color.white;
         topTmp.raycastTarget   = false;
 
         // 구매자 + 날짜 + 실제 기록 메타
@@ -121,13 +171,17 @@ public class FeedUI : MonoBehaviour
         botRT.offsetMin        = new Vector2(10f, 2f);
         botRT.offsetMax        = new Vector2(-10f, -2f);
         var botTmp             = botGO.GetComponent<TextMeshProUGUI>();
-        botTmp.text            = $"{r.buyerName}  ·  Day {r.gameDay} {r.gameHour:00}:00\n" +
-                                 $"{ResolveCategoryLabel(r.category)} · 품질 {r.quality:0.00}";
+        botTmp.text            = demo
+            ? $"{r.buyerName}  ·  {r.gameHour:00}:00  ·  {ResolveCategoryLabel(r.category)}"
+            : $"{r.buyerName}  ·  Day {r.gameDay} {r.gameHour:00}:00\n" +
+              $"{ResolveCategoryLabel(r.category)} · 품질 {r.quality:0.00}";
         botTmp.fontSize        = 14;
-        botTmp.color           = new Color(0.7f, 0.7f, 0.7f);
+        botTmp.color           = demo ? new Color(.34f, .43f, .40f) : new Color(0.7f, 0.7f, 0.7f);
         botTmp.raycastTarget   = false;
         botTmp.textWrappingMode = TextWrappingModes.Normal;
 
+        // 데모 첫날에는 다음 날 마을 변화 집계(영문 내부 요약)를 보여 주지 않는다.
+        if (demo) return card;
         var villageGO = new GameObject("VillageLine", typeof(TextMeshProUGUI));
         var villageRT = (RectTransform)villageGO.transform;
         villageRT.SetParent(card.transform, false);
@@ -181,6 +235,7 @@ public class FeedUI : MonoBehaviour
         scrollRect.content  = cRT;
         scrollRect.horizontal = false;
         scrollRect.vertical   = true;
+        scrollRect.scrollSensitivity = 34f; // 휠 한 칸에 실제로 내려가게(CraftingUI와 같은 값)
 
         cardParent = cRT;
     }
@@ -209,8 +264,11 @@ public class FeedUI : MonoBehaviour
         if (parent == null) return;
         var card = new GameObject("FeedEmptyState", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         card.transform.SetParent(parent, false);
-        card.GetComponent<Image>().color = new Color(0.14f, 0.15f, 0.2f, 0.94f);
-        card.GetComponent<LayoutElement>().preferredHeight = 132f;
+        bool demo = OpeningDemo;
+        var cardImage = card.GetComponent<Image>();
+        cardImage.color = demo ? new Color(.95f, .96f, .91f, 1f) : new Color(0.14f, 0.15f, 0.2f, 0.94f);
+        if (demo) { cardImage.sprite = PAUiTheme.RoundedSprite; cardImage.type = Image.Type.Sliced; }
+        card.GetComponent<LayoutElement>().preferredHeight = demo ? 64f : 132f;
 
         var textGO = new GameObject("Message", typeof(RectTransform), typeof(TextMeshProUGUI));
         var textRect = (RectTransform)textGO.transform;
@@ -223,7 +281,7 @@ public class FeedUI : MonoBehaviour
         text.text = message;
         text.fontSize = 15f;
         text.alignment = TextAlignmentOptions.Center;
-        text.color = new Color(0.82f, 0.85f, 0.9f);
+        text.color = demo ? new Color(.34f, .43f, .40f) : new Color(0.82f, 0.85f, 0.9f);
         text.textWrappingMode = TextWrappingModes.Normal;
 
         _cards.Add(card);

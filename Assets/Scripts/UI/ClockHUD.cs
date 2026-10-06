@@ -118,6 +118,20 @@ public class ClockHUD : MonoBehaviour
         }
     }
 
+    // GameClock.ForceSet(저장 복원·일몰/영업 시각 고정)은 tick 이벤트를 보내지 않는다.
+    // 표시 중인 분이 실제 시계와 다르면 즉시 다시 그려 멈춘 시각이 남지 않게 한다.
+    int _shownDay = -1, _shownMinuteOfDay = -1;
+
+    void Update()
+    {
+        var clock = GameClock.Instance;
+        if (clock == null) return;
+        int h = Mathf.FloorToInt(clock.CurrentHour);
+        int minuteOfDay = h * 60 + Mathf.FloorToInt((clock.CurrentHour - h) * 60f);
+        if (minuteOfDay != _shownMinuteOfDay || clock.CurrentDay != _shownDay)
+            Refresh(clock.CurrentHour, clock.CurrentDay, clock.CurrentSeason);
+    }
+
     void OnHourTick(int hour)
     {
         if (GameClock.Instance != null)
@@ -143,6 +157,8 @@ public class ClockHUD : MonoBehaviour
     {
         int h = Mathf.FloorToInt(hour);
         int m = Mathf.FloorToInt((hour - h) * 60f);
+        _shownMinuteOfDay = h * 60 + m;
+        _shownDay = day;
 
         if (clockText != null) clockText.text = $"{h:D2}:{m:D2}";
         if (dateText  != null) dateText.text  = $"Day {day} · {SeasonName(season)}";

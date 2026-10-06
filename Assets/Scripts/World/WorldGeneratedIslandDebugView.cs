@@ -114,7 +114,8 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
                 WorldChunkMeshData data = WorldChunkMeshBuilder.Build(
                     definition,
                     cells,
-                    chunkCoordinate);
+                    chunkCoordinate,
+                    GetComponent<DemoRouteController>() != null);
                 var chunkObject = new GameObject($"GeneratedChunk_{chunkX}_{chunkZ}");
                 chunkObject.transform.SetParent(_runtimeRoot.transform, false);
                 var filter = chunkObject.AddComponent<MeshFilter>();
@@ -159,7 +160,12 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         {
             colors[WorldSurfaceMaterialSlots.Grass] = new Color(.48f, .60f, .34f);
             colors[WorldSurfaceMaterialSlots.Sand] = new Color(.78f, .71f, .51f);
-            colors[WorldSurfaceMaterialSlots.Cliff] = new Color(.48f, .39f, .28f);
+            colors[WorldSurfaceMaterialSlots.Cliff] = new Color(.42f, .33f, .23f);
+            // P10: 숲 바닥·고지대·길이 회색/갈색 디버그 색으로 남아 '테스트 맵'처럼 보였다. 로컬 아트 톤에 맞춘다.
+            colors[WorldSurfaceMaterialSlots.Soil] = new Color(.40f, .46f, .28f);
+            colors[WorldSurfaceMaterialSlots.Rock] = new Color(.60f, .58f, .51f);
+            colors[WorldSurfaceMaterialSlots.DirtPath] = new Color(.67f, .54f, .37f);
+            colors[WorldSurfaceMaterialSlots.StonePath] = new Color(.66f, .62f, .54f);
             colors[WorldSurfaceMaterialSlots.Water] = new Color(.22f, .53f, .59f);
         }
         var result = new Material[WorldSurfaceMaterialSlots.Count];

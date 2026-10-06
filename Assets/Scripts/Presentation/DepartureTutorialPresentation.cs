@@ -23,14 +23,15 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
     Mesh _keyCoverMesh;
     float _nextBoardCheck;
 
-    static readonly Color Ink = new Color(0.17f, 0.23f, 0.23f);
-    static readonly Color Paper = new Color(0.97f, 0.94f, 0.85f, 0.98f);
-    static readonly Color Teal = new Color(0.22f, 0.45f, 0.44f);
-    static readonly Color Amber = new Color(0.88f, 0.57f, 0.22f);
+    static readonly Color Ink = PAUiTheme.Ink;
+    static readonly Color Paper = PAUiTheme.Cream;
+    static readonly Color Teal = PAUiTheme.Teal;
+    static readonly Color Amber = PAUiTheme.Gold;
 
     void Start()
     {
         if (gameObject.scene.name != DepartureTutorialController.SceneName) { enabled = false; return; }
+        AudioManager.PlayBGM(AudioManager.OpeningHarborAmbience);
         if (tutorial == null) tutorial = GetComponent<DepartureTutorialController>();
         if (font == null) font = TMP_Settings.defaultFontAsset;
         BuildUI();
@@ -45,8 +46,6 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         }
     }
 
-    int _lastStage;
-    float _noticeUntil;
     void Update()
     {
         // 생성 시점이 다른 실제 보드 인스턴스도 교정한다. MOVE 메시에는 적용하지 않는다.
@@ -56,8 +55,9 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
             CorrectGatherBoards();
         }
         if (tutorial == null || _canvas == null) return;
-        if (_lastStage != tutorial.Stage) { _lastStage = tutorial.Stage; _noticeUntil = Time.unscaledTime + 4; }
-        ObjectiveLabel.transform.parent.gameObject.SetActive(Time.unscaledTime < _noticeUntil || tutorial.Complete);
+        // A lesson remains visible until its observed gameplay result is complete.
+        // Modal panels provide their own instructions and cover the lesson HUD.
+        ObjectiveLabel.transform.parent.gameObject.SetActive(!PlayerInputHandler.ModalOpen);
         ObjectiveLabel.text = tutorial.ObjectiveText;
         _step.text = tutorial.Complete ? "P.A. COMPANY  /  DEPARTURE CERTIFIED"
             : $"P.A. COMPANY  /  STEP {tutorial.Stage:00}";
@@ -68,9 +68,11 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         if (reactionVisible) _reaction.text = tutorial.LastReaction;
         _completionPanel.SetActive(tutorial.Complete && !(ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen));
         bool modal=PlayerInputHandler.ModalOpen;
-        _controls.transform.parent.gameObject.SetActive(!modal);
+        _controls.transform.parent.gameObject.SetActive(!modal && !reactionVisible);
         _controls.text = tutorial.Complete ? "출항 준비를 마쳤습니다." : tutorial.Stage==3
-            ? "1–9 / 휠 선택 · X 빈손 · E 진열" : "WASD 이동 · Shift 달리기 · Space 점프 · E 행동";
+            ? "1–9 / 휠 선택 · X 빈손 · E 진열" : tutorial.Stage==2
+            ? "WASD 이동 · X 빈손 · 사과를 바라보고 E 줍기"
+            : "WASD 이동 · Shift 달리기 · Space 점프 · E 행동";
     }
 
     void CorrectGatherBoards()
@@ -196,7 +198,7 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         rect.anchoredPosition = position;
         rect.sizeDelta = size;
         Image image = go.GetComponent<Image>();
-        image.color = color;
+        PAUiTheme.Surface(image, color);
         image.raycastTarget = false;
         return rect;
     }

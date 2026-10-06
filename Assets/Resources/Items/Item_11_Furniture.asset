@@ -16,9 +16,9 @@ MonoBehaviour:
   itemName: "\uBAA9\uC81C \uAC00\uAD6C"
   description: "\uC911\uBC18\uBD80 \uD574\uAE08\uC6A9 \uACE0\uB9C8\uC9C4 \uBAA9\uACF5
     \uC0C1\uD488."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: eddd2e465cb02394e94b7be0b69f4aa0, type: 3}
   maxStack: 8
-  model: {fileID: 0}
+  model: {fileID: 9174387294504619635, guid: f319dacf48d0e234a97f8d3aa84e1ebc, type: 3}
   basePrice: 185
   toolType: 0
   category: 3

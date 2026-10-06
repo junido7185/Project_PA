@@ -118,7 +118,12 @@ public class NpcBubbleUI : MonoBehaviour
         if (!string.IsNullOrEmpty(prefix) && text != null && text.StartsWith(prefix))
             text = text.Substring(prefix.Length);
         if (bubbleText != null) bubbleText.text = text;
-        if (_bg != null) _bg.color = new Color(1f, 1f, 1f, 0.92f);
+        if (_bg != null)
+        {
+            if (PAUiTheme.Active) PAUiTheme.Surface(_bg, PAUiTheme.Cream);
+            else _bg.color = new Color(1f, 1f, 1f, 0.92f);
+        }
+        if (PAUiTheme.Active && bubbleText != null) bubbleText.color = PAUiTheme.Ink;
         gameObject.SetActive(true);
         UpdateScreenPosition();
         RestartHide(duration);
@@ -147,7 +152,7 @@ public class NpcBubbleUI : MonoBehaviour
         if (!bought)
         {
             Show("너무 비싸 ...", 2f);
-            if (_bg != null) _bg.color = new Color(1f, 0.5f, 0.5f, 0.9f);
+            if (_bg != null) _bg.color = PAUiTheme.Active ? PAUiTheme.SoftWarning : new Color(1f, 0.5f, 0.5f, 0.9f);
             return;
         }
 
@@ -161,7 +166,7 @@ public class NpcBubbleUI : MonoBehaviour
         else                     { emoji = "비싸긴 한데."; bgColor = new Color(1f, 0.85f, 0.6f, 0.9f); }
 
         Show(emoji, 2f);
-        if (_bg != null) _bg.color = bgColor;
+        if (_bg != null) _bg.color = PAUiTheme.Active ? (ratio <= 1f ? PAUiTheme.SoftSuccess : PAUiTheme.SoftWarning) : bgColor;
     }
 
     public void HideBubble()

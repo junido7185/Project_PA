@@ -222,7 +222,11 @@ Use ProjectPA-specific assets before generic external alternatives.
 
 ## Demo slice contract
 
-`Arrival → Demo256 → Wood → Ore → Fish → Bug → Hub placement → Shop placement → stock gathered item → price → OPEN → real NPC sale → money/log → first-business success → demo end`
+Use `Docs/01_GAME_DESIGN/Canon/PROJECT_PA_OPENING_DEMO_CANON_V2_2026-09-16.md` as the current demo contract.
+
+`Tutorial → choose 2 companions → Pixel Voyage → Real Demo256 Island → Supply Box → Wood/Stone → Shop/Base + 2 Resident Tents → Specialization → Sunset → Display → Price → OPEN → real NPC Sale → CLOSE → Pioneer Report`
+
+Fish, Bug and NPC tool gifts are optional. A separate Hub, actual Agriculture and Day 2 are not demo requirements. Older abbreviated routes are not implementation authority.
 
 Do not expand into:
 - 1024² worldgen

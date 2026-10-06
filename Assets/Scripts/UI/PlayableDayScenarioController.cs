@@ -61,6 +61,9 @@ public class PlayableDayScenarioController : MonoBehaviour
     public string SelectedMapId { get; private set; } = "green_bay";
     public string SelectedMapName => GetMapName(SelectedMapId);
     public bool StartupFlowCompleted => _startupCompleted;
+    public bool TitleMenuOpen => !_startupCompleted && _flowCanvas != null
+        && _flowCanvas.gameObject.activeInHierarchy
+        && (_startupStep == StartupStep.Title || _startupStep == StartupStep.NewGameConfirm);
     public Stage Current { get; private set; } = Stage.TalkToNpc;
     public int CurrentStageIndex => (int)Current;
 
@@ -68,6 +71,10 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     Canvas _flowCanvas;
     GameObject _flowPanel;
+    GameObject _titleMenuBacking;
+    GameObject _titleWorldImage;
+    GameObject _titleVeil;
+    Image _flowDim;
     TextMeshProUGUI _flowTitle;
     TextMeshProUGUI _flowBody;
     TMP_InputField _nameInput;
@@ -85,6 +92,10 @@ public class PlayableDayScenarioController : MonoBehaviour
     bool _startupPausedTime;
     bool _continueSaveAvailable;
     bool _continueLoading;
+    string _continueIssue;
+    bool _continueLegacyFormat;
+    string _continueRuntimeError;
+    string[] _continueCompanionIds = Array.Empty<string>();
     int _continueCheckVersion;
     bool _everSawDialogueOpen;
     bool _everSawSmartphoneAudit;
@@ -293,14 +304,17 @@ public class PlayableDayScenarioController : MonoBehaviour
             case StartupStep.Title:
                 SetFlowText(
                     "PROJECT P.A.",
-                    "낮에는 동물 마을에서 재료와 상품을 준비하고, 밤에는 마을의 유일한 잡화점을 운영하세요.\n당신이 판매한 물건은 다음 날 마을의 풍경과 생활을 바꿉니다.",
+                    "낮에는 마을을 가꾸고, 밤에는 잡화점을 엽니다.",
                     "새 게임");
+                _continueRuntimeError = DemoRouteController.ConsumeContinueError();
                 BeginContinueAvailabilityCheck();
                 break;
             case StartupStep.NewGameConfirm:
                 SetFlowText(
                     "기존 저장 기록 확인",
-                    "현재 저장 기록이 있습니다.\n새 게임을 시작해도 지금 바로 삭제되지는 않지만, 이후 저장하면 기존 기록을 덮어씁니다.\n계속하시겠습니까?",
+                    _continueLegacyFormat
+                        ? "이전 버전 저장은 이어할 수 없지만 파일은 그대로 보존됩니다.\n새 게임의 진행은 별도 저장 기록에 남습니다.\n계속하시겠습니까?"
+                        : "기존 저장 기록이 있습니다.\n새 게임은 바로 기록을 지우지 않지만,\n다음에 저장하면 이전 기록을 덮어씁니다.\n계속하시겠습니까?",
                     "새 게임 시작");
                 if (_secondaryButton != null)
                 {
@@ -358,6 +372,102 @@ public class PlayableDayScenarioController : MonoBehaviour
                     "첫날 시작");
                 break;
         }
+
+        ApplyStartupVisualStyle();
+    }
+
+    void ApplyStartupVisualStyle()
+    {
+        bool title = _startupStep == StartupStep.Title;
+        bool confirm = _startupStep == StartupStep.NewGameConfirm;
+        if (_titleMenuBacking != null) _titleMenuBacking.SetActive(title);
+        if (_titleWorldImage != null) _titleWorldImage.SetActive(title || confirm);
+        if (_titleVeil != null) _titleVeil.SetActive(title || confirm);
+        if (_flowDim != null) _flowDim.color = title || confirm
+            ? new Color(0.17f, 0.31f, 0.26f, 1f)
+            : new Color(0.04f, 0.06f, 0.05f, 0.84f);
+
+        var panelRt = (RectTransform)_flowPanel.transform;
+        var panelImage = _flowPanel.GetComponent<Image>();
+        panelRt.sizeDelta = title ? new Vector2(920f, 790f)
+            : confirm ? new Vector2(760f, 360f) : new Vector2(920f, 620f);
+        panelImage.color = title ? new Color(1f, 1f, 1f, 0f)
+            : new Color(0.97f, 0.94f, 0.86f, 0.98f);
+        panelImage.raycastTarget = !title;
+
+        var titleRt = (RectTransform)_flowTitle.transform;
+        titleRt.anchoredPosition = title ? new Vector2(0f, 295f)
+            : confirm ? new Vector2(0f, 110f) : new Vector2(0f, 235f);
+        titleRt.sizeDelta = title ? new Vector2(820f, 116f)
+            : confirm ? new Vector2(700f, 72f) : new Vector2(820f, 70f);
+        _flowTitle.fontSize = title ? 86f : confirm ? 39f : 38f;
+        _flowTitle.color = title ? new Color(1f, 0.91f, 0.67f)
+            : new Color(0.08f, 0.42f, 0.27f);
+        _flowTitle.outlineColor = title ? new Color32(59, 37, 24, 255) : Color.clear;
+        _flowTitle.outlineWidth = title ? 0.27f : 0f;
+
+        var bodyRt = (RectTransform)_flowBody.transform;
+        if (title)
+        {
+            // 이어하기 불가 사유가 있으면 한 줄 문구 칸을 이유 전체가 읽히는 세 줄 칸으로 넓힌다(메뉴 버튼 위 여백 안).
+            bool reason = !string.IsNullOrEmpty(_continueRuntimeError ?? _continueIssue);
+            bodyRt.anchoredPosition = new Vector2(0f, 160f);
+            bodyRt.sizeDelta = reason ? new Vector2(860f, 104f) : new Vector2(680f, 52f);
+            _flowBody.fontSize = reason ? 21f : 24f;
+            _flowBody.textWrappingMode = TextWrappingModes.Normal;
+            _flowBody.alignment = TextAlignmentOptions.Center;
+            _flowBody.color = new Color(1f, 0.98f, 0.88f);
+            _flowBody.outlineColor = new Color32(38, 43, 31, 235);
+            _flowBody.outlineWidth = 0.22f;
+        }
+        else if (confirm)
+        {
+            bodyRt.anchoredPosition = new Vector2(0f, 0f);
+            bodyRt.sizeDelta = new Vector2(640f, 145f);
+            _flowBody.fontSize = 23f;
+            _flowBody.alignment = TextAlignmentOptions.TopLeft;
+            _flowBody.color = new Color(0.16f, 0.17f, 0.14f);
+            _flowBody.outlineWidth = 0f;
+        }
+        else
+        {
+            _flowBody.color = new Color(0.08f, 0.10f, 0.12f);
+            _flowBody.outlineWidth = 0f;
+        }
+
+        SetMenuButtonStyle(_primaryButton, title, title ? new Vector2(0f, -88f)
+            : confirm ? new Vector2(150f, -125f) : new Vector2(150f, -250f));
+        SetMenuButtonStyle(_secondaryButton, title, title ? new Vector2(0f, 0f)
+            : confirm ? new Vector2(-150f, -125f) : new Vector2(-150f, -250f));
+        SetMenuButtonStyle(_quitButton, title, title ? new Vector2(0f, -176f)
+            : new Vector2(-260f, -250f));
+    }
+
+    void SetMenuButtonStyle(Button button, bool title, Vector2 position)
+    {
+        if (button == null) return;
+        var rt = (RectTransform)button.transform;
+        rt.anchoredPosition = position;
+        rt.sizeDelta = title ? new Vector2(286f, 64f)
+            : button == _primaryButton ? new Vector2(240f, 58f) : new Vector2(200f, 58f);
+        var image = button.GetComponent<Image>();
+        image.sprite = SmartphoneUI.RoundedSprite;
+        image.type = Image.Type.Sliced;
+        image.color = title ? new Color(0.23f, 0.15f, 0.09f, 0.95f)
+            : button == _quitButton ? new Color(0.45f, 0.27f, 0.20f)
+            : new Color(0.08f, 0.42f, 0.27f);
+        var colors = button.colors;
+        colors.highlightedColor = new Color(1.18f, 1.11f, 0.93f, 1f);
+        colors.pressedColor = new Color(0.75f, 0.71f, 0.60f, 1f);
+        colors.disabledColor = new Color(0.55f, 0.53f, 0.48f, 0.7f);
+        button.colors = colors;
+        var label = button.GetComponentInChildren<TextMeshProUGUI>();
+        if (label != null)
+        {
+            ((RectTransform)label.transform).sizeDelta = rt.sizeDelta - new Vector2(18f, 8f);
+            label.fontSize = title ? 26f : 20f;
+            label.color = title ? new Color(1f, 0.94f, 0.81f) : Color.white;
+        }
     }
 
     void BeginContinueAvailabilityCheck()
@@ -367,6 +477,8 @@ public class PlayableDayScenarioController : MonoBehaviour
         int requestVersion = ++_continueCheckVersion;
         _continueSaveAvailable = false;
         _continueLoading = false;
+        _continueIssue = null;
+        _continueLegacyFormat = false;
         if (_primaryButton != null) _primaryButton.interactable = false;
         _secondaryButton.gameObject.SetActive(true);
         _secondaryButton.interactable = false;
@@ -376,10 +488,11 @@ public class PlayableDayScenarioController : MonoBehaviour
 
     async System.Threading.Tasks.Task RefreshContinueAvailabilityAsync(int requestVersion)
     {
-        bool exists = false;
+        SaveManager.ContinueInspection inspection = null;
         try
         {
-            exists = SaveManager.instance != null && await SaveManager.instance.HasSaveAsync();
+            inspection = SaveManager.instance != null
+                ? await SaveManager.instance.InspectContinueAsync() : null;
         }
         catch (Exception ex)
         {
@@ -390,10 +503,20 @@ public class PlayableDayScenarioController : MonoBehaviour
             || _startupCompleted || _startupStep != StartupStep.Title)
             return;
 
-        _continueSaveAvailable = exists;
+        _continueSaveAvailable = inspection?.HasSave == true;
+        _continueIssue = inspection?.Issue;
+        _continueLegacyFormat = inspection?.LegacyFormat == true;
+        _continueCompanionIds = inspection?.CompanionIds ?? Array.Empty<string>();
         if (_primaryButton != null) _primaryButton.interactable = true;
-        _secondaryButton.interactable = exists;
-        if (_secondaryText != null) _secondaryText.text = exists ? "이어하기" : "저장 없음";
+        _secondaryButton.interactable = inspection?.CanContinue == true;
+        if (_secondaryText != null) _secondaryText.text = inspection?.CanContinue == true ? "이어하기" :
+            _continueSaveAvailable ? "호환 불가" : "저장 없음";
+        if (_flowBody != null && !string.IsNullOrEmpty(_continueRuntimeError ?? _continueIssue))
+        {
+            _flowBody.text = "이어하기 불가 · " + (_continueRuntimeError ?? _continueIssue) +
+                "\n새 게임은 시작할 수 있으며 기존 저장은 유지됩니다.";
+            ApplyStartupVisualStyle(); // 검사가 동기 완료돼도 비동기 완료돼도 같은 사유 칸 크기를 쓴다.
+        }
     }
 
     void SetFlowText(string title, string body, string primary)
@@ -2233,7 +2356,28 @@ public class PlayableDayScenarioController : MonoBehaviour
         var dim = new GameObject("Dim", typeof(RectTransform), typeof(Image));
         dim.transform.SetParent(canvasGo.transform, false);
         Stretch((RectTransform)dim.transform);
-        dim.GetComponent<Image>().color = new Color(0.04f, 0.06f, 0.05f, 0.84f);
+        _flowDim = dim.GetComponent<Image>();
+        _flowDim.color = new Color(0.04f, 0.06f, 0.05f, 0.84f);
+
+        _titleWorldImage = new GameObject("TitleWorld", typeof(RectTransform), typeof(Image), typeof(AspectRatioFitter));
+        _titleWorldImage.transform.SetParent(canvasGo.transform, false);
+        var worldRt = (RectTransform)_titleWorldImage.transform;
+        worldRt.anchorMin = new Vector2(0.5f, 0.5f);
+        worldRt.anchorMax = new Vector2(0.5f, 0.5f);
+        worldRt.sizeDelta = new Vector2(1920f, 1080f);
+        var worldImage = _titleWorldImage.GetComponent<Image>();
+        worldImage.sprite = Resources.Load<Sprite>("UI/Title/PA_TitleIsland");
+        worldImage.raycastTarget = false;
+        var worldFit = _titleWorldImage.GetComponent<AspectRatioFitter>();
+        worldFit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        worldFit.aspectRatio = 16f / 9f;
+        _titleWorldImage.SetActive(false);
+
+        _titleVeil = new GameObject("TitleVeil", typeof(RectTransform), typeof(Image));
+        _titleVeil.transform.SetParent(canvasGo.transform, false);
+        Stretch((RectTransform)_titleVeil.transform);
+        _titleVeil.GetComponent<Image>().color = new Color(0.08f, 0.13f, 0.10f, 0.48f);
+        _titleVeil.SetActive(false);
 
         _flowPanel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
         _flowPanel.transform.SetParent(canvasGo.transform, false);
@@ -2243,6 +2387,18 @@ public class PlayableDayScenarioController : MonoBehaviour
         panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.sizeDelta = new Vector2(920f, 620f);
         _flowPanel.GetComponent<Image>().color = new Color(0.97f, 0.94f, 0.86f, 0.98f);
+
+        _titleMenuBacking = new GameObject("TitleMenuBacking", typeof(RectTransform), typeof(Image));
+        _titleMenuBacking.transform.SetParent(_flowPanel.transform, false);
+        var menuBackingRt = (RectTransform)_titleMenuBacking.transform;
+        menuBackingRt.anchoredPosition = new Vector2(0f, -88f);
+        menuBackingRt.sizeDelta = new Vector2(326f, 292f);
+        var menuBackingImage = _titleMenuBacking.GetComponent<Image>();
+        menuBackingImage.sprite = SmartphoneUI.RoundedSprite;
+        menuBackingImage.type = Image.Type.Sliced;
+        menuBackingImage.color = new Color(0.12f, 0.13f, 0.08f, 0.45f);
+        menuBackingImage.raycastTarget = false;
+        _titleMenuBacking.SetActive(false);
 
         _flowTitle = CreateText(_flowPanel.transform, "Title", new Vector2(0f, 235f), new Vector2(820f, 70f), 38f, new Color(0.08f, 0.42f, 0.27f), FontStyles.Bold);
         _flowBody = CreateText(_flowPanel.transform, "Body", new Vector2(0f, 70f), new Vector2(780f, 210f), 24f, new Color(0.08f, 0.10f, 0.12f), FontStyles.Normal);
@@ -2332,7 +2488,8 @@ public class PlayableDayScenarioController : MonoBehaviour
         }
 
         if (_startupCompleted || _startupStep != StartupStep.Title
-            || !_continueSaveAvailable || _continueLoading || SaveManager.instance == null)
+            || !_continueSaveAvailable || !string.IsNullOrEmpty(_continueIssue) ||
+            _continueLoading || SaveManager.instance == null)
             return;
 
         _continueLoading = true;
@@ -2343,7 +2500,15 @@ public class PlayableDayScenarioController : MonoBehaviour
 
         try
         {
-            await SaveManager.instance.LoadGameAsync();
+            if (!DemoRouteController.PrepareContinue(_continueCompanionIds, out string reason))
+                throw new InvalidOperationException(reason);
+            if (_startupPausedTime)
+            {
+                Time.timeScale = _timeScaleBeforeStartup;
+                _startupPausedTime = false;
+            }
+            await SceneManager.LoadSceneAsync(DemoRouteController.WorldScene, LoadSceneMode.Single);
+            return;
         }
         catch (Exception ex)
         {
@@ -2356,8 +2521,8 @@ public class PlayableDayScenarioController : MonoBehaviour
         _primaryButton.interactable = true;
         if (_quitButton != null) _quitButton.interactable = true;
         if (_flowBody != null)
-            _flowBody.text = "저장 데이터를 불러오지 못했습니다. 새 게임을 시작하거나 저장 파일을 확인해 주세요.";
-        BeginContinueAvailabilityCheck();
+            _flowBody.text = "저장 데이터를 불러오지 못했습니다. 새 게임은 시작할 수 있습니다.";
+        _secondaryButton.interactable = true;
     }
 
     void OnQuitPressed()

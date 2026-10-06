@@ -113,6 +113,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
             if (countText != null)
                 countText.text = slot.count > 1 ? slot.count.ToString() : "";
         }
+        if (firstDay) PAUiTheme.Slot(this, slot);
     }
 
     void EnsureFallbackText()
@@ -158,6 +159,7 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
                 case 2014: return "작업대";
                 case 2020: return "가판대";
             }
+            return ItemDisplayName.For(slot.item);
         }
         return name;
     }
@@ -177,7 +179,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
         DragContext.draggedInstance = new ItemInstance(s.item, amount)
         {
             quality = s.instance != null ? s.instance.quality : 1f,
-            currentPrice = s.instance != null ? s.instance.currentPrice : 0
+            currentPrice = s.instance != null ? s.instance.currentPrice : 0,
+            durabilityUsed = s.instance != null ? s.instance.durabilityUsed : 0
         };
         DragContext.draggedCount = amount;
         DragContext.fromSlotIndex = index;

@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 2021
   itemName: Chair
   description: 
-  icon: {fileID: 21300000, guid: eb6239c27c0f3d049bddcb00854d6cd5, type: 3}
+  icon: {fileID: 21300000, guid: fbc012a567c6d89419b6637b6d377366, type: 3}
   maxStack: 1
-  model: {fileID: 7904562973432616760, guid: c47d5c368f5a2884a9ee18eda4c3e6b5, type: 3}
+  model: {fileID: 9174387294504619635, guid: f319dacf48d0e234a97f8d3aa84e1ebc, type: 3}
   basePrice: 10
   toolType: 0
   category: 4

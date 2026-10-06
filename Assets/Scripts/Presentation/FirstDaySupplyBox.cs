@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -29,7 +30,7 @@ public sealed class FirstDaySupplyBox : MonoBehaviour, IInteractable
         if (!hasShop)      Debug.LogWarning("[SupplyBox] Canon v2 §3: Pioneer Shop/Base Blueprint (id 2012) not found in supplies.");
     }
 
-    public string GetInteractPrompt() => "P.A. Pioneer Supply 열기";
+    public string GetInteractPrompt() => "P.A. 보급 상자 열기";
 
     public void Interact(GameObject interactor)
     {
@@ -52,6 +53,27 @@ public sealed class FirstDaySupplyBox : MonoBehaviour, IInteractable
         Collected = true;
         FirstDayWorldPresentation.Toast("보급품을 받았어요. 1–9 선택 · X 빈손 · E 상호작용");
         StartCoroutine(OpenAndPack());
+    }
+
+    // Continue: 보급 키트는 배치되거나 가방/진열대에 남으므로 저장 내용만으로 수령 여부가 정해진다.
+    // (Smartphone 2010은 시스템 UI라 지급 목록에서 제외)
+    public static bool SaveShowsReceived(SaveData data)
+    {
+        if (data == null) return false;
+        if (data.demoSession?.placedBuildings != null && data.demoSession.placedBuildings.Count > 0) return true;
+        var supplies = FirstDayStudioAssets.Load()?.supplies;
+        if (supplies == null) return false;
+        var ids = new HashSet<int>(supplies.Where(i => i != null && i.id != 2010).Select(i => i.id));
+        bool Has(List<SlotSaveData> slots) => slots != null && slots.Any(s => s != null && s.count > 0 && ids.Contains(s.itemId));
+        return Has(data.inventorySlots) || Has(data.hotbarSlots) ||
+               data.shopSlots != null && data.shopSlots.Any(s => s != null && s.occupied && ids.Contains(s.itemId));
+    }
+
+    public void RestoreReceived()
+    {
+        Collected = true;
+        _next = FirstDayStudioAssets.Load()?.supplies?.Length ?? 0;
+        gameObject.SetActive(false);
     }
 
     IEnumerator OpenAndPack()

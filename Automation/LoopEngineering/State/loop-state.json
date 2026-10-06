@@ -1,4 +1,370 @@
 {
+  "demoProductionRouting": {
+    "selectedApproval": "demoPolishFinishApproval",
+    "unityEditorOwner": "codex",
+    "environmentOwner": "codex",
+    "environmentTicket": "DEMO-ENV-001",
+    "environmentApprovalSource": "User 2026-10-02: configure the production environment and repair its existing problems based on the preceding assessment",
+    "environmentScope": "Shared demo skill, read-only doctor, local MCP client configuration, skill-policy consistency and current-document reconciliation only",
+    "environmentStatus": "configured_runtime_verified_2026-10-03",
+    "stopAtMilestoneReached": false,
+    "latestIntentSupersedesHistoricalApprovalSelection": true,
+    "previousSelectedApproval": "demoFeedbackFinishApproval",
+    "selectionChangedOn": "2026-10-06",
+    "notes": [
+      "Selection identifies one existing gameplay approval; it does not grant new gameplay, migration, package or commit authority.",
+      "2026-10-03: selection moved to demoFeedbackFinishApproval (P1-P11) on the user's direct approval message. stopAtMilestoneReached=false describes only that new sequence; demoCompletionApproval keeps its D4_GAMEVIEW_REVIEW stop, results and protected-dependency record. D4 and the old motion results are not ACCEPTED.",
+      "The 2026-09-30 D1-D4 record still assigns Unity production to Claude. Codex may configure/read the environment, not take its gameplay ticket.",
+      "The v16 decision in that record rejects reconstruction; implementation and current-format continue remain unverified.",
+      "Human-rejected locomotion samples remain on hold. Missing human review alone does not stop an independently approved ticket."
+    ],
+    "activeTicket": "D2"
+  },
+  "demoFeedbackFinishApproval": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "approvedOn": "2026-10-03",
+    "approvalSource": "User 2026-10-03 (~06:14 KST), pasted directly into the Claude Code preparation session in reply to the presented approval prompt: 'AI_WORKFLOW/03_TASKS/CLAUDE_OPENING_DEMO_EXECUTION_PROMPT.md의 2026-10-03 피드백 기반 실행 계약을 읽고, P1_CURRENT_CONTINUE부터 P11_WINDOWS_DELIVERY까지 순차 제작을 선승인한다. Claude가 Unity 제작 담당이다. 현재 D4의 결함은 P2에서 수정하고, 기존 D4 검수 대기 대신 이 새 sequence의 FINAL_WINDOWS_HUMAN_REVIEW까지 진행한다. D4와 기존 모션 결과를 ACCEPTED로 바꾸는 승인은 아니다. 문서에 명시된 현재 저장/전화 UI의 한정 수정과 새 모션 재작업은 허용한다. 이전에 보류한 모션 샘플을 승인된 스타일로 취급하지 않는다. 각 경험을 실제 구현·컴파일·플레이·GameView 비교·재수정·증거까지 끝낸 뒤 다음 경험으로 계속 진행한다. HARD STOP 외에는 티켓마다 승인 질문으로 멈추지 않는다. v16 변환, 원본 save 변경, 외부 패키지/에셋 다운로드, 새 권위/대형 재작성, 삭제, commit/push는 허용하지 않는다. 최종 사람 검수는 유지한다.' (followed by the contract's two precedence lines)",
+    "contract": "AI_WORKFLOW/03_TASKS/CLAUDE_OPENING_DEMO_EXECUTION_PROMPT.md (2026-10-03 피드백 기반 실행 계약; 모션 검수·레퍼런스 기록 규칙 포함)",
+    "approvedTickets": [
+      "P1_CURRENT_CONTINUE",
+      "P2_PHONE_GUIDE_D4",
+      "P3_DIRECT_GATHER",
+      "P4_FISHING",
+      "P5_BUG_CATCH",
+      "P6_CRAFT_PLACE_STORAGE",
+      "P7_COMPANION_GROWTH",
+      "P8_BUSINESS_REPORT",
+      "P9_CHARACTER_FEEL",
+      "P10_ISLAND_FIRSTDAY",
+      "P11_WINDOWS_DELIVERY"
+    ],
+    "ticketDefinitions": {
+      "P1_CURRENT_CONTINUE": "현재 형식 이어하기 (SAFE CORE). 현재 SaveData.demoSession/v17 및 SaveManager의 기존 구현을 먼저 대조한다. 현 형식의 상점·텐트·가판대·작업대 등 지원된 배치 종류/ID/위치/회전과 슬롯 상품·수량·품질·가격, 돈·인벤토리·시간·특성화·동료 연결의 실제 복원을 검증한다. 월드/객체 준비 → 기존 placement로 복원 → 슬롯/진행 바인딩 순서와 타이틀 Continue 진입을 확인한다. 같은 live 객체를 유지하는 assertion으로 재로드를 대체하지 않는다. 격리 저장 → 새 Play/타이틀 Continue → 새 객체 복원 증거를 남긴다. v16은 지원 불가 사유와 새 게임 선택을 보여주고 원본의 hash/내용을 유지한다. 임의 재배치·변환·새 schema migration은 하지 않는다. 한정 허용: SaveManager/기존 DemoSettlement save bridge/WorldPersistence 및 placeable catalog의 현 schema 복원 연결, Continue UI, 해당 격리 검증. SaveData의 기존 dirty field를 보존한다. 현재 schema로 표현할 수 없어 schema 변경/비호환 migration이 필요하면 정확한 의존성을 보고하는 HARD STOP이다. P6 이후 새 수납/배치 종류가 기존 저장 계약에 들어오는지 P11에서 다시 확인한다.",
+      "P2_PHONE_GUIDE_D4": "전화·HUD·진행 안내와 기존 D4 결함. 한정 허용: SmartphoneUI.cs/ShopManagementPhoneUI.cs의 알림 진입, 현 상점 관리/설치 안내, 상태 문구, Continue 사유 UI 및 관련 presentation. 기존 dirty 변경을 읽고 보존한다. 보호 목록 전체를 해제하지 않는다. 실제 P → 홈 타일 → 알림 기록 → 상점 앱 → 특성화/OPEN/CLOSE/매출 → 뒤로/닫기 → 이동 복귀. QA SelectTab API로 열어 player reachability를 대신하지 않는다. 자동 마감 뒤 상태/문구 일치, 오전·일몰·영업 중·21:30·마감 뒤 시계의 문자열과 실제 렌더를 함께 검증한다. 상시 중앙 체크리스트 대신 2~4초 우상단 Toast·P 기록·대상 근처 짧은 E 프롬프트를 쓴다. Q용 새 퀘스트 권위는 추가하지 않는다. 문 E는 출입, 가판대 E는 진열/가격, 작업대 E는 제작, 상점 운영은 P폰으로 구분한다. 빈손이 필요한 행동은 X 안내를 읽을 수 있어야 한다. 폰은 Inventory 아이템이 아니다. 설치 기능은 기존 blueprint/placement로 연결하며 앱에서 즉시 건물을 지급/생성하는 우회를 만들지 않는다.",
+      "P3_DIRECT_GATHER": "보급·도구·직접 채집. 보급의 실제 E 입력 → 도끼/곡괭이/낚싯대/잠자리채·kit 지급, 중복 방지, 1~9/휠 선택·손 표시·X를 검증한다. 도끼+나무/곡괭이+바위: 유효 대상 → 그립/타격 → 접촉 순간 SFX/VFX → 자원 드롭 → E 줍기 → 수량 → 진열 가능한 실제 물품. 허공/틀린 대상/실패는 내구도0, 성공 결과만 소비. 필수 자원 채집 뒤 약25~35% 도구 여유는 실제 동선으로 점검한다. 빠른 연속 입력·가득 찬 Inventory·고갈 자원에서 중복/유실이 없어야 한다. Ground Pickup과 직접 채집을 함께 경험하게 한다.",
+      "P4_FISHING": "기본 낚시의 완성. 기존 Rod/FishingSpot/Inventory 권위를 재사용한다. 접근 가능한 데모 물가의 식별 가능한 낚시 기회 → Rod/E 캐스팅 → 입질/기다림 → 성공 또는 너무 빠름/놓침·취소 → 재시도 → 실제 Fish 획득 → 진열/판매. 선택 행동이며 필수 정착/엔딩 게이트로 만들지 않는다. 포함된 활동의 실제 입력·시각/소리·내구도·중복/가득 찬 가방 검수는 필수다. 전 해안 자유 캐스팅, 육지에 물고기 출현/파닥임/추격/칼 포획, 희귀종 반격/피로도는 확장 후보로 보존하며 이 sequence에서 구현하지 않는다.",
+      "P5_BUG_CATCH": "기본 곤충 포획의 완성. 기존 BugCritter/Net/Inventory를 재사용한다. 초원 등에서 움직이는 곤충 발견 → 접근/방향 → Net/E 동작 → 명중 포획 또는 빗나감/이탈 → 실제 보상 → 진열/판매. 발견·추격·포획/실패가 화면과 소리로 읽혀야 한다. 빈손/틀린 도구/거리·가방 가득참·중복 포획을 검사한다. 현재 Day1 시간/지역 출현은 현 데이터 범위에서 확인한다. 계절·새 날씨 시스템은 만들지 않는다. 선택 행동을 MUST PATH 강제로 바꾸지 않는다.",
+      "P6_CRAFT_PLACE_STORAGE": "낮 상품 준비·제작·배치·수납. 기존 Workbench Kit/CraftingService/RecipeData/placement로 원재료 → 판재 등 가공품 → 상품/가판대·가구 → 진열/판매의 대표 경로를 완성한다. 레시피 개수 늘리기로 해결하지 않는다. 기존 레시피별 용도·재료·Root 잠금·결과를 대조하고 낮 상품 구성이 이해되는 최소 대표 경로를 선택한다. 대표 도구 upgrade1종은 선택 Root → recipe 해금 → 실제 재료 소비/제작 → 직접 사용 또는 NPC 지급까지 연결한다. 여러 작업대 종류/별도 설비 트리는 제외. 작업대 업그레이드는 실제 unlock/소비/효과 계약이 확정되지 않았다면 별도 후보로 남기고 임의 구현하지 않는다. 공통 배치의 기본 문법: 마우스로 캐릭터 주변 유효 위치 지정, E 확정, R 회전, Esc/RMB 취소. 좌클릭이 배치 확정과 선택/가격을 동시에 실행하지 않게 한다. 기존 WASD preview 이동은 호환 보조로 유지 가능. 유효/불가/범위가 보이는 preview, 재료/kit 소비, 취소 복구, Hold E 이동, 벽·가구·NPC·문 앞·고객 통로, 큰 건물 전체가 보이는 기존 camera build mode. 실내 상자는 기존 Storage 권위를 통한 실제 넣기/꺼내기·가득참/수량 보존을 제공한다. 별도 Inventory 권위를 만들지 않는다. 상품은 저장 ID를 바꾸지 않고 표시 계층에서 한국어 이름·맞는 모델·수량·가격을 읽히게 한다. Plank의 열매 모델/가격 가림도 해결한다.",
+      "P7_COMPANION_GROWTH": "동행 선택의 이유·낮 작업·성장. 선택 후보3/동행2와 기존 profile/ProducerNpcController/WorksiteBinding/schedule을 보존한다. 역할·특기·Root synergy가 선택 화면과 기존 로컬 외형에서 읽혀야 한다. 동행2가 이동/자기 집/작업·채집·상황 반응을 보여주도록 기존 생산과 이동을 연결한다. 가만히 서 있는 장식 캐릭터로 끝내지 않는다. 호환 동료에게 제작한 upgrade 도구 지급 → 이전 도구 반환 → 실제 장착/작업 → 생산 효과를 before/after로 확인한다. 그릇된 Root를 고른 플레이어에게 NPC gift를 강제하지 않는다. NPC 도구 내구도/다단계 커리어/실제 농사 루프는 제외한다. Root4는 처음부터 읽고 선택 가능하되 정착 완료 뒤 License Point로 첫 선택한다. 선택 Root의 다음1단계 preview를 보여준다. 전체 트리는 구현하지 않는다.",
+      "P8_BUSINESS_REPORT": "낮 상품이 실제 밤 영업과 평가로 연결. P3~P6에서 직접 얻거나 만든 상품을 실제 가판대에 올리고 가격을 정해 P폰으로 개점한다. QA 재고 지급은 이 대표 제품 경로 증거에 쓰지 않는다. 기존 가판대3/1개 이상 OPEN 조건, 관광객7·동시3·영업시간 성과는 재사용한다. 기존 프로필·방문 스케줄·PurchaseEvaluator로 동행/주민과 관광객의 방문·관심·가격 반응 차이를 확인한다. 최신 검사 residentsSeen=0을 주민 검증 완료로 취급하지 않는다. 길막힘·동시 평가·평가 중 가격·품절·영업 중 이동 금지·자율 구매/거절·결제/피드백·마감 후 퇴장을 확인한다. 재고 감소=실판매, 돈 증가=SalesLog=Report 매출, CLOSE1회. 소량 판매의 과한 A/S를 되살리지 않는다. 정착/직접 탐험·채집/제작·성장/동료 지급/판매가 기존 Report 점수와 행동 댓글에 반영되는지 확인한다. 낮 동안 점수/랭크 상시 노출 금지.",
+      "P9_CHARACTER_FEEL": "딩컴 레퍼런스 기반 새 모션 재작업. 계약의 모션 검수 규칙으로 맨손/도구의 이동·정지·회전·점프/착지·그립·타격을 정상 제품 카메라에서 재작업한다. 기존 PlayerController/CameraController/Animator 권위와 이미 검증된 접지·상태 전이를 재사용한다. 이번 sequence 승인은 새 재작업 범위만 허용한다. 사람에게 거절된 옛 결과는 REJECTED, 보류 샘플은 보존한다. 새 before/after 원속 비교 영상과 관련 게임플레이 회귀를 남긴다. 시각 ACCEPTED는 실제 사용자의 판정까지 UNVERIFIED로 둔다.",
+      "P10_ISLAND_FIRSTDAY": "섬·조명·도입·첫날의 연결. Demo256 유지. 항구/해안/숲/고지대/초원의 공간 정체성·자원/물가/곤충·랜드마크·통로를 정상 camera 탐험으로 확인한다. 주요 발견이 약10~20초 이동 간격에서 이어지는지 실제 동선으로 점검한다. 오전9시 빛/캐릭터 음영/나무, 일몰, 밤 상점 창/실내·상품/가격 가독성. 집/상점/작업/판매 공간이 생활 공간으로 읽혀야 한다. 빈 절차 평면·debug label/primitive·불규칙 단차·건물/나무 가림을 해소한다. NEW GAME → 교육/가격 인증 → 동행2 → 8~12초 Pixel Voyage → 실제 섬 → 보급 → 정착/성장 → 일몰 → 영업/Report의 안내·전환·소리. 배/부두/섬의 겹침과 모자이크만으로 흐름이 읽히지 않는 도입을 개선하되 장편 영상·새 범용 컷신 시스템은 만들지 않는다. Soft Clock은 정착 전 갑자기 밤으로 넘기지 않으며, 성장/상품 준비 기회를 주고 자연 일몰로 이어져야 한다. GameView polish pass/Presentation pass는 이 경험 범위의 기존 runtime/scene/prefab/material/audio/animator를 함께 수정할 수 있다. Golden Prototype_FirstDay.unity 덮어쓰기와 MainGame 통합, World authority 재작성은 하지 않는다.",
+      "P11_WINDOWS_DELIVERY": "납품·실제 연속 검증. 기존 빌드 경로로 고유 Windows 후보를 만들고 소스 HEAD/관련 dirty·build identity를 기록한다. 실제 NEW GAME부터 Report까지 continuous MUST PATH를 검증한다. 가능한 구간 입력은 실제 제품 메뉴/조작으로 수행하고 fixture/API 점프를 완주 증거로 대체하지 않는다. 선택 낚시·곤충·동료 지급을 포함한 낮 활동 대표 경로도 따로 검증한다. 현재 형식의 저장 → 정상 종료 → 재실행/타이틀 Continue → 배치·수납·상품·돈·진행 재검증. 사용자 save 대신 격리 경로. 이미 실패한 Windows 자동 입력 방법을 같은 방식으로 반복하지 않는다. 자동 증명이 안 되는 구간은 후보에서 바로 따라 할 정확한 사람 검수 순서로 남긴다. 실제 측정한 standalone 프레임 타임/FPS·해상도·경로와 오디오, 빌드 경고의 실제 영향, 미해결 기능/화면 항목을 보고한다. 최종 사용자 검수 전에는 RELEASE ACCEPTED/데모 전체 PASS를 선언하지 않는다."
+    },
+    "activeTicket": "P11_WINDOWS_DELIVERY",
+    "preapprovedThrough": "P11_WINDOWS_DELIVERY",
+    "stopAtMilestone": "FINAL_WINDOWS_HUMAN_REVIEW",
+    "stopAtMilestoneReached": false,
+    "ticketStatus": {
+      "P1_CURRENT_CONTINUE": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (Editor Play, isolated saves; standalone save/quit/relaunch is P11)",
+      "P2_PHONE_GUIDE_D4": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (Editor Play, injected InputSystem/uGUI input)",
+      "P3_DIRECT_GATHER": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (island still reads as a test map — not a finished screen; P10 re-review)",
+      "P4_FISHING": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (optional activity, not a MUST PATH gate; bobber is a small stand-in model at the default camera)",
+      "P5_BUG_CATCH": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (optional activity, not a MUST PATH gate; butterflies are session-local, all-day, Day1 meadow only)",
+      "P6_CRAFT_PLACE_STORAGE": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (Codex CraftingUI applied by hash; workbench upgrade left as a candidate; only the invalid-ground blocking case exercised)",
+      "P7_COMPANION_GROWTH": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (selection-card synergy text shown only in the departure scene: P11 continuous route; night return home and role readability of the C-02/C-04 looks unverified)",
+      "P8_BUSINESS_REPORT": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED (Editor Play; companions cross disconnected NavMesh terraces only by an offscreen hop - P10)",
+      "P9_CHARACTER_FEEL": "REWORK_DONE_GAMEPLAY_REGRESSION_PASS_VISUAL_HUMAN_UNVERIFIED (tool grip/strike/cast/net and airborne arms; locomotion clips and 9/29 sample untouched)",
+      "P10_ISLAND_FIRSTDAY": "PARTIAL_PRESENTATION_PASS_ISLAND_STILL_READS_PROCEDURAL_HUMAN_DIRECTION_NEEDED (palette, anchor dressing, NPC arms fixed; 1 m step readability, flat activity plazas, trench paths and NPC terrace links remain)",
+      "P11_WINDOWS_DELIVERY": "IN_PROGRESS (candidate4 fishing OS input + Fish x2, isolated save and normal quit verified; final same-candidate natural route pending)"
+    },
+    "experienceReferences": {
+      "P10_ISLAND_FIRSTDAY": "Animal Crossing/Dinkum island footage not re-observed (comparison UNVERIFIED). Cause analysis: Demo256 terrain is drawn by WorldGeneratedIslandDebugView flat debug colours (forest floor/highland/paths grey-brown), activity anchors keep an 18 m empty radius, the long brown line is a 1-level (1 m) step cliff seen edge-on with identical grass on both terraces and no shadow from the morning sun, player stepOffset 0.35 m with a 1.54 m jump climbs 1 m terraces while NavMesh only links same-level sectors (harbor L0 -> L1..4 PathPartial). After: Demo256 palette for soil/rock/dirt/stone paths and darker cliffs, activity anchor clearance 9 -> 4 cells (settlement anchors keep 9), NPC arms lowered in the demo world. Ledge tufts tried and reverted (not visible, cost only).",
+      "P9_CHARACTER_FEEL": "Local Dinkum sections only (no new download under this approval): Logs/VisualQA/Task01C-Locomotion/StyleRework-20260929 trailer 21.75-23.55s bare-hand run/stop/idle, gameplay 168.4-170.8s (holding shells: legs/stop only) and 258-277s idle. Observed: upright torso, elbows bent close to the body, quick compact stop, knees together on a short landing. Tool grip/strike, rod, net and bare-hand jump sections are not available locally -> those comparisons UNVERIFIED. Before: axe/pickaxe hung across the shoulder/face and the head never came down to the target, the rod had no cast and was held by the tip, the net barely moved, arms stuck straight forward while airborne. After: right-arm two-bone aim overlay + direct tool orientation; carry with the head forward-right, wind-up 0.16s -> strike at 0.28s (same as GatherFeedback.ContactDelay) -> follow-through -> recover; net sweep; rod cast/wait/pull; airborne arms lowered.",
+      "P8_BUSINESS_REPORT": "Dinkum/Moonstone Island shop-night footage not re-observed (comparison UNVERIFIED). Before: fish and butterflies went to the bag so they could not be held and displayed, companions never visited (no NpcController; residentsSeen=0), Esc on the price window opened the pause menu and froze business time, crafting was not reflected in the Report, and companion shoppers would have shown profile ids. After: fishing/net rewards and companion batches prefer the hotbar, each companion visits once per opening as a resident customer through the existing NpcController/PurchaseEvaluator with its own profile and its Korean name, walking to the shop door first (offscreen hop only where the NavMesh does not link terraces), Esc closes the price window before pausing, CraftingService raises a read-only Crafted event and the Report adds a crafted-goods comment without changing §20.1 scoring.",
+      "P7_COMPANION_GROWTH": "Stardew/Animal Crossing villager-routine footage not re-observed (comparison UNVERIFIED). Before: Demo256 companions had no movement component and stood at the harbour as decorations, the Miner worked in place only after a gift, the Farmer had no day, the producer judged a 109 m work spot as reached on the first frame, rocks sat on terraces the NavMesh cannot reach, the phone shop app could not be wheel-scrolled to the root buttons, Root next steps were English and unused, and the selection card did not name the matching root. After: DemoCompanionRoutine (presentation adapter) gives each companion a NavMeshAgent, harbour wandering, stop-and-face when the player approaches, walking to its own tent, a day cycle (work target <-> home, home at night) and queued event lines that do not cover progress toasts; the Miner starts real work with the starter pickaxe at settlement (existing ProducerNpcController FSM), walks to the nearest reachable quarry point, shows the held tool, and the 개선 곡괭이 gift returns the old pickaxe, swaps the hand tool and shortens the interval 10.0 s -> 6.7 s; the resident prompt reads name · activity; the phone app shows four roots with ★ companion synergy, the license-point choice and the chosen root's next step in Korean; the selection card's future line names the synergy root.",
+      "P6_CRAFT_PLACE_STORAGE": "Stardew/Dinkum crafting-placement footage not re-observed (comparison UNVERIFIED). Before: crafting cards showed English names, no owned/needed state and a generic lock line; crafted results went to the bag; Plank had no icon/model (red fruit on stands) and English stand labels with the price inside the model; placement was WASD-only with English enum status and no range or build view; a stand granted into the just-emptied slot opened a preview by itself; the demo shop had no usable storage. After: Codex CraftingUI (hash-matched patch) shows 판재/의자/개선 곡괭이/목제 가구 with owned/needed, 재료 부족, 광업/tier locks; crafted results and storage take-outs prefer the hotbar; Plank uses the local FoodKit wooden board model and a generated icon; stand label/prompt/price window use Korean names and the label sits above the model; placement: mouse aim within 3 cells (+footprint radius), E confirm, R rotate, Esc/RMB cancel, green/red preview, range ring, Korean status, large buildings use the camera build view, previews open only on player selection; the shop-side interior chest is a StorageBox (whole-stack store with merge, take-out, full refusal, walk-away close) saved through the existing storedItems record.",
+      "P5_BUG_CATCH": "Animal Crossing/Dinkum bug-catching footage not re-observed (comparison UNVERIFIED). Before: E with the net added a Butterfly instantly (no swing timing, no miss/escape), English prompts, nothing shown without a net, Demo256 bugs drawn as two orange spheres, the acquisition model of the thin butterfly mesh was scaled to ~2.4 m. After: local butterfly model with wing-fold flapping and facing, net swing whoosh, catch decided at swing contact (0.28 s) inside a 1.6 m net reach, far swing misses and the butterfly flies 2.6 m away (uncatchable while fleeing), full bag releases it (no loss, no durability), rapid E catches once with a catch sound, butterfly shrinks into the net, 1 net durability, empty hands/wrong tool show \"잠자리채를 들면 잡을 수 있어요\" without catching, acquisition model capped at 0.5 m.",
+      "P4_FISHING": "Dinkum/Animal Crossing fishing footage not re-observed (comparison UNVERIFIED). Before: E started an English auto-cast prompt (Space to pull), spot sat away from usable water, no bobber/bite readability, Fish went straight to the bag. After: spot snapped to a real shore cell (side-on to the camera so the bobber is not behind the prompt), dark fish shadow circles in the water, E casts a bobber with splash SFX, 1.6-3.2 s wait, 1.0 s bite window with bite SFX/dip and \"[E] 지금 당기기!\", too-early/miss/X-cancel/leaving all reset without loss, full bag keeps the fish hooked, landing uses the existing daily TryCollectDayPrepStock (2 Fish once) and 1 rod durability, spot then shows today done.",
+      "P3_DIRECT_GATHER": "Dinkum gathering footage not re-observed this ticket (comparison UNVERIFIED); Canon §4/§5.1 contract applied. Before: 3 E presses put Wood/Ore straight into the bag, no drop/E pickup, no contact SFX/VFX, no durability, prompt shown from a terrace the action could not reach, canopy hid the player/axe. After: hit lands at swing contact (0.28 s) with synthesized chop/stone SFX and local-model chips, rapid E gives one hit per swing, felled/mined resource drops on the ground and needs empty hands + E ([X] hint), depletion persisted only when the drop is claimed, success-only durability (axe 5 for 4 required fells = 25%, pickaxe 4 for 3 = 33%) with hotbar bar and break toast, same-level (±2 m) target rule, occluding tall trees rendered shadows-only while they cover the player (chopped tree stays visible), Korean display names for pickup/toast/hotbar.",
+      "P2_PHONE_GUIDE_D4": "Reference (Animal Crossing NookPhone readability) not re-observed this ticket; no footage accessed, comparison UNVERIFIED. Before: record reachable only via QA SelectTab, lines cut with ellipsis and mid-word, English 'Processed…' village line, dark legacy cards, stale '영업을 시작했어요.' after auto-close, no hint when a held tool blocked the door/supply/talk. After: home 기록 tile (+new badge) -> FeedUI panel found by component, word-wrapped adaptive record lines, light demo cards without internal summary, state-driven shop-app message, [X] 손 비우기 -> [E] prompt, workbench prompt '작업대 · 제작'.",
+      "P1_CURRENT_CONTINUE": "N/A — SAFE CORE save/continue; no external visual reference. Before: title continue never passed (2026-09-30 tests failed), v16 was relocated/converted by dirty code, HUD clock stayed 07:00 after a restore, title reason truncated. After: see evidence."
+    },
+    "evidence": {
+      "P10_ISLAND_FIRSTDAY": "Logs/VisualQA/20261005-131326-P10_ISLAND_SURVEY/EVIDENCE.md with P10_before_top_after_bottom.jpg, landmark shots, lighting 16:00-hold/20:30, discovery distances from the harbor (supply 4 m, fishing 5 m, butterfly 26 m, tree 65 m, rock 132 m, settlement ~190 m, activities 160-278 m). Line identification and cell levels: -130324/-130701/-131131. Before survey -095724. Regression: P8 48/48 (-131404). Intro/voyage/transition sound review deferred to the P11 continuous route.",
+      "P9_CHARACTER_FEEL": "Logs/VisualQA/20261005-095034-P9_CHARACTER_FEEL-after/EVIDENCE.md with P9_game_before_after_30fps.mp4 (product camera) and P9_close34_before_after_30fps.mp4 (close 3/4), 30 fps real speed (Time.captureFramerate 30, end-of-frame ScreenCapture, no RenderTexture), same virtual-keyboard timeline: idle, run, stop, turn, sprint, jump, running jump/land, axe carry/run, axe x2, pickaxe, rod cast, net. Before-only videos in -094255-P9_CHARACTER_FEEL-before. Regression after the change: P3 33/33, P4 18/18, P5 16/16 (20261005-0952..0954). Visual ACCEPTED pending the user.",
+      "P8_BUSINESS_REPORT": "Logs/VisualQA/20261005-093355-P8_BUSINESS_REPORT/result.txt (48/48 PASS, Console 0): products only from real fishing (2), net (1), 2 felled trees -> workbench 판재 (1); 3 stands placed in the shop by mouse; price UI +10; phone OPEN; tourists 7 / max 3 at once / stuck 0; 미라 (resident) bought 판재@35, tourists bought/passed; sold out; move locked while open; bubbles; one close; customers left; money +65 = sales log 65 = close event 65 = Report 65 (3 sales); Report activities bug,craft,fish,forestry and comments settlement/first customers/crafted goods/curiosity; no score in daytime. Price change while a customer evaluated: runs -091254 and -091707 (물고기 18->17G, every sale at a displayed price); in the final run the stand sold just before the change. Earlier runs kept (-085921 … -092938): price window canvas lookup, stocking (bag vs hotbar), Esc opening pause, late resident arrival, approach path from a disconnected terrace, offscreen hop. FIXTURES: direct Demo256 entry, teleport approaches, 광업 via TryChooseRoot, sunset clock 1 s/h.",
+      "P7_COMPANION_GROWTH": "Logs/VisualQA/20261005-084529-P7_COMPANION_GROWTH/result.txt (31/31 PASS, Console 0). Earlier runs kept (-080805 … -084308): review order, the routine overriding the producer destination, terrace rocks unreachable (PathPartial), one run started before a recompile and was reset by a play-mode domain reload (-081536, no result), wheel not reaching the scroll view (ShopPanel took the raycast), and the producer arrival bug. Real input: X/E at companions, mouse + E placement of shop and 2 tents, P, mouse click 상점 tile, wheel x(n) over the app, click 광업, number key + E gift, X + E batch claim. FIXTURES: direct Demo256 entry with Miner_01/Farmer_01, teleport approaches, 개선 곡괭이 given (crafting verified in P6). NavMesh evidence: nearest 5 rocks PathPartial from the tents; the Miner works at a reachable quarry point 108 m away (P10 terrace connectivity).",
+      "P6_CRAFT_PLACE_STORAGE": "Logs/VisualQA/20261005-035014-P6_CRAFT_PLACE_STORAGE/result.txt (56/56 PASS, Console 0). Earlier runs kept: -033807 (no valid site on the harbour sand, review order), -033924 (stand auto-preview after shop placement; crafted pickaxe in the bag), -034138 (stand site only inside the shop), -034408 (door approach), -034550 (storage take-out to the bag), -034804 (56/56 but English workbench title, price over the table, prompt behind the storage panel). Real input: kit number keys, mouse aim/far clamp, E on blocked spot, R, right click, E place x5 (workbench, shop, 2 tents, stand), hold E move + Esc, E workbench, mouse clicks on cards (disabled/craft x3), W while open, Esc, S walk, number-key improved pickaxe 2 swings on a 3-hit rock, door E, stand E, chest E, store/take/full clicks, S walk-away. FIXTURES: direct Demo256 entry, teleport approaches, Wood+8/Ore+2, 광업 via TryChooseRoot (phone input verified in P2), chest filler entries. Codex handoff: Logs/CodexParallel/P6CraftingUI/CodeReady-20261005-001 (original 3b5a3123…, 11 related API hashes equal to baseline, patch c8ac49b5… applied, result 0fc33bda… = Codex source; Claude then added the hotbar preference call).",
+      "P5_BUG_CATCH": "Logs/VisualQA/20261005-032102-P5_BUG_CATCH/result.txt (16/16 PASS, Console 0). Earlier runs kept: -031809 (1 FAIL: release/miss text lingered as the [E] prompt, prompt now always the next action) and -031946 (16/16 PASS but GameView showed a ~2.4 m acquisition butterfly, capped). Real input: X empty hands, axe, net number key, E full bag, E from 1.85 m, E while fleeing, 3 rapid E close, E after catch. FIXTURES: direct Demo256 entry, teleport approach, bag fill/clear. Butterflies at 09:04 in the harbor-side meadow (3, session-local).",
+      "P4_FISHING": "Logs/VisualQA/20261005-030912-P4_FISHING/result.txt (18/18 PASS, Console 0; run 1 -030731 also 18/18 but its bobber fell on camera-facing water behind the prompt, fixed by shore choice). Real input: number key rod, E cast, E too early, missed bite, X cancel, full bag hooked then 3 rapid E land once, E after completion. FIXTURES: direct Demo256 entry, teleport approach, bag fill/clear. Brown forest line identified as the GeneratedChunk_7_*/8_* terrain seam at x=255 (Logs/VisualQA/20261004-233752-P3_DIRECT_GATHER/brown-line-check.txt), carried to P10.",
+      "P3_DIRECT_GATHER": "Logs/VisualQA/20261004-233752-P3_DIRECT_GATHER/result.txt (33/33 PASS, Console 0; earlier runs -224734 and -224950 kept: they found the English supply prompt, the cliff-terrace prompt/action mismatch, and two fixture arithmetic errors). Real input: E supply (no duplicate), 1-9/wheel/X, air & wrong-target swings 0 durability, contact timing, rapid taps, drop + X/E pickup, full bag keeps the drop, depleted tree ignored, axe breaks on the 5th success, 3 rocks, ground pickup. FIXTURES: direct Demo256 entry, teleport approach, bag fill/clear. Durability is session-only (no SaveData field; Continue restores fresh tools — known limit). 'Required route' timing on foot is not measured (teleport fixture). Long brown line: terrain chunk seam (see P4 evidence).",
+      "P2_PHONE_GUIDE_D4": "Logs/VisualQA/20261004-223242-P2_PHONE_GUIDE_D4/result.txt (auto-close route: P -> home 기록 tile -> record -> Esc -> 상점 tile -> 광업; held axe at door shows [X] hint -> X -> E enters; OPEN; 119 s business, 21:30 warning, 22:00 auto close; 6 sales/99G = SalesLog = money delta = stock decrease; Report card E -> shop app '오늘 영업 완료/오늘 영업을 마쳤어요', OPEN/CLOSE disabled; Esc -> 기록 tile after close; Esc x2, movement returns; HUD clock/money at morning/sunset/door/business/after report; 85 checks, 2 FAIL = long record line truncation, fixed) + Logs/VisualQA/20261004-223602-P2_PHONE_GUIDE_D4-manual-close/result.txt (separate initial state: OPEN -> phone 영업 마감 at 20.07h -> Report once -> closed app state; morning record truncation re-check PASS; 52/52 PASS). Console errors 0. FIXTURES as labeled in result.txt (direct Demo256 entry, supply Interact, placement API, stock grant, accelerated sunset/door approach).",
+      "P1_CURRENT_CONTINUE": "Logs/VisualQA/20261003-064739-P1_CURRENT_CONTINUE/CurrentFormatChain/result.txt (4 Play sessions: pause-menu island reload + 3 new-Play title Continue; placements/IDs/anchors/rotation, stands item/qty/quality/price, money, bag/hotbar/selection, day/hour + HUD clock, Root/LP, companion-tent mapping with adversarial IDs, supply received, interior inside, report exploration, report after CLOSE + OPEN blocked, business save refused; RESULT PASS) + Logs/VisualQA/20261003-065243-P1_CURRENT_CONTINUE/LegacyV16Notice/result.txt (v16 isolated copy: 호환 불가 + full reason + new-game confirm, hash unchanged, no v17 written; RESULT PASS). Console errors 0. FIXTURES labeled (direct Demo256 entry, placement API with product id/marker/kit consumption, clock acceleration, stock grant, money). User save hash 71467AA5… unchanged. Known limits: NPC tool gift and bug population are session-only (P7/P5/P11), ground pickups not checked (P3)."
+    },
+    "allowedLimitedScope": [
+      "P1 save: SaveManager / existing DemoSettlement save bridge / WorldPersistence / placeable catalog current-schema restore wiring, Continue UI and isolated verification only",
+      "P2 phone: SmartphoneUI.cs / ShopManagementPhoneUI.cs notification entry, shop-management/placement guidance, status text, Continue-reason UI and related presentation only; the protected list as a whole is not released",
+      "P9 motion: new rework only; the 2026-09-29 held samples are preserved and are not an approved style"
+    ],
+    "protectedScope": [
+      "No v16 conversion/relocation; original v16 save hash and content preserved; do not run the v16 conversion checks or menus",
+      "No change to original/user saves; isolated save paths only",
+      "SaveData.cs existing dirty fields preserved; a schema change or incompatible migration is a HARD STOP with the exact dependency",
+      "Unrelated dirty work preserved; Golden Assets/Scenes/Prototype_FirstDay.unity, MainGame integration and Packages untouched",
+      "No external package/asset download, no new Save/Economy/Inventory/Shop/Player authority, no large rewrite, no deletion, no commit/push"
+    ],
+    "localTicketCommitsAllowed": false,
+    "pushAllowed": false,
+    "notAcceptance": "Production approval only. D4 and the old motion results are not ACCEPTED; human review stays at FINAL_WINDOWS_HUMAN_REVIEW.",
+    "status": "in_progress",
+    "codexFinalProductionTakeover": {
+      "takenOverOn": "2026-10-05T17:15:02.706734+09:00",
+      "approvalSource": "User direct goal: Claude automatic continuation and the parallel Codex producer have been stopped; one Codex session takes over Unity production.",
+      "contract": "AI_WORKFLOW/03_TASKS/CODEX_OPENING_DEMO_FINAL_EXECUTION_PROMPT.md",
+      "continuationOrder": [
+        "P11_WINDOWS_DELIVERY: resume candidate4 fishing interruption",
+        "P10_ISLAND_FIRSTDAY: island paths, presentation, NPC connections",
+        "P9_CHARACTER_FEEL: unresolved motion",
+        "existing P3-P8/P9/P10: remaining day activities, UI, intro and audio",
+        "P11_WINDOWS_DELIVERY: final identical Windows candidate"
+      ],
+      "studioRecoveryBudgetPerNewExperience": {
+        "compileFix": 3,
+        "targetedPlay": 3,
+        "dedicatedValidator": 1
+      },
+      "preserveHistoricalResults": true,
+      "finalHumanReviewRequired": true,
+      "commitsAllowed": false,
+      "pushAllowed": false,
+      "previousUnityEditorOwner": "claude-code",
+      "scope": "Bounded Demo256 terrain presentation, real slope/step connections and existing NavMesh extensions; new motion rework; existing authorities/current Save schema/Golden scene/user saves preserved. No external packages/assets, deletion or large rewrite.",
+      "latestUserDirection": "2026-10-05: no ramps; keep Dinkum-like block terrain and player jump traversal",
+      "currentExperience": "P11 same-source candidate/actual natural route preparation; prior P4/P6/grip/foot stops preserved",
+      "latestUserFishingDirection": {
+        "source": "2026-10-05 user: Stardew-like minigame then How to Fish-like flopping land fish and tool capture, existing local species/model assets; sea below land; no swimming",
+        "supersedes": "basic fishing only and land-fish exclusion in final execution prompt",
+        "scope": [
+          "minigame",
+          "land fish motion",
+          "tool capture before reward",
+          "local fish variety/models"
+        ],
+        "preserve": [
+          "existing P4 evidence",
+          "existing fishing/day-prep/inventory/economy/save authorities",
+          "current save schema",
+          "fishing optional on Day1"
+        ]
+      },
+      "latestUserToolDirection": "2026-10-05: axe/pickaxe/net should visibly work in air and on wrong targets with failed-use motion; compare Animal Crossing/Dinkum.",
+      "continuationBlockedBy": {
+        "kind": "HARD_STOP_RECOVERY_BUDGET",
+        "experience": "P4 fishing extension",
+        "compileFixUsed": 3,
+        "targetedPlayUsed": 2,
+        "reason": "HowTo text wraps into Success caption after functional PASS25",
+        "requestedExtension": {
+          "compileFix": 1,
+          "targetedPlay": 1,
+          "scope": "FirstDayFishingMinigame.Build HowTo text/font/layout only"
+        },
+        "approvalReceived": false,
+        "preparedPatch": "Logs/CodexOpeningDemoFinal/P4-LandFish-20261005-001/PENDING-ReelHint.patch"
+      },
+      "supplementalResults": {
+        "P11Resume": {
+          "evidence": "Logs/CodexOpeningDemoFinal/P11-FishingResume-20261005-001",
+          "result": "candidate4 actual OS fishing Fish+2 and normal isolated SaveQuit; not full final route"
+        },
+        "P10Structure": {
+          "evidence": "Logs/VisualQA/20261005-182456-P10_ISLAND_SURVEY",
+          "checks": 12,
+          "failed": 0,
+          "compileFixUsed": 3,
+          "targetedPlayUsed": 3,
+          "result": "dry traversal, sea lower than land, complete navpaths and visible NPC step fixture; full polish/natural NPC route unfinished"
+        },
+        "P4FishingExtension": {
+          "evidence": "Logs/VisualQA/20261005-185029-P4_FISHING",
+          "checks": 25,
+          "failed": 0,
+          "compileFixUsed": 3,
+          "targetedPlayUsed": 2,
+          "functionality": "PASS",
+          "presentation": "INCOMPLETE_HINT_OVERLAP",
+          "models": "local Quaternius CuteFish Tuna/RedSnapper/YellowTang"
+        },
+        "P9FreeToolUse": {
+          "evidence": "Logs/CodexOpeningDemoFinal/P9-ToolUse-20261005-001/EVIDENCE.md",
+          "successfulPlay": "Logs/VisualQA/20261005-191952-P9_CHARACTER_FEEL-after",
+          "checks": 15,
+          "failed": 0,
+          "compileFixUsed": 2,
+          "targetedPlayUsed": 3,
+          "functionality": "PASS",
+          "presentation": "IMPROVED",
+          "human": "UNVERIFIED",
+          "actualAudio": "UNVERIFIED",
+          "interruptedPlayPreserved": "Logs/VisualQA/20261005-190759-P9_CHARACTER_FEEL-after"
+        }
+      },
+      "lastCheckpointOn": "2026-10-05T19:29:17.037999+09:00",
+      "supportGripExperience": {
+        "startedOn": "2026-10-05T19:38:45.108867+09:00",
+        "budget": {
+          "compileFix": 3,
+          "targetedPlay": 3,
+          "validator": 1
+        },
+        "evidenceRoot": "Logs/CodexOpeningDemoFinal/P9-SupportGrip-20261005-001",
+        "preservePriorBudgets": true,
+        "result": "FUNCTIONAL25_PASS_PRESENTATION_FAIL_BUDGET_EXHAUSTED",
+        "compileFixUsed": 3,
+        "targetedPlayUsed": 3,
+        "successfulPlay": "Logs/VisualQA/20261005-195553-P9_CHARACTER_FEEL-support-grip",
+        "blocker": "Rendered palms do not convincingly grip shaft; rod near face. Do not use bone-anchor zero distance as presentation PASS."
+      },
+      "introUiExperience": {
+        "startedOn": "2026-10-05T20:04:00+09:00",
+        "logRoot": "Logs/CodexOpeningDemoFinal/P11-IntroUI-20261005-001",
+        "compileUsed": 1,
+        "targetedPlayUsed": 2,
+        "finalDelivery": false,
+        "actualResult": "OS NEWGAME, walk/jump, dropped fruit3, empty-hand pickup, hand lesson, stock, Q4 pending17/cancel/reopen7, retrieve/restock, buyer+7G, unlocked Q3",
+        "nextAction": "remaining applied Q1/Q2/Q6 UI checks; final fresh Windows build still pending",
+        "result": "PASS10/errors0 scoped intro guidance/icon; GameView viewed",
+        "qa": "Logs/VisualQA/20261005-204555-P11_INTRO_UI"
+      },
+      "uiInteractionsExperience": {
+        "compileUsed": 3,
+        "targetedPlayUsed": 3,
+        "result": "HARD_STOP_RECOVERY_BUDGET; Q1/Q6 function observed in second run, new bag/Q2 pending",
+        "log": "Logs/CodexOpeningDemoFinal/P6-UiInteractions-20261005-001",
+        "firstRun": "Logs/VisualQA/20261005-205949-P6_APPLIED_UI",
+        "secondRun": "Logs/VisualQA/20261005-210313-P6_APPLIED_UI",
+        "latestQa": "Logs/VisualQA/20261005-210825-P6_APPLIED_UI",
+        "pendingQaDeviceIsolationBudget": {
+          "compile": 1,
+          "play": 1,
+          "approved": false
+        }
+      },
+      "audioExperience": {
+        "compileUsed": 2,
+        "targetedPlayUsed": 2,
+        "result": "SFX setting fix PASS7/errors0; actual Windows output recorded, broader transitions/human sound still unverified",
+        "log": "Logs/CodexOpeningDemoFinal/P11-Audio-20261005-001",
+        "beforeQa": "Logs/VisualQA/20261005-211925-P11_AUDIO",
+        "afterQa": "Logs/VisualQA/20261005-212218-P11_AUDIO"
+      },
+      "footCadenceExperience": {
+        "compileCycles": 3,
+        "targetedPlayRuns": 3,
+        "scope": "Independent support-foot cadence: actual flat walking, no new clip/foot IK/root movement or grip changes. Day1 only playback calibration if proven",
+        "validator": "existing PA_P3DirectGatherReview foot mode",
+        "finalDelivery": false,
+        "stage": "HARD_STOP: compile3/3 Play3/3; original product cadence retained, foot sliding unresolved",
+        "beforeQa": "Logs/VisualQA/20261005-214027-P9_FOOT-before",
+        "baseline": "Root4.2m/s; low-foot bone marker projected sliding game1.6722/close1.2709m/s; not sole/human PASS",
+        "secondQa": "Logs/VisualQA/20261005-214549-P9_FOOT-after",
+        "finalQa": "Logs/VisualQA/20261005-215708-P9_FOOT-after",
+        "functional": "sampling/input PASS15 errors0, not motion quality PASS",
+        "presentation": "FAIL/UNRESOLVED: no proven planted-foot correction; mesh-floor classification ambiguous, nearby shrub occludes part of sole comparison",
+        "productActorSha256": "83847498089e588c13caa79ef468acb4fde497026ce2c78d7634651750358881",
+        "human": "UNVERIFIED"
+      },
+      "ambienceExperience": {
+        "scope": "Independent opening/harbor, voyage, island/day-night ambience binding over existing AudioManager BGM crossfade/setting. No music assets, new audio authority, scene/save changes or download. Prior SFX fix preserved",
+        "approvedFiles": [
+          "Assets/Scripts/AudioManager.cs",
+          "Assets/Scripts/Presentation/DepartureTutorialPresentation.cs",
+          "Assets/Scripts/Presentation/DepartureVoyagePresentation.cs",
+          "Assets/Scripts/Presentation/FirstDayWorldPresentation.cs",
+          "Assets/Editor/PA_P3DirectGatherReview.cs",
+          "Assets/Scripts/PA_RuntimeSceneBinder.cs"
+        ],
+        "compileCycles": 3,
+        "targetedPlayRuns": 3,
+        "validator": "existing PA_P3DirectGatherReview intro flow + bounded ambience observations",
+        "stage": "Bounded ambience output/binding PASS: harbor/voyage/day actual intro input; targeted matching night/loop/mute PASS6 errors0. Compile3/Play3",
+        "finalDelivery": false,
+        "beforeQa": "Logs/VisualQA/20261005-221757-P11_AMBIENCE-before",
+        "afterQa": "Logs/VisualQA/20261005-222225-P11_AMBIENCE-after",
+        "nightQa": "Logs/VisualQA/20261005-222651-P11_AMBIENCE-night",
+        "human": "UNVERIFIED",
+        "limitations": "Natural sunset/business and final same-source Windows audio still required. Before direct tutorial lacked AudioManager. After Play2 falsely sampled day at night because original daylight hold; preserved, not accepted night. Procedural fallback is ambience, no commissioned music or subjective full-demo sound PASS."
+      },
+      "windowsDeliveryExperience": {
+        "scope": "Existing P11 same-source Windows review candidate; natural OS input NEWGAME→Day1 Report, normal isolated SaveQuit/new process Continue, raw full-session frame timing/audio/screens. Outstanding product presentation stops remain marked",
+        "compileCycles": 1,
+        "targetedPlayRuns": 1,
+        "buildAttempts": 1,
+        "validator": "existing optional StandalonePerfLog + normal OS input, no new validator",
+        "stage": "BLOCKED_INPUT_OWNER: user is directly playing candidate82524; same condition verified over3goal turns. Current candidate and logs preserved; no game input/source edits.",
+        "approvedFiles": [
+          "Assets/Scripts/QA/StandalonePerfLog.cs"
+        ],
+        "finalDelivery": false,
+        "candidate": "Builds\\Windows\\Candidate-OpeningDemo-Codex-20261005-223435\\Project_PA.exe",
+        "pid": 82524,
+        "buildResult": "result=Succeeded errors=0 warnings=185 size=245507666 seconds=35.8039077 output=C:/Users/sdjsd/Desktop/Unity/Project_PA/Builds/Windows/Candidate-OpeningDemo-Codex-20261005-223435/Project_PA.exe guid=fb09d04a9a594019a798fbf1bb38bec3",
+        "inputAttribution": "Codex initial OS NEWGAME/move/jump/apple input + user direct price/sale/companion/continued input; valid mixed human/OS actual path, not all-agent automatic completion",
+        "lastReadOnlyCheckpoint": "2026-10-05T23:00:55.446446+09:00",
+        "inputOwner": "user",
+        "inputControlReturnRequired": true,
+        "evidenceFolder": "Logs/CodexOpeningDemoFinal/P11-Windows-20261005-001",
+        "videoGameplayEvidenceAccepted": false,
+        "rawPerformanceStatus": "PARTIAL_SESSION_NOT_FINAL_PASS",
+        "reportContinueObserved": false,
+        "inputOwnerBlockedAudit": {
+          "at": "2026-10-05T23:06:25.388523+09:00",
+          "reason": "User directly controls the same live Windows candidate; natural end-to-end input cannot continue without colliding with user play. No control-return message received.",
+          "consecutiveGoalTurns": 3,
+          "originalTurn": "User direct-play confirmation; subsequent read-only native evidence and checkpoint, no further game input",
+          "previousTurn": "Specific PID82524 handle45s wait returnedWAIT_TIMEOUT/live, log unchanged and no save",
+          "currentTurn": "OpenProcess PID82524 succeeded; WaitForSingleObject0 returned258/live; visibleWindow8786336; log unchanged39940bytes, no save",
+          "previousTurnClassification": "verified_wait",
+          "remainingIndependentProductWork": "Current same-source Windows route requires player control. Previously stopped P4/P6/grip/foot/surface same-blocker attempts are not silently reopened; prepared/evidence work already preserved. No new safe product mutation is necessary for the current candidate observation.",
+          "scopePreserved": true,
+          "completed": false,
+          "inputSent": false
+        }
+      }
+    }
+  },
+  "demoCompletionApproval": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "approvedOn": "2026-09-30",
+    "approvalSource": "User 2026-09-30 (Claude Code AskUserQuestion): Claude owns Unity Editor now, Codex paused; run D1-D4 without per-ticket confirmation; no commits; v16 = notice only, current-save continue recovery only",
+    "approvedTickets": [
+      "D1",
+      "D2",
+      "D3",
+      "D4"
+    ],
+    "ticketDefinitions": {
+      "D1": "Pioneer Report scoring to Canon v2 §20 (weights 25/30/25/20, S90/A75/B60, activity-proportional commerce) + regression check",
+      "D2": "Business-day feel: tourist count/concurrency/interval, limited opening hours with auto-close warning, via existing CustomerArrival/DayNightShopLoop authorities",
+      "D3": "Replace product-path IMGUI (Pioneer Report card, specialization choice, OPEN/CLOSE) with uGUI; do not overwrite Codex in-progress phone UI files",
+      "D4": "Unified HUD (time/money/hotbar/interaction prompt) + Canon §22 toast rule (top-right 2-4s, logged to phone Dispatch)"
+    },
+    "activeTicket": "D4",
+    "preapprovedThrough": "D4",
+    "stopAtMilestone": "D4_GAMEVIEW_REVIEW",
+    "ticketStatus": {
+      "D1": "FUNCTIONAL_PASS_HUMAN_UNVERIFIED",
+      "D2": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED",
+      "D3": "FUNCTIONAL_PASS_PRESENTATION_STRUCTURALLY_IMPROVED_HUMAN_UNVERIFIED",
+      "D4": "HUD_TOAST_PASS_PHONE_RECORD_UNREACHABLE_PROTECTED_DEPENDENCY_HUMAN_UNVERIFIED"
+    },
+    "evidence": "Logs/VisualQA/DemoCompletion-20261003-003953/result.txt (73/73 PASS, Console errors 0, QA fixtures labeled); earlier attempts DemoCompletion-20261003-002719 and -003504 and the 2026-10-01 DemoCompletion-20260930/D2 folder are preserved",
+    "protectedDependency": "Canon §22 phone record: FeedUI renders FirstDayWorldPresentation.DispatchLog, but SmartphoneUI.BuildShopApp hides the Feed tab tile. Needs SmartphoneUI.cs (home tile -> SelectTab(2)) or ShopManagementPhoneUI.cs (render DispatchLog); both are codexProtectedPaths. Same file: stale feedback text after auto-close.",
+    "milestoneReachedOn": "2026-10-03",
+    "localTicketCommitsAllowed": false,
+    "pushAllowed": false,
+    "codexProtectedPaths": [
+      "Assets/Scripts/SaveData.cs",
+      "Assets/Scripts/SaveManager.cs",
+      "Assets/Scripts/UI/SmartphoneUI.cs",
+      "Assets/Scripts/UI/ShopManagementPhoneUI.cs",
+      "Assets/Editor/PA_ContinueCompatibilityTests.cs",
+      "Assets/Editor/PA_SaveRoundTripValidator.cs"
+    ],
+    "v16Decision": "User 2026-09-30: restore current-format save layout only; v16 shows unsupported-version notice and starts new game; original save preserved read-only",
+    "status": "stopped_at_D4_GAMEVIEW_REVIEW_human_review_pending"
+  },
   "visualDirectorContinuationApproval": {
     "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
     "approvedOn": "2026-09-25",
@@ -70,7 +436,19 @@
     "canon": "PROVISIONAL CANON v1",
     "humanPreapproved": true,
     "autonomousContinuation": true,
-    "approvedTickets": ["CONTENT-000B", "CONTENT-001", "CONTENT-002", "CONTENT-003", "CONTENT-004", "CONTENT-005", "CONTENT-006", "CONTENT-007", "CONTENT-008", "CONTENT-009", "CONTENT-010"],
+    "approvedTickets": [
+      "CONTENT-000B",
+      "CONTENT-001",
+      "CONTENT-002",
+      "CONTENT-003",
+      "CONTENT-004",
+      "CONTENT-005",
+      "CONTENT-006",
+      "CONTENT-007",
+      "CONTENT-008",
+      "CONTENT-009",
+      "CONTENT-010"
+    ],
     "activeTicket": "CONTENT-002",
     "nextTicket": "CONTENT-003",
     "preapprovedThrough": "CONTENT-010",
@@ -91,7 +469,12 @@
       "ticket": "CONTENT-001",
       "result": "PASS",
       "evidence": "Logs/Content/CONTENT001/OpeningValidation_Release.log",
-      "regressions": ["Golden first-day", "World onboarding", "World daytime activities", "Save round-trip"],
+      "regressions": [
+        "Golden first-day",
+        "World onboarding",
+        "World daytime activities",
+        "Save round-trip"
+      ],
       "saveEnvelope": 13,
       "worldPayload": 11,
       "commitPending": false,
@@ -109,8 +492,15 @@
       "saveEnvelope": 14,
       "resumePoint": "Serial Runtime/Editor compile after Unity exit, then one D3D11 correction run. Do not run a third validation on the same interaction failure. No CONTENT-003 until PASS and local commit."
     },
-    "releasedBlockers": ["CONTENT-000 approval pending", "CONTENT-000B automatic start prohibited"],
-    "preservedTechnicalDebt": ["BETA-010 PlayerRoot facing restore 137 degrees: two prior failed executions; not cleared by canon approval", "WorldSandbox normal entry not integrated", "Day 6-30 runtime completion unproven"],
+    "releasedBlockers": [
+      "CONTENT-000 approval pending",
+      "CONTENT-000B automatic start prohibited"
+    ],
+    "preservedTechnicalDebt": [
+      "BETA-010 PlayerRoot facing restore 137 degrees: two prior failed executions; not cleared by canon approval",
+      "WorldSandbox normal entry not integrated",
+      "Day 6-30 runtime completion unproven"
+    ],
     "knownDirtyBaseline": "Existing user-owned changes preserved; only content-ticket additions are staged. Pre-existing dirty state alone is not an unexpected conflict."
   },
   "milestone": {
@@ -345,8 +735,16 @@
     "waterCellsBlocked": true
   },
   "surface": {
-    "groundTypes": ["Grass", "Soil", "Sand", "Rock"],
-    "pathTypes": ["Dirt", "Stone"],
+    "groundTypes": [
+      "Grass",
+      "Soil",
+      "Sand",
+      "Rock"
+    ],
+    "pathTypes": [
+      "Dirt",
+      "Stone"
+    ],
     "waterModel": "bounded cell surface level plus derived depth; no fluid simulation",
     "shorelineFaces": true,
     "waterCollider": false,
@@ -403,10 +801,32 @@
     "uniqueChecksums": 128,
     "corpusElapsedMilliseconds": 1599,
     "landRatioRange": "44.9%..58.2%",
-    "biomes": ["Coast", "Meadow", "Forest", "Highland"],
-    "waterTypes": ["Ocean", "River", "Pond"],
-    "anchors": ["Start", "Shop", "Beach", "MeadowActivity", "ForestActivity", "HighlandActivity", "PondActivity"],
-    "resourceKinds": ["Forage", "Timber", "Stone", "Fish"],
+    "biomes": [
+      "Coast",
+      "Meadow",
+      "Forest",
+      "Highland"
+    ],
+    "waterTypes": [
+      "Ocean",
+      "River",
+      "Pond"
+    ],
+    "anchors": [
+      "Start",
+      "Shop",
+      "Beach",
+      "MeadowActivity",
+      "ForestActivity",
+      "HighlandActivity",
+      "PondActivity"
+    ],
+    "resourceKinds": [
+      "Forage",
+      "Timber",
+      "Stone",
+      "Fish"
+    ],
     "cellGraphConnectivity": true,
     "debugGenerate": "J",
     "debugSeed": "[ / ]",
@@ -459,7 +879,17 @@
     "movement": "existing PlayerInputHandler plus PlayerController",
     "camera": "existing CameraController follow; orthographic size 22",
     "traversalGuard": "last safe generated walkable cell",
-    "integratedActions": ["gather", "craft", "terraform", "B09 place/move", "B01 display move/rotate", "stock", "open", "customer sale", "save/load"],
+    "integratedActions": [
+      "gather",
+      "craft",
+      "terraform",
+      "B09 place/move",
+      "B01 display move/rotate",
+      "stock",
+      "open",
+      "customer sale",
+      "save/load"
+    ],
     "restartValidation": "actual Play Mode exit and re-entry",
     "mainGameIntegrated": false,
     "mainGameGate": "WORLD-MAIN-001 separate human approval"
@@ -469,7 +899,12 @@
     "state": "BETA_001_COMPLETE",
     "freshSession": "Day 1 at 09:00",
     "startPrompt": true,
-    "firstRoute": ["WASD movement", "P.A. night shop landmark", "crafting workbench landmark", "daytime resource handoff"],
+    "firstRoute": [
+      "WASD movement",
+      "P.A. night shop landmark",
+      "crafting workbench landmark",
+      "daytime resource handoff"
+    ],
     "shopReachDistanceMeters": 4,
     "workbenchReachDistanceMeters": 4,
     "developmentOverlayDefaultHidden": true,
@@ -481,7 +916,11 @@
     "ticket": "BETA-002",
     "state": "BETA_002_COMPLETE",
     "sceneScope": "WorldSandbox runtime only",
-    "playerAuthorities": ["PlayerInteraction", "Inventory", "Hotbar"],
+    "playerAuthorities": [
+      "PlayerInteraction",
+      "Inventory",
+      "Hotbar"
+    ],
     "generatedZones": {
       "Gathering": "ForestActivity / Forage spawn / Carrot x2",
       "Farming": "MeadowActivity / Seed x2 / Wheat x3 harvest",
@@ -504,7 +943,13 @@
       "Kitchen": "B06 / 3 visible recipes",
       "Forge": "B07 / 2 visible recipes"
     },
-    "validatedProducts": ["BakedPotato", "BreadLoaf", "GrilledFish", "IronBar", "Plank"],
+    "validatedProducts": [
+      "BakedPotato",
+      "BreadLoaf",
+      "GrilledFish",
+      "IronBar",
+      "Plank"
+    ],
     "rawBaseValue": 118,
     "processedBaseValue": 203,
     "validatedSaleGold": 28,
@@ -519,8 +964,17 @@
     "sceneScope": "WorldSandbox runtime only",
     "shopAuthority": "existing B01 Shop and four ShopSlots",
     "presentation": "one shop-zone header plus four live slot-status labels and player HUD summary",
-    "states": ["empty", "stocked", "sold-out"],
-    "stockMetadata": ["item name", "count", "display price", "quality"],
+    "states": [
+      "empty",
+      "stocked",
+      "sold-out"
+    ],
+    "stockMetadata": [
+      "item name",
+      "count",
+      "display price",
+      "quality"
+    ],
     "movableDisplayPreserved": true,
     "customerAccessPreserved": true,
     "saveProjection": "existing v11 WorldStateSaveData shopFurniture projection",
@@ -846,35 +1300,184 @@
   "beta010Started": true,
   "beta010Completed": false,
   "ticketCommitPendingHuman": false,
-  "startedAt": "2026-08-11",
   "startedAt": "2026-08-20",
   "stoppedAt": "2026-08-21",
   "stopReason": null,
   "nextAction": "Implement CONTENT-002 First Shop Night from the existing WorldGameplayAdapter customer visit and NpcController seams. CONTENT-000B e6f3716 and CONTENT-001 c49eb01 are complete; do not repeat them. Connect the same Bori to real purchase decisions, preserve rejection/no-sale continuation, persist A02 evidence, then compile/validate/commit before CONTENT-003.",
   "presentationMilestone": {
-  "id": "VS-PRESENT-001",
-  "title": "Opening Vertical Slice Presentation Pass",
-  "humanApproved": true,
-  "approvedDate": "2026-09-07",
-  "baseHead": "c49eb01d1d4797fcfd73ccffe47f2da2faf32906",
-  "artCheckpoint": "0135ddf",
-  "activePhase": null,
-  "sequence": [
-    "P0"
-  ],
-  "gates": {
-    "P1": "P0 continuous Unity play PASS",
-    "P2": "P0 and P1 PASS"
+    "id": "VS-PRESENT-001",
+    "title": "Opening Vertical Slice Presentation Pass",
+    "humanApproved": true,
+    "approvedDate": "2026-09-07",
+    "baseHead": "c49eb01d1d4797fcfd73ccffe47f2da2faf32906",
+    "artCheckpoint": "0135ddf",
+    "activePhase": null,
+    "sequence": [
+      "P0"
+    ],
+    "gates": {
+      "P1": "P0 continuous Unity play PASS",
+      "P2": "P0 and P1 PASS"
+    },
+    "localCheckpointCommitAllowed": true,
+    "stopAtMilestone": "VS-PRESENT-001",
+    "unrelatedContentSequencePreserved": true,
+    "art001To010AutoImplementationAllowed": false,
+    "pushAllowed": false,
+    "status": "P0_PASS_STOP",
+    "P1": "NOT_STARTED",
+    "P2": "NOT_STARTED",
+    "latestHumanInstruction": "2026-09-07 P0 only; commit and STOP",
+    "evidence": "Docs/90_PRESENTATION/Evidence/2026-09-08/P0-validation.json"
   },
-  "localCheckpointCommitAllowed": true,
-  "stopAtMilestone": "VS-PRESENT-001",
-  "unrelatedContentSequencePreserved": true,
-  "art001To010AutoImplementationAllowed": false,
-  "pushAllowed": false,
-  "status": "P0_PASS_STOP",
-  "P1": "NOT_STARTED",
-  "P2": "NOT_STARTED",
-  "latestHumanInstruction": "2026-09-07 P0 only; commit and STOP",
-  "evidence": "Docs/90_PRESENTATION/Evidence/2026-09-08/P0-validation.json"
-}
+  "demoPolishFinishApproval": {
+    "policyId": "PREAPPROVED_MILESTONE_CONTINUATION",
+    "approvalSource": "User direct /goal 2026-10-06: D0-D12 in order, ownership returned to Codex; D5/D7 GPT-6 Astra XHigh only.",
+    "approvedAt": "2026-10-06T00:53:56.443479+09:00",
+    "status": "in_progress",
+    "contract": "AI_WORKFLOW/03_TASKS/CODEX_DEMO_POLISH_FINISH_PROMPT.md",
+    "approvedTickets": [
+      "D0",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "D6",
+      "D7",
+      "D8",
+      "D9",
+      "D10",
+      "D11",
+      "D12"
+    ],
+    "ticketDefinitions": {
+      "D0": "인수와 대기 패치",
+      "D1": "아이템 아이콘 통일 (Icon Bake)",
+      "D2": "UI 테마 통일",
+      "D3": "작업대 제작 UI",
+      "D4": "나무 흔들기와 자원 반응",
+      "D5": "캐릭터 액션 애니메이션",
+      "D6": "도구 손맛",
+      "D7": "지형 마감 (경사로 금지)",
+      "D8": "바이옴 드레싱",
+      "D9": "주변 생태 엔티티",
+      "D10": "상점 내부와 라이선스 정리",
+      "D11": "제안서 정합 보강 (Day 1 범위, 새 권위 없이)",
+      "D12": "오디오 확인과 최종 납품"
+    },
+    "activeTicket": "D2",
+    "preapprovedThrough": "D12",
+    "stopAtMilestone": "FINAL_WINDOWS_HUMAN_REVIEW",
+    "completionReached": false,
+    "unityEditorOwner": "codex",
+    "localTicketCommitsAllowed": false,
+    "noAutoCommit": true,
+    "pushAllowed": false,
+    "perTicketBudget": {
+      "compileFix": 3,
+      "targetedPlay": 3,
+      "dedicatedValidators": 1
+    },
+    "modelOverrides": {
+      "D5": {
+        "model": "gpt-6-astra",
+        "reasoningEffort": "xhigh"
+      },
+      "D7": {
+        "model": "gpt-6-astra",
+        "reasoningEffort": "xhigh"
+      }
+    },
+    "pendingPatchesApproved": [
+      "P4 ReelHint",
+      "P6 DeviceIsolation"
+    ],
+    "preservedApproval": "demoFeedbackFinishApproval",
+    "forbidden": [
+      "external downloads",
+      "Golden scene edits",
+      "SmartphoneUI.cs edits",
+      "Save schema edits",
+      "KEEP authority rewrite",
+      "deletion",
+      "commit",
+      "push",
+      "ramps"
+    ],
+    "ticketStatus": {
+      "D0": "PASS",
+      "D1": "PASS",
+      "D2": "in_progress",
+      "D3": "NOT_STARTED",
+      "D4": "NOT_STARTED",
+      "D5": "NOT_STARTED",
+      "D6": "NOT_STARTED",
+      "D7": "NOT_STARTED",
+      "D8": "NOT_STARTED",
+      "D9": "NOT_STARTED",
+      "D10": "NOT_STARTED",
+      "D11": "NOT_STARTED",
+      "D12": "NOT_STARTED"
+    },
+    "results": {
+      "D0": {
+        "compileCycles": 2,
+        "targetedPlayRuns": 3,
+        "dedicatedValidatorsAdded": 0,
+        "fishingResult": "PASS25/errors0",
+        "fishingEvidence": "Logs/VisualQA/20261006-005457-P4_FISHING",
+        "uiResult": "PASS27/errors0",
+        "devicePatch": "Reuses existing audioNativeDevices and restore-on-finish/exit/reload, extends only ui mode; no duplicate restore stack",
+        "candidateExitedNormally": true,
+        "candidateSave": "Logs/CodexOpeningDemoFinal/P11-Windows-20261005-001/save-natural/savegame-v17.json",
+        "uiFirstRun": "Logs/VisualQA/20261006-005617-P6_APPLIED_UI",
+        "uiFirstResult": "22 checks, 0 failed assertions, 0 console errors; Require failed at product door; authored spawn replaced radial ground approach for final attempt",
+        "uiEvidence": "Logs/VisualQA/20261006-005855-P6_APPLIED_UI",
+        "functionality": "PASS",
+        "presentation": "STRUCTURALLY IMPROVED",
+        "human": "UNVERIFIED"
+      },
+      "D1": {
+        "compileCycles": 3,
+        "targetedPlayRuns": 1,
+        "dedicatedValidatorsAdded": 0,
+        "icons": 31,
+        "recipes": 12,
+        "functionality": "PASS30/errors0",
+        "presentation": "STRUCTURALLY IMPROVED",
+        "human": "UNVERIFIED",
+        "evidence": "Logs/CodexDemoPolish/D1-20261006-0103/EVIDENCE.md"
+      },
+      "D2": {
+        "compileCycles": 3,
+        "targetedPlayRuns": 2,
+        "dedicatedValidatorsAdded": 1,
+        "functionality": "PARTIAL; tooltip missing",
+        "presentation": "STRUCTURALLY IMPROVED bag/hotbar; remaining UNVERIFIED",
+        "human": "UNVERIFIED",
+        "blocker": "Tooltip not instantiated/bound by runtime UI composition; extra compile budget required",
+        "evidence": "Logs/CodexDemoPolish/D2-20261006-082207/EVIDENCE.md"
+      }
+    },
+    "evidence": "Logs/CodexDemoPolish/D2-20261006-082207",
+    "supplementalApprovals": [
+      {
+        "approvedAt": "2026-10-06T09:12:24.502820",
+        "source": "User direct 2026-10-06: D2 extra compile/fix1 targetedPlay2, apply pending tooltip patch and finish remaining panels; D3 may refine icons2012/2013/2005/2010 without item data value changes. Other tickets High, D5/D7 Astra XHigh. Stop on exhausted budget.",
+        "ticket": "D2",
+        "additionalCompileFix": 1,
+        "additionalTargetedPlay": 2,
+        "baselineUsed": {
+          "compileFix": 3,
+          "targetedPlay": 2,
+          "dedicatedValidators": 1
+        }
+      }
+    ],
+    "scopeAdditions": {
+      "D3": "Distinguish shop2012/tent2013/management2005 icons by building silhouette/mark, replace flat phone2010 icon; preserve item data values; use D3 budget."
+    },
+    "defaultReasoningEffort": "high"
+  }
 }

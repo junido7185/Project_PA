@@ -9,6 +9,8 @@ public class EquipmentSystem : MonoBehaviour
     public Item HeldItem => FirstDayPresentation && IsHolstered ? null : Inventory.instance?.GetSelectedItem();
     public GameObject HeldVisual { get; private set; }
     public float ActionStartedAt { get; private set; } = -100;
+    public float FailedContactAt { get; private set; } = -100;
+    public string LastUseFeedback { get; private set; } = string.Empty;
     Transform _hand;
     Item _shown;
     Quaternion _authoredRotation;
@@ -31,6 +33,8 @@ public class EquipmentSystem : MonoBehaviour
     {
         IsHolstered = true;
         ActionStartedAt = -100;
+        FailedContactAt = -100;
+        LastUseFeedback = string.Empty;
         _shown = null;
         if (HeldVisual != null) { HeldVisual.SetActive(false); Destroy(HeldVisual); }
         HeldVisual = null;
@@ -38,7 +42,19 @@ public class EquipmentSystem : MonoBehaviour
         if (pickaxeModel != null) pickaxeModel.SetActive(false);
     }
     void EquipSelection(int index) { IsHolstered = false; RefreshHeldVisual(); }
-    public void PlayAction() { ActionStartedAt = Time.time; }
+    public void PlayAction() { ActionStartedAt = Time.time; FailedContactAt = -100; LastUseFeedback = string.Empty; }
+    // Shared presentation timing. Resource/bug/fish components still decide success and rewards.
+    public bool TryBeginToolUse()
+    {
+        if (Time.time - ActionStartedAt < .62f) return false;
+        PlayAction();
+        return true;
+    }
+    public void FailedUse(string message, bool contacted)
+    {
+        LastUseFeedback = message;
+        if (contacted) FailedContactAt = Time.time;
+    }
     public static Item CurrentHeld(GameObject player)
     {
         var equipment = player != null ? player.GetComponent<EquipmentSystem>() : null;

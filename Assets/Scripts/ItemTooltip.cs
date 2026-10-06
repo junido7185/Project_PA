@@ -21,7 +21,8 @@ public class ItemTooltip : MonoBehaviour
     public void Show(Item item, Vector2 screenPos)
     {
         nameText.text = item.itemName;
-        descriptionText.text = item.description;
+        descriptionText.text = PAUiTheme.Active ? item.description + "\n기본 가격  " + item.basePrice + " G" : item.description;
+        if (PAUiTheme.Active) PAUiTheme.Tooltip(this);
         icon.sprite = item.icon;
         gameObject.SetActive(true);
         UpdatePosition(screenPos);
@@ -33,6 +34,13 @@ public class ItemTooltip : MonoBehaviour
     {
         Vector2 localPoint;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(rootCanvas.transform as RectTransform, screenPos, rootCanvas.worldCamera, out localPoint);
-        rectTransform.anchoredPosition = localPoint + offset;
+        var point = localPoint + offset;
+        if (PAUiTheme.Active)
+        {
+            var bounds = ((RectTransform)rootCanvas.transform).rect;
+            point.x = Mathf.Clamp(point.x, bounds.xMin + 12, bounds.xMax - rectTransform.rect.width - 12);
+            point.y = Mathf.Clamp(point.y, bounds.yMin + rectTransform.rect.height + 12, bounds.yMax - 12);
+        }
+        rectTransform.anchoredPosition = point;
     }
 }

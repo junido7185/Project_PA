@@ -16,7 +16,7 @@ MonoBehaviour:
   itemName: "\uC0C1\uC810 \uC124\uACC4\uB3C4"
   description: "P.A.\uC5D0\uC11C \uC900\uBE44\uD55C \uC0C8 \uC12C \uC0DD\uD65C\uC744
     \uC704\uD55C \uBCF4\uAE09\uD488."
-  icon: {fileID: 21300000, guid: 490c320337a970e4aae6be5727122b23, type: 3}
+  icon: {fileID: 21300000, guid: c1fc551dbbad16a40a335d690160901a, type: 3}
   maxStack: 1
   model: {fileID: 5108575975690731935, guid: 6c47913378e24f141ad18b8f10488d08, type: 3}
   basePrice: 0

@@ -24,7 +24,19 @@ public class HotbarUI : MonoBehaviour
     void LateUpdate()
     {
         // bootstrap가 UI/입력 권위를 나중에 연결하거나 교체해도 현재 인스턴스로 구독한다.
-        if (BindRuntimeReferences()) RefreshUI();
+        bool rebound = BindRuntimeReferences();
+        // D4(데모): X로 손을 비우면 선택 칸 강조도 바뀌어야 HUD와 손이 같은 상태를 보여 준다.
+        if (rebound || FirstDayHolstered() != _shownHolstered) RefreshUI();
+    }
+
+    EquipmentSystem _equipment;
+    bool _shownHolstered;
+
+    bool FirstDayHolstered()
+    {
+        if (inventory == null) return false;
+        if (_equipment == null || _equipment.gameObject != inventory.gameObject) _equipment = inventory.GetComponent<EquipmentSystem>();
+        return _equipment != null && _equipment.FirstDayPresentation && _equipment.IsHolstered;
     }
 
     void Start()
@@ -87,6 +99,7 @@ public class HotbarUI : MonoBehaviour
 
         if (inventory != null)
             selectedIndex = inventory.selectedHotbarIndex;
+        _shownHolstered = FirstDayHolstered();
 
         if (slotUIs == null) slotUIs = new List<InventorySlotUI>();
         if (slotUIs.Count == 0 && hotbar != null && hotbar.slots != null && slotParent != null && slotPrefab != null)
@@ -111,6 +124,8 @@ public class HotbarUI : MonoBehaviour
             if (slotUIs[i] == null) continue;
             var slot = hotbar != null && hotbar.slots != null && i < hotbar.size && i < hotbar.slots.Count
                 ? hotbar.slots[i] : null;
+            if (PAUiTheme.Active && tooltip == null) tooltip = PAUiTheme.EnsureTooltip(rootCanvas);
+            slotUIs[i].tooltip = tooltip;
             slotUIs[i].SetupHotbar(hotbar, inventory, i, this);
             // 없는/빈 권위 슬롯도 반드시 전달해 이전 sprite/count를 지운다.
             slotUIs[i].SetSlot(slot);
@@ -127,8 +142,15 @@ public class HotbarUI : MonoBehaviour
 
             Image bg = null;
             bg = slotUIs[i].GetComponent<Image>();
-            if (bg != null) bg.color = (i == selectedIndex && slot != null && !slot.IsEmpty)
-                ? new Color(1,.8f,.36f) : new Color(.91f,.91f,.80f);
+            bool firstDayHud = PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.FirstDayControls;
+            bool empty = slot == null || slot.IsEmpty;
+            // D4(데모): 빈 칸이어도 선택 칸을 강조하고, 빈 칸은 반투명으로 낮춰 화면에서 가장 밝은 요소가 되지 않게 한다.
+            // 빈손(X) 상태의 선택 칸은 옅은 금색 — 실제로 들고 있을 때만 진한 금색이다.
+            if (bg != null) bg.color = firstDayHud
+                ? (i == selectedIndex ? (_shownHolstered ? new Color(1f, .86f, .56f, .78f) : new Color(1f, .80f, .36f, .96f))
+                    : empty ? new Color(.98f, .95f, .87f, .42f) : new Color(.98f, .95f, .87f, .90f))
+                : (i == selectedIndex && !empty) ? new Color(1,.8f,.36f) : new Color(.91f,.91f,.80f);
+            if (firstDayHud) PAUiTheme.Slot(slotUIs[i], slot, i == selectedIndex, _shownHolstered);
         }
 
         UpdateCharacterModel();

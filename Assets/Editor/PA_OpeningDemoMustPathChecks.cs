@@ -113,6 +113,7 @@ public static class PA_OpeningDemoMustPathChecks
             {
                 var placement = WorldAlphaPlayableController.Instance.Buildings;
                 var catalog = DemoPlaceableCatalog.Load();
+                Require(!DayNightShopLoopController.Instance.TryOpenShop(), "uninstalled shop cannot open");
                 if (SessionState.GetBool(Active + ".EntranceReview", false))
                 {
                     SessionState.SetBool(Active + ".EntranceReview", false);
@@ -178,8 +179,11 @@ public static class PA_OpeningDemoMustPathChecks
                     "sale reaches economy, log, and demo success observer");
                 Require(loop.TryCloseOpeningShop() && loop.OpeningSessionCompleted, "CLOSE settles opening session");
                 Require(progress.PioneerReport != null && progress.PioneerReport.sales == 1 &&
-                    progress.PioneerReport.revenue == paid && progress.IsPanelOpen,
-                    "Pioneer Report appears with actual sale result");
+                    progress.PioneerReport.revenue == paid && SmartphoneUI.instance != null &&
+                    SmartphoneUI.instance.IsOpen && SmartphoneUI.instance.CurrentTabIndex == 4,
+                    "Pioneer Report appears in shop phone with actual sale result");
+                Require(!loop.TryCloseOpeningShop() && !loop.TryOpenShop(),
+                    "repeat open and close cannot settle again");
                 Note("DISPLAY/PRICE/OPEN/SALE/CLOSE/REPORT PASS");
                 Finish("PASS");
             }

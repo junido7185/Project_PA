@@ -37,8 +37,10 @@ public class PlayerInputHandler : MonoBehaviour
     public bool RunHeld { get; private set; }
     public bool JumpPressed { get; private set; }
     public bool InteractHeld { get; private set; }
+    public bool FishingReelHeld { get; private set; }
     public event Action OnHolster;
     public static bool ModalOpen => Time.timeScale == 0 ||
+        FirstDayFishingMinigame.IsOpen ||
         (InventoryUI.instance != null && InventoryUI.instance.gameObject.activeSelf) ||
         (SmartphoneUI.instance != null && SmartphoneUI.instance.IsOpen) ||
         (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen) ||
@@ -111,6 +113,20 @@ public class PlayerInputHandler : MonoBehaviour
         var kb    = Keyboard.current;
         var mouse = Mouse.current;
         if (kb == null) { InteractHeld = false; return; }
+        FishingReelHeld = FirstDayFishingMinigame.IsOpen && Time.timeScale != 0 &&
+            (kb.spaceKey.isPressed || mouse != null && mouse.leftButton.isPressed);
+        if (PlayableDayScenarioController.Instance?.TitleMenuOpen == true)
+        {
+            InteractHeld = false;
+            RunHeld = false;
+            JumpPressed = false;
+            if (MoveInput != Vector2.zero)
+            {
+                MoveInput = Vector2.zero;
+                OnMoveChanged?.Invoke(MoveInput);
+            }
+            return;
+        }
         InteractHeld = FirstDayControls && !ModalOpen && kb.eKey.isPressed;
         RunHeld = FirstDayControls && !ModalOpen && kb.leftShiftKey.isPressed;
         JumpPressed = FirstDayControls && !ModalOpen && kb.spaceKey.wasPressedThisFrame;
@@ -121,10 +137,17 @@ public class PlayerInputHandler : MonoBehaviour
         if (kb.sKey.isPressed || kb.downArrowKey.isPressed)  move.y -= 1f;
         if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) move.x += 1f;
         if (kb.aKey.isPressed || kb.leftArrowKey.isPressed)  move.x -= 1f;
+        if (ModalOpen) move = Vector2.zero;
         if (move != MoveInput)
         {
             MoveInput = move;
             OnMoveChanged?.Invoke(MoveInput);
+        }
+
+        if (FirstDayFishingMinigame.IsOpen)
+        {
+            if (kb.escapeKey.wasPressedThisFrame) FirstDayFishingMinigame.Instance.Cancel();
+            return;
         }
 
         // -------- 버튼 입력 감지 --------

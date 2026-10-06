@@ -28,7 +28,10 @@ Work on one approved pass at a time:
 - S13 First Sale Presentation
 - S14 Pioneer Report
 
-Preserve the Opening Demo route and MUST PATH. Do not advance to another pass without approval.
+Preserve the Opening Demo route and MUST PATH. Advance only within approval.
+An explicitly preapproved sequence recorded in loop-state.json does not require
+another message between its tickets; use `demoProductionRouting` and
+`pa-demo-factory`, retaining the Editor owner and milestone review limits.
 
 ## Reference philosophy
 

@@ -34,7 +34,7 @@ AI_WORKFLOW/02_AGENT_RULES/VERTICAL_SLICE_STUDIO_MODE.md
 
 AI_WORKFLOW/08_ASSET_CONTEXT/PROJECT_PA_ASSET_MANIFEST.md
 
-.codex/skills/project-pa-vertical-slice/SKILL.md — Codex skill 로딩을 지원하는 환경에서 사용
+.agents/skills/project-pa-vertical-slice/SKILL.md — Codex skill 로딩을 지원하는 환경에서 사용
 
 해당 경험에 직접 관련된 구현/씬/프리팹/아트 문서
 
