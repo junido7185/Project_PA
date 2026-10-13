@@ -212,7 +212,7 @@ Core submission files:
 
 Report/presentation candidates in `Docs/`:
 
-- `Docs/202121026-컴퓨터공학과-신동준-졸업작품-제안서.pptx` - original graduation project proposal deck, 8.99 MiB
+- 졸업작품 제안서(.pptx) - original graduation project proposal deck, 8.99 MiB
 - `Docs/졸업작품-제안서.pdf` - proposal PDF, 3.99 MiB
 - `Docs/Project_PA_Week11_Presentation.pptx` - compact presentation deck, 0.03 MiB
 - `Docs/발표_개발현황보고서.md` - development status report draft, 0.01 MiB

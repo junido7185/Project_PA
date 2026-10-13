@@ -1,7 +1,7 @@
 # Project P.A. (Pioneer Assistance)
 
 낮에는 섬에서 자원을 모으고 거점을 세우고, 밤에는 직접 연 가게에서 물건값을 정해 파는 **3D 코지 생활·상점 경영 시뮬레이션**입니다.
-Unity 6·C#으로 1인 개발 중인 졸업작품(2026.01~)입니다. 손님 NPC는 성격에 따라 플레이어가 정한 가격을 보고 구매 여부를 스스로 판단합니다.
+Unity 6·C#으로 1인 개발 중인 졸업작품(2025.12 ~)입니다. 손님 NPC는 성격에 따라 플레이어가 정한 가격을 보고 구매 여부를 스스로 판단합니다.
 
 <p align="center">
   <img src="Docs/Portfolio/hero-settlement.jpg" width="820" alt="섬에 첫 거점과 동료 거처 두 채를 배치한 실제 플레이 화면">
@@ -17,7 +17,7 @@ Unity 6·C#으로 1인 개발 중인 졸업작품(2026.01~)입니다. 손님 NPC
 | **4. 배를 타고 섬으로** | **5. 격자 위에 거점 배치(R로 회전)** | **6. 정착 후 첫 영업 준비** |
 | ![배 위의 플레이어와 동료](Docs/Portfolio/04-boat.jpg) | ![설치 가능 영역 미리보기](Docs/Portfolio/05-placement.jpg) | ![완성된 거점 앞의 플레이어](Docs/Portfolio/06-settled.jpg) |
 
-밤 영업에서는 손님이 진열 상품과 가격을 보고 구매 여부를 정하고, 휴대폰 등급 심사 앱에서 누적 매출과 다음 Tier 목표를 확인합니다.
+밤 영업에서는 손님이 진열 상품과 가격을 보고 구매 여부를 정하고, 휴대폰 등급 심사 앱에서 누적 매출과 다음 등급 목표를 확인합니다.
 
 | 구매 판정이 화면에 보이는 순간 | 휴대폰 등급 심사 앱 |
 |---|---|
@@ -80,7 +80,7 @@ flowchart LR
 ### 3. 저장 데이터 버전 관리와 "적용 전에 거절하기"(부분 구현)
 [`SaveManager.cs#L344-L440`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/SaveManager.cs#L344-L440) · [`ISaveRepository.cs`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/Services/ISaveRepository.cs)
 
-- 저장 형식은 v17입니다. `MigrateSaveData`(L705~)가 v1부터 단계별로 변환하지만, 이 변환은 FirstDay 섬이 아닌 씬에서만 탑니다(L377-L382). FirstDay 섬에서는 v16 이하 저장을 변환하지 않고 원본을 둔 채 거절합니다(L368-L369).
+- 저장 형식은 v17입니다. `MigrateSaveData`(L705~)가 v0부터 단계별로 변환하지만, 이 변환은 FirstDay 섬이 아닌 씬에서만 탑니다(L377-L382). FirstDay 섬에서는 v16 이하 저장을 변환하지 않고 원본을 둔 채 거절합니다(L368-L369).
 - 손상 JSON·상위 버전·v16 이하·섬 준비 미완료는 런타임을 건드리기 전에 거절합니다(L347-L375). 다만 L403의 `PrepareRuntimeForStateRestore()` 이후 월드·배치 복원 단계(L417·L428·L438·L440)의 실패는 오류만 기록하고 아직 롤백하지 않아, 트랜잭션형 로드로 바꾸는 것이 다음 과제입니다.
 - 저장소는 `ISaveRepository` 비동기 인터페이스 뒤에 두었고, 검증기는 별도 폴더를 주입해 사용자 저장을 건드리지 않습니다.
 - 섬 상태 체크섬은 타일·건물·가구·자원 목록을 키로 정렬한 뒤 계산해, 이 목록들의 저장 순서에는 영향을 받지 않습니다([`WorldPersistenceService.cs#L248-L303`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/World/WorldPersistenceService.cs#L248-L303)). 다만 문자열 키를 LINQ `OrderBy` 기본 비교(문화권 영향)로 정렬하고 건물 내부 보관 아이템(`storedItems`)은 정렬하지 않아, 완전한 순서 무관은 아닙니다.
@@ -103,7 +103,7 @@ flowchart LR
 |---|---|
 | ![플레이어 이동 연속 프레임](Docs/Portfolio/player-motion.gif) | ![NPC 걷기 후 정지 연속 프레임](Docs/Portfolio/npc-walk-stop.gif) |
 
-두 GIF는 검증 스크립트가 실제 입력 이벤트를 넣고 100~200ms 이상 간격으로 찍은 프레임을 이어 붙인 것이라 실제 재생 속도와는 다릅니다.
+두 GIF는 검증 스크립트가 실제 입력 이벤트를 넣으며 100~200ms 간격으로 찍은 프레임을, 포트폴리오 정리 중(2026-10-13) Claude Code로 이어 붙인 것이라 실제 재생 속도와 다릅니다.
 
 ## 검증 방법
 
@@ -113,7 +113,7 @@ flowchart LR
 
 ## 아직 안 된 것
 
-- Windows 단독 실행 빌드에서는 NEW GAME → 출항 교육 첫 단계까지만 직접 확인했습니다. 그 뒤 전체 경로는 Editor에서만 검증됐습니다.
+- Windows 단독 실행 빌드(2026-09-27 후보)는 에이전트 자동 입력으로 NEW GAME → 출항 교육 첫 단계까지만 확인했습니다. 같은 빌드로 엔딩까지 직접 플레이했다는 기록은 있지만 캡처 증거는 없고, 이후 경로의 자동 검증은 Editor에서만 했습니다.
 - 마지막 다듬기 작업(D2)은 툴팁의 키 안내 오류(Space/E), 대화와 안내 문구 겹침이 남은 상태로 멈춰 있습니다.
 - 섬 16×16 구역의 첫 생산 단계는 부분 구현이고, 섬에서 밤 상점으로 이어지는 흐름은 별도 데모 맵에서만 연결돼 있습니다.
 - 시각 품질은 사람이 최종 확인하지 않았습니다. 캐릭터 발 접지와 양손 들기 자세가 어색합니다.
@@ -125,7 +125,7 @@ flowchart LR
 
 - 운영 규칙: 쓸 수 있는 경로와 보호 파일(기준 씬, 저장 스키마 등), 티켓당 시도 2회·변경 파일 15개 제한, 같은 원인으로 두 번 실패하면 멈추는 규칙, 씬·저장 형식·밸런스 변경 시 사람 승인 단계([`AGENTS.md`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/AGENTS.md), [`loop-policy.json`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Automation/LoopEngineering/loop-policy.json)).
 - 결정 예시: FirstDay 섬에서 v16 이하 저장은 변환하지 않고 원본을 보존한 채 사유만 안내하기로 했고(`SaveManager.cs` L324 주석), 실내를 별도 씬 대신 같은 씬의 분리 공간으로 두기로 했습니다.
-- 기록: `milestone/gameplay-beta-85`의 커밋 87개 중 12개에 AI 공동 작성(`Co-Authored-By`) 표기가 있습니다.
+- 기록: `milestone/gameplay-beta-85`의 커밋 98개 중 12개(2026-07-09 ~ 2026-07-13)에 AI 공동 작성(`Co-Authored-By`) 표기가 있습니다.
 
 ## 실행
 
