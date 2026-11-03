@@ -68,6 +68,17 @@ public sealed class DepartureTutorialController : MonoBehaviour
     float _returnToPriceAt;
     string BuyerName => buyer != null && buyer.profile != null && !string.IsNullOrEmpty(buyer.profile.npcName)
         ? buyer.profile.npcName : buyer != null ? buyer.gameObject.name : string.Empty;
+    // 화면에는 내부 프로필 ID(Farmer_01) 대신 손님 호칭을 보인다. 결정·판매 대조는 BuyerName을 그대로 쓴다.
+    public const string BuyerDisplayName = "손님";
+
+    string PlayerFacingReaction(string line)
+    {
+        if (string.IsNullOrEmpty(line)) return string.Empty;
+        string id = BuyerName;
+        if (!string.IsNullOrEmpty(id) && line.StartsWith(id + ":", StringComparison.Ordinal))
+            return BuyerDisplayName + line.Substring(id.Length);
+        return line;
+    }
 
     void Start()
     {
@@ -97,7 +108,19 @@ public sealed class DepartureTutorialController : MonoBehaviour
         {
             PlayerInputHandler.Instance.FirstDayControls = true;
             GameClock.Instance.enabled = false;
-            fruitTree.ConfigurePhysicalFruit();
+            // D4: 흔들 대상은 트리거 앵커가 아니라 형제 나무 모델이고, 매달린 장식 열매 자리에서 실제 열매가 떨어진다.
+            Transform shakeVisual = null;
+            if (fruitTree.transform.parent != null)
+                foreach (Transform sibling in fruitTree.transform.parent)
+                    if (sibling != fruitTree.transform && sibling.name.ToUpperInvariant().Contains("COMMONTREE")) { shakeVisual = sibling; break; }
+            Transform[] hangPoints = null;
+            if (harvestFruitVisuals != null)
+            {
+                var points = new System.Collections.Generic.List<Transform>();
+                foreach (GameObject fruitVisual in harvestFruitVisuals) if (fruitVisual != null) points.Add(fruitVisual.transform);
+                hangPoints = points.ToArray();
+            }
+            fruitTree.ConfigurePhysicalFruit(shakeVisual, hangPoints);
             var equipment = player.GetComponent<EquipmentSystem>() ?? player.gameObject.AddComponent<EquipmentSystem>();
             equipment.ConfigureFirstDay();
             // 씬에 직렬화된 NPC 절차 애니메이터 대신 Demo256과 같은 클립 로코모션을 사용한다.
@@ -222,7 +245,7 @@ public sealed class DepartureTutorialController : MonoBehaviour
         if (!IsReady || Stage != 5 || profile != buyer.profile || item != fruit || customer != BuyerName) return;
         DecisionCount++;
         _acceptedDecision = result.willBuy;
-        LastReaction = PurchaseFeedbackPresentationController.Instance.LastReactionLine;
+        LastReaction = PlayerFacingReaction(PurchaseFeedbackPresentationController.Instance.LastReactionLine);
         ReactionUntil = Time.unscaledTime + 25f;
         if (!result.willBuy) _returnToPriceAt = Time.unscaledTime + 3f;
         Debug.Log($"[VS-PRESENT-001] DECISION buy={result.willBuy} probability={result.probability:F3} price={price}");

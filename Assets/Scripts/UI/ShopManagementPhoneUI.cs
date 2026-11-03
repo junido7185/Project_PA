@@ -112,19 +112,23 @@ public sealed class ShopManagementPhoneUI : MonoBehaviour
             new Vector2(5, -199), new Vector2(-19, -154));
         open.onClick.AddListener(OpenShop); close.onClick.AddListener(CloseShop);
         feedback = Text(content, "Feedback", "", 16, Soft, new Vector2(0, 1), new Vector2(1, 1),
-            new Vector2(19, -237), new Vector2(-19, -202));
+            new Vector2(19, -239), new Vector2(-19, -202));
+        Fit(reason, 13); Fit(feedback, 12);
 
-        Text(content, "SalesHeading", "매출 · 최근 Report", 19, Teal, new Vector2(0, 1), new Vector2(1, 1),
-            new Vector2(19, -304), new Vector2(-19, -276), true);
+        // 전시 캡처: 좁은 폰 폭에서 'Report' 문구가 말줄임(…)으로 잘리지 않게 한글 짧은 표기 + 자동 축소를 쓴다.
+        Text(content, "SalesHeading", "매출 · 최근 보고서", 19, Teal, new Vector2(0, 1), new Vector2(1, 1),
+            new Vector2(19, -306), new Vector2(-19, -274), true);
         sales = Text(content, "Sales", "", 18, Ink, new Vector2(0, 1), new Vector2(1, 1),
-            new Vector2(19, -356), new Vector2(-19, -307));
+            new Vector2(19, -358), new Vector2(-19, -307));
         report = Text(content, "Report", "", 17, Soft, new Vector2(0, 1), new Vector2(1, 1),
-            new Vector2(19, -414), new Vector2(-19, -357));
+            new Vector2(19, -420), new Vector2(-19, -359));
+        Fit(sales, 14); Fit(report, 13);
 
         Text(content, "GrowthHeading", "성장 · 전문 분야", 19, Teal, new Vector2(0, 1), new Vector2(1, 1),
             new Vector2(19, -481), new Vector2(-19, -452), true);
         growth = Text(content, "Growth", "", 17, Ink, new Vector2(0, 1), new Vector2(1, 1),
             new Vector2(19, -527), new Vector2(-19, -482));
+        Fit(growth, 13);
         roots = new Button[4];
         string[] names = { "임업", "광업", "수산업", "농업" };
         for (int i = 0; i < 4; i++)
@@ -140,6 +144,13 @@ public sealed class ShopManagementPhoneUI : MonoBehaviour
         claim = Action(content, "ClaimStands", "남은 가판대 받기", new Vector2(0, 1), new Vector2(1, 1),
             new Vector2(19, -728), new Vector2(-19, -683));
         claim.onClick.AddListener(ClaimStands);
+    }
+
+    // 넘치면 말줄임 대신 글자를 조금 줄여 전체 문장을 보인다(데이터·문구 내용은 그대로).
+    static void Fit(TextMeshProUGUI text, float min)
+    {
+        text.enableAutoSizing = true;
+        text.fontSizeMax = text.fontSize; text.fontSizeMin = min;
     }
 
     static void Card(Transform parent, string name, int top, int bottom, Color color)
@@ -163,7 +174,7 @@ public sealed class ShopManagementPhoneUI : MonoBehaviour
         string phase = !installed ? "none" : opened ? "open" : loop != null && loop.OpeningSessionCompleted ? "done" : "ready";
         if (lastPhase != null && phase != lastPhase)
             feedback.text = phase == "open" ? "영업 중이에요. 22:00에 자동으로 문을 닫아요." :
-                phase == "done" ? "오늘 영업을 마쳤어요. 아래에서 Report를 확인하세요." : string.Empty;
+                phase == "done" ? "오늘 영업을 마쳤어요. 아래에서 보고서를 확인하세요." : string.Empty;
         lastPhase = phase;
         reason.text = !installed ? "핫바의 상점 설계도로 먼저 상점을 설치하세요." :
             loop == null ? "영업 시스템을 찾을 수 없어요." :
@@ -185,8 +196,8 @@ public sealed class ShopManagementPhoneUI : MonoBehaviour
         var stats = history != null ? history.GetDailyDecisionStats(day) : default;
         sales.text = $"오늘 매출 {revenue:N0} G  ·  판매 {stats.purchases}건\n구매 보류 {stats.rejections}회";
         var latest = settlement != null ? settlement.PioneerReport : null;
-        report.text = latest == null ? "최근 개척 보고서는 영업 마감 후 표시됩니다." :
-            $"최근 Report  ·  {latest.total} / 100점\n판매 {latest.sales}건  ·  매출 {latest.revenue:N0} G";
+        report.text = latest == null ? "개척 보고서는 영업 마감 후 표시돼요." :
+            $"최근 보고서 {latest.total}/100점\n판매 {latest.sales}건 · 매출 {latest.revenue:N0} G";
         // P7: 네 분야는 처음부터 읽히고, 동행 궁합과 고른 분야의 다음 1단계를 보인다.
         string synergy = settlement == null ? "" : string.Join("·", new[] { DemoSpecialization.Forestry, DemoSpecialization.Mining,
             DemoSpecialization.Fisheries, DemoSpecialization.Agriculture }.Where(settlement.HasSynergy).Select(RootName));
@@ -227,7 +238,7 @@ public sealed class ShopManagementPhoneUI : MonoBehaviour
     void CloseShop()
     {
         var loop = DayNightShopLoopController.Instance;
-        feedback.text = loop != null && loop.TryCloseOpeningShop() ? "마감했어요. Report를 확인하세요." : "지금은 마감할 수 없어요.";
+        feedback.text = loop != null && loop.TryCloseOpeningShop() ? "마감했어요. 보고서를 확인하세요." : "지금은 마감할 수 없어요.";
         Refresh();
     }
     void ChooseRoot(DemoSpecialization root)

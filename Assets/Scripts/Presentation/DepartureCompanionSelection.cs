@@ -248,9 +248,13 @@ public sealed class DepartureCompanionSelection : MonoBehaviour
             Label(card, "Goods", "첫 상품  ·  " + PlayerText(c.firstGoods, "정보 미확인"), 32, 275, 510, 62, 27, Ink);
             // P7: 이 동행과 궁합이 맞는 전문 분야(Root)를 선택 카드에서 바로 읽게 한다.
             Label(card, "Future", "성장 방향  ·  " + PlayerText(c.future, "정보 미확인") + "  ·  ★" + SynergyRoot(c.id), 32, 345, 516, 50, 22, Teal);
-            Label(card, "Personality", PlayerText(c.personality, "소개 정보 미확인"), 32, 407, 516, 64, 24, Ink);
-            string temperament = c.profile == null || c.Mbti.Contains("?") ? "성향 정보 미확인" : "성향  ·  " + c.Mbti;
-            Label(card, "MBTI", temperament, 32, 480, 516, 36, 20, Teal);
+            // 성향이 확인되지 않은 후보는 성향 줄을 숨기고, 소개 문구가 그 자리까지 이어 쓰게 한다.
+            // 세 카드 모두 소개 문구를 위쪽 정렬해 카드끼리 줄 높이가 맞고, 구분선·선택 문구는 같은 자리에 둔다.
+            bool temperamentKnown = c.profile != null && !c.Mbti.Contains("?");
+            var personality = Label(card, "Personality", PlayerText(c.personality, "소개 정보 미확인"), 32, 407, 516,
+                temperamentKnown ? 64 : 108, 24, Ink);
+            personality.alignment = TextAlignmentOptions.TopLeft;
+            if (temperamentKnown) Label(card, "MBTI", "성향  ·  " + c.Mbti, 32, 480, 516, 36, 20, Teal);
             Panel(card, "SelectionDivider", 32, 528, 516, 2, c.accent);
             _selectionLabels[i] = Label(card, "Selection", "", 32, 548, 516, 38, 23, Teal);
         }

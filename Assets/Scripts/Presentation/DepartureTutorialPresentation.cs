@@ -69,11 +69,25 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         _completionPanel.SetActive(tutorial.Complete && !(ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen));
         bool modal=PlayerInputHandler.ModalOpen;
         _controls.transform.parent.gameObject.SetActive(!modal && !reactionVisible);
-        _controls.text = tutorial.Complete ? "출항 준비를 마쳤습니다." : tutorial.Stage==3
-            ? "1–9 / 휠 선택 · X 빈손 · E 진열" : tutorial.Stage==2
-            ? "WASD 이동 · X 빈손 · 사과를 바라보고 E 줍기"
-            : "WASD 이동 · Shift 달리기 · Space 점프 · E 행동";
+        int controlsKey = tutorial.Complete ? 99 : tutorial.Stage;
+        if (controlsKey != _controlsShown)
+        {
+            _controlsShown = controlsKey;
+            string controls = tutorial.Complete ? "출항 준비를 마쳤습니다." : tutorial.Stage==3
+                ? $"{Key("1–9")} / {Key("휠")} 선택  ·  {Key("X")} 빈손  ·  {Key("E")} 진열" : tutorial.Stage==2
+                ? $"{Key("WASD")} 이동  ·  {Key("X")} 빈손  ·  사과를 바라보고 {Key("E")} 줍기"
+                : $"{Key("WASD")} 이동  ·  {Key("Shift")} 달리기  ·  {Key("Space")} 점프  ·  {Key("E")} 행동";
+            _controls.text = controls;
+            // 문구 길이에 맞춰 알약 폭을 정해 좌우 여백이 늘 같게 보인다.
+            float width = _controls.GetPreferredValues(controls).x + ControlsPadding * 2f;
+            ((RectTransform)_controls.transform.parent).sizeDelta = new Vector2(Mathf.Clamp(width, 360f, 1180f), ControlsHeight);
+        }
     }
+
+    const float ControlsHeight = 54f, ControlsPadding = 34f;
+    int _controlsShown = -1;
+    // 키 이름은 PAUiTheme.Gold(.96,.79,.38)로 강조한다.
+    static string Key(string key) => "<color=#F5C961>" + key + "</color>";
 
     void CorrectGatherBoards()
     {
@@ -157,10 +171,19 @@ public sealed class DepartureTutorialPresentation : MonoBehaviour
         _money = Label(moneyPanel, "Amount", "0 G", new Vector2(16f, -8f), new Vector2(148f, 52f), 30f, Paper);
         _money.alignment = TextAlignmentOptions.MidlineRight;
 
+        // 전시 캡처: 반투명 띠 아래로 바닥 화살표가 비치지 않게 불투명 잉크 알약으로 둔다(좌상단 목표 패널과 같은 둥근 면).
         RectTransform controlsPanel = Panel(root.transform, "Controls", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-            new Vector2(0f, 182f), new Vector2(720f, 44f), new Color(0.17f, 0.23f, 0.23f, 0.86f));
-        _controls = Label(controlsPanel, "Keys", "", new Vector2(14f, -3f), new Vector2(692f, 38f), 19f, Paper);
+            new Vector2(0f, 182f), new Vector2(720f, ControlsHeight), Ink);
+        var controlsShadow = controlsPanel.gameObject.AddComponent<Shadow>();
+        controlsShadow.effectColor = new Color(0f, 0f, 0f, 0.22f);
+        controlsShadow.effectDistance = new Vector2(0f, -4f);
+        _controls = Label(controlsPanel, "Keys", "", Vector2.zero, Vector2.zero, 21f, Paper);
         _controls.alignment = TextAlignmentOptions.Center;
+        _controls.textWrappingMode = TextWrappingModes.NoWrap;
+        _controls.richText = true;
+        RectTransform keysRect = _controls.rectTransform;
+        keysRect.anchorMin = Vector2.zero; keysRect.anchorMax = Vector2.one;
+        keysRect.offsetMin = new Vector2(ControlsPadding, 4f); keysRect.offsetMax = new Vector2(-ControlsPadding, -4f);
 
         RectTransform reaction = Panel(root.transform, "ActualCustomerReaction", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
             new Vector2(0f, 206f), new Vector2(720f, 86f), Paper);

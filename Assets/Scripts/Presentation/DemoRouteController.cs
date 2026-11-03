@@ -12,6 +12,8 @@ public sealed class DemoRouteController : MonoBehaviour
     public const string WorldScene = "WorldSandbox";
     static bool _arrivalPending;
     static bool _continuePending;
+    // 출항 항해 페이드에서 막 넘어온 새 게임만 상륙 연출을 재생한다(Continue/직접 진입은 즉시 조작).
+    static bool _voyageArrival;
     static string _continueError;
     public static DepartureCompanionSelection.Candidate[] SelectedCompanions { get; private set; } = Array.Empty<DepartureCompanionSelection.Candidate>();
     public static string[] SelectedCompanionIds => SelectedCompanions.Select(c => c.id).ToArray();
@@ -37,6 +39,7 @@ public sealed class DemoRouteController : MonoBehaviour
         else SelectedCompanions = Array.Empty<DepartureCompanionSelection.Candidate>();
         _continuePending = true;
         _arrivalPending = true;
+        _voyageArrival = false;
         return true;
     }
     public bool FirstDemoSaleCompleted { get; private set; }
@@ -49,6 +52,7 @@ public sealed class DemoRouteController : MonoBehaviour
     {
         _arrivalPending = false;
         _continuePending = false;
+        _voyageArrival = false;
         _continueError = null;
         SelectedCompanions = Array.Empty<DepartureCompanionSelection.Candidate>();
         TransitionOverlay = null;
@@ -93,6 +97,8 @@ public sealed class DemoRouteController : MonoBehaviour
             if (!Application.CanStreamedLevelBeLoaded(WorldScene))
                 throw new InvalidOperationException("WorldSandbox must be enabled in Build Settings for the demo route.");
             _arrivalPending = true;
+            // 저장 도착 복원(SkipTravelForSavedArrival)은 연출을 다시 틀지 않는다.
+            _voyageArrival = !voyage.SkippedForSavedArrival;
             // 남은 실습 사과/선택/손 표현은 섬의 실제 보급품으로 전달하지 않는다.
             Inventory.instance?.ResetForFreshOpeningSession();
             Debug.Log("[INTEGRATION-01] Opening arrival -> Demo256");
@@ -106,6 +112,8 @@ public sealed class DemoRouteController : MonoBehaviour
             _alpha = GetComponent<WorldAlphaPlayableController>();
             yield return null;
         }
+        bool voyageArrival = _voyageArrival && !_continuePending;
+        _voyageArrival = false;
         if (_continuePending)
         {
             _continuePending = false;
@@ -122,7 +130,6 @@ public sealed class DemoRouteController : MonoBehaviour
         }
         else if (!_alpha.BeginNewGame()) throw new InvalidOperationException("Demo256 playable clock could not start.");
         _alpha.SetDevelopmentOverlayVisible(false);
-        IsPlayable = true;
         SalesLogManager.OnSaleRecorded -= OnSale;
         SalesLogManager.OnSaleRecorded += OnSale;
         // The world controller has already bound the gameplay camera. End the
@@ -130,6 +137,13 @@ public sealed class DemoRouteController : MonoBehaviour
         Camera gameplayCamera = Camera.main;
         if (gameplayCamera == null || !gameplayCamera.isActiveAndEnabled || gameplayCamera.targetTexture != null)
             throw new InvalidOperationException("Demo256 gameplay camera is not rendering to the screen.");
+        // 상륙 연출은 같은 프레임에 같은 페이드 색으로 시작하므로 전환 오버레이를 걷어도 화면이 튀지 않는다.
+        bool intro = false;
+        if (voyageArrival)
+        {
+            try { intro = ArrivalIntroPresentation.Play(_alpha.Adapter.PlayerRoot != null ? _alpha.Adapter.PlayerRoot.transform : null); }
+            catch (Exception e) { Debug.LogException(e); intro = false; ArrivalIntroPresentation.Abort(); }
+        }
         if (TransitionOverlay != null)
         {
             TransitionOverlay.SetActive(false);
@@ -137,6 +151,14 @@ public sealed class DemoRouteController : MonoBehaviour
             TransitionOverlay = null;
         }
         Debug.Log("[FIRST-DAY] Demo256 harbor ready; supply awaits E; exact companions=" + string.Join(",",SelectedCompanionIds));
+        // 연출(건너뛰기 포함)이 조작을 돌려준 뒤에 플레이 가능으로 알린다. 멈춘 연출은 시간 제한 후 강제로 끝낸다.
+        float introStarted = Time.realtimeSinceStartup;
+        while (intro && ArrivalIntroPresentation.IsPlaying)
+        {
+            if (Time.realtimeSinceStartup - introStarted > ArrivalIntroPresentation.Duration + 6f) { ArrivalIntroPresentation.ForceFinish(); break; }
+            yield return null;
+        }
+        IsPlayable = true;
     }
 
     void OnDestroy() => SalesLogManager.OnSaleRecorded -= OnSale;

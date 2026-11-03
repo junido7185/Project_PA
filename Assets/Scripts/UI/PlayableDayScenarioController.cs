@@ -74,6 +74,12 @@ public class PlayableDayScenarioController : MonoBehaviour
     GameObject _titleMenuBacking;
     GameObject _titleWorldImage;
     GameObject _titleVeil;
+    // 전시 키아트용 타이틀 장식(표시 전용): 로고 입체 그림자, 부제 띠, 하단 전시 표기.
+    TextMeshProUGUI _titleLogoShadow;
+    GameObject _titleSubtitleBand;
+    TextMeshProUGUI _titleFooter;
+    static Sprite s_titleVeilSprite;
+    static Sprite s_titleBandSprite;
     Image _flowDim;
     TextMeshProUGUI _flowTitle;
     TextMeshProUGUI _flowBody;
@@ -396,15 +402,28 @@ public class PlayableDayScenarioController : MonoBehaviour
         panelImage.raycastTarget = !title;
 
         var titleRt = (RectTransform)_flowTitle.transform;
-        titleRt.anchoredPosition = title ? new Vector2(0f, 295f)
+        titleRt.anchoredPosition = title ? new Vector2(0f, 298f)
             : confirm ? new Vector2(0f, 110f) : new Vector2(0f, 235f);
-        titleRt.sizeDelta = title ? new Vector2(820f, 116f)
+        titleRt.sizeDelta = title ? new Vector2(1000f, 132f)
             : confirm ? new Vector2(700f, 72f) : new Vector2(820f, 70f);
-        _flowTitle.fontSize = title ? 86f : confirm ? 39f : 38f;
+        _flowTitle.fontSize = title ? 94f : confirm ? 39f : 38f;
         _flowTitle.color = title ? new Color(1f, 0.91f, 0.67f)
             : new Color(0.08f, 0.42f, 0.27f);
         _flowTitle.outlineColor = title ? new Color32(59, 37, 24, 255) : Color.clear;
         _flowTitle.outlineWidth = title ? 0.27f : 0f;
+        // 로고 입체감: 같은 글자를 진한 갈색으로 아래에 한 겹 더 깔아 크림+갈색 외곽선 로고가 밝은 배경에서도 떠 보이게 한다.
+        if (_titleLogoShadow != null)
+        {
+            _titleLogoShadow.gameObject.SetActive(title);
+            if (title)
+            {
+                var shadowRt = (RectTransform)_titleLogoShadow.transform;
+                shadowRt.anchoredPosition = titleRt.anchoredPosition + new Vector2(0f, -8f);
+                shadowRt.sizeDelta = titleRt.sizeDelta;
+                _titleLogoShadow.text = _flowTitle.text;
+                _titleLogoShadow.fontSize = _flowTitle.fontSize;
+            }
+        }
 
         var bodyRt = (RectTransform)_flowBody.transform;
         if (title)
@@ -412,13 +431,20 @@ public class PlayableDayScenarioController : MonoBehaviour
             // 이어하기 불가 사유가 있으면 한 줄 문구 칸을 이유 전체가 읽히는 세 줄 칸으로 넓힌다(메뉴 버튼 위 여백 안).
             bool reason = !string.IsNullOrEmpty(_continueRuntimeError ?? _continueIssue);
             bodyRt.anchoredPosition = new Vector2(0f, 160f);
-            bodyRt.sizeDelta = reason ? new Vector2(860f, 104f) : new Vector2(680f, 52f);
-            _flowBody.fontSize = reason ? 21f : 24f;
+            bodyRt.sizeDelta = reason ? new Vector2(860f, 104f) : new Vector2(760f, 56f);
+            _flowBody.fontSize = reason ? 21f : 27f;
             _flowBody.textWrappingMode = TextWrappingModes.Normal;
             _flowBody.alignment = TextAlignmentOptions.Center;
             _flowBody.color = new Color(1f, 0.98f, 0.88f);
             _flowBody.outlineColor = new Color32(38, 43, 31, 235);
             _flowBody.outlineWidth = 0.22f;
+            // 밝은 섬 배경 위 부제 가독성: 가장자리가 부드럽게 사라지는 반투명 잉크 띠를 글자 뒤에 깐다.
+            if (_titleSubtitleBand != null)
+            {
+                var bandRt = (RectTransform)_titleSubtitleBand.transform;
+                bandRt.anchoredPosition = bodyRt.anchoredPosition;
+                bandRt.sizeDelta = bodyRt.sizeDelta + (reason ? new Vector2(260f, 34f) : new Vector2(300f, 30f));
+            }
         }
         else if (confirm)
         {
@@ -434,13 +460,41 @@ public class PlayableDayScenarioController : MonoBehaviour
             _flowBody.color = new Color(0.08f, 0.10f, 0.12f);
             _flowBody.outlineWidth = 0f;
         }
+        if (_titleSubtitleBand != null) _titleSubtitleBand.SetActive(title);
+        if (_titleFooter != null) _titleFooter.gameObject.SetActive(title || confirm);
 
-        SetMenuButtonStyle(_primaryButton, title, title ? new Vector2(0f, -88f)
-            : confirm ? new Vector2(150f, -125f) : new Vector2(150f, -250f));
-        SetMenuButtonStyle(_secondaryButton, title, title ? new Vector2(0f, 0f)
-            : confirm ? new Vector2(-150f, -125f) : new Vector2(-150f, -250f));
-        SetMenuButtonStyle(_quitButton, title, title ? new Vector2(0f, -176f)
-            : new Vector2(-260f, -250f));
+        if (title)
+        {
+            ApplyTitleMenuLayout();
+            return;
+        }
+        SetMenuButtonStyle(_primaryButton, false, confirm ? new Vector2(150f, -125f) : new Vector2(150f, -250f));
+        SetMenuButtonStyle(_secondaryButton, false, confirm ? new Vector2(-150f, -125f) : new Vector2(-150f, -250f));
+        SetMenuButtonStyle(_quitButton, false, new Vector2(-260f, -250f));
+    }
+
+    // 타이틀 메뉴: 저장이 없으면 이어하기 버튼을 숨기고 남은 버튼을 메뉴 카드 가운데로 모은다.
+    // 순서(이어하기 → 새 게임 → 게임 종료)와 버튼 기능은 그대로다. 호환 불가 저장은 버튼을 남기되 차분한 비활성으로 보인다.
+    void ApplyTitleMenuLayout()
+    {
+        if (_startupCompleted || _startupStep != StartupStep.Title) return;
+        bool showContinue = _secondaryButton != null && _secondaryButton.gameObject.activeSelf;
+        const float step = 88f;
+        float first = showContinue ? 0f : -step * 0.5f;
+        if (showContinue) SetMenuButtonStyle(_secondaryButton, true, new Vector2(0f, first));
+        SetMenuButtonStyle(_primaryButton, true, new Vector2(0f, first - (showContinue ? step : 0f)));
+        SetMenuButtonStyle(_quitButton, true, new Vector2(0f, first - (showContinue ? step * 2f : step)));
+        if (_titleMenuBacking != null)
+            ((RectTransform)_titleMenuBacking.transform).sizeDelta = new Vector2(326f, showContinue ? 292f : 204f);
+
+        if (!showContinue || _secondaryButton.interactable || _continueLoading) return;
+        var image = _secondaryButton.GetComponent<Image>();
+        image.color = new Color(0.86f, 0.82f, 0.73f, 1f);
+        var colors = _secondaryButton.colors;
+        colors.disabledColor = Color.white;
+        _secondaryButton.colors = colors;
+        var label = _secondaryButton.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (label != null) label.color = new Color(0.47f, 0.40f, 0.33f);
     }
 
     void SetMenuButtonStyle(Button button, bool title, Vector2 position)
@@ -453,7 +507,7 @@ public class PlayableDayScenarioController : MonoBehaviour
         var image = button.GetComponent<Image>();
         image.sprite = SmartphoneUI.RoundedSprite;
         image.type = Image.Type.Sliced;
-        image.color = title ? new Color(0.23f, 0.15f, 0.09f, 0.95f)
+        image.color = title ? new Color(0.23f, 0.15f, 0.09f, 1f)
             : button == _quitButton ? new Color(0.45f, 0.27f, 0.20f)
             : new Color(0.08f, 0.42f, 0.27f);
         var colors = button.colors;
@@ -480,7 +534,8 @@ public class PlayableDayScenarioController : MonoBehaviour
         _continueIssue = null;
         _continueLegacyFormat = false;
         if (_primaryButton != null) _primaryButton.interactable = false;
-        _secondaryButton.gameObject.SetActive(true);
+        // 확인 중에는 이어하기 칸을 숨긴다(키아트에 어두운 '저장 확인 중'이 남지 않게). 저장이 있으면 결과에서 다시 보인다.
+        _secondaryButton.gameObject.SetActive(false);
         _secondaryButton.interactable = false;
         if (_secondaryText != null) _secondaryText.text = "저장 확인 중";
         _ = RefreshContinueAvailabilityAsync(requestVersion);
@@ -511,12 +566,15 @@ public class PlayableDayScenarioController : MonoBehaviour
         _secondaryButton.interactable = inspection?.CanContinue == true;
         if (_secondaryText != null) _secondaryText.text = inspection?.CanContinue == true ? "이어하기" :
             _continueSaveAvailable ? "호환 불가" : "저장 없음";
+        // 저장 파일이 아예 없으면 이어하기 버튼을 숨긴다. 호환 불가·실행 오류는 이유와 함께 비활성 버튼으로 남긴다.
+        _secondaryButton.gameObject.SetActive(_continueSaveAvailable || !string.IsNullOrEmpty(_continueRuntimeError));
         if (_flowBody != null && !string.IsNullOrEmpty(_continueRuntimeError ?? _continueIssue))
         {
             _flowBody.text = "이어하기 불가 · " + (_continueRuntimeError ?? _continueIssue) +
                 "\n새 게임은 시작할 수 있으며 기존 저장은 유지됩니다.";
             ApplyStartupVisualStyle(); // 검사가 동기 완료돼도 비동기 완료돼도 같은 사유 칸 크기를 쓴다.
         }
+        ApplyTitleMenuLayout();
     }
 
     void SetFlowText(string title, string body, string primary)
@@ -524,6 +582,12 @@ public class PlayableDayScenarioController : MonoBehaviour
         if (_flowTitle != null) _flowTitle.text = title;
         if (_flowBody != null) _flowBody.text = body;
         if (_primaryText != null) _primaryText.text = primary;
+        // 타이틀 장식은 타이틀 단계에서만 보인다(결산 등 같은 패널을 쓰는 화면에 로고 그림자가 남지 않게).
+        bool titleStep = !_startupCompleted && _startupStep == StartupStep.Title;
+        if (_titleLogoShadow != null) { _titleLogoShadow.text = title; _titleLogoShadow.gameObject.SetActive(titleStep); }
+        if (_titleSubtitleBand != null) _titleSubtitleBand.SetActive(titleStep);
+        if (_titleFooter != null) _titleFooter.gameObject.SetActive(titleStep
+            || (!_startupCompleted && _startupStep == StartupStep.NewGameConfirm));
     }
 
     void SetFlowBodyPresentation(bool summary)
@@ -2376,7 +2440,11 @@ public class PlayableDayScenarioController : MonoBehaviour
         _titleVeil = new GameObject("TitleVeil", typeof(RectTransform), typeof(Image));
         _titleVeil.transform.SetParent(canvasGo.transform, false);
         Stretch((RectTransform)_titleVeil.transform);
-        _titleVeil.GetComponent<Image>().color = new Color(0.08f, 0.13f, 0.10f, 0.48f);
+        // 밝은 골든아워 섬 렌더가 보이도록 전체 어둡기 대신 세로 그라데이션(위·아래만 살짝, 가운데는 거의 투명)을 쓴다.
+        var veilImage = _titleVeil.GetComponent<Image>();
+        veilImage.sprite = TitleVeilSprite();
+        veilImage.color = new Color(0.10f, 0.12f, 0.08f, 1f);
+        veilImage.raycastTarget = false;
         _titleVeil.SetActive(false);
 
         _flowPanel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
@@ -2396,9 +2464,27 @@ public class PlayableDayScenarioController : MonoBehaviour
         var menuBackingImage = _titleMenuBacking.GetComponent<Image>();
         menuBackingImage.sprite = SmartphoneUI.RoundedSprite;
         menuBackingImage.type = Image.Type.Sliced;
-        menuBackingImage.color = new Color(0.12f, 0.13f, 0.08f, 0.45f);
+        // 크림 메뉴 카드 + 진한 갈색 버튼: 밝은 배경에서도 탁하지 않은 UI 테마(크림/잉크) 메뉴로 보인다.
+        menuBackingImage.color = new Color(SmartphoneUI.Cream.r, SmartphoneUI.Cream.g, SmartphoneUI.Cream.b, 0.94f);
         menuBackingImage.raycastTarget = false;
+        var menuShadow = _titleMenuBacking.AddComponent<Shadow>();
+        menuShadow.effectColor = new Color(0.10f, 0.07f, 0.04f, 0.30f);
+        menuShadow.effectDistance = new Vector2(0f, -6f);
         _titleMenuBacking.SetActive(false);
+
+        // 부제 띠는 본문(부제) 뒤, 로고 그림자는 로고 뒤에 오도록 먼저 만든다.
+        _titleSubtitleBand = new GameObject("TitleSubtitleBand", typeof(RectTransform), typeof(Image));
+        _titleSubtitleBand.transform.SetParent(_flowPanel.transform, false);
+        var bandImage = _titleSubtitleBand.GetComponent<Image>();
+        bandImage.sprite = TitleBandSprite();
+        bandImage.color = new Color(0.10f, 0.12f, 0.08f, 0.55f);
+        bandImage.raycastTarget = false;
+        _titleSubtitleBand.SetActive(false);
+
+        _titleLogoShadow = CreateText(_flowPanel.transform, "TitleLogoShadow", new Vector2(0f, 290f), new Vector2(1000f, 132f), 94f, new Color32(59, 37, 24, 255), FontStyles.Bold);
+        _titleLogoShadow.outlineColor = new Color32(59, 37, 24, 255);
+        _titleLogoShadow.outlineWidth = 0.27f;
+        _titleLogoShadow.gameObject.SetActive(false);
 
         _flowTitle = CreateText(_flowPanel.transform, "Title", new Vector2(0f, 235f), new Vector2(820f, 70f), 38f, new Color(0.08f, 0.42f, 0.27f), FontStyles.Bold);
         _flowBody = CreateText(_flowPanel.transform, "Body", new Vector2(0f, 70f), new Vector2(780f, 210f), 24f, new Color(0.08f, 0.10f, 0.12f), FontStyles.Normal);
@@ -2428,7 +2514,67 @@ public class PlayableDayScenarioController : MonoBehaviour
         _primaryText = _primaryButton.GetComponentInChildren<TextMeshProUGUI>();
         _secondaryText = _secondaryButton.GetComponentInChildren<TextMeshProUGUI>();
 
+        // 졸업 전시 표기: 화면 하단 가운데의 작은 한 줄(그라데이션 아래쪽 어두운 면 위).
+        _titleFooter = CreateText(canvasGo.transform, "TitleExhibitionFooter", Vector2.zero, new Vector2(1600f, 32f), 17f,
+            new Color(1f, 0.96f, 0.86f, 0.92f), FontStyles.Normal);
+        var footerRt = (RectTransform)_titleFooter.transform;
+        footerRt.anchorMin = footerRt.anchorMax = new Vector2(0.5f, 0f);
+        footerRt.pivot = new Vector2(0.5f, 0f);
+        footerRt.anchoredPosition = new Vector2(0f, 26f);
+        _titleFooter.text = "2026 KONKUK UNIV. COMPUTER ENGINEERING  ·  GRADUATION EXHIBITION";
+        _titleFooter.characterSpacing = 6f;
+        _titleFooter.textWrappingMode = TextWrappingModes.NoWrap;
+        _titleFooter.outlineColor = new Color32(38, 43, 31, 200);
+        _titleFooter.outlineWidth = 0.16f;
+        _titleFooter.gameObject.SetActive(false);
+
         SetFlowVisible(false);
+    }
+
+    // 타이틀 배경 위 세로 그라데이션: 아래(전시 표기)·위(로고 영역)만 조금 어둡고 가운데는 섬 그림이 그대로 보인다.
+    static Sprite TitleVeilSprite()
+    {
+        if (s_titleVeilSprite != null) return s_titleVeilSprite;
+        s_titleVeilSprite = SoftAlphaSprite("PA_TitleVeilGradient", 16, 128, (u, v) =>
+            0.10f + 0.42f * (1f - SmoothRange(0f, 0.26f, v)) + 0.28f * SmoothRange(0.58f, 1f, v)
+            + 0.14f * Mathf.Pow(Mathf.Abs(u - 0.5f) * 2f, 2f));
+        return s_titleVeilSprite;
+    }
+
+    // 부제 띠: 좌우·위아래 가장자리가 부드럽게 사라지는 가로 띠.
+    static Sprite TitleBandSprite()
+    {
+        if (s_titleBandSprite != null) return s_titleBandSprite;
+        s_titleBandSprite = SoftAlphaSprite("PA_TitleSubtitleBand", 64, 16, (u, v) =>
+            SmoothRange(0f, 0.22f, u) * (1f - SmoothRange(0.78f, 1f, u))
+            * SmoothRange(0f, 0.34f, v) * (1f - SmoothRange(0.66f, 1f, v)));
+        return s_titleBandSprite;
+    }
+
+    static float SmoothRange(float edge0, float edge1, float x)
+    {
+        float t = Mathf.Clamp01((x - edge0) / (edge1 - edge0));
+        return t * t * (3f - 2f * t);
+    }
+
+    static Sprite SoftAlphaSprite(string name, int width, int height, Func<float, float, float> alpha)
+    {
+        var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+        {
+            name = name, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear
+        };
+        var pixels = new Color32[width * height];
+        for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+        {
+            float a = Mathf.Clamp01(alpha(x / (width - 1f), y / (height - 1f)));
+            pixels[y * width + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
+        }
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+        var sprite = Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f);
+        sprite.name = name;
+        return sprite;
     }
 
     void OnPrimaryPressed()
