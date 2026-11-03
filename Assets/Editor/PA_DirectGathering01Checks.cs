@@ -170,11 +170,17 @@ public static class PA_DirectGathering01Checks
             yield return null;
             for (int hit = 1; hit < total; hit++)
             {
+                var visual = Visual(target);
+                var restPose = visual != null ? (visual.localRotation, visual.localScale, visual.localPosition) : default;
                 Interact();
+                // The hit lands at swing contact (GatherFeedback.ContactDelay), not on the input frame.
+                until = Time.time + GatherFeedback.ContactDelay + .05f; while (Time.time < until) yield return null;
                 Check(Hits(target) == total - hit && inventory.CountItems(reward) == before,
                     label + " intermediate hit " + hit + " gives no reward");
                 yield return null;
-                Check(target.transform.localScale != BaseScale(target), label + " hit has visible scale response");
+                // D4: a bound child visual sways/cracks while the root and trigger stay put; unbound targets keep the root pulse.
+                Check(visual != null ? (visual.localRotation, visual.localScale, visual.localPosition) != restPose : target.transform.localScale != BaseScale(target),
+                    label + " hit has visible presentation response");
                 until = Time.time + .3f; while (Time.time < until) yield return null;
             }
             var preserved = inventory.slots.Select(slot => slot.instance).ToArray();
@@ -192,7 +198,11 @@ public static class PA_DirectGathering01Checks
                 label + " retry after freeing inventory grants exactly one reward then persists depletion");
             ((IInteractable)target).Interact(adapter.PlayerRoot);
             Check(inventory.CountItems(reward) == before + 1, label + " duplicate reward rejected");
-            Check(target.GetComponentsInChildren<Renderer>().All(r => !r.enabled), label + " depleted presentation hidden");
+            // D4: the tree fall (0.6 s + 0.3 s on the ground + 0.35 s sink) / rock crumble (0.35 s) plays before the resource hides; the stump stays.
+            until = Time.time + 1.5f; while (Time.time < until) yield return null;
+            var stumpRoot = target is Gatherable felled && felled.StumpVisual != null ? felled.StumpVisual.transform : null;
+            Check(target.GetComponentsInChildren<Renderer>().Where(r => stumpRoot == null || !r.transform.IsChildOf(stumpRoot)).All(r => !r.enabled),
+                label + " depleted presentation hidden");
             InventoryUI.instance.Toggle();
             yield return null;
             ScreenCapture.CaptureScreenshot(Output + "/" + label + "-reward.png");
@@ -287,7 +297,9 @@ public static class PA_DirectGathering01Checks
         int index = adapter.PlayerHotbar.slots.FindIndex(slot => item == null ? slot.IsEmpty : slot.item == item);
         Check(index >= 0, (item == null ? "Empty slot" : item.itemName) + " is available in actual Hotbar");
         var callback = (Action<int>)typeof(PlayerInputHandler).GetField("OnHotbarDirectSelect", Private).GetValue(PlayerInputHandler.Instance);
-        Check(callback != null, "Hotbar selection input has live subscribers"); callback(index);
+        Check(callback != null, "Hotbar selection input has live subscribers");
+        // Mirrors PlayerInputHandler.CheckDigitKey: the Inventory is the selection authority, the event only refreshes UI.
+        Inventory.instance.SelectHotbarSlot(index); callback(index);
     }
     static void Interact()
     {
@@ -297,6 +309,7 @@ public static class PA_DirectGathering01Checks
     static int Hits(Component c) => c is Gatherable g ? g.DirectRemainingHits : ((MiningSpot)c).DirectRemainingHits;
     static bool Depleted(Component c) => c is Gatherable g ? g.DirectDepleted : ((MiningSpot)c).DirectDepleted;
     static string Key(Component c) => c is Gatherable g ? g.DirectSpawnKey : ((MiningSpot)c).DirectSpawnKey;
+    static Transform Visual(Component c) => c is Gatherable g ? g.PresentationVisual : ((MiningSpot)c).PresentationVisual;
     static Vector3 BaseScale(Component c) => (Vector3)c.GetType().GetField("_directBaseScale", Private).GetValue(c);
     static bool Persisted(Component c) => adapter.CaptureWorldState().resourceStates.Any(x => x.spawnKey == Key(c) && x.consumed);
     static void Check(bool ok, string text)
