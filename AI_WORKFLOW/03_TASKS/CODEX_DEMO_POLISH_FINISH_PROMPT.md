@@ -1,20 +1,18 @@
+2026-10-09 policy amendment: The valid loop-state/lease selects the single production writer (currently Claude Code); non-owner agents provide review/independent support without a required approval gate. Latest order is world -> character/gathering -> props -> UI -> harmony. User authorization permits capability-based assignment, adaptive repair by progress/evidence and continuing inside the approved goal. Earlier per-ticket counts, task duration/file caps and fixed model/owner assignments remain historical approval evidence, not current execution gates. Explicit rejections, holds, Canon/design conditions and save/core protections remain. The latest direct-user amendment below supersedes the former final-human-review requirement.
+
+2026-10-25 latest direct-user amendment — PA_AUTONOMOUS_REFERENCE_REVIEW_20261025_V1: Continue approved development without waiting for human quality review. Compare existing references with actual gameplay/images/time-series and independent AI critique; use actual functional/save/performance evidence for those claims. The existing run boundary is now FINAL_WINDOWS_REFERENCE_REVIEW, not mandatory human acceptance; this is distinct from whole-Canon completion or permission to publish. Resume the existing Claude owner through the normal autonomous helper after verified subscription resets, preserving cumulative usage, prior refusals, single-writer/Save protection, no paid fallback and the separate Unity/native Esc stop. This supersedes older final-human-review requirements below. Source: Logs/ParallelProduction/Production-observer-codex-20261020/auto-resume-20261025/user-request.md.
+
+
+2026-10-19 현재 운영 정책: 기존 Canon의 전체 게임 목표와 현재 실행 묶음의 FINAL_WINDOWS_HUMAN_REVIEW를 구분한다. 승인 목표 안의 구현·세부 설계·복구·검증은 자율 진행하며 단계마다 사용자 재승인을 요구하지 않는다. 파일 수·작업 총시간·compile/Play/validator 횟수·기계적 연속 실패·옛 티켓/모델/담당자 배정을 실행 상한으로 쓰지 않는다. 파일 소유 범위는 충돌 확인 후 기존 registry에서 조정하고, 순서는 최신 checkpoint와 품질 우선순위를 따른다. 시도·사용량·실패·거절·승인 이력은 누적 보존한다. 같은 행동을 진전 없이 반복하면 원인·바꾼 접근·새 근거를 checkpoint에 남긴 뒤 복구하고, 실행 상태가 모호하면 확인 전 재실행하지 않는다. 실제 출력/소유 파일 활동이 끊긴 프로세스의 inactivity timeout은 유지하며 작업 총시간 상한과 분리한다. 120초 복구 스냅샷·20분 안전 인계는 재개 가능한 복구 주기다. 실제 실행 정책은 Automation/LoopEngineering/loop-policy.json의 recoveryPolicy를 따른다. 사용자 dirty·Save 호환성·기존 권위/디자인 조건·현재 반려/보류·단일 Unity writer·미승인 결제/외부 공개 금지·최종 사람 검수는 유지한다. 과거 고정 담당자 문구보다 현재 유효한 state/lease와 검증된 인수인계가 우선하며, 이번 운영 정리는 제작 재개나 writer 이전 승인이 아니다.
+
 # Project P.A. — Codex 데모 완성(폴리시) 실행 계약
 
 작성: 2026-10-06. 이 파일은 실행 지시이며 읽는 것만으로 승인·소유권이 바뀌지 않는다. 사용자의 직접 시작 메시지가 필요하다.
-기존 계약 `AI_WORKFLOW/03_TASKS/CODEX_OPENING_DEMO_FINAL_EXECUTION_PROMPT.md`의 규칙(인수 절차, Studio 예산, 최종 P11 납품, HARD STOP, 기록)을 그대로 상속한다. 이 문서는 그 위에 **완성도 보완 티켓 D0~D12**를 추가한다. 충돌하면 사용자 최신 지시 → AGENTS.md → 이 문서 → 기존 계약 순이다.
+기존 계약 `AI_WORKFLOW/03_TASKS/CODEX_OPENING_DEMO_FINAL_EXECUTION_PROMPT.md`의 인수·기존 기능·납품 증거·보호·기록을 재사용한다. 그 계약의 옛 숫자 상한·기계적 중단·모델/담당자 고정은 현재 실행 gate로 상속하지 않는다. 이 문서는 그 위에 **완성도 보완 티켓 D0~D12**를 추가한다. 충돌하면 사용자 최신 지시 → AGENTS.md → 이 문서 → 기존 계약 순이다.
 
-## 사용자가 보낼 시작 메시지
+## 현재 시작·재개 지시
 
-아래 첫 문장은 실제로 후보 실행을 종료했을 때만 보낸다.
-
-```text
-후보 실행(standalone)을 종료했고 입력 소유권을 Codex에 넘긴다. Claude 자동 재개는 없다. 지금부터 Codex 한 세션이 Project_PA의 Unity 제작을 맡는다.
-AI_WORKFLOW/03_TASKS/CODEX_DEMO_POLISH_FINISH_PROMPT.md를 실행 계약으로 적용해 Day 1 데모를 '완성된 게임처럼 보이고 손맛이 있는' 상태로 마감해라. VERTICAL SLICE STUDIO MODE를 활성화한다.
-loop-state.json에 새 approval `demoPolishFinishApproval`을 기록하고 D0~D12를 이 순서로 선승인한다(preapprovedThrough=D12, stopAtMilestone=FINAL_WINDOWS_HUMAN_REVIEW, Unity 소유자 Codex). 기존 demoFeedbackFinishApproval의 P1~P11 결과·거절·보류 기록은 보존한다.
-티켓마다 Studio 복구 예산(compile/fix 최대 3회, targeted Play 최대 3회, 전용 validator 최대 1개)을 승인한다. 대기 중인 P4 ReelHint·P6 DeviceIsolation 패치 적용도 D0 예산 안에서 승인한다.
-허용: 로컬에 이미 있는 에셋(Assets, ExternalAssetSources, Blender/Library)과 Unity에 이미 설치된 패키지(URP, Shader Graph 등) 사용, Editor 도구·Animator 레이어·셰이더·UI 테마 신규 작성. 금지: 외부 패키지/에셋 다운로드, Golden 씬·SmartphoneUI.cs·Save schema·KEEP 권위 재작성, 삭제, commit/push, 경사로 추가.
-HARD STOP과 FINAL_WINDOWS_HUMAN_REVIEW 외에는 티켓마다 추가 승인을 묻지 말고 계속 진행해라. 문서나 검증기만 만들고 끝내지 말고 실제 게임 화면을 바꿔라.
-```
+현재 사용자가 직접 발송할 문안은 `Tools/PaAgentConsole/startup/prompts/02_PRODUCTION_START.md`다. 기존 선택 approval·현재 checkpoint·단일 owner를 보존하며 새 approval이나 옛 D2 추가 예산을 만들지 않는다. 파일 열람/복사는 실행 승인이 아니다. 2026-10-06 원문 시작 지시의 Codex 고정·3/3/1·티켓 고정 순서는 폐기된 운영 규칙이며 백업과 기존 승인 이력에 보존한다.
 
 ## 목표
 
@@ -27,14 +25,14 @@ HARD STOP과 FINAL_WINDOWS_HUMAN_REVIEW 외에는 티켓마다 추가 승인을 
 
 범위 밖: Day 2 이후, 실제 농사·호미, 새 날씨·계절, 멀티플레이, 매입 가격 협상 같은 새 경제 규칙, 새 Save 필드, 곡면(Curved World) 셰이더 전면 적용.
 
-## 시작 상태 (2026-10-06 확인)
+## 역사적 시작 상태 (2026-10-06, 현재 실행 선택으로 재사용 금지)
 
 - `loop-state.json`: `demoProductionRouting.selectedApproval=demoFeedbackFinishApproval`, `unityEditorOwner=codex`, `activeTicket=P11_WINDOWS_DELIVERY`. 상태가 **BLOCKED_INPUT_OWNER**(사용자가 후보 PID 82524를 플레이 중)일 수 있다. 시작 메시지의 종료 확인 전에는 그 프로세스에 입력을 보내거나 다시 빌드하지 않는다.
 - 대기 패치: `Logs/CodexOpeningDemoFinal/P4-LandFish-20261005-001/PENDING-ReelHint.patch`(낚시 안내문·성공 표시 겹침), `PENDING-DeviceIsolation.patch`(P6).
 - 미해결: P9 지지발 미끄러짐·양손 그립(기존 3/3 소진), P10 단차 가독성·빈 광장·NPC 자연 루틴, 실제 오디오 청취 미확인, P11 최종 후보·새 프로세스 이어하기·성능.
 - 라이선스: `Assets/Art/animal-crossing-froggy-chair`(근거 없음)가 `Resources/DemoStructure/PioneerShopBase.prefab`, `SimpleFurniture.prefab`, `Prefabs/FroggyChair.prefab`, `Item_SimpleFurniture`의 모델·아이콘에 쓰인다. Free RPG Icons(Bread/Carrot/Wheat/Ore/IronBar 아이콘)는 라이선스 문서가 없다. `Assets/Art/Character/Chop.fbx`는 출처 기록이 없다. 셋 다 데모 화면에서 빼야 한다(파일 삭제 금지, 참조만 교체).
 
-## 티켓 (한 번에 하나, 이 순서)
+## 승인 범위 D0~D12 (기존 정의 보존, 최신 품질 순서·checkpoint에서 진행)
 
 각 티켓은 시작 전에 파일 목록·기존 권위·플레이어 결과·최소 검사를 짧게 보고한다. 같은 정상 카메라·해상도의 before/after GameView(동작은 정상 속도 영상)를 고유 폴더 `Logs/CodexDemoPolish/<티켓>-<시각>/`에 남긴다.
 
@@ -103,7 +101,7 @@ HARD STOP과 FINAL_WINDOWS_HUMAN_REVIEW 외에는 티켓마다 추가 승인을 
   - 상체 AvatarMask 액션 레이어와 트리거를 만든다: Shake, PickUp, Place, Interact/Craft, Talk.
   - 도구 휘두르기는 기존 그립을 유지하면서 상체 클립과 섞어, 몸통이 함께 움직이게 한다.
   - 동행 광부의 작업 동작이 실제 채굴로 보이게 한다. 대화 중에는 Idle_Talking을 쓴다.
-  - 이동 수치·카메라·입력 권위는 바꾸지 않는다. 기존 사용자 반려 기록(이동 모션)을 수락으로 바꾸지 않는다. 이 티켓에서 지지발 미끄러짐을 다시 다룰 때는 새 예산 안에서 원인과 비교 영상을 남긴다.
+  - 이동 수치·카메라·입력 권위는 바꾸지 않는다. 기존 사용자 반려 기록(이동 모션)을 수락으로 바꾸지 않는다. 이 티켓에서 지지발 미끄러짐을 다시 다룰 때는 기존 반려를 보존하고 원인과 같은 조건의 비교 영상을 남긴다.
   - `Chop.fbx`(출처 없음)는 쓰지 않는다.
 - 검사:
   - 맨손과 도끼·곡괭이·낚싯대·잠자리채로 각각 흔들기·줍기·설치·제작·대화를 한다.
@@ -188,8 +186,8 @@ HARD STOP과 FINAL_WINDOWS_HUMAN_REVIEW 외에는 티켓마다 추가 승인을 
 
 ## 레퍼런스
 
-- 기존 `Logs/CodexParallel/SteamDemoQuality/ReferenceReview-20261005-001/REFERENCE_AUDIT.md`와 로컬 딩컴 영상부터 쓴다.
-- 티켓마다 관찰 요소 3~5개 → 현재 차이 → 이번 구현 → 동일 조건 전후 비교를 증거에 남긴다.
+- 최신 References/ReferenceResearch 색인에서 해당 결정에 필요한 기존 관찰과 실제 웹 PC 영상 구간을 재사용한다. 설치된 딩컴 실행·입력·수정은 금지한다.
+- 관련 관찰 → 현재 차이 → 구현 → 동일 조건 전후 비교를 필요한 만큼 남긴다. 문서 수/항목 수를 작업 gate로 삼지 않는다.
   - 딩컴 기준: 흔들기·벌목 쓰러짐·채광 파편·도구 타격 손맛·아이콘·작업대 UI·바이옴 밀도
   - 동물의 숲 기준: 마을 생활감·주민 반응·UI 정보 위계
 - 캐릭터·아이콘·모델·UI 그래픽을 복제하지 않는다. 외부 영상은 관찰만 하고 내려받거나 가져오지 않는다.
@@ -203,7 +201,7 @@ HARD STOP과 FINAL_WINDOWS_HUMAN_REVIEW 외에는 티켓마다 추가 승인을 
   - 기능 PASS
   - presentation STRUCTURALLY IMPROVED / FAIL / UNVERIFIED
   - human ACCEPTED / REJECTED / UNVERIFIED
-- 예산 소진, 같은 blocker 2회, 저장 계약 변경 필요, 보호 파일 수정 필요, 다운로드 필요 시 HARD STOP하고 정확한 다음 행동을 한 번 기록한다.
-- 티켓 완료마다 `Docs/04_DEVELOPMENT_LOG/2026-10.md`에 한 번 기록하고, 바뀐 현재 문서의 해당 부분만 갱신한다. 중단 시 `CODEX_HANDOFF.md`를 덮어써 현재 티켓·예산·다음 행동을 남긴다.
+- 고정 수정 파일 수·총 작업 시간·compile/Play/validator 횟수나 같은 blocker의 발생 횟수로 중단하지 않는다. 무진전 반복은 원인·바꾼 접근·새 증거를 남겨 복구하고 모호한 실행은 확인 전 재시도하지 않는다. 현재 범위에서 안전 복구 불가, 실제 권위/Save 호환성/dirty 충돌, 유효한 사용자 반려·보류·미승인 결제/공개·최종 사람 검수 경계는 지킨다.
+- 티켓 완료마다 `Docs/04_DEVELOPMENT_LOG/2026-10.md`에 한 번 기록하고, 바뀐 현재 문서의 해당 부분만 갱신한다. 중단 시 `CODEX_HANDOFF.md`를 덮어써 현재 checkpoint·누적 시도/사용량·다음 행동을 남긴다.
 - 성능: 바이옴 드레싱·생태·입자 추가 전후로 같은 경로의 프레임 시간을 비교한다. 로딩 프레임은 따로 표시한다.
 - 끝까지 실제 도달한 상태만 보고한다. 사람 검수 전에는 RELEASE ACCEPTED를 선언하지 않는다.

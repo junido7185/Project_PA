@@ -597,11 +597,12 @@ public static class PA_BigIsland01Checks
         WorldGenerationResult legacy = WorldIslandGenerator.Generate(demo.Seed);
         Check(legacy.GenerationVersion == 1 && legacy.Definition.Width == 128, "default generator remains generation-v1/128");
         int[] counts = { 6, 8, 6, 4 };
+        int[] demoCounts = { 24, 96, 72, 16 };
         foreach (WorldResourceKind kind in Enum.GetValues(typeof(WorldResourceKind)))
         {
             int oldCount = legacy.ResourceSpawns.Count(s => s.Kind == kind);
             int newCount = demo.ResourceSpawns.Count(s => s.Kind == kind);
-            Check(oldCount == counts[(int)kind] && newCount == oldCount * 4, $"{kind} resource records {oldCount} -> {newCount}");
+            Check(oldCount == counts[(int)kind] && newCount == demoCounts[(int)kind], $"{kind} resource records {oldCount} -> {newCount}");
         }
         Check(WorldIslandGenerator.Generate(demo.Seed, WorldIslandGenerationSettings.Demo256).Checksum == demo.Checksum,
             "Demo256 deterministic checksum");

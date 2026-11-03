@@ -33,10 +33,8 @@ public sealed class FirstDayToolSurface : MonoBehaviour, IInteractable
         Vector3 flat = Vector3.ProjectOnPlane(transform.position - player.transform.position, Vector3.up);
         if (flat.sqrMagnitude > 2.05f * 2.05f || Vector3.Dot(player.transform.forward, flat.normalized) < .75f)
         { equipment.FailedUse("빗나갔어요.", false); _reacting = false; yield break; }
-        var held = EquipmentSystem.CurrentHeld(player);
-        bool matches = held != null && held.toolType == (Stone ? ToolType.Pickaxe : ToolType.Axe);
-        string message = matches ? Stone ? "이 바위는 지금 캘 수 없어요." : "이 나무는 지금 벨 수 없어요." :
-            Stone ? "바위는 곡괭이로 캘 수 있어요." : "나무는 도끼로 벨 수 있어요.";
+        string message = Stone ? "장식 바위는 채광할 수 없어요. '기본 곡괭이 가능' 표시를 찾아주세요." :
+            "장식 나무는 벌목할 수 없어요. '기본 도끼 가능' 표시를 찾아주세요.";
         equipment.FailedUse(message, true); GatherFeedback.ToolBlocked();
         FirstDayWorldPresentation.Toast(message, false);
         Quaternion rest = transform.rotation;
@@ -48,5 +46,5 @@ public sealed class FirstDayToolSurface : MonoBehaviour, IInteractable
         transform.rotation = rest; _reacting = false;
     }
 
-    public string GetInteractPrompt() => Stone ? "바위 두드리기" : "나무 두드리기";
+    public string GetInteractPrompt() => Stone ? "장식 바위 · 채광 불가" : "장식 나무 · 벌목 불가";
 }

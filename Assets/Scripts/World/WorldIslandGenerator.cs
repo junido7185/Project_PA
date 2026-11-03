@@ -634,10 +634,13 @@ public static class WorldIslandGenerator
             WorldResourceKind.Forage, ScaleSpawnCount(settings, 6),
             cell => cell.IsDryLand && cell.Biome == WorldBiomeType.Meadow && !cell.Terrain.HasPath);
         AddRankedSpawns(records, seed, generationVersion, cells, settings,
-            WorldResourceKind.Timber, ScaleSpawnCount(settings, 8),
+            // Preserve v1 and the existing v2 ranked prefix/keys so consumed resources remain consumed.
+            WorldResourceKind.Timber, ScaleSpawnCount(settings,
+                generationVersion == WorldIslandGenerationSettings.LegacyGenerationVersion ? 8 : 24),
             cell => cell.IsDryLand && cell.Biome == WorldBiomeType.Forest && !cell.Terrain.HasPath);
         AddRankedSpawns(records, seed, generationVersion, cells, settings,
-            WorldResourceKind.Stone, ScaleSpawnCount(settings, 6),
+            WorldResourceKind.Stone, ScaleSpawnCount(settings,
+                generationVersion == WorldIslandGenerationSettings.LegacyGenerationVersion ? 6 : 18),
             cell => cell.IsDryLand && cell.Biome == WorldBiomeType.Highland && !cell.Terrain.HasPath);
         AddRankedSpawns(records, seed, generationVersion, cells, settings,
             WorldResourceKind.Fish, ScaleSpawnCount(settings, 4),
