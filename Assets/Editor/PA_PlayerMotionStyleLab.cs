@@ -17,7 +17,7 @@ public static class PA_PlayerMotionStyleLab
 
     // ---------- 미리보기 렌더 ----------
     // 편집 모드의 SkinnedMeshRenderer는 Camera.Render 직전 뼈 변경을 스킨에 반영하지 않으므로 BakeMesh로 그린다.
-    sealed class Stage : IDisposable
+    internal sealed class Stage : IDisposable
     {
         public Scene Scene;
         // 바인드 자세(발바닥이 지면에 평평하게 닿은 원본 자세)의 발 뼈 높이·회전. 접지 목표와 발 각도 기준.
@@ -424,6 +424,142 @@ public static class PA_PlayerMotionStyleLab
         d.RootY = Keys("RootT.y", 0f, 0f, 0.95f);
         d.Pitch = Keys("Pitch", 0f, 0f, 0f, 0.3f, 4f, 1f, 0f);
         return d;
+    }
+
+    // ---------- 2026-10-31 딩컴 이동 재작업 (사용자: UAL 모캡은 "껄렁한 건달", 9월 PA_Style은 부자연) ----------
+    // 공식 PC 트레일러1 20.0~21.6s(정면·뒷모습 달리기 30fps) 관찰: 곧은 상체, 팔꿈치 약 90도로 주먹을 엉덩이 앞에 두고 몸 옆에서 작게 앞뒤,
+    // 무릎을 굽힌 짧은 보폭과 통통 튀는 상하, 머리 고정. 9월 클립과 다른 점: 팔을 편 채 늘어뜨리지 않고(마네킹 행진), 지지 중 무릎을
+    // 확실히 굽혀 몸이 내려앉았다 튄다. 주기는 딩컴(약 0.25s)보다 여유 있게 잡아(사용자 "반복이 너무 빠름" 이력) 보폭을 속도에 맞춘다.
+    // 지지발 이동 거리 = 게임 속도 × 지지 시간이 되게 ahead/behind를 계산해 발이 미끄러지지 않게 한다.
+    sealed class GaitSpec
+    {
+        public string Name;
+        public float Speed, Length, StanceEnd, FlightLift, Pitch, Spine, HeadNod, ArmFwd, ArmBack, ForeFwd, ForeBack, ArmDown, Twist;
+        public float[] StanceKnee, StanceToe;
+        public float SwingKickKnee, SwingKickThigh, SwingLiftKnee, SwingLiftThigh, SwingReachKnee, SwingReachThigh;
+    }
+
+    static MotionDef GaitDef(GaitSpec g)
+    {
+        var d = new MotionDef { Name = g.Name, Length = g.Length, GroundPerFrame = true, StanceEnd = g.StanceEnd, FlightLift = g.FlightLift };
+        float travel = g.Speed * g.Length * g.StanceEnd; // 지지 시간 동안 발이 몸 아래를 지나는 거리(m)
+        float ahead = travel * .5f, behind = -travel * .5f;
+        var ph = new List<float>(); var knee = new List<float>(); var thigh = new List<float>(); var toe = new List<float>();
+        for (int k = 0; k < 5; k++)
+        {
+            float s = k / 4f;
+            ph.Add(g.StanceEnd * s);
+            knee.Add(g.StanceKnee[k]);
+            thigh.Add(SolveThigh(g.StanceKnee[k], Mathf.Lerp(ahead, behind, s)));
+            toe.Add(g.StanceToe[k]);
+        }
+        float swing = 1f - g.StanceEnd; // 스윙 구간 안에서 차올림 → 무릎 들기 → 뻗기
+        ph.AddRange(new[] { g.StanceEnd + swing * .25f, g.StanceEnd + swing * .6f, g.StanceEnd + swing * .88f });
+        knee.AddRange(new[] { g.SwingKickKnee, g.SwingLiftKnee, g.SwingReachKnee });
+        thigh.AddRange(new[] { g.SwingKickThigh, g.SwingLiftThigh, g.SwingReachThigh });
+        toe.AddRange(new[] { -18f, -6f, 4f });
+        var thighKeys = new List<float>(); var kneeKeys = new List<float>(); var footKeys = new List<float>();
+        for (int i = 0; i < ph.Count; i++)
+        {
+            thighKeys.Add(ph[i]); thighKeys.Add(thigh[i]);
+            kneeKeys.Add(ph[i]); kneeKeys.Add(knee[i]);
+            footKeys.Add(ph[i]); footKeys.Add(SolveFoot(thigh[i], knee[i], toe[i]));
+        }
+        Both(d, "Upper Leg Front-Back", 0f, thighKeys.ToArray());
+        Both(d, "Lower Leg Stretch", 0f, kneeKeys.ToArray());
+        Both(d, "Foot Up-Down", 0f, footKeys.ToArray());
+        BothStatic(d, "Upper Leg In-Out", .04f);
+        BothStatic(d, "Upper Leg Twist In-Out", 0f);
+        // 팔: 같은 쪽 다리와 반대 위상(0.5). 앞으로 갈 때 팔꿈치를 더 굽혀 주먹이 배꼽 앞, 뒤로 갈 때 조금 펴 엉덩이 옆.
+        Both(d, "Arm Front-Back", .5f, 0f, g.ArmFwd, .5f, g.ArmBack);
+        Both(d, "Forearm Stretch", .5f, 0f, g.ForeFwd, .5f, g.ForeBack);
+        BothStatic(d, "Arm Down-Up", g.ArmDown);
+        BothStatic(d, "Arm Twist In-Out", .25f); // 위팔을 바깥으로 돌려 굽힌 전완이 배 앞을 가로지르지 않고 앞을 향하게
+        BothStatic(d, "Shoulder Down-Up", -.12f);
+        BothStatic(d, "Shoulder Front-Back", 0f);
+        BothStatic(d, "Hand Down-Up", 0f);
+        BothStatic(d, "Hand In-Out", 0f);
+        BothStatic(d, "Forearm Twist In-Out", 0f);
+        // 상체는 곧게(딩컴), 비틀림은 아주 작게만 — 큰 비틀림·머리 돌림이 "건달" 인상의 원인이었다. 머리는 앞숙임을 상쇄해 정면.
+        d.Static["Spine Front-Back"] = g.Spine;
+        d.Static["Chest Front-Back"] = 0f;
+        d.Static["UpperChest Front-Back"] = 0f;
+        d.Static["Head Nod Down-Up"] = g.HeadNod;
+        d.Static["Neck Nod Down-Up"] = 0f;
+        d.Tracks.Add(Keys("Chest Twist Left-Right", 0f, 0f, g.Twist, .5f, -g.Twist));
+        d.Tracks.Add(Keys("Head Turn Left-Right", 0f, 0f, -g.Twist * .8f, .5f, g.Twist * .8f));
+        d.RootY = new Track { Muscle = "RootT.y", Phase = new[] { 0f, .5f }, Value = new[] { .94f, .94f } }; // 접지는 GroundClip이 프레임마다 맞춘다
+        d.Pitch = Keys("Pitch", 0f, 0f, g.Pitch);
+        return d;
+    }
+
+    static GaitSpec DinkumRun() => new GaitSpec
+    {
+        Name = "PA_DK_Run", Speed = 4.2f, Length = .33f, StanceEnd = .4f, FlightLift = .02f, Pitch = 5f, Spine = .05f, HeadNod = -.03f,
+        StanceKnee = new[] { 1.0f, .84f, .78f, .88f, 1.04f }, StanceToe = new[] { 6f, 1f, 0f, -6f, -18f },
+        SwingKickKnee = .15f, SwingKickThigh = .28f, SwingLiftKnee = .25f, SwingLiftThigh = -.42f, SwingReachKnee = .85f, SwingReachThigh = -.22f,
+        ArmFwd = -.28f, ArmBack = .25f, ForeFwd = .05f, ForeBack = .4f, ArmDown = -.46f, Twist = .03f,
+    };
+
+    // Sprint: 1차(앞숙임 9°·깊은 무릎)는 게임 실측 지지발 자연 속도가 약 3.1m/s로 설계(6.72)의 절반이었다.
+    // 설계가 정확했던 Run(게임 실측 4.12 vs 설계 4.2)과 같은 자세에 팔 진폭·앞숙임만 조금 키운다. 지지 거리는 다리가 닿는 ±0.3m(설계 5.0m/s)로
+    // 두고 6.72m/s는 재생 배율(약 1.35)로 낸다 — 허벅지 해 범위를 넘는 ±0.4m는 발이 닿지 못해 실제 보폭이 줄었다.
+    static GaitSpec DinkumSprint() => new GaitSpec
+    {
+        Name = "PA_DK_Sprint", Speed = 5.0f, Length = .3f, StanceEnd = .4f, FlightLift = .022f, Pitch = 6.5f, Spine = .07f, HeadNod = -.045f,
+        StanceKnee = new[] { 1.0f, .82f, .76f, .87f, 1.04f }, StanceToe = new[] { 6f, 1f, 0f, -6f, -20f },
+        SwingKickKnee = .1f, SwingKickThigh = .32f, SwingLiftKnee = .2f, SwingLiftThigh = -.48f, SwingReachKnee = .82f, SwingReachThigh = -.26f,
+        ArmFwd = -.36f, ArmBack = .3f, ForeFwd = 0f, ForeBack = .35f, ArmDown = -.46f, Twist = .035f,
+    };
+
+    // 걷기: 대기↔달리기 사이 짧은 구간과 NPC 산책용. 양발 지지가 있는 통통한 걸음(체공 없음).
+    static GaitSpec DinkumWalk() => new GaitSpec
+    {
+        Name = "PA_DK_Walk", Speed = 1.5f, Length = .62f, StanceEnd = .6f, FlightLift = 0f, Pitch = 1.5f, Spine = .02f, HeadNod = 0f,
+        StanceKnee = new[] { 1.08f, .95f, .9f, .98f, 1.12f }, StanceToe = new[] { 8f, 2f, 0f, -4f, -14f },
+        SwingKickKnee = .45f, SwingKickThigh = .12f, SwingLiftKnee = .5f, SwingLiftThigh = -.35f, SwingReachKnee = .95f, SwingReachThigh = -.25f,
+        ArmFwd = -.22f, ArmBack = .2f, ForeFwd = .45f, ForeBack = .7f, ArmDown = -.58f, Twist = .02f,
+    };
+
+    // 대기: 두 발을 모으고 바로 선 귀여운 자세(체중 한쪽 기대기 없음). 숨쉬기(가슴·어깨)와 아주 느린 좌우 흔들림만.
+    static MotionDef DinkumIdleDef()
+    {
+        var d = new MotionDef { Name = "PA_DK_Idle", Length = 2.8f, GroundPerFrame = true };
+        float knee = 1.1f, idleThigh = SolveThigh(knee, 0f);
+        BothStatic(d, "Upper Leg Front-Back", idleThigh);
+        BothStatic(d, "Upper Leg In-Out", .07f);
+        BothStatic(d, "Lower Leg Stretch", knee);
+        BothStatic(d, "Foot Up-Down", SolveFoot(idleThigh, knee, 0f));
+        Both(d, "Arm Down-Up", 0f, 0f, -.6f, .5f, -.57f);
+        BothStatic(d, "Arm Front-Back", .02f);
+        BothStatic(d, "Forearm Stretch", .8f);
+        BothStatic(d, "Forearm Twist In-Out", 0f);
+        BothStatic(d, "Hand Down-Up", 0f);
+        Both(d, "Shoulder Down-Up", 0f, 0f, -.16f, .5f, -.1f);
+        d.Tracks.Add(Keys("Chest Front-Back", 0f, 0f, 0f, .5f, -.035f));
+        d.Tracks.Add(Keys("Spine Left-Right", 0f, .1f, .015f, .6f, -.015f));
+        d.Static["Spine Front-Back"] = 0f;
+        d.Static["UpperChest Front-Back"] = 0f;
+        d.Tracks.Add(Keys("Head Nod Down-Up", 0f, 0f, .03f, .5f, .05f));
+        d.RootY = Keys("RootT.y", 0f, 0f, .95f, .5f, .946f);
+        d.Pitch = Keys("Pitch", 0f, 0f, 0f);
+        return d;
+    }
+
+    // 딩컴 이동 4종을 생성해 PlayerMotionStyle 폴더에 저장한다. 점프는 기존 PA_Style 점프(같은 굽힌 팔·곧은 상체)를 쓴다.
+    internal static List<AnimationClip> BuildDinkumClips()
+    {
+        try
+        {
+            var clips = new List<AnimationClip>
+            {
+                SaveClip(BuildClip(DinkumIdleDef())), SaveClip(BuildClip(GaitDef(DinkumWalk()))),
+                SaveClip(BuildClip(GaitDef(DinkumRun()))), SaveClip(BuildClip(GaitDef(DinkumSprint()))),
+            };
+            foreach (var clip in clips) AssetDatabase.SaveAssetIfDirty(clip);
+            return clips;
+        }
+        finally { _solverStage?.Dispose(); _solverStage = null; }
     }
 
     const float IdleKnee = 1.15f; // 약 7도
