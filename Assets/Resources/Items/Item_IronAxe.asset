@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_IronAxe
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2026
+  itemName: "\uCCA0 \uB3C4\uB07C"
+  description: "\uCCA0 \uB0A0 \uB3C4\uB07C(\uD798 3). \uB098\uBB34\uB97C \uD55C\uB450
+    \uBC88\uC5D0 \uB118\uACA8\uC694. \uC784\uC5C5 \uC804\uBB38 \uBD84\uC57C\uC5D0\uC11C
+    \uB9CC\uB4E4\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: 9f631f7bba54c7145b91917b6cb7f3d7, type: 3}
+  maxStack: 1
+  model: {fileID: 4082183883496160074, guid: 777bc997947eb74488b3a1287a1d3190, type: 3}
+  basePrice: 0
+  toolType: 1
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

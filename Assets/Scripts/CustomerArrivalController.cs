@@ -87,7 +87,15 @@ public class CustomerArrivalController : MonoBehaviour
         public float leaveAt;
         public bool returning;
         public float returnStartedAt;
+        // 2026-11-03 가게 의자: 쇼핑을 마친 손님이 빈 의자에 앉아 잠깐 쉬었다 나간다(표현 전용, 판매·저장 권위 없음).
+        public GameObject seat;
+        public Vector3 seatPoint, seatApproach;
+        public bool seated;
+        public float seatPhaseUntil;
     }
+
+    public int SeatedThisOpening { get; private set; }
+    static readonly HashSet<GameObject> ClaimedSeats = new HashSet<GameObject>();
 
     readonly List<TouristVisit> _tourists = new List<TouristVisit>();
 
@@ -122,7 +130,7 @@ public class CustomerArrivalController : MonoBehaviour
         DisperseCustomers();
         _wasOpen = false;
         _invitedThisOpening = 0;
-        _touristsSpawnedThisOpening = 0;
+        _touristsSpawnedThisOpening = 0; SeatedThisOpening = 0;
         _nextInviteAt = 0f;
         _nextTouristInviteAt = 0f;
     }
@@ -179,7 +187,7 @@ public class CustomerArrivalController : MonoBehaviour
     void OnShopOpened()
     {
         _invitedThisOpening = 0;
-        _touristsSpawnedThisOpening = 0;
+        _touristsSpawnedThisOpening = 0; SeatedThisOpening = 0;
         _nextInviteAt = 0f; // 즉시 첫 손님 초대
         _nextTouristInviteAt = Time.time + Mathf.Max(0.5f, firstTouristDelay);
     }
@@ -390,13 +398,15 @@ public class CustomerArrivalController : MonoBehaviour
         source = null;
         sourceVisual = null;
         _npcBuffer.Clear();
+        HashSet<Mesh> companionLooks = CompanionLooks();
 
         foreach (NpcController npc in FindObjectsByType<NpcController>(FindObjectsSortMode.None))
         {
             if (npc == null || npc.profile == null || IsTransientTourist(npc)) continue;
             NpcScheduleController schedule = npc.GetComponent<NpcScheduleController>();
             if (schedule == null || schedule.scheduleData == null) continue;
-            if (FindCharacterVisual(npc.transform) == null) continue;
+            Transform visual = FindCharacterVisual(npc.transform);
+            if (visual == null || SharesLook(visual, companionLooks)) continue;
             _npcBuffer.Add(npc);
         }
 
@@ -422,6 +432,10 @@ public class CustomerArrivalController : MonoBehaviour
             FindCharacterVisual(candidate.spawnPrefab.transform) == null);
         candidateSources.Sort((left, right) => string.CompareOrdinal(
             left.ResolveDisplayName(), right.ResolveDisplayName()));
+        // 함께 온 동행과 같은 외형(예: 광부 안전모)의 손님은 같은 사람처럼 보인다. 다른 외형이 남아 있을 때만 거른다.
+        var distinct = candidateSources.FindAll(candidate =>
+            !SharesLook(FindCharacterVisual(candidate.spawnPrefab.transform), companionLooks));
+        if (distinct.Count > 0) candidateSources = distinct;
         if (candidateSources.Count == 0) return false;
 
         NpcCandidateData selected = candidateSources[
@@ -429,6 +443,24 @@ public class CustomerArrivalController : MonoBehaviour
         source = selected.spawnPrefab.GetComponentInChildren<NpcController>(true);
         sourceVisual = FindCharacterVisual(selected.spawnPrefab.transform);
         return source != null && source.profile != null && sourceVisual != null;
+    }
+
+    // 데모 동행(DemoCompanionRoutine)의 피부 메시. 같은 메시를 쓰는 원본은 손님 외형으로 쓰지 않는다.
+    static HashSet<Mesh> CompanionLooks()
+    {
+        var meshes = new HashSet<Mesh>();
+        foreach (var companion in FindObjectsByType<DemoCompanionRoutine>(FindObjectsSortMode.None))
+            foreach (var skin in companion.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (skin.sharedMesh != null) meshes.Add(skin.sharedMesh);
+        return meshes;
+    }
+
+    static bool SharesLook(Transform visual, HashSet<Mesh> companionLooks)
+    {
+        if (visual == null || companionLooks.Count == 0) return false;
+        foreach (var skin in visual.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            if (skin.sharedMesh != null && companionLooks.Contains(skin.sharedMesh)) return true;
+        return false;
     }
 
     static Transform FindCharacterVisual(Transform root)
@@ -545,6 +577,12 @@ public class CustomerArrivalController : MonoBehaviour
             if (!visit.shoppingStarted)
                 continue;
 
+            if (visit.seat != null)
+            {
+                UpdateSeat(visit);
+                continue;
+            }
+
             if (visit.waitingToLeave)
             {
                 if (Time.timeSinceLevelLoad >= visit.leaveAt && !BeginTouristReturn(visit, "쇼핑 종료"))
@@ -563,6 +601,7 @@ public class CustomerArrivalController : MonoBehaviour
                 visit.npc.Pause();
                 visit.waitingToLeave = true;
                 visit.leaveAt = Time.timeSinceLevelLoad + 2.6f;
+                TryTakeSeat(visit);
             }
             else if (timedOutVisit && !BeginTouristReturn(visit, "방문 시간 초과"))
             {
@@ -586,9 +625,110 @@ public class CustomerArrivalController : MonoBehaviour
         }
     }
 
+    // 상점 안의 빈 의자 하나를 맡아 그 앞까지 걷는다. 의자 모양(PA_DemoIconBake.BuildChair: Seat·BackTop)에서 좌석 높이와 정면을 읽는다.
+    void TryTakeSeat(TouristVisit visit)
+    {
+        var settlement = DemoSettlementController.Instance;
+        var agent = visit.npc != null ? visit.npc.GetComponent<NavMeshAgent>() : null;
+        if (settlement == null || agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh) return;
+        foreach (var chair in settlement.ShopChairs())
+        {
+            if (chair == null || ClaimedSeats.Contains(chair)) continue;
+            if (!SeatOf(chair, out Vector3 seatPoint, out Vector3 facing)) continue;
+            Vector3 approach = seatPoint + facing * .6f; approach.y = chair.transform.position.y;
+            if (!NavMesh.SamplePosition(approach, out var hit, 1.2f, NavMesh.AllAreas)) continue;
+            var path = new NavMeshPath();
+            if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete || !agent.SetPath(path)) continue;
+            agent.isStopped = false;
+            ClaimedSeats.Add(chair);
+            visit.seat = chair;
+            visit.seatPoint = seatPoint;
+            visit.seatApproach = hit.position;
+            visit.seated = false;
+            visit.seatPhaseUntil = Time.timeSinceLevelLoad + 8f; // 걸어가기 제한
+            return;
+        }
+    }
+
+    void UpdateSeat(TouristVisit visit)
+    {
+        var agent = visit.npc.GetComponent<NavMeshAgent>();
+        float now = Time.timeSinceLevelLoad;
+        if (!visit.seated)
+        {
+            bool arrived = agent != null && agent.isOnNavMesh && !agent.pathPending && agent.remainingDistance <= .35f;
+            if (!arrived && now < visit.seatPhaseUntil) return;
+            if (!arrived) { LeaveSeat(visit); return; } // 못 가면 앉지 않고 평소처럼 나간다.
+            agent.isStopped = true;
+            Vector3 face = visit.seatApproach - visit.seatPoint; face.y = 0f;
+            if (face.sqrMagnitude > .0001f) visit.npc.transform.rotation = Quaternion.LookRotation(face.normalized);
+            var pose = visit.npc.GetComponent<NpcSitPose>() ?? visit.npc.gameObject.AddComponent<NpcSitPose>();
+            if (!pose.Sit(visit.seatPoint)) { LeaveSeat(visit); return; }
+            visit.seated = true;
+            visit.seatPhaseUntil = now + 5.5f;
+            SeatedThisOpening++;
+            visit.npc.GetComponentInChildren<NpcBubbleUI>(true)?.Show($"{visit.npc.profile?.npcName ?? "여행 손님"}: 잠깐 쉬었다 갈게요.", 2.4f);
+            Debug.Log($"🪑 [CustomerArrival] {visit.npc.profile?.npcName ?? visit.npc.name} 의자에 앉음");
+            return;
+        }
+        if (now >= visit.seatPhaseUntil) LeaveSeat(visit);
+    }
+
+    // 일어나서 의자를 돌려주고, 평소 퇴장(waitingToLeave → BeginTouristReturn)으로 잇는다.
+    void LeaveSeat(TouristVisit visit)
+    {
+        if (visit == null) return;
+        if (visit.seat != null) ClaimedSeats.Remove(visit.seat);
+        visit.seat = null;
+        var pose = visit.npc != null ? visit.npc.GetComponent<NpcSitPose>() : null;
+        if (pose != null) pose.Stand();
+        var agent = visit.npc != null ? visit.npc.GetComponent<NavMeshAgent>() : null;
+        if (agent != null && agent.isOnNavMesh) agent.isStopped = false;
+        visit.waitingToLeave = true;
+        visit.leaveAt = Time.timeSinceLevelLoad + (visit.seated ? .45f : 0f);
+        visit.seated = false;
+    }
+
+    // 좌석 윗면 가운데와 앉은 사람이 볼 방향. 개구리 의자(SimpleFurniture)는 플레이어 앉기용 Sitpoint(정면 = forward)를 쓰고
+    // 좌석 높이는 의자 높이의 42%로 본다. 소유 의자 모델(BuildChair)은 Seat 윗면과 등받이(BackTop) 반대쪽을 쓴다.
+    static bool SeatOf(GameObject chair, out Vector3 seatPoint, out Vector3 facing)
+    {
+        seatPoint = default; facing = default;
+        var renderers = chair.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) return false;
+        Bounds all = renderers[0].bounds; foreach (var r in renderers) all.Encapsulate(r.bounds);
+        var sit = FindChild(chair.transform, "Sitpoint");
+        var seatPart = FindChild(chair.transform, "Seat");
+        var back = FindChild(chair.transform, "BackTop");
+        if (sit != null)
+        {
+            facing = sit.forward;
+            seatPoint = new Vector3(sit.position.x, all.min.y + all.size.y * .42f, sit.position.z);
+        }
+        else if (seatPart != null && back != null && seatPart.GetComponent<Renderer>() != null)
+        {
+            Bounds seat = seatPart.GetComponent<Renderer>().bounds;
+            facing = seat.center - back.position;
+            seatPoint = new Vector3(seat.center.x, seat.max.y, seat.center.z);
+        }
+        else return false;
+        facing.y = 0f;
+        if (facing.sqrMagnitude < .0001f) return false;
+        facing.Normalize();
+        return true;
+    }
+
+    static Transform FindChild(Transform root, string name)
+    {
+        foreach (var child in root.GetComponentsInChildren<Transform>(true))
+            if (child.name == name) return child;
+        return null;
+    }
+
     bool BeginTouristReturn(TouristVisit visit, string reason)
     {
         if (visit == null || visit.npc == null) return false;
+        if (visit.seat != null) LeaveSeat(visit);
         visit.npc.SetShoppingPriority(false);
         visit.npc.Pause();
 
@@ -618,6 +758,7 @@ public class CustomerArrivalController : MonoBehaviour
     static void DestroyTourist(TouristVisit visit)
     {
         if (visit == null) return;
+        if (visit.seat != null) { ClaimedSeats.Remove(visit.seat); visit.seat = null; }
         if (visit.root != null)
         {
             visit.root.SetActive(false);

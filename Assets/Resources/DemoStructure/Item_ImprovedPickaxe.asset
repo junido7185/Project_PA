@@ -13,11 +13,13 @@ MonoBehaviour:
   m_Name: Item_ImprovedPickaxe
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 2022
-  itemName: Improved Pickaxe
-  description: 
+  itemName: "\uAD6C\uB9AC \uACE1\uAD2D\uC774"
+  description: "\uAD6C\uB9AC \uB0A0\uC744 \uB367\uB304 \uACE1\uAD2D\uC774(\uD798
+    2). \uACE0\uC9C0\uB300 \uCCA0 \uAD11\uB9E5\uB3C4 \uCE98 \uC218 \uC788\uACE0,
+    \uAD11\uBD80 \uB3D9\uB8CC\uC5D0\uAC8C \uC8FC\uBA74 \uC77C\uC774 \uBE68\uB77C\uC838\uC694."
   icon: {fileID: 21300000, guid: ff07b4fef9481db4ba5d25638b626077, type: 3}
   maxStack: 1
-  model: {fileID: 1912750664959970827, guid: e93c1c207ccc541428fca6959dfbaa96, type: 3}
+  model: {fileID: 3577108074868921814, guid: 79d7ac85c99572540b4a4a5e4cbb825a, type: 3}
   basePrice: 10
   toolType: 2
   category: 4

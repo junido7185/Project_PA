@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Starfish
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2036
+  itemName: "\uBD88\uAC00\uC0AC\uB9AC"
+  description: "\uBB3C\uAC00\uC5D0 \uAC00\uB054 \uC62C\uB77C\uC624\uB294 \uC8FC\uD669
+    \uBD88\uAC00\uC0AC\uB9AC. \uD574\uBCC0\uC5D0\uC11C \uAC00\uC7A5 \uB4DC\uBB38
+    \uBC1C\uACAC\uBB3C\uC774\uB77C \uAC12\uC774 \uC88B\uC544\uC694."
+  icon: {fileID: 21300000, guid: 1920febaf55352c4985e18bab3d9eebd, type: 3}
+  maxStack: 99
+  model: {fileID: 2737389324060895838, guid: 00afebf19297e4847b74eb0334763063, type: 3}
+  basePrice: 24
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

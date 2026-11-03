@@ -6,19 +6,38 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
 {
     public const string ControllerResource = "PlayerLocomotion/PlayerLocomotion";
 
-    // 블렌드 임계값(게임 속도, m/s): 걷기 입력 4.2는 Jog, Shift 6.72는 Sprint가 담당한다.
-    public const float WalkNaturalSpeed = 0.78f;
-    public const float JogNaturalSpeed = 4.29f;
-    public const float SprintNaturalSpeed = 6.60f;
+    // 블렌드 임계값(게임 속도, m/s): 걷기 0.8, 기본 이동 4.2는 Run, Shift 6.72는 Sprint가 담당한다.
+    // 2026-10-31 2차(사용자: UAL 모캡 이동은 "껄렁한 건달"): 딩컴 트레일러 관찰 기반 키 포즈 PA_DK_* 클립.
+    // 2026-11-01 3차(사용자: 키 포즈 이동은 "로봇처럼 기계적"): 반다이남코 리서치 모캡(CC BY-NC 4.0) 리타깃 PA_MC_* 클립
+    // (PA_MocapLocomotion.BuildProduct 생성·연결). C-01은 다리가 짧아 보폭 속도가 낮으므로 재생 배율 상한을 넓힌다.
+    // 2026-11-02 4차(사용자: "모션이 바보 같다"): 아이(childish) 연기 대시 → 배우 기본(normal) 걷기·달리기로 교체.
+    public const float WalkNaturalSpeed = 0.8f;
+    public const float JogNaturalSpeed = 4.2f;
+    public const float SprintNaturalSpeed = 6.72f;
 
-    // 각 클립이 다리 보정 C-01에서 지지발을 고정한 채 이동하는 속도(m/s). 재생 배율 = 실제 속도 / 이 값.
-    // PA_Style_Run 3.54, PA_Style_Sprint 5.06: 게임 Animator에서 제자리·재생 배율 1로 재생해 지면에 닿은 메시(최저 10정점)의 뒤쪽 속도를 잰 값.
-    // 편집기 SampleAnimation 측정은 약 1.3~1.4배 크게 나와 쓰지 않는다. 걷기 구간도 Run 클립을 쓴다.
-    // 2026-09-29 기본 이동 보폭을 늘려 반복을 늦춤(사용자 피드백). 발이 맞는 값은 4.6이지만, 사용자 선택으로 애니메이션만 더 늦춰
-    // 6.0을 쓴다(4.2m/s에서 재생 배율 약 0.7, 지지발 약 1.2m/s 미끄러짐 감수).
-    [SerializeField] float walkStrideSpeed = 6.0f;
-    [SerializeField] float jogStrideSpeed = 6.0f;
-    [SerializeField] float sprintStrideSpeed = 5.06f;
+    // 각 클립이 C-01에서 지지발을 고정한 채 이동하는 속도(m/s). 재생 배율 = 실제 속도 / 이 값.
+    // 2026-11-02 기본(normal) 스타일 클립 보고서(Feedback-20261102/mocap-normal) naturalSpeed: Walk 0.39, Run 2.97, Sprint 3.32.
+    // 게임 촬영 미끄럼 지표(발목 높이로 지지 판정)는 앞꿈치로 딛는 기본 달리기에서 실제 지지 프레임을 놓쳐(Run 2.7/2.85 모두
+    // |slip| 중앙 1.4~1.8, 부호 +0.2~0.6으로 재생 배율에 반응 없음) 보정 근거로 쓰지 않는다. 클립 실측(2.97)에 가까운 2.85를 쓴다.
+    // Sprint는 6.72/3.15가 이미 재생 상한(2.1)이다. 기본 이동 4.2m/s는 약 1.47배로 재생한다.
+    public const float WalkStride = 0.4f, RunStride = 2.85f, SprintStride = 3.15f;
+    public const float MinPlayback = 0.6f, MaxPlayback = 2.1f;
+    [SerializeField] float walkStrideSpeed = WalkStride;
+    [SerializeField] float jogStrideSpeed = RunStride;
+    [SerializeField] float sprintStrideSpeed = SprintStride;
+
+    // NPC(클립 이동 모드)도 같은 클립·같은 보정값으로 재생 배율을 정한다.
+    public static float DefaultPlayback(float speed) => Playback(speed, WalkStride, RunStride, SprintStride);
+
+    // 걷기 임계값 아래(대기→걷기 섞임)는 1배에서 임계값의 배율까지 이어 붙여 재생 속도가 끊기지 않게 한다.
+    static float Playback(float speed, float walk, float run, float sprint)
+    {
+        if (speed < WalkNaturalSpeed) return Mathf.Lerp(1f, Mathf.Clamp(WalkNaturalSpeed / walk, MinPlayback, MaxPlayback), speed / WalkNaturalSpeed);
+        float stride = speed <= JogNaturalSpeed
+            ? Mathf.Lerp(walk, run, Mathf.InverseLerp(WalkNaturalSpeed, JogNaturalSpeed, speed))
+            : Mathf.Lerp(run, sprint, Mathf.InverseLerp(JogNaturalSpeed, SprintNaturalSpeed, speed));
+        return Mathf.Clamp(speed / stride, MinPlayback, MaxPlayback);
+    }
 
     static readonly int MoveSpeedId = Animator.StringToHash("MoveSpeed");
     static readonly int PlaybackId = Animator.StringToHash("LocomotionPlayback");
@@ -105,7 +124,7 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
         if (_speed < 0.02f && measured == 0f) _speed = 0f;
 
         _animator.SetFloat(MoveSpeedId, _speed);
-        _animator.SetFloat(PlaybackId, _speed < WalkNaturalSpeed ? 1f : Mathf.Clamp(_speed / StrideSpeedAt(_speed), 0.6f, 1.4f));
+        _animator.SetFloat(PlaybackId, Playback(_speed, walkStrideSpeed, jogStrideSpeed, sprintStrideSpeed));
 
         // 경사·작은 턱의 한두 프레임 isGrounded 끊김은 낙하로 보지 않는다.
         // 아래 지면이 stepOffset보다 멀면 실제 단차 낙하이므로 발이 떨어진 프레임부터 공중으로 본다.
@@ -122,14 +141,6 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
                                  GroundDistance(_body.stepOffset) <= _body.stepOffset);
         _animator.SetBool(GroundedId, Grounded);
         _animator.SetFloat(VerticalSpeedId, _player != null ? _player.VerticalSpeed : 0f);
-    }
-
-    // 블렌드 트리와 같은 구간 가중치로 두 클립의 보폭 속도를 보간한다.
-    float StrideSpeedAt(float speed)
-    {
-        if (speed <= JogNaturalSpeed)
-            return Mathf.Lerp(walkStrideSpeed, jogStrideSpeed, Mathf.InverseLerp(WalkNaturalSpeed, JogNaturalSpeed, speed));
-        return Mathf.Lerp(jogStrideSpeed, sprintStrideSpeed, Mathf.InverseLerp(JogNaturalSpeed, SprintNaturalSpeed, speed));
     }
 
     // 스폰/워프 직후 CC는 skin 안쪽(예: 0.04m)에 멈춰 있고 첫 수평 이동 뒤에야 skinWidth 높이로 정렬된다.
@@ -186,29 +197,45 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
     }
 
     // P9 — 손 장착·도구 동작과 공중 팔 자세. Animator 자세 위에 오른팔 두 뼈를 목표 방향으로 돌리고 도구 방향을 직접 정한다.
-    // 키 방향은 캐릭터 기준(x 오른쪽, y 위, z 앞). 접촉 순간 0.28초는 GatherFeedback.ContactDelay와 같다.
-    struct ArmKey
+    // 키 방향은 캐릭터 기준(x 오른쪽, y 위, z 앞). 접촉 키는 GatherFeedback.ContactDelay를 사용한다.
+    // NPC 손 도구(NpcHeldToolPose)도 같은 키·보간·팔 풀이를 쓴다(2026-11-02).
+    internal struct ArmKey
     {
         public float t, chest; public Vector3 upper, fore, tool;
         public ArmKey(float t, Vector3 upper, Vector3 fore, Vector3 tool, float chest = 0f) { this.t = t; this.upper = upper; this.fore = fore; this.tool = tool; this.chest = chest; }
     }
 
-    static readonly ArmKey CarryHeavy = new ArmKey(0f, new Vector3(.15f, -1f, .1f), new Vector3(.1f, -.45f, .9f), new Vector3(.3f, .65f, .7f));
-    static readonly ArmKey[] AxeSwing =
+    internal static readonly ArmKey CarryHeavy =new ArmKey(0f, new Vector3(.15f, -1f, .1f), new Vector3(.1f, -.45f, .9f), new Vector3(.3f, .65f, .7f));
+    // 머리 뒤로 접히던 준비 자세를 위·앞·오른쪽에 둔다. 짧은 홀드 중 양손은 기존 shaft grip을 따른다.
+    static readonly ArmKey AxePrepare = new ArmKey(.12f, new Vector3(.55f, .8f, .15f), new Vector3(-.12f, .82f, .56f), new Vector3(.24f, .94f, .25f), -4f);
+    static readonly ArmKey PickaxePrepare = new ArmKey(.12f, new Vector3(.55f, .82f, .12f), new Vector3(-.1f, .86f, .5f), new Vector3(.25f, .95f, .2f), -4f);
+    internal static readonly ArmKey[] AxeSwing =
     {
         CarryHeavy,
-        new ArmKey(.16f, new Vector3(.25f, .85f, -.25f), new Vector3(.05f, .75f, -.65f), new Vector3(0f, .25f, -1f), -6f),
-        new ArmKey(.28f, new Vector3(.1f, -.15f, 1f), new Vector3(0f, -.5f, 1f), new Vector3(0f, -.35f, 1f), 12f),
-        new ArmKey(.40f, new Vector3(.1f, -.45f, .9f), new Vector3(0f, -.75f, .65f), new Vector3(0f, -.65f, .75f), 8f),
-        new ArmKey(.56f, CarryHeavy.upper, CarryHeavy.fore, CarryHeavy.tool)
+        AxePrepare,
+        new ArmKey(.20f, AxePrepare.upper, AxePrepare.fore, AxePrepare.tool, AxePrepare.chest),
+        new ArmKey(GatherFeedback.ContactDelay, new Vector3(.1f, -.15f, 1f), new Vector3(0f, -.35f, 1f), new Vector3(.02f, -.3f, 1f), 12f),
+        new ArmKey(.42f, new Vector3(.1f, -.45f, .9f), new Vector3(0f, -.75f, .65f), new Vector3(0f, -.65f, .75f), 8f),
+        new ArmKey(GatherFeedback.HeavyToolReturnDelay, CarryHeavy.upper, CarryHeavy.fore, CarryHeavy.tool)
     };
-    static readonly ArmKey[] PickaxeSwing =
+    internal static readonly ArmKey[] PickaxeSwing =
     {
         CarryHeavy,
-        new ArmKey(.16f, new Vector3(.25f, .9f, -.2f), new Vector3(.05f, .8f, -.6f), new Vector3(0f, .3f, -1f), -6f),
-        new ArmKey(.28f, new Vector3(.1f, -.3f, 1f), new Vector3(0f, -.75f, .8f), new Vector3(0f, -.7f, .7f), 16f),
-        new ArmKey(.40f, new Vector3(.1f, -.55f, .85f), new Vector3(0f, -.85f, .55f), new Vector3(0f, -.8f, .55f), 10f),
-        new ArmKey(.56f, CarryHeavy.upper, CarryHeavy.fore, CarryHeavy.tool)
+        PickaxePrepare,
+        new ArmKey(.20f, PickaxePrepare.upper, PickaxePrepare.fore, PickaxePrepare.tool, PickaxePrepare.chest),
+        // 손과 날을 바위 윗면 쪽으로 뻗는다. 대상 IK나 타격 판정은 추가하지 않는다.
+        new ArmKey(GatherFeedback.ContactDelay, new Vector3(.12f, -.25f, 1f), new Vector3(.02f, -.3f, 1f), new Vector3(.05f, -.4f, 1f), 16f),
+        new ArmKey(.42f, new Vector3(.1f, -.55f, .85f), new Vector3(0f, -.85f, .55f), new Vector3(0f, -.8f, .55f), 10f),
+        new ArmKey(GatherFeedback.HeavyToolReturnDelay, CarryHeavy.upper, CarryHeavy.fore, CarryHeavy.tool)
+    };
+    // 삽 파기(2026-11-03): 날을 앞 아래로 겨눴다가(준비) 땅에 찔러 넣고(접촉) 흙을 떠 올린다(들기). 손잡이 끝을 오른손, 자루 중간을 왼손이 받친다.
+    internal static readonly ArmKey[] ShovelDig =
+    {
+        CarryHeavy,
+        new ArmKey(.12f, new Vector3(.3f, .15f, .6f), new Vector3(.05f, .25f, .95f), new Vector3(.1f, -.35f, .95f), -4f),
+        new ArmKey(GatherFeedback.ContactDelay, new Vector3(.12f, -.4f, .9f), new Vector3(0f, -.65f, .75f), new Vector3(0f, -.9f, .45f), 14f),
+        new ArmKey(.44f, new Vector3(.1f, -.2f, .95f), new Vector3(0f, -.15f, .98f), new Vector3(0f, .15f, 1f), 4f),
+        new ArmKey(GatherFeedback.HeavyToolReturnDelay, CarryHeavy.upper, CarryHeavy.fore, CarryHeavy.tool)
     };
     static readonly ArmKey CarryNet = new ArmKey(0f, new Vector3(.15f, -1f, .1f), new Vector3(.1f, -.1f, 1f), new Vector3(.05f, .9f, .45f));
     static readonly ArmKey[] NetSwing =
@@ -246,7 +273,7 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
     Vector3 Local(Vector3 v) => (transform.right * v.x + transform.up * v.y + transform.forward * v.z).normalized;
 
     // 뼈가 자식 뼈를 가리키는 방향을 목표 방향으로 돌린다(기존 자세 위에 가중치로 덮는다).
-    static void Aim(Transform bone, Transform child, Vector3 direction, float weight)
+    internal static void Aim(Transform bone, Transform child, Vector3 direction, float weight)
     {
         if (bone == null || child == null || weight <= 0f) return;
         Vector3 current = child.position - bone.position;
@@ -279,7 +306,7 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
     void ApplyToolPose()
     {
         ToolType tool = HeldTool();
-        bool handled = tool == ToolType.Axe || tool == ToolType.Pickaxe || tool == ToolType.Net || tool == ToolType.FishingRod;
+        bool handled = tool == ToolType.Axe || tool == ToolType.Pickaxe || tool == ToolType.Net || tool == ToolType.FishingRod || tool == ToolType.Shovel;
         _toolWeight = Mathf.MoveTowards(_toolWeight, handled ? 1f : 0f, Time.deltaTime * 6f);
         SupportingTool = false;
         SupportGripError = float.PositiveInfinity;
@@ -291,6 +318,7 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
         {
             case ToolType.Axe: pose = Sample(AxeSwing, action); break;
             case ToolType.Pickaxe: pose = Sample(PickaxeSwing, action); break;
+            case ToolType.Shovel: pose = Sample(ShovelDig, action); break;
             case ToolType.Net: pose = Sample(NetSwing, action); break;
             default:
                 bool casting = FishingSpot.ActiveDirectCaster == gameObject;
@@ -336,10 +364,10 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
     void ApplySupportGrip(ToolType tool, float action, Transform visual)
     {
         if (_leftUpperArm == null || _leftLowerArm == null || _leftHand == null) return;
-        bool heavy = tool == ToolType.Axe || tool == ToolType.Pickaxe;
+        bool heavy = tool == ToolType.Axe || tool == ToolType.Pickaxe || tool == ToolType.Shovel;
         bool rod = tool == ToolType.FishingRod;
         float pull = Time.time - FishingSpot.LastDirectPullAt;
-        bool wanted = Grounded && (heavy && action >= 0f && action < .58f || rod &&
+        bool wanted = Grounded && (heavy && action >= 0f && action < GatherFeedback.HeavyToolReturnDelay + .02f || rod &&
             (FishingSpot.ActiveDirectCaster == gameObject || action >= 0f && action < .5f || pull >= 0f && pull < .45f));
         _supportGripWeight = Mathf.MoveTowards(_supportGripWeight, wanted ? 1f : 0f, Time.deltaTime * 12f);
         if (_supportGripWeight <= .001f || !heavy && !rod) return;
@@ -382,7 +410,7 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
         palm = hand.InverseTransformDirection(normal.normalized);
     }
 
-    static void AlignGripHand(Transform hand, Vector3 fingerAxis, Vector3 palmAxis, Vector3 shaft, Vector3 inward, float weight)
+    internal static void AlignGripHand(Transform hand, Vector3 fingerAxis, Vector3 palmAxis, Vector3 shaft, Vector3 inward, float weight)
     {
         Vector3 normal = Vector3.ProjectOnPlane(inward, shaft).normalized;
         if (normal.sqrMagnitude < .001f) return;
@@ -391,7 +419,7 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
         hand.rotation = Quaternion.Slerp(hand.rotation, target, weight);
     }
 
-    static void SolveArm(Transform upper, Transform lower, Transform hand, Vector3 target, Vector3 fallbackPole, float weight)
+    internal static void SolveArm(Transform upper, Transform lower, Transform hand, Vector3 target, Vector3 fallbackPole, float weight)
     {
         // Keep the authored local wrist pose so it follows the solved forearm instead of bending back to the old world angle.
         Vector3 a = upper.position, b = lower.position, c = hand.position;
@@ -436,7 +464,7 @@ public sealed class PlayerLocomotionAnimator : MonoBehaviour
     }
 
     // 키 사이를 부드럽게(smoothstep) 잇는다. 범위를 벗어나면 첫/끝 자세.
-    static ArmKey Sample(ArmKey[] keys, float t)
+    internal static ArmKey Sample(ArmKey[] keys, float t)
     {
         if (t <= keys[0].t || t >= keys[keys.Length - 1].t) return t >= keys[keys.Length - 1].t ? keys[keys.Length - 1] : keys[0];
         for (int i = 1; i < keys.Length; i++)

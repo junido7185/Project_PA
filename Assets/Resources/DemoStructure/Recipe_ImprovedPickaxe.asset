@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
   m_Name: Recipe_ImprovedPickaxe
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
-  recipeName: Improved Pickaxe
+  recipeName: "\uAD6C\uB9AC \uACE1\uAD2D\uC774"
   icon: {fileID: 21300000, guid: ff07b4fef9481db4ba5d25638b626077, type: 3}
   description: 
   ingredients:
   - item: {fileID: 11400000, guid: 9e64a6681df3bd44cac10562bce30aa9, type: 2}
     count: 1
+  - item: {fileID: 11400000, guid: a6497275068553646a7317a83cf883fd, type: 2}
+    count: 2
   - item: {fileID: 11400000, guid: a059185af048eab4bb38e0a3b4b62602, type: 2}
-    count: 2
-  - item: {fileID: 11400000, guid: 8283f21f84e1134458262a89b7e29984, type: 2}
-    count: 2
+    count: 1
   outputItem: {fileID: 11400000, guid: 1b9f8a9f909e80c4cbfaf1113a4c4258, type: 2}
   outputCount: 1
   baseOutputQuality: 1.2
   ingredientQualityWeight: 0.3
   requiredTier: 0
-  requiredWorkbench: 1
+  requiredWorkbench: 3
   inputItem: {fileID: 0}
   inputCount: 0

@@ -72,10 +72,11 @@ public static class PA_DemoStructureSetup
             new DemoPlaceableEntry { item=Resources.Load<Item>("FirstDayStudio/Item_2013"), key="resident-tent", kind=DemoPlaceableKind.ResidentTent, buildingResource="DepartureTutorial/Settlement/Shelter", size=new Vector2Int(2,2), surfaces=WorldPlaceableSurface.Settlement },
             new DemoPlaceableEntry { item=Resources.Load<Item>("FirstDayStudio/Item_2014"), key="field-workbench", kind=DemoPlaceableKind.Workbench, buildingResource="DemoStructure/FieldWorkbench", surfaces=WorldPlaceableSurface.Settlement | WorldPlaceableSurface.Utility | WorldPlaceableSurface.Living },
             new DemoPlaceableEntry { item=standItem, key="display-stand", kind=DemoPlaceableKind.DisplayStand, buildingResource="DemoStructure/StarterDisplayStand", surfaces=WorldPlaceableSurface.ShopFloor },
-            new DemoPlaceableEntry { item=furnitureItem, key="furniture-chair", kind=DemoPlaceableKind.Furniture, buildingResource="DemoStructure/SimpleFurniture", surfaces=WorldPlaceableSurface.Living | WorldPlaceableSurface.Utility }
-        };
+            new DemoPlaceableEntry { item=furnitureItem, key="furniture-chair", kind=DemoPlaceableKind.Furniture, buildingResource="DemoStructure/SimpleFurniture", surfaces=WorldPlaceableSurface.Living | WorldPlaceableSurface.Utility | WorldPlaceableSurface.ShopFloor } // 2026-11-02 가게 꾸밈(손님 매력)
+        // 용도별 작업대(조리대·화로)는 PA_CraftingStationsSetup이 만든다. 이 배열을 다시 써도 이미 만든 항목은 남긴다.
+        }.Concat(PA_CraftingStationsSetup.ExistingEntries()).Concat(PA_BeachFindsSetup.ExistingEntries()).ToArray();
         var improved = Asset<Item>("Item_ImprovedPickaxe");
-        improved.id = 2022; improved.itemName = "Improved Pickaxe"; improved.toolType = ToolType.Pickaxe;
+        improved.id = 2022; improved.itemName = "구리 곡괭이"; improved.toolType = ToolType.Pickaxe;
         improved.category = ItemCategory.Tool; improved.maxStack = 1; improved.model = art.pickaxe;
         var recipe = Asset<RecipeData>("Recipe_ImprovedPickaxe");
         recipe.recipeName = "Improved Pickaxe"; recipe.requiredWorkbench = WorkbenchType.BasicWorkbench;
@@ -86,10 +87,12 @@ public static class PA_DemoStructureSetup
             new RecipeIngredient { item=Resources.Load<Item>("Items/Item_Wood"), count=2 },
             new RecipeIngredient { item=Resources.Load<Item>("Items/Item_Ore"), count=2 } };
         catalog.upgrades = new[] { new DemoToolUpgrade { recipe=recipe, tool=improved, starterTool=starter,
-            root=DemoSpecialization.Mining, specialty=NpcSpecialty.Miner, companionPrefix="Miner",
+            root=DemoSpecialization.None, specialty=NpcSpecialty.Miner, companionPrefix="Miner",
             production=Resources.Load<ProductionData>("Production/Production_Ore"), npcEfficiency=1.5f, playerWorkStrength=2 } };
         EditorUtility.SetDirty(improved); EditorUtility.SetDirty(recipe);
         EditorUtility.SetDirty(catalog); AssetDatabase.SaveAssets();
+        // 2026-11-02 도구 단계: 구리 곡괭이 레시피(화로·구리 주괴)는 PA_ToolProgressionSetup이 정의한다. 위 기본값을 덮어쓴다.
+        if (AssetDatabase.LoadAssetAtPath<Item>("Assets/Resources/Items/Item_CopperBar.asset") != null) PA_ToolProgressionSetup.Apply();
         Debug.Log("[DEMO-STRUCTURE] Owned assets prepared; no scene edit or Play executed.");
     }
     // 기존 자산 하나만 수정한다. 전체 Prepare를 실행해 다른 dirty 자산을 재생성하지 않는다.

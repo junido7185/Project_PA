@@ -145,12 +145,19 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
             : "ITEM";
         if (PlayerInputHandler.Instance?.FirstDayControls == true)
         {
+            // 구리·철 단계 도구와 튼튼한 낚싯대는 기본 도구와 구분되게 단계 이름을 쓴다(ToolDurability.DisplayName 표).
+            if (slot.item.toolType != ToolType.None)
+            {
+                string tierName = ToolDurability.DisplayName(slot.item);
+                if (!string.IsNullOrEmpty(tierName) && tierName.Contains(" ")) return tierName;
+            }
             switch (slot.item.toolType)
             {
                 case ToolType.Axe: return "도끼";
                 case ToolType.Pickaxe: return "곡괭이";
                 case ToolType.FishingRod: return "낚싯대";
                 case ToolType.Net: return "잠자리채";
+                case ToolType.Shovel: return "삽";
             }
             switch (slot.item.id)
             {

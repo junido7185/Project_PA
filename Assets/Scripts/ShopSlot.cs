@@ -8,6 +8,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
     [Header("진열 상태")]
     public ItemInstance currentItem;
     public int displayPrice = 0;
+    Item _priceFor; // displayPrice를 정한 상품(진열·복원 때 기록). 비어 있으면 아직 모른다.
     [Tooltip("같은 상품을 한 가판대에 쌓을 수 있는 최대 수량. 1이면 기존처럼 한 개만 진열한다")]
     public int stockCapacity = 1;
 
@@ -152,7 +153,10 @@ public class ShopSlot : MonoBehaviour, IInteractable
         };
 
         sourceSlot.AddCount(-moved);
-        if (displayPrice <= 0) displayPrice = currentItem.data.basePrice;
+        // 2026-11-03 market-r2: 빈 칸에 다른 상품을 올리면 앞 상품의 가격(광석 11G)이 그대로 남아 조개 목걸이(112G)가 11G에 팔렸다.
+        // 가격은 그 가격을 정한 상품에만 이어진다. 같은 상품을 다시 채우면 플레이어가 정한 가격을 유지한다.
+        if (displayPrice <= 0 || _priceFor != null && _priceFor != currentItem.data) displayPrice = currentItem.data.basePrice;
+        _priceFor = currentItem.data;
 
         Inventory.instance.RefreshAllUI();
         RefreshDisplay();
@@ -340,6 +344,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public void RefreshDisplay()
     {
+        if (currentItem != null && currentItem.data != null) _priceFor = currentItem.data;
         ClearDisplay();
 
         // Task 019 — 오늘 품절된 빈 슬롯은 보충을 유도하는 작은 라벨을 보여준다.

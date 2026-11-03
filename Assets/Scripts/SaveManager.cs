@@ -246,6 +246,17 @@ public class SaveManager : MonoBehaviour
         if (FriendshipService.Instance != null)
         {
             data.friendshipData = SerializeFriendship();
+            if (BeachFinds.Instance != null && BeachFinds.Instance.Day > 0)
+            {
+                data.beachFindsDay = BeachFinds.Instance.Day;
+                data.beachFindsCollected = BeachFinds.Instance.CollectedSlots();
+            }
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.discoveredItemIds = DiscoveryLog.Snapshot();
+            if (DigSpots.Instance != null && DigSpots.Instance.Day > 0)
+            {
+                data.digSpotsDay = DigSpots.Instance.Day;
+                data.digSpotsDug = DigSpots.Instance.DugSlots();
+            }
         }
 
         // 7. 채용 NPC — v4 (id, transform, FSM state)
@@ -499,6 +510,11 @@ public class SaveManager : MonoBehaviour
         // 3-a. 감사 시스템 복구
         if (AuditService.Instance != null)
             AuditService.Instance.ForceSetLastAuditDay(data.lastAuditDay);
+
+        // 3-a2. 해변 발견물: 같은 날 이미 주운 자리는 다시 놓지 않는다(날짜가 다르면 새 날의 것을 놓는다).
+        BeachFinds.Instance?.RestoreCollected(data.beachFindsDay, data.beachFindsCollected);
+        DigSpots.Instance?.RestoreDug(data.digSpotsDay, data.digSpotsDug);
+        if (gameObject.scene.name == DemoRouteController.WorldScene) DiscoveryLog.Restore(data.discoveredItemIds);
 
         // 3-b. 친밀도 복구 — v4
         if (FriendshipService.Instance != null && data.friendshipData != null)

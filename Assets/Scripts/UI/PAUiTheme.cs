@@ -61,7 +61,43 @@ public static class PAUiTheme
             ui.countText.alignment = TextAlignmentOptions.TopRight;
             ui.countText.margin = Vector4.zero; ui.countText.raycastTarget = false;
         }
+        CategoryTile(ui.transform, empty ? null : slot.item);
         Durability(ui.transform,empty ? null : slot.instance);
+    }
+
+    // 2026-11-03 레퍼런스 08(가방·핫바): 아이콘 뒤 둥근 받침을 종류 색으로 칠해 가방을 훑어볼 때 도구·바다 생물·귀중품·가공품·설비가
+    // 색으로 먼저 갈린다. 색은 한 단계 연하게(이름 글자 Ink 대비 유지), 종류는 글자(이름)로도 읽힌다(DESIGN.md §2 색).
+    public static readonly Color TileTool = new Color(.97f,.74f,.5f), TileSea = new Color(.56f,.82f,.76f), TileValuable = new Color(1f,.92f,.68f),
+        TileGoods = new Color(.72f,.86f,.58f), TileKit = new Color(.8f,.75f,.92f), TileMaterial = new Color(.88f,.8f,.66f);
+
+    public static Color CategoryColor(Item item)
+    {
+        if (item == null) return Color.clear;
+        if (item.toolType == ToolType.Building || item.id == 1001 || item.id == 2005 || item.id == 2012 || item.id == 2013 || item.id == 2014 ||
+            item.id == 2020 || item.id == 2023 || item.id == 2024 || item.id == 2021 || item.id == 11) return TileKit;
+        if (item.toolType != ToolType.None || item.category == ItemCategory.Tool) return TileTool;
+        if (item.category == ItemCategory.Luxury || item.id == 2040 || item.id == 2041) return TileValuable;
+        if (item.category == ItemCategory.Processed || item.category == ItemCategory.Utility) return TileGoods;
+        bool sea = item.id == 8 || item.id >= 3000 && item.id < 3100 || item.id == 2004 || item.id >= 2034 && item.id <= 2036;
+        return sea ? TileSea : TileMaterial;
+    }
+
+    static void CategoryTile(Transform slot, Item item)
+    {
+        var tile = slot.Find("CategoryTile");
+        if (item == null) { if (tile != null) tile.gameObject.SetActive(false); return; }
+        if (tile == null)
+        {
+            var image = Panel(slot, "CategoryTile", Color.white);
+            image.raycastTarget = false;
+            tile = image.transform;
+            var rect = (RectTransform)tile;
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(9, 25); rect.offsetMax = new Vector2(-9, -9);
+            tile.SetAsFirstSibling();
+        }
+        tile.gameObject.SetActive(true);
+        tile.GetComponent<Image>().color = CategoryColor(item);
     }
 
     public static void Durability(Transform slot, ItemInstance item)

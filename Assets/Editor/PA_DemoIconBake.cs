@@ -80,6 +80,29 @@ public static class PA_DemoIconBake
         Debug.Log("[D1 Icon Bake] PASS " + LastEvidence);
     }
 
+    // 새 콘텐츠 아이템 하나만 같은 카메라·조명으로 굽는다(전체 Bake를 다시 돌려 기존 아이콘을 바꾸지 않는다).
+    public static Sprite BakeIcon(Item item, GameObject model)
+    {
+        if (item == null || model == null) throw new InvalidOperationException("BakeIcon needs an item and a local model.");
+        Directory.CreateDirectory(Root + "/Icons");
+        Texture2D icon = Render(model, item.id);
+        int visible = icon.GetPixels32().Count(c => c.a > 16);
+        if (visible < 100) throw new InvalidOperationException("Invalid transparent icon for " + item.name + ": " + visible);
+        string iconPath = Root + "/Icons/Item_" + item.id + ".png";
+        File.WriteAllBytes(iconPath, icon.EncodeToPNG());
+        Object.DestroyImmediate(icon);
+        AssetDatabase.ImportAsset(iconPath, ImportAssetOptions.ForceSynchronousImport);
+        var importer = (TextureImporter)AssetImporter.GetAtPath(iconPath);
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
+        importer.maxTextureSize = 256;
+        importer.SaveAndReimport();
+        return AssetDatabase.LoadAssetAtPath<Sprite>(iconPath);
+    }
+
     static string Contract(Item i) => i.id + "|" + i.itemName + "|" + i.description + "|" + i.basePrice + "|" +
         i.maxStack + "|" + i.toolType + "|" + i.category + "|" + i.requiredTier + "|" +
         AssetDatabase.GetAssetPath(i.buildingToBuild) + "|" + AssetDatabase.GetAssetPath(i.cropPrefab);
@@ -117,7 +140,7 @@ public static class PA_DemoIconBake
 
     static Color Wood => new Color(.55f,.29f,.12f);
     static Color Metal => new Color(.42f,.54f,.58f);
-    static GameObject OwnedModel(string name, Action<GameObject> build)
+    internal static GameObject OwnedModel(string name, Action<GameObject> build)
     {
         string path = Root + "/Models/" + name + ".prefab";
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -127,7 +150,7 @@ public static class PA_DemoIconBake
         finally { Object.DestroyImmediate(root); }
     }
 
-    static void AddModel(GameObject root, GameObject source, Vector3 position, float height, float yaw = 0)
+    internal static void AddModel(GameObject root, GameObject source, Vector3 position, float height, float yaw = 0)
     {
         if (source == null) throw new InvalidOperationException("Missing local model in " + root.name);
         var child = Object.Instantiate(source, root.transform);
@@ -154,7 +177,7 @@ public static class PA_DemoIconBake
     }
 
     // 모서리를 깎은 8각 단면의 소유 메시. 외부 모델/primitive placeholder에 의존하지 않는다.
-    static void Part(GameObject root,string name,Vector3 position,Vector3 size,Color color,float topScale=1f)
+    internal static void Part(GameObject root,string name,Vector3 position,Vector3 size,Color color,float topScale=1f)
     {
         var go=new GameObject(name,typeof(MeshFilter),typeof(MeshRenderer));
         go.transform.SetParent(root.transform,false);go.transform.localPosition=position;
@@ -217,6 +240,9 @@ public static class PA_DemoIconBake
             // 카메라/조명은 공통. 길쭉한 모델의 대표 실루엣만 정규화한다.
             if (itemId == 8 || itemId == 3001 || itemId == 3002)
                 clone.transform.rotation = Quaternion.Euler(0,90,0) * clone.transform.rotation;
+            // 바닥에 납작하게 놓이는 해변 발견물(가리비·불가사리·조개 목걸이)은 윗면이 보이게 카메라 쪽으로 세운다(아이콘 전용).
+            if (itemId == 2034 || itemId == 2036 || itemId == 2037 || itemId == 2040 || itemId == 2041)
+                clone.transform.rotation = Quaternion.AngleAxis(-48f, Quaternion.Euler(0,35f,0) * Vector3.right) * clone.transform.rotation;
             if (itemId == 2011)
             {
                 clone.transform.rotation = Quaternion.Euler(0,0,-35) * clone.transform.rotation;

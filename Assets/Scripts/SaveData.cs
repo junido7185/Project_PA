@@ -10,6 +10,14 @@ public class SaveData
     public FirstProductionSaveData firstProduction = new FirstProductionSaveData(); // v16 explicit opening state
     public FirstSettlementSaveData firstSettlement; // v15: optional opening settlement only
     public DemoSessionSaveData demoSession; // v17: FirstDay dynamic placements and session progress
+    // 2026-11-03 해변 줍기(BEACHCOMBING.md): v17 안의 추가 필드. 과거 저장은 0/null이라 그날 것을 모두 다시 놓는다.
+    public int beachFindsDay;
+    public List<int> beachFindsCollected;
+    // 2026-11-03 파기 자국(DIGGING.md): 같은 방식의 v17 추가 필드.
+    public int digSpotsDay;
+    public List<int> digSpotsDug;
+    // 2026-11-03 발견 도감(COLLECTION.md): 처음 손에 넣은 대상 아이템 id. 과거 저장은 null → 가방에서 조용히 다시 찾는다.
+    public List<int> discoveredItemIds;
 
     // 플레이어 정보
     public int money;

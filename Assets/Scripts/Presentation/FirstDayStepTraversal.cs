@@ -34,6 +34,8 @@ public sealed class FirstDayStepTraversal : MonoBehaviour
         {
             var data=_agent.currentOffMeshLinkData;
             var owner=data.owner as NavMeshLink;
+            // 멈춘 에이전트(대화 중 등)는 링크 위에서도 그 자리에 선다. 이음 건너기도 같은 규칙(2026-11-03 gift 진단: 대화 시작 때 1.8m 미끄러짐).
+            if (_agent.isStopped) return;
             if (owner==null || !owner.name.StartsWith("DemoTerraceStepLink_",System.StringComparison.Ordinal))
             {
                 // Existing level sector seams retain their normal walk crossing.
@@ -42,7 +44,6 @@ public sealed class FirstDayStepTraversal : MonoBehaviour
                 if ((transform.position-_to).sqrMagnitude<.0025f) _agent.CompleteOffMeshLink();
                 return;
             }
-            if (_agent.isStopped) return;
             _from=transform.position; _to=data.endPos+Vector3.up*_agent.baseOffset;
             _elapsed=0f;
             _duration=Mathf.Clamp(Vector3.ProjectOnPlane(_to-_from,Vector3.up).magnitude/Mathf.Max(.1f,_agent.speed),.45f,.85f);

@@ -160,7 +160,8 @@ public sealed class DemoSettlementController : MonoBehaviour
         if (!Established && !string.IsNullOrEmpty(shopId) && tents.Count == 2 && residents.Count == 2 && residents.All(r => !string.IsNullOrEmpty(r.TentId)))
         {
             Established = true; LicensePoints = 1;
-            var mines = Resources.FindObjectsOfTypeAll<MiningSpot>().Where(m => m.gameObject.scene.IsValid() && m.IsDirectWorld).ToArray();
+            // 동행은 기본 곡괭이로 시작하므로 일반(구리) 바위로 일하러 간다. 철 광맥은 플레이어의 다음 목표로 남긴다.
+            var mines = Resources.FindObjectsOfTypeAll<MiningSpot>().Where(m => m.gameObject.scene.IsValid() && m.IsDirectWorld && m.DirectHardness <= 1).ToArray();
             foreach (var resident in residents)
                 foreach (var upgrade in catalog?.upgrades ?? Array.Empty<DemoToolUpgrade>())
                 {
@@ -427,8 +428,8 @@ public sealed class DemoSettlementController : MonoBehaviour
 
     public static string NextPreview(DemoSpecialization root) => root switch
     {
-        DemoSpecialization.Forestry => "다음 단계: 좋은 도끼 → 목공 (미리보기)",
-        DemoSpecialization.Mining => "다음 단계: 개선 곡괭이 → 금속 가공 (미리보기)",
+        DemoSpecialization.Forestry => "다음 단계: 철 도끼(임업 전문) · 화로에서 구리 도끼 → 철 도끼",
+        DemoSpecialization.Mining => "다음 단계: 철 곡괭이(광업 전문) · 고지대 철 광맥 → 철 주괴",
         DemoSpecialization.Fisheries => "다음 단계: 좋은 낚싯대 → 수산 가공 (미리보기)",
         DemoSpecialization.Agriculture => "다음 단계: 괭이 · 밭 · 씨앗 (미리보기)",
         _ => ""
@@ -624,6 +625,55 @@ public sealed class DemoSettlementController : MonoBehaviour
         arrivals.touristUtilityScale = .8f;
     }
 
+    // 2026-11-02 가게 꾸밈(CRAFTING_STATIONS §6-1, ACNH식 '꾸미는 이유'): 상점 바닥 구역 안의 장식 가구(의자) 수만큼
+    // 그날 밤 관광객 수를 늘리고(최대 +3), 관광객의 사치품 선호·가격 관대함을 조금 올린다. 구매 판단 자체(PurchaseEvaluator)는 그대로다.
+    public const int ShopDecorCap = 3;
+    public const string DecorKey = "furniture-chair";
+    // 2026-11-03 조개 장식(해변 발견물 → 가게 꾸밈): 의자와 같은 꾸밈 효과(합계 상한 ShopDecorCap). 손님이 앉는 자리는 의자만.
+    public const string ShellDecorKey = "decor-shells";
+
+    public int CountShopDecor() => ShopDecorObjects(DecorKey, ShellDecorKey).Count;
+
+    // 상점 건물 안(막힘 구역 제외)에 놓인 의자들. 손님이 앉아 쉬는 자리(CustomerArrivalController)이기도 하다.
+    public System.Collections.Generic.List<GameObject> ShopChairs() => ShopDecorObjects(DecorKey);
+
+    System.Collections.Generic.List<GameObject> ShopDecorObjects(params string[] keys)
+    {
+        var chairs = new System.Collections.Generic.List<GameObject>();
+        if (placement == null || string.IsNullOrEmpty(shopId)) return chairs;
+        var shopPlaced = placement.Placements.FirstOrDefault(p => p.InstanceId == shopId);
+        if (shopPlaced?.GameObject == null) return chairs;
+        var floors = shopPlaced.GameObject.GetComponentsInChildren<WorldPlaceableZone>(true)
+            // 매장 바닥·생활·작업 구역 모두 상점 건물 안이다(2026-11-03 decor 검증: 의자가 생활 구역에 놓여 0으로 셌다). 막힘 구역(None)은 제외.
+            .Where(z => z.surface != WorldPlaceableSurface.None).ToArray();
+        if (floors.Length == 0) return chairs;
+        foreach (var placed in placement.Placements)
+        {
+            var marker = placed.GameObject != null ? placed.GameObject.GetComponent<DemoPlacedObject>() : null;
+            if (marker?.Entry == null || System.Array.IndexOf(keys, marker.Entry.key) < 0) continue;
+            if (floors.Any(z => z.Contains(placed.GameObject.transform.position))) chairs.Add(placed.GameObject);
+        }
+        return chairs;
+    }
+
+    int ApplyShopAppeal(CustomerArrivalController arrivals)
+    {
+        int decor = Mathf.Min(ShopDecorCap, CountShopDecor());
+        if (arrivals == null) return decor;
+        ConfigureOpeningCustomers(arrivals);
+        arrivals.maxTouristsPerOpening += decor;
+        arrivals.touristLuxuryScale += .1f * decor;
+        arrivals.touristPriceSensitivityScale = Mathf.Max(.5f, arrivals.touristPriceSensitivityScale - .05f * decor);
+        ShopDecorTonight = decor;
+        return decor;
+    }
+
+    public int ShopDecorTonight { get; private set; }
+
+    // 키("field-forge" 등)로 정착지에 놓인 배치물이 있는지.
+    public bool HasPlaced(string key) => placement != null && placement.Placements.Any(p =>
+        p.GameObject != null && p.GameObject.GetComponent<DemoPlacedObject>()?.Entry?.key == key);
+
     void UpdateBusinessHours(GameClock clock)
     {
         var loop = DayNightShopLoopController.Instance;
@@ -637,7 +687,10 @@ public sealed class DemoSettlementController : MonoBehaviour
         {
             _businessClockRunning = true; _closeWarned = false;
             clock.secondsPerGameHour = OpeningSecondsPerGameHour; clock.enabled = true;
-            FirstDayWorldPresentation.Toast("영업 시작 · 오늘은 22:00에 문을 닫아요.");
+            int decor = ApplyShopAppeal(CustomerArrivalController.Instance);
+            FirstDayWorldPresentation.Toast(decor > 0
+                ? $"영업 시작 · 가게 꾸밈 {decor}개 덕분에 손님이 {decor}명 더 와요. 22:00에 문을 닫아요."
+                : "영업 시작 · 22:00에 문을 닫아요. 가게 안에 의자를 놓으면 손님이 늘어요.");
         }
         if (!_closeWarned && clock.CurrentHour >= OpeningWarnHour)
         {

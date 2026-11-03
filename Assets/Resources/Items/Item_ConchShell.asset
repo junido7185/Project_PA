@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_ConchShell
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2035
+  itemName: "\uC18C\uB77C \uAECD\uB370\uAE30"
+  description: "\uB3CC\uAE30\uAC00 \uB09C \uC18C\uB77C \uAECD\uB370\uAE30. \uADC0\uC5D0
+    \uB300\uBA74 \uBC14\uB2F7\uC18C\uB9AC\uAC00 \uB098\uC694. \uAC00\uB9AC\uBE44\uBCF4\uB2E4
+    \uB4DC\uBB3C\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: 685275ca5dea1174db8950cd3a224751, type: 3}
+  maxStack: 99
+  model: {fileID: 7326041625776654118, guid: 3cb64f6399a95a74da60464bfc42d06f, type: 3}
+  basePrice: 15
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

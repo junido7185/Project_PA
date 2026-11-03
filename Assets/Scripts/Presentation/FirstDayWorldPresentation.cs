@@ -18,6 +18,7 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
     Transform _player;
     WorldGridService _grid;
     FirstDayStudioAssets _assets;
+    CoastalVegetationField _vegetation;
     TextMeshProUGUI _toast;
     RectTransform _toastCard;
     // Canon v2 §22: HUD = 순간 알림, Smartphone = 기록. 최근 알림을 휴대폰 피드에서 다시 볼 수 있게 남긴다.
@@ -63,10 +64,17 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         supplyObstacle.size = new Vector3(1.4f, 1, 1.4f);
         supplyObstacle.carving = true;
         Supply = supply.GetComponent<FirstDaySupplyBox>();
+        ComposeLandingCargo();
         ComposeCompanions();
         ComposeDressing(generated);
         ComposeApproachDressing(generated);
         ComposeSettlementEdgeDressing(generated);
+        ComposeCoastTreeline(generated);
+        // Dinkum ref: instanced coastal grass clumps and shallow-water rocks/seaweed (presentation only).
+        _vegetation = GetComponent<CoastalVegetationField>();
+        if (_vegetation == null) _vegetation = gameObject.AddComponent<CoastalVegetationField>();
+        _vegetation.Configure(_grid, generated, _player, Harbor, _assets);
+        ApplyFoliageLook();
         ComposeGroundPickups();
         // P3: 채집 중 캐릭터·도구가 큰 나무 수관에 가리지 않게(장식 나무 + 직접 채집 나무).
         var foliage = GetComponent<FoliageOcclusion>();
@@ -82,19 +90,22 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         card.transform.SetParent(canvas.transform,false);
         _toastCard=(RectTransform)card.transform; _toastCard.anchorMin=_toastCard.anchorMax=_toastCard.pivot=new Vector2(1,1);
         _toastCard.anchoredPosition=new Vector2(-24,-96); _toastCard.sizeDelta=new Vector2(440,72);
+        // 2026-11-03 레퍼런스 06(알림): 금색 테두리(바깥 금색 면 + 안쪽 크림 면) · 가운데 정렬 · 굵은 본문 + 작은 보조 줄.
         var cardImage=card.GetComponent<Image>(); cardImage.sprite=SmartphoneUI.RoundedSprite; cardImage.type=Image.Type.Sliced;
-        cardImage.color=new Color(.98f,.95f,.87f,.96f); cardImage.raycastTarget=false;
-        var accent = new GameObject("Accent",typeof(RectTransform),typeof(Image));
-        accent.transform.SetParent(card.transform,false);
-        var accentRect=(RectTransform)accent.transform; accentRect.anchorMin=new Vector2(0,0); accentRect.anchorMax=new Vector2(0,1);
-        accentRect.offsetMin=new Vector2(10,12); accentRect.offsetMax=new Vector2(16,-12);
-        var accentImage=accent.GetComponent<Image>(); accentImage.color=SmartphoneUI.Teal; accentImage.raycastTarget=false;
+        cardImage.color=PAUiTheme.Gold; cardImage.raycastTarget=false;
+        card.AddComponent<Shadow>().effectDistance=new Vector2(0,-6);
+        var inner = new GameObject("Inner",typeof(RectTransform),typeof(Image));
+        inner.transform.SetParent(card.transform,false);
+        var innerRect=(RectTransform)inner.transform; innerRect.anchorMin=Vector2.zero; innerRect.anchorMax=Vector2.one;
+        innerRect.offsetMin=new Vector2(7,7); innerRect.offsetMax=new Vector2(-7,-7);
+        var innerImage=inner.GetComponent<Image>(); innerImage.sprite=SmartphoneUI.RoundedSprite; innerImage.type=Image.Type.Sliced;
+        innerImage.color=new Color(.99f,.96f,.88f,1f); innerImage.raycastTarget=false;
         var label = new GameObject("DispatchToast",typeof(RectTransform),typeof(TextMeshProUGUI));
         label.transform.SetParent(card.transform,false);
         var rect=(RectTransform)label.transform; rect.anchorMin=Vector2.zero; rect.anchorMax=Vector2.one;
-        rect.offsetMin=new Vector2(28,10); rect.offsetMax=new Vector2(-16,-10);
+        rect.offsetMin=new Vector2(22,10); rect.offsetMax=new Vector2(-22,-10);
         _toast=label.GetComponent<TextMeshProUGUI>();_toast.font=TMP_Settings.defaultFontAsset;
-        _toast.fontSize=21;_toast.color=Ink;_toast.alignment=TextAlignmentOptions.MidlineLeft;_toast.raycastTarget=false;
+        _toast.fontSize=21;_toast.color=Ink;_toast.alignment=TextAlignmentOptions.Center;_toast.raycastTarget=false;
         gameObject.AddComponent<FirstDayHudStyle>();
         DispatchLog.Clear(); DispatchSerial = 0; // 새 Opening 세션의 기록만 휴대폰에 남긴다.
         Toast("DAY 1 · 새로운 섬\n항구의 P.A. 보급 상자를 열어보세요.");
@@ -122,13 +133,18 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
             var candidate=selected[i];
             var npc=new GameObject("Companion_"+candidate.id);
             npc.transform.SetParent(transform);npc.transform.position=Harbor+new Vector3(i==0?-2:4,0,5);
+            // 항구에서 바다 쪽(-Z)을 보며 시작한다. 표시 모델만 돌리면 NavMeshAgent·FaceTowards가 돌리는 루트 정면과
+            // 몸 정면이 반대가 되어 뒷걸음으로 걷는다(2026-11-02 사용자 "NPC가 거꾸로 다닌다"). 루트를 돌리고 표시 모델은 루트와 같은 방향에 둔다.
+            npc.transform.rotation=Quaternion.Euler(0,180,0);
             var visual=FirstDayStudioAssets.Place(candidate.model,npc.transform,npc.transform.position,1.75f,180);
             npc.AddComponent<NpcHumanoidProceduralAnimator>();
             var col=npc.AddComponent<CapsuleCollider>();col.center=Vector3.up*.85f;col.height=1.7f;col.radius=.3f;
             var dialogue=npc.AddComponent<NpcDialogue>();dialogue.overrideProfile=candidate.profile;
             dialogue.interactPrompt=candidate.displayName+"와 대화";
             dialogue.dialogueData=Resources.Load<DialogueData>("Dialogues/Dialogue_"+candidate.id.Split('_')[0]);
-            dialogue.GreetingInteracted+=(d,p)=>Toast(d.LastLine,false);
+            // 친밀도 키(대화 하루 1회·도구 선물·가게 구매가 쌓여 대화창 이름표 하트로 보인다). 같은 대사를 알림으로 한 번 더 띄우지 않는다
+            // (2026-11-03: 대화창과 오른쪽 위 알림에 같은 문장이 겹쳐 보였다).
+            dialogue.friendshipId="companion:"+candidate.id;
         }
     }
     void ComposeDressing(WorldGenerationResult generated)
@@ -178,6 +194,49 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
     }
     // Canon v2 §6: 항구 양옆과 정착 초지 가장자리만 낮은 군락으로 연결한다.
     // 길/자원/충돌/점유를 추가하지 않으며 플레이어가 배치하면 해당 군락은 숨긴다.
+    // 소품 조사(PropsSurvey-20261025): 첫 화면이 빈 모래 위 보급 상자 하나뿐이었다. 상자 옆에 하선한 화물(세운 통 둘·누운 통 하나)을
+    // 둬 항구에 막 내린 개척대로 읽히게 한다. 표시 전용이며, 보급 상자처럼 한 덩어리로 길을 막고 동행이 비켜 간다.
+    // 독립 비평(Arrival-props-critic-20261025): 통이 상자보다 눈에 띄고 붙어 한 더미로 읽혔으며 가는 통나무는 막대로 보였다 →
+    // 통을 상자 나무색 쪽으로 어둡게, 상자에서 약 .9m 떨어뜨리고(동행 통로), 통나무는 뺐다.
+    static readonly Color CargoBarrelTint = new Color(.66f, .54f, .46f, 1f);
+    static MaterialPropertyBlock _cargoBlock;
+
+    void ComposeLandingCargo()
+    {
+        if (_assets.barrel == null) return;
+        var cargo = new GameObject("PA_LandingCargo", typeof(BoxCollider));
+        cargo.transform.SetParent(transform);
+        cargo.transform.position = Harbor + new Vector3(5.8f, 0f, 3.4f);
+        PlaceBarrel(cargo.transform, new Vector3(-.6f, 0f, .3f), .85f, 0f, true);
+        PlaceBarrel(cargo.transform, new Vector3(.1f, 0f, -.2f), .78f, 30f, true);
+        PlaceBarrel(cargo.transform, new Vector3(-.3f, 0f, -1f), .62f, 70f, false);
+        var box = cargo.GetComponent<BoxCollider>();
+        box.center = new Vector3(-.2f, .45f, -.3f); box.size = new Vector3(1.6f, .9f, 1.9f);
+        var obstacle = cargo.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+        obstacle.shape = UnityEngine.AI.NavMeshObstacleShape.Box;
+        obstacle.center = box.center; obstacle.size = box.size + new Vector3(.2f, 0f, .2f);
+        obstacle.carving = true;
+    }
+
+    // FoodKit 통은 옆으로 누운 채 만들어져 있어 세울 때는 Z로 90° 굴린다. 바닥 중심을 지정 위치에 맞추고,
+    // 공유 재질은 그대로 둔 채 블록으로 색만 어둡게 한다(URP Lit _BaseColor).
+    void PlaceBarrel(Transform parent, Vector3 offset, float height, float yaw, bool upright)
+    {
+        var barrel = Instantiate(_assets.barrel, parent);
+        barrel.transform.rotation = Quaternion.Euler(0f, yaw, 0f) * (upright ? Quaternion.Euler(0f, 0f, 90f) : Quaternion.identity);
+        var renderer = barrel.GetComponentInChildren<Renderer>();
+        if (renderer == null) return;
+        barrel.transform.localScale *= height / Mathf.Max(.001f, renderer.bounds.size.y);
+        Bounds bounds = renderer.bounds;
+        Vector3 target = parent.position + offset;
+        barrel.transform.position += target - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+        foreach (var collider in barrel.GetComponentsInChildren<Collider>()) collider.enabled = false;
+        if (_cargoBlock == null) _cargoBlock = new MaterialPropertyBlock();
+        renderer.GetPropertyBlock(_cargoBlock);
+        _cargoBlock.SetColor("_BaseColor", CargoBarrelTint);
+        renderer.SetPropertyBlock(_cargoBlock);
+    }
+
     void ComposeApproachDressing(WorldGenerationResult generated)
     {
         var resources = new HashSet<Vector2Int>(generated.ResourceSpawns.Select(s => s.Coordinate));
@@ -253,6 +312,128 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         }
     }
 
+    // Dinkum world pass(ref 03·05): 항구 해변 바로 위 초원 단의 앞줄에 나무 수관을 세워 바다·모래·풀·나무·캐릭터가
+    // 기본 카메라 한 화면에 함께 읽히게 한다. 기존 장식 나무와 같은 충돌·도구 반응만 쓰고 보상/자원/저장은 없다.
+    // 동행 경로는 NavMeshObstacle carving으로 피한다(보급 상자와 같은 방식). 항구 통로·길·자원 cell은 비운다.
+    void ComposeCoastTreeline(WorldGenerationResult generated)
+    {
+        var resources = new HashSet<Vector2Int>(generated.ResourceSpawns.Select(s => s.Coordinate));
+        var parent = new GameObject("CoastTreeline").transform;
+        parent.SetParent(transform); parent.position = Harbor; _chunks.Add(parent);
+        var random = new System.Random(9012);
+        var placed = new List<Vector3>();
+        if (!_grid.WorldToCell(Harbor, out var harborCell)) return;
+        // v7 verifier: cone pines read unlike the reference's white-trunk broadleaf trees (02/13); the coast
+        // row uses the catalog's birches only (falls back to any tree if none).
+        var broadleaf = _assets.trees.Where(t => t != null && t.name.Contains("Birch")).ToArray();
+        var family = broadleaf.Length > 0 ? broadleaf : _assets.trees;
+        void PlaceTree(Vector3 point, float height, string label)
+        {
+            var prefab = family[random.Next(family.Length)];
+            var go = FirstDayStudioAssets.Place(prefab, parent, point, height, random.Next(360));
+            go.name = label + prefab.name;
+            // FBX 루트의 축 변환(-90 X) 때문에 루트에 붙인 capsule은 눕는다. 월드 정렬 자식에 줄기 충돌을 둔다.
+            var trunk = new GameObject("TrunkCollider");
+            trunk.transform.SetPositionAndRotation(point, Quaternion.identity);
+            trunk.transform.SetParent(go.transform, true);
+            trunk.transform.localScale = Vector3.one / Mathf.Max(.001f, go.transform.lossyScale.x);
+            var col = trunk.AddComponent<CapsuleCollider>(); col.height = 2f; col.radius = .3f; col.center = Vector3.up;
+            var obstacle = trunk.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+            obstacle.shape = UnityEngine.AI.NavMeshObstacleShape.Capsule; obstacle.carving = true;
+            obstacle.radius = .4f; obstacle.height = 2f; obstacle.center = Vector3.up;
+            FirstDayToolSurface.Attach(go, false);
+            placed.Add(point);
+        }
+        bool FreeCell(Vector2Int cell, out WorldCellData data, out Vector3 ground)
+        {
+            ground = default;
+            return _grid.TryGetCell(cell, out data) && data.IsWalkable && !data.HasWater && !data.HasPath &&
+                   !resources.Contains(cell) && _grid.CellToWorld(cell, out ground);
+        }
+        for (int attempt = 0; attempt < 80 && placed.Count < 8; attempt++)
+        {
+            int side = attempt % 2 == 0 ? -1 : 1;
+            // 단 앞줄(항구 기준 +5~+6 cell, 약 10~12m 북쪽)과 기본 화면 폭(±6~18m) 안.
+            var cell = harborCell + new Vector2Int(side * random.Next(3, 10), random.Next(5, 7));
+            if (!FreeCell(cell, out var data, out var ground) || data.ElevationLevel < 1) continue;
+            if (Mathf.Abs(ground.x - Harbor.x) < 4.5f) continue;
+            var point = ground + new Vector3((float)random.NextDouble() - .5f, 0, (float)random.NextDouble() - .5f);
+            if (placed.Any(p => Vector3.Distance(p, point) < 3.6f)) continue;
+            PlaceTree(point, 3.8f + (float)random.NextDouble() * 1.4f, "CoastTree_");
+        }
+        // v8 verifier: no tree was fully in frame. Two beach accents on the sand side (east/west of the landing),
+        // whose whole canopy sits inside the default arrival/coast camera; spawn/supply/harbour lane stay open.
+        var supplyPoint = Harbor + new Vector3(2.8f, 0, 3);
+        foreach (var offset in new[] { new Vector2Int(5, 3), new Vector2Int(-5, 2), new Vector2Int(6, 3), new Vector2Int(-6, 2) })
+        {
+            if (placed.Count(p => p.y < Harbor.y + .5f) >= 2) break;
+            if (!FreeCell(harborCell + offset, out var data, out var ground) || data.ElevationLevel > 0) continue;
+            if (Mathf.Abs(ground.x - Harbor.x) < 4.5f || Vector3.Distance(ground, supplyPoint) < 6f ||
+                Vector3.Distance(ground, Harbor + new Vector3(0, 0, 2)) < 6f) continue;
+            if (placed.Any(p => Mathf.Abs(p.x - ground.x) < 6f && p.y < Harbor.y + .5f)) continue;
+            PlaceTree(ground, 4.2f, "BeachTree_");
+        }
+    }
+
+    // Dinkum world pass: 기존 장식 풀·덤불(나무/바위 제외, 1.2m 미만)의 단면·무텍스처 'Green' 재질이
+    // 플레이 카메라에서 검게 읽혀, 인스턴스 군락과 같은 PA/StylizedFoliage 그라데이션으로 바꾼다. 표현만 바꾼다.
+    void ApplyFoliageLook()
+    {
+        var source = Resources.Load<Material>("WorldArt/PA_Foliage");
+        if (source == null || source.shader == null || !source.shader.isSupported) return;
+        Material grass = null, bush = null;
+        // v6 verifier: dark slate pine/birch canopies clashed with the yellow-green ground (refs 02/03/13).
+        // Presentation trees share brighter canopy copies; trunks/bark keep their source materials.
+        var canopy = new Dictionary<Material, Material>();
+        foreach (var renderer in GetComponentsInChildren<MeshRenderer>(true))
+        {
+            if (!renderer.name.Contains("Tree")) continue;
+            var materials = renderer.sharedMaterials;
+            bool changed = false;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                var m = materials[i];
+                if (m == null || !(m.name.StartsWith("Green") || m.name.StartsWith("DarkGreen"))) continue;
+                if (!canopy.TryGetValue(m, out var bright))
+                {
+                    bright = new Material(m) { name = m.name + "_PACanopy", hideFlags = HideFlags.DontSave };
+                    var tint = m.name.StartsWith("Dark") ? new Color(.40f, .58f, .22f) : new Color(.55f, .72f, .28f);
+                    if (bright.HasProperty("_BaseColor")) bright.SetColor("_BaseColor", tint);
+                    if (bright.HasProperty("_Color")) bright.SetColor("_Color", tint);
+                    canopy.Add(m, bright);
+                }
+                materials[i] = bright; changed = true;
+            }
+            if (changed) renderer.sharedMaterials = materials;
+        }
+        foreach (var renderer in GetComponentsInChildren<MeshRenderer>(true))
+        {
+            if (renderer.name.Contains("Rock") || renderer.name.Contains("Tree") || renderer.bounds.size.y > 1.2f) continue;
+            var materials = renderer.sharedMaterials;
+            bool changed = false;
+            bool isBush = renderer.name.Contains("Bush");
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] == null || !(materials[i].name.StartsWith("Green") || materials[i].name.StartsWith("DarkGreen"))) continue;
+                if (isBush && bush == null) bush = FoliageVariant(source, .8f, .02f);
+                if (!isBush && grass == null) grass = FoliageVariant(source, .55f, .06f);
+                materials[i] = isBush ? bush : grass;
+                changed = true;
+            }
+            if (changed) renderer.sharedMaterials = materials;
+        }
+    }
+
+    static Material FoliageVariant(Material source, float gradientHeight, float wind)
+    {
+        var material = new Material(source) { name = "PA_Foliage_Dressing", hideFlags = HideFlags.DontSave };
+        material.SetColor("_RootColor", new Color(.36f, .52f, .18f));
+        material.SetColor("_TipColor", new Color(.80f, .90f, .40f));
+        material.SetFloat("_GradientHeight", gradientHeight);
+        material.SetFloat("_Wind", wind);
+        return material;
+    }
+
     // Canon v2 §7: presentation 소유 식생만 숨긴다. 자원 상태/월드 점유는 변경하지 않는다.
     public void ClearShopSite(DemoShopInterior shop)
     {
@@ -265,6 +446,7 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
                 _coveredPlants.Add(plant);
                 plant.SetActive(false);
             }
+        if (_vegetation != null) _vegetation.HideWithin(shop.CoversGround);
 
         // 느슨한 줍기 아이템은 같은 인스턴스/수량으로 가장 가까운 빈 바닥에 보존한다.
         var reserved = new HashSet<Vector2Int>();
@@ -309,15 +491,39 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
     public static void Toast(string message, bool record = true)
     {
         if(Instance==null||Instance._toast==null||string.IsNullOrEmpty(message))return;
-        string shown=WrapWords(Instance._toast,message,392);
+        // 제작 창(가운데 1220px, 오른쪽 끝 x=1570)이 열려 있으면 카드를 창 오른쪽 빈 곳 폭(316)으로 줄여 [닫기]를 가리지 않는다(DESIGN.md §6).
+        bool modal=CraftingUI.instance!=null&&CraftingUI.instance.IsOpen;
+        float cardWidth=modal?316f:440f;
+        Instance._toastRaw=message;
+        string shown=ToastText(Instance._toast,message,cardWidth-52);
         Instance._toast.text=shown;Instance._toastUntil=Time.unscaledTime+3.5f;
-        // 카드 높이를 문장 길이에 맞춘다(1~3줄).
-        float height=Instance._toast.GetPreferredValues(shown,396,0).y+20;
-        Instance._toastCard.sizeDelta=new Vector2(440,Mathf.Clamp(height,60,140));
+        // 카드 높이를 문장 길이에 맞춘다(1~4줄).
+        float height=Instance._toast.GetPreferredValues(shown,cardWidth-44,0).y+26;
+        Instance._toastCard.sizeDelta=new Vector2(cardWidth,Mathf.Clamp(height,64,modal?190:150));
         if(!record)return;
         string clock=GameClock.Instance!=null?$"{GameClock.Instance.CurrentHourInt:D2}:{Mathf.FloorToInt((GameClock.Instance.CurrentHour-GameClock.Instance.CurrentHourInt)*60):D2}  ":"";
         DispatchLog.Insert(0,clock+message.Replace("\n"," "));DispatchSerial++;
         if(DispatchLog.Count>8)DispatchLog.RemoveAt(DispatchLog.Count-1);
+    }
+
+    string _toastRaw;
+    static readonly System.Text.RegularExpressions.Regex ToastSpeaker = new System.Text.RegularExpressions.Regex(@"^([^:\n]{1,10}): (.+)$", System.Text.RegularExpressions.RegexOptions.Singleline);
+
+    // 본문(굵게) + 보조 줄(작게·Muted)로 나눈다: "이름: 말" → 말 / 이름, "제목\n설명" → 제목 / 설명, "A · B" → A / B.
+    internal static string ToastText(TextMeshProUGUI label,string message,float width)
+    {
+        string main=message, sub=null;
+        var speaker=ToastSpeaker.Match(message);
+        int newline=message.IndexOf('\n'), dot=message.IndexOf(" · ",System.StringComparison.Ordinal);
+        if(speaker.Success){main=speaker.Groups[2].Value.Replace('\n',' ');sub=speaker.Groups[1].Value;}
+        else if(newline>0){main=message.Substring(0,newline);sub=message.Substring(newline+1).Replace('\n',' ');}
+        else if(dot>0){main=message.Substring(0,dot);sub=message.Substring(dot+3);}
+        string top=WrapWords(label,main,width);
+        if(string.IsNullOrEmpty(sub))return $"<b>{top}</b>";
+        float size=label.fontSize;label.fontSize=17f;
+        string bottom=WrapWords(label,sub,width);
+        label.fontSize=size;
+        return $"<b>{top}</b>\n<size=17><color=#5E6C66>{bottom}</color></size>";
     }
 
     // TMP는 한글을 글자 단위로 줄바꿈한다("고/르세요"). 토스트는 띄어쓰기 단위로 미리 줄을 나눈다.
@@ -373,8 +579,17 @@ public sealed class FirstDayWorldPresentation : MonoBehaviour
         }
         Destroy(visual);
     }
+    bool _toastModal;
     void Update()
     {
+        // 알림이 떠 있는 동안 제작 창이 열리거나 닫히면 카드 폭을 다시 맞춘다(남은 표시 시간은 유지).
+        bool modal=CraftingUI.instance!=null&&CraftingUI.instance.IsOpen;
+        if(modal!=_toastModal)
+        {
+            _toastModal=modal;
+            if(_toast!=null&&Time.unscaledTime<_toastUntil)
+            { float until=_toastUntil; Toast(_toastRaw ?? _toast.text,false); _toastUntil=until; }
+        }
         if(_player==null)return;
         var settlement = DemoSettlementController.Instance;
         bool reportOpen = settlement != null && settlement.IsPanelOpen && settlement.PioneerReport != null;

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
+  m_Name: Recipe_FiredJar
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeData
+  recipeName: "\uAD6C\uC6B4 \uD1A0\uAE30 \uD56D\uC544\uB9AC"
+  icon: {fileID: 21300000, guid: aedae813912252e4ba8038d23c9bd16e, type: 3}
+  description: 
+  ingredients:
+  - item: {fileID: 11400000, guid: a9aeae22085b51046abeeb19ac24c0c5, type: 2}
+    count: 3
+  - item: {fileID: 11400000, guid: a059185af048eab4bb38e0a3b4b62602, type: 2}
+    count: 1
+  outputItem: {fileID: 11400000, guid: 4774bc5cfb298424d986b106e8b9af21, type: 2}
+  outputCount: 1
+  baseOutputQuality: 1.2
+  ingredientQualityWeight: 0.3
+  requiredTier: 0
+  requiredWorkbench: 3
+  inputItem: {fileID: 0}
+  inputCount: 0

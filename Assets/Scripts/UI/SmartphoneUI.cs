@@ -266,18 +266,47 @@ public class SmartphoneUI : MonoBehaviour
         System.Array.Resize(ref tabButtons, index + 1);
         tabPanels[index] = panel; tabButtons[index] = buttonShop;
         _shopTab = index;
+
+        // 2026-11-03 도감 앱(COLLECTION.md): 두 번째 줄 왼쪽. 아래 장식 선·문구 자리를 쓰므로 둘은 숨긴다.
+        var dex = HomeTile("CollectionPanel_Tile", -74f, new Color(.86f, .84f, .95f), "도감", "발견한 것", -372f);
+        Decor(dex.transform, "Book", new Vector2(.26f, .22f), new Vector2(.74f, .78f), Vector2.zero, Vector2.zero, Cream);
+        Decor(dex.transform, "Spine", new Vector2(.26f, .22f), new Vector2(.36f, .78f), Vector2.zero, Vector2.zero, Teal);
+        Decor(dex.transform, "Mark", new Vector2(.48f, .42f), new Vector2(.64f, .58f), Vector2.zero, Vector2.zero, new Color(.95f, .73f, .35f));
+        homeScreen.transform.Find("HomeDivider")?.gameObject.SetActive(false);
+        homeScreen.transform.Find("HomeFooter")?.gameObject.SetActive(false);
+        var dexPanel = new GameObject("CollectionPanel", typeof(RectTransform), typeof(Image));
+        dexPanel.transform.SetParent(homeScreen.transform.parent, false);
+        var dexRect = (RectTransform)dexPanel.transform;
+        dexRect.anchorMin = Vector2.zero; dexRect.anchorMax = Vector2.one; dexRect.offsetMin = dexRect.offsetMax = Vector2.zero;
+        dexPanel.GetComponent<Image>().color = Cream;
+        dexPanel.AddComponent<CollectionPhoneUI>();
+        dexPanel.SetActive(false);
+        int dexIndex = tabPanels.Length;
+        System.Array.Resize(ref tabPanels, dexIndex + 1);
+        System.Array.Resize(ref tabButtons, dexIndex + 1);
+        tabPanels[dexIndex] = dexPanel; tabButtons[dexIndex] = dex;
+        _collectionTab = dexIndex;
+        // 클릭 → SelectTab은 Start의 탭 버튼 연결 반복이 맡는다(BuildShopApp이 그 전에 실행됨).
         CacheTabButtonColors();
     }
 
-    Button HomeTile(string name, float x, Color color, string caption, string hint)
+    int _collectionTab = -1;
+    public void OpenCollectionApp()
     {
+        if (!_isOpen) Toggle();
+        if (_collectionTab >= 0) SelectTab(_collectionTab);
+    }
+
+    Button HomeTile(string name, float x, Color color, string caption, string hint, float y = -160f)
+    {
+        float dy = y + 160f;
         var tile = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
         tile.transform.SetParent(homeScreen.transform, false);
         var tileRect = (RectTransform)tile.transform;
         tileRect.anchorMin = tileRect.anchorMax = new Vector2(.5f, 1);
         tileRect.pivot = new Vector2(.5f, 1);
         tileRect.sizeDelta = new Vector2(124, 124);
-        tileRect.anchoredPosition = new Vector2(x, -160);
+        tileRect.anchoredPosition = new Vector2(x, y);
         var tileImage = tile.GetComponent<Image>();
         tileImage.sprite = RoundedSprite; tileImage.type = Image.Type.Sliced;
         tileImage.color = color;
@@ -289,9 +318,9 @@ public class SmartphoneUI : MonoBehaviour
             pressedColor = new Color(.70f, .91f, .85f), selectedColor = Color.white,
             disabledColor = new Color(.65f, .68f, .63f), colorMultiplier = 1f, fadeDuration = .12f };
         Label(homeScreen.transform, name.Replace("_Tile", "_Caption"), caption, 22, Cream,
-            new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(x - 70, -323), new Vector2(x + 70, -286), true);
+            new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(x - 70, -323 + dy), new Vector2(x + 70, -286 + dy), true);
         Label(homeScreen.transform, name.Replace("_Tile", "_Hint"), hint, 16, new Color(1, 1, 1, .9f),
-            new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(x - 70, -350), new Vector2(x + 70, -319));
+            new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(x - 70, -350 + dy), new Vector2(x + 70, -319 + dy));
         return button;
     }
 

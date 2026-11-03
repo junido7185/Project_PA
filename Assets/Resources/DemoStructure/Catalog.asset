@@ -73,13 +73,40 @@ MonoBehaviour:
     size: {x: 1, y: 1}
     footprint: []
     entrance: {x: 0, y: -1}
-    surfaces: 12
+    surfaces: 14
+    canMove: 1
+  - item: {fileID: 11400000, guid: c2e45e294ea08a04896ffc3bb3daed98, type: 2}
+    key: field-kitchen
+    buildingResource: DemoStructure/FieldKitchen
+    kind: 4
+    size: {x: 2, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 13
+    canMove: 1
+  - item: {fileID: 11400000, guid: 02f0dbb1eabb5764fb677a9a09ae9c86, type: 2}
+    key: field-forge
+    buildingResource: DemoStructure/FieldForge
+    kind: 4
+    size: {x: 2, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 13
+    canMove: 1
+  - item: {fileID: 11400000, guid: ff810636cf5e91943b34df736ed4523d, type: 2}
+    key: decor-shells
+    buildingResource: DemoStructure/ShellDecor
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
     canMove: 1
   upgrades:
   - recipe: {fileID: 11400000, guid: b7c76881e781eae4bb65509e9ef5268f, type: 2}
     tool: {fileID: 11400000, guid: 1b9f8a9f909e80c4cbfaf1113a4c4258, type: 2}
     starterTool: {fileID: 11400000, guid: 9e64a6681df3bd44cac10562bce30aa9, type: 2}
-    root: 2
+    root: 0
     specialty: 2
     production: {fileID: 11400000, guid: abf119c1079a9bc48b068651e935b5de, type: 2}
     companionPrefix: Miner

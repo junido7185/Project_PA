@@ -63,7 +63,7 @@ public class ShopPriceUI : MonoBehaviour
     TextMeshProUGUI _currentPriceTxt;
     TextMeshProUGUI _pendingLabelTxt;
     TextMeshProUGUI _modeHintTxt;
-    Image          _itemIcon;
+    Image          _itemIcon, _itemTile;
     Button[]       _adjustButtons;
     Button          _confirmBtn;
     Button          _retrieveBtn;
@@ -145,6 +145,18 @@ public class ShopPriceUI : MonoBehaviour
         previewRT.anchoredPosition = new Vector2(0f, 36f);
         SetSurface(preview.GetComponent<Image>(), new Color(.98f, .91f, .66f));
         preview.GetComponent<Image>().raycastTarget = false;
+
+        // 가방·핫바와 같은 종류 색 받침(PAUiTheme.CategoryColor) 위에 아이콘을 얹는다.
+        var tile = new GameObject("ItemIconTile", typeof(RectTransform), typeof(Image));
+        var tileRT = (RectTransform)tile.transform;
+        tileRT.SetParent(_panel, false);
+        tileRT.anchorMin = tileRT.anchorMax = tileRT.pivot = new Vector2(.5f, .5f);
+        tileRT.sizeDelta = new Vector2(96f, 96f);
+        tileRT.anchoredPosition = new Vector2(-244f, 181f);
+        _itemTile = tile.GetComponent<Image>();
+        SetSurface(_itemTile, Color.white);
+        _itemTile.raycastTarget = false;
+        _itemTile.enabled = false;
 
         var icon = new GameObject("ItemIcon", typeof(RectTransform), typeof(Image));
         var iconRT = (RectTransform)icon.transform;
@@ -386,8 +398,14 @@ public class ShopPriceUI : MonoBehaviour
             _itemIcon.sprite = occupied ? _slot.currentItem.data.icon : null;
             _itemIcon.enabled = _itemIcon.sprite != null;
         }
+        if (_itemTile != null)
+        {
+            _itemTile.enabled = occupied;
+            if (occupied) _itemTile.color = PAUiTheme.CategoryColor(_slot.currentItem.data);
+        }
+        // 기본가(아이템 basePrice)를 함께 보여 가격을 얼마나 올리고 내렸는지 바로 읽히게 한다.
         if (_currentPriceTxt != null)
-            _currentPriceTxt.text = occupied ? $"현재 적용 가격  {_slot.EffectiveDisplayPrice:N0} G / 개" : "상품 진열 후 가격을 설정할 수 있어요";
+            _currentPriceTxt.text = occupied ? $"현재 적용 가격  {_slot.EffectiveDisplayPrice:N0} G / 개  ·  기본가 {_slot.currentItem.data.basePrice:N0} G" : "상품 진열 후 가격을 설정할 수 있어요";
         if (_pendingLabelTxt != null)
             _pendingLabelTxt.text = occupied ? "확정 전 임시 가격 · 적용 버튼으로 확정" : "먼저 상품을 진열하세요";
         if (_modeHintTxt != null)

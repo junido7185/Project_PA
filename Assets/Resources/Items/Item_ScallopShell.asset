@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_ScallopShell
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2034
+  itemName: "\uAC00\uB9AC\uBE44 \uAECD\uB370\uAE30"
+  description: "\uBAA8\uB798\uC0AC\uC7A5\uC5D0\uC11C \uC8FC\uC6B4 \uBD80\uCC44\uAF34
+    \uC870\uAC1C\uAECD\uB370\uAE30. \uBC14\uB2E4\uAC00 \uB9E4\uC77C \uC0C8\uB85C
+    \uBC00\uC5B4 \uC62C\uB824\uC694. \uC791\uC5C5\uB300\uC5D0\uC11C \uBAA9\uAC78\uC774\uB85C
+    \uC5EE\uC744 \uC218 \uC788\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: 33236dea861ced44ea785383b624374a, type: 3}
+  maxStack: 99
+  model: {fileID: 5366547057875980523, guid: 2b15222c92a29a54fa5fadaee70ee28e, type: 3}
+  basePrice: 8
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}
