@@ -38,6 +38,9 @@ public class PlayerInputHandler : MonoBehaviour
     public bool JumpPressed { get; private set; }
     public bool InteractHeld { get; private set; }
     public bool FishingReelHeld { get; private set; }
+    // 무인 촬영(ExhibitionCaptureDirector -pa-capture-plan motion) 전용 이동 주입. null이면 키보드만 쓴다(일반 플레이 영향 없음).
+    public static Vector2? QaMove;
+    public static bool QaRun;
     public event Action OnHolster;
     public static bool ModalOpen => Time.timeScale == 0 ||
         FirstDayFishingMinigame.IsOpen ||
@@ -138,6 +141,7 @@ public class PlayerInputHandler : MonoBehaviour
         if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) move.x += 1f;
         if (kb.aKey.isPressed || kb.leftArrowKey.isPressed)  move.x -= 1f;
         if (ModalOpen) move = Vector2.zero;
+        if (QaMove.HasValue && !ModalOpen) { move = QaMove.Value; RunHeld |= QaRun; }
         if (move != MoveInput)
         {
             MoveInput = move;

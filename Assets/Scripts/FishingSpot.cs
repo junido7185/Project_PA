@@ -14,13 +14,17 @@ public class FishingSpot : MonoBehaviour, IInteractable
     public bool IsFishing => _isFishing;
     public string LastFeedback => _lastFeedback;
 
-    bool _directPlayerDemo, _biteReady, _claiming;
+    bool _directPlayerDemo, _biteReady, _claiming, _roaming;
     GameObject _castingPlayer;
-    public bool IsDirectPlayerDemo => _directPlayerDemo;
+    // 고정 물가의 직접 조작 낚시터. 해안 어디서나 던지게 따라다니는 보조 낚시터는 IsRoamingCast로 따로 구분한다.
+    public bool IsDirectPlayerDemo => _directPlayerDemo && !_roaming;
+    public bool IsRoamingCast => _roaming;
     public bool BiteReady => _biteReady;
 
-    // User direction 2026-10-05: bite -> reel control -> dry-land flop -> tool capture.
-    // 보상은 기존 일일 낚시 활동(DayNightShopLoopController.TryCollectDayPrepStock)만 준다.
+    // User direction 2026-10-05: bite -> reel control -> dry-land flop -> capture.
+    // 피드백 4(2026-10-31): 하루 낚시 횟수 제한이 없다. 그날 첫 포획만 기존 일일 낚시 활동
+    // (DayNightShopLoopController.TryCollectDayPrepStock)으로 지급·기록해 튜토리얼/진행을 그대로 두고, 이후 포획은 같은 지급 형태로
+    // 가방에만 넣는다(포획마다 저장 기록을 늘리지 않는다). 낮·밤 모두 낚을 수 있다. 입질은 ShoreFishSchool의 물고기 그림자가 일으킨다.
     public enum DemoPhase { Idle, Waiting, Bite, Hooked, Reeling, Landed }
     public DemoPhase Phase { get; private set; }
     // P9 플레이어 동작 표현용(읽기 전용): 지금 줄을 던져 둔 플레이어와 마지막으로 당긴 시각.
@@ -28,16 +32,36 @@ public class FishingSpot : MonoBehaviour, IInteractable
     public static float LastDirectPullAt { get; private set; } = -10f;
     public GameObject Bobber => _bobber;
     public Vector3 WaterTarget => _waterTarget;
-    const float BiteWindow = 1f;
-    GameObject _bobber, _fishShadow;
-    Vector3 _waterTarget, _bobberRest;
-    float _biteEndsAt, _phaseStartedAt;
+    // 지금 찌에 붙은 해안 물고기 그림자(없으면 null: 보이지 않는 물고기의 예비 입질).
+    public ShoreFishSchool.ShoreFish HookFish => _fish;
+    const float CastFlight = .45f;
+    GameObject _bobber;
+    Vector3 _waterTarget, _bobberRest, _castFrom;
+    float _biteEndsAt, _phaseStartedAt, _castLandsAt, _nextAttractAt, _visitorAt, _unseenBiteAt, _nextGridLookup;
+    bool _bobberLanded;
     WorldGridService _grid;
     FirstDayFishingMinigame _reel;
+    ShoreFishSchool.ShoreFish _fish;
+    FishingSpot _primary, _roamingTwin;
+    Collider _roamTrigger;
+    // 고정·이동형 낚시터가 겹쳐도 줄은 한 번에 하나만 던진다(E 입력은 줄을 던진 쪽으로 넘긴다).
+    static FishingSpot s_activeCast;
+    // 카메라가 찌·뭍에 오른 물고기를 따라 구도를 옮길 때 읽는다(읽기 전용).
+    public static FishingSpot ActiveCast => s_activeCast != null && s_activeCast.Phase != DemoPhase.Idle ? s_activeCast : null;
     public FirstDayLandedFish LandedFish { get; private set; }
     public Item SelectedFish { get; private set; }
     string _selectedResource;
+    float _selectedDifficulty;
     static readonly string[] Species = { "Items/Item_Fish", "Items/Item_Fish_RedSnapper", "Items/Item_Fish_YellowTang" };
+    // 종마다 출현 비율과 릴 난이도가 다르다(비쌀수록 어렵다). 그림자 크기: 기본 작음 · 노랑쥐치 중간 · 붉은 도미 큼.
+    static readonly float[] SpeciesWeight = { .5f, .2f, .3f };
+    static readonly float[] SpeciesDifficultyTable = { .15f, .8f, .45f };
+    public static int SpeciesCount => Species.Length;
+    public static string SpeciesResource(int species) => Species[Mathf.Clamp(species, 0, Species.Length - 1)];
+    public static float SpeciesDifficulty(int species) => SpeciesDifficultyTable[Mathf.Clamp(species, 0, Species.Length - 1)];
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics() { s_activeCast = null; ActiveDirectCaster = null; LastDirectPullAt = -10f; }
 
     public void ConfigureDirectPlayerDemo(WorldGridService grid = null)
     {
@@ -46,9 +70,12 @@ public class FishingSpot : MonoBehaviour, IInteractable
         _directPlayerDemo = true;
         _grid = grid != null ? grid : FindFirstObjectByType<WorldGridService>();
         SnapToShore();
+        EnsureRoamingTwin();
     }
 
-    // 낚시터를 실제 물과 맞닿은 가장 가까운 땅 칸으로 옮기고, 그 앞 물 위에 물고기 그림자를 둔다(식별 가능한 낚시 기회).
+    DaytimeStockPrepPoint Stock => _stockPoint != null ? _stockPoint : _primary != null ? _primary._stockPoint : null;
+
+    // 낚시터를 실제 물과 맞닿은 가장 가까운 땅 칸으로 옮긴다(언제나 쓸 수 있는 기준 물가). 물고기 그림자는 ShoreFishSchool이 맡는다.
     void SnapToShore()
     {
         if (_grid == null || !_grid.WorldToCell(transform.position, out var origin)) return;
@@ -81,20 +108,86 @@ public class FishingSpot : MonoBehaviour, IInteractable
         transform.position = new Vector3(edge.x, landPosition.y, edge.z);
         _waterTarget = waterPosition + new Vector3(bestStep.x, 0f, bestStep.y) * definition.CellSize * .6f;
         _waterTarget.y = WorldChunkMeshBuilder.OpeningWaterHeight(definition,waterCell) + .02f;
-        SpawnFishShadow();
     }
 
-    void SpawnFishShadow()
+    // 피드백 4: 낚싯대를 들고 물가를 바라보면 해안 어디서나 던질 수 있게, 플레이어 앞 해안 턱으로 따라오는 보조 낚시터를 둔다.
+    // PlayerInteraction은 FishingSpot 콜라이더만 고르므로 같은 클래스·같은 일일 활동을 공유하는 별도 오브젝트로 만든다.
+    void EnsureRoamingTwin()
     {
-        var assets = FirstDayStudioAssets.Load();
-        if (assets == null || assets.fish == null || _fishShadow != null) return;
-        _fishShadow = FirstDayStudioAssets.Place(assets.fish, transform, _waterTarget, .22f);
-        _fishShadow.name = "FishingSpot_FishShadow";
-        foreach (var collider in _fishShadow.GetComponentsInChildren<Collider>()) collider.enabled = false;
-        var block = new MaterialPropertyBlock();
-        block.SetColor("_BaseColor", new Color(.10f, .16f, .20f, 1f));
-        block.SetColor("_Color", new Color(.10f, .16f, .20f, 1f));
-        foreach (var renderer in _fishShadow.GetComponentsInChildren<Renderer>()) renderer.SetPropertyBlock(block);
+        if (_roaming || _roamingTwin != null) return;
+        var go = new GameObject("ShoreFishing_RoamingCast") { layer = 2 }; // Ignore Raycast: 일반 레이캐스트에 걸리지 않는다.
+        go.SetActive(false);
+        var stock = Stock;
+        go.transform.SetParent(stock != null ? stock.transform.parent : transform.parent, false);
+        var trigger = go.AddComponent<SphereCollider>();
+        trigger.isTrigger = true; trigger.radius = .35f; trigger.center = Vector3.up * .75f; trigger.enabled = false;
+        var twin = go.AddComponent<FishingSpot>();
+        twin._roaming = true; twin._directPlayerDemo = true; twin._primary = this; twin._grid = _grid; twin._roamTrigger = trigger;
+        _roamingTwin = twin;
+        go.SetActive(true);
+    }
+
+    // 낚싯대를 든 플레이어가 물가를 바라볼 때만 콜라이더를 켜고 플레이어 바로 앞(물가 쪽)에 둔다.
+    void UpdateRoamingAnchor()
+    {
+        bool show = false;
+        var player = Inventory.instance != null ? Inventory.instance.gameObject : null;
+        if (_primary.isActiveAndEnabled && player != null && player.activeInHierarchy && !PlayerInputHandler.ModalOpen &&
+            EquipmentSystem.CurrentHeld(player)?.toolType == ToolType.FishingRod &&
+            TryFindShoreAhead(player.transform, out var anchor, out var water))
+        {
+            transform.position = anchor;
+            _waterTarget = water;
+            show = true;
+        }
+        if (_roamTrigger != null && _roamTrigger.enabled != show) _roamTrigger.enabled = show;
+    }
+
+    static readonly float[] AheadYaw = { 0f, -16f, 16f };
+
+    // 플레이어가 서 있는 땅 칸에서 앞(±16°)으로 2.6m 안에 물이 시작되면, 해안 턱에서 1~2m 떨어진 물 위를 찌 자리로 고른다.
+    bool TryFindShoreAhead(Transform player, out Vector3 anchor, out Vector3 water)
+    {
+        anchor = water = default;
+        if (_grid == null) _grid = _primary != null ? _primary._grid : null;
+        if (_grid == null && Time.unscaledTime >= _nextGridLookup)
+        { _nextGridLookup = Time.unscaledTime + 1f; _grid = FindFirstObjectByType<WorldGridService>(); }
+        if (_grid == null) return false;
+        Vector3 origin = player.position;
+        if (!_grid.WorldToCell(origin, out var standCell) || !_grid.TryGetCell(standCell, out var stand) || stand.HasWater) return false;
+        Vector3 forward = Vector3.ProjectOnPlane(player.forward, Vector3.up);
+        if (forward.sqrMagnitude < .01f) return false;
+        forward.Normalize();
+        var definition = _grid.Definition;
+        foreach (float yaw in AheadYaw)
+        {
+            Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * forward;
+            float edge = -1f;
+            for (float d = .3f; d <= 2.6f; d += .15f)
+            {
+                if (!_grid.WorldToCell(origin + dir * d, out var c) || !_grid.TryGetCell(c, out var cell)) break;
+                if (cell.HasWater) { edge = d; break; }
+            }
+            if (edge < 0f) continue;
+            // 해안 턱에서 바깥쪽으로 물이 이어지는 동안 가장 먼(최대 2.2m) 헤엄칠 수 있는 점에 찌가 떨어진다.
+            bool found = false;
+            Vector3 best = default;
+            WorldCellData bestCell = default;
+            for (float extra = .7f; extra <= 2.2f; extra += .25f)
+            {
+                Vector3 p = origin + dir * (edge + extra);
+                if (!_grid.WorldToCell(p, out var wc) || !_grid.TryGetCell(wc, out var wcell) || !wcell.HasWater) break;
+                if (!ShoreFishSchool.ClearOfLand(_grid, p, .4f)) continue;
+                found = true; best = p; bestCell = wcell;
+            }
+            if (!found) continue;
+            float surface = WorldChunkMeshBuilder.OpeningWaterHeight(definition, bestCell);
+            if (origin.y - surface > 3.5f) continue; // 높은 절벽 위에서는 던지지 않는다.
+            water = new Vector3(best.x, surface + .02f, best.z);
+            anchor = origin + dir * Mathf.Clamp(edge, .6f, 1.45f);
+            return true;
+        }
+        return false;
     }
 
     bool IsPlayerInReach(GameObject player)
@@ -107,28 +200,20 @@ public class FishingSpot : MonoBehaviour, IInteractable
             Vector3.Dot(player.transform.forward, delta.normalized) >= .75f;
     }
 
-    bool DemoAvailable(out DayNightShopLoopController loop)
-    {
-        loop = DayNightShopLoopController.Instance;
-        return loop != null && _stockPoint != null && loop.IsDayPrepPointAvailable(_stockPoint);
-    }
-
     void InteractDirect(GameObject player)
     {
+        if (s_activeCast != null && s_activeCast != this && s_activeCast._castingPlayer == player && s_activeCast.Phase != DemoPhase.Idle)
+        { s_activeCast.InteractDirect(player); return; }
         if (_claiming || !isActiveAndEnabled || !IsPlayerInReach(player)) return;
-        if ((PlayerInputHandler.Instance?.FirstDayControls ?? false) && EquipmentSystem.CurrentHeld(player)?.toolType != ToolType.FishingRod) return;
-        if (!DemoAvailable(out var loop))
-        {
-            CancelCast();
-            _lastFeedback = "오늘 이 낚시터의 물고기는 다 낚았어요.";
-            return;
-        }
+        if (((PlayerInputHandler.Instance?.FirstDayControls ?? false) || _roaming) &&
+            EquipmentSystem.CurrentHeld(player)?.toolType != ToolType.FishingRod) return;
         switch (Phase)
         {
             case DemoPhase.Idle:
                 StartDirectCast(player);
                 return;
             case DemoPhase.Waiting:
+                ReleaseFish(true); // 너무 이른 당김은 다가오던 물고기를 쫓는다. 곧바로 다시 던질 수 있다.
                 CancelCast();
                 _lastFeedback = "너무 빨리 당겼어요. 다시 던져 보세요.";
                 FirstDayWorldPresentation.Toast(_lastFeedback, false);
@@ -145,63 +230,157 @@ public class FishingSpot : MonoBehaviour, IInteractable
 
     void StartDirectCast(GameObject player)
     {
-        if (_waterTarget == Vector3.zero) { _lastFeedback = "물가를 바라보고 던져 주세요."; return; }
+        if (_waterTarget == Vector3.zero || Inventory.instance == null) { _lastFeedback = "물가를 바라보고 던져 주세요."; return; }
         _castingPlayer = player;
-        _selectedResource = Species[Random.Range(0, Species.Length)];
-        SelectedFish = Resources.Load<Item>(_selectedResource);
-        if (SelectedFish == null) { _selectedResource = Species[0]; SelectedFish = FishItem; }
         ActiveDirectCaster = player;
+        s_activeCast = this;
         _isFishing = true;
         _biteReady = false;
+        _fish = null;
+        SelectedFish = null;
         Phase = DemoPhase.Waiting;
-        _phaseStartedAt = Time.time;
-        _lastFeedback = "입질을 기다리는 중… 찌가 쑥 들어가면 당기세요.";
+        float now = Time.time;
+        _phaseStartedAt = now;
+        _castLandsAt = now + CastFlight;
+        _bobberLanded = false;
+        bool school = ShoreFishSchool.Instance != null;
+        _nextAttractAt = _castLandsAt + Random.Range(.4f, 1.1f);
+        _visitorAt = _castLandsAt + Random.Range(7f, 11f);
+        // 해안 물고기 시스템이 없는 장면(검증 등)은 예전처럼 1.6~3.2초 뒤 입질한다. 있으면 물고기가 끝내 안 올 때만 쓰는 긴 예비 시간이다.
+        _unseenBiteAt = _castLandsAt + (school ? Random.Range(16f, 21f) : Random.Range(1.6f, 3.2f));
+        _lastFeedback = "찌를 던졌어요… 물고기 그림자가 다가오길 기다려요.";
         // Display-only float; existing fishing phases, timings and rewards remain authoritative.
         if (_bobber == null) _bobber = FirstDayFishingFloat.Create(this);
-        if (_bobber != null) { _bobber.SetActive(true); _bobberRest = _bobber.transform.position; }
-        GatherFeedback.Splash();
-        _castRoutine = StartCoroutine(WaitForDirectBite());
+        _bobberRest = _waterTarget;
+        _castFrom = player.transform.position + Vector3.up * 1.5f + player.transform.forward * .5f;
+        if (_bobber != null) { _bobber.SetActive(true); _bobber.transform.position = _castFrom; }
+        GatherFeedback.Swish();
     }
 
-    IEnumerator WaitForDirectBite()
+    public static int PickSpecies()
     {
-        yield return new WaitForSeconds(Random.Range(1.6f, 3.2f));
-        _castRoutine = null;
-        if (Phase != DemoPhase.Waiting) yield break;
+        float roll = Random.value, sum = 0f;
+        for (int i = 0; i < Species.Length; i++) { sum += SpeciesWeight[i]; if (roll < sum) return i; }
+        return 0;
+    }
+
+    // 찌가 물에 닿은 뒤: 근처 그림자가 알아채고 다가와 톡톡 건드리다가(찌가 살짝 눌림) 물면(찌가 쑥 잠김) 입질 단계가 된다.
+    void UpdateWaiting()
+    {
+        float now = Time.time;
+        if (!_bobberLanded)
+        {
+            if (now < _castLandsAt) return;
+            _bobberLanded = true;
+            GatherFeedback.Splash();
+            _lastFeedback = "입질을 기다리는 중… 찌가 쑥 들어가면 당기세요.";
+        }
+        var school = ShoreFishSchool.Instance;
+        if (_fish != null && (!_fish.Alive || _fish.Owner != (object)this ||
+            _fish.State == ShoreFishSchool.Stage.Roam || _fish.State == ShoreFishSchool.Stage.Flee))
+        {
+            // 다가오던 물고기가 길이 막혀 돌아섰다. 다른 물고기를 기다린다.
+            _fish = null;
+            _unseenBiteAt = Mathf.Max(_unseenBiteAt, now + 4f);
+            _lastFeedback = "입질을 기다리는 중… 찌가 쑥 들어가면 당기세요.";
+        }
+        if (_fish == null && school != null && now >= _nextAttractAt)
+        {
+            _nextAttractAt = now + Random.Range(.6f, 1.3f);
+            if (Random.value < .7f) _fish = school.Attract(this, _waterTarget);
+            if (_fish == null && now >= _visitorAt)
+            {
+                _visitorAt = now + Random.Range(6f, 10f);
+                _fish = school.SpawnVisitor(this, _waterTarget);
+            }
+            if (_fish != null) _lastFeedback = "물고기 그림자가 찌로 다가와요… 찌가 쑥 잠기면 당기세요.";
+        }
+        if (_fish != null)
+        {
+            if (_fish.State == ShoreFishSchool.Stage.Bite) EnterBite(_fish.Species, _fish.Difficulty);
+            else if (_fish.State == ShoreFishSchool.Stage.Nibble && _fish.Nibbles > 0) _lastFeedback = "톡톡… 아직이에요! 찌가 쑥 잠기면 당기세요.";
+            return;
+        }
+        if (now >= _unseenBiteAt)
+        {
+            int species = PickSpecies();
+            EnterBite(species, SpeciesDifficulty(species));
+        }
+    }
+
+    void EnterBite(int species, float difficulty)
+    {
+        _selectedResource = SpeciesResource(species);
+        SelectedFish = Resources.Load<Item>(_selectedResource);
+        if (SelectedFish == null) { _selectedResource = Species[0]; SelectedFish = FishItem; }
+        _selectedDifficulty = Mathf.Clamp01(difficulty);
         Phase = DemoPhase.Bite;
         _biteReady = true;
-        _biteEndsAt = Time.time + BiteWindow;
+        // 어려운 물고기일수록 입질 창이 조금 짧다.
+        _biteEndsAt = Time.time + Mathf.Lerp(1.15f, .8f, _selectedDifficulty);
         _lastFeedback = "지금 당기기!";
         GatherFeedback.Bite();
+    }
+
+    void PoseBobber()
+    {
+        float now = Time.time;
+        if (Phase == DemoPhase.Waiting && !_bobberLanded)
+        {
+            float k = Mathf.InverseLerp(_phaseStartedAt, _castLandsAt, now);
+            _bobber.transform.position = Vector3.Lerp(_castFrom, _bobberRest, k) + Vector3.up * (Mathf.Sin(k * Mathf.PI) * 1.1f);
+            return;
+        }
+        float dip = _fish != null ? _fish.BobberDip : 0f;
+        float bob = Phase == DemoPhase.Waiting
+            ? Mathf.Sin((now - _castLandsAt) * 3f) * .03f * (1f - dip) - dip * .08f
+            : -.12f + Mathf.Sin(now * 30f) * .012f;
+        _bobber.transform.position = _bobberRest + Vector3.up * bob;
     }
 
     void BeginReeling()
     {
         Phase = DemoPhase.Reeling; _biteReady = false;
+        if (_fish != null) ShoreFishSchool.Instance?.Hook(_fish);
         if (_reel == null) _reel = gameObject.AddComponent<FirstDayFishingMinigame>();
-        _reel.Open(SelectedFish, CompleteReeling);
+        _reel.Open(SelectedFish, CompleteReeling, _selectedDifficulty);
     }
 
     void CompleteReeling(bool caught)
     {
         if (Phase != DemoPhase.Reeling) return;
-        if (!caught || _castingPlayer == null || !DemoAvailable(out _) || !TryFindDryLanding(out var dry))
+        if (!caught || _castingPlayer == null || Inventory.instance == null || !TryFindDryLanding(out var dry))
         {
+            ReleaseFish(true);
             CancelCast(); _lastFeedback = "물고기가 달아났어요. 다시 던져 보세요.";
             FirstDayWorldPresentation.Toast(_lastFeedback, false);
             return;
         }
         var assets = FirstDayStudioAssets.Load();
         GameObject model = SelectedFish != null && SelectedFish.model != null ? SelectedFish.model : assets != null ? assets.fish : null;
-        LandedFish = FirstDayLandedFish.Create(this, SelectedFish, model, _waterTarget, dry);
-        if (LandedFish == null) { CancelCast(); _lastFeedback = "물고기 모델을 표시할 수 없어요."; return; }
+        LandedFish = FirstDayLandedFish.Create(this, SelectedFish, model, _waterTarget, dry, _selectedDifficulty);
+        if (LandedFish == null) { ReleaseFish(true); CancelCast(); _lastFeedback = "물고기 모델을 표시할 수 없어요."; return; }
+        // 끌어올린 물고기의 그림자는 사라지고 뭍의 물고기가 이어받는다.
+        if (_fish != null) { ShoreFishSchool.Instance?.Catch(_fish); _fish = null; }
         Phase = DemoPhase.Landed; _isFishing = false;
         if (_bobber != null) _bobber.SetActive(false);
         if (ActiveDirectCaster == _castingPlayer) ActiveDirectCaster = null;
-        if (_fishShadow != null) _fishShadow.SetActive(false);
-        ToolDurability.ConsumeSuccess(_castingPlayer.GetComponent<Inventory>(), _castingPlayer.GetComponent<Inventory>().GetSelectedInstance());
-        _lastFeedback = ItemDisplayName.For(SelectedFish) + "를 끌어올렸어요! 도끼나 곡괭이로 포획하세요.";
-        FirstDayWorldPresentation.Toast(_lastFeedback, true);
+        if (s_activeCast == this) s_activeCast = null;
+        // 낚싯대 내구도는 실제로 끌어올린 물고기 1마리당 1만 쓴다(빈 입질·놓침·실패·뭍에서의 포획 타격은 무료).
+        var inventory = _castingPlayer.GetComponent<Inventory>();
+        if (inventory != null) ToolDurability.ConsumeSuccess(inventory, inventory.GetSelectedInstance());
+        _lastFeedback = ItemDisplayName.For(SelectedFish) + "를 끌어올렸어요! 물로 도망가기 전에 때려서 잡으세요(맨손도 돼요).";
+        FirstDayWorldPresentation.Toast(_lastFeedback, FirstCatchPending);
+    }
+
+    // 오늘 일일 낚시 활동(첫 포획)이 아직 남았는가. 남았으면 다음 포획이 기존 활동 기록·튜토리얼 경로로 간다.
+    bool FirstCatchPending
+    {
+        get
+        {
+            var loop = DayNightShopLoopController.Instance; var stock = Stock;
+            return loop != null && stock != null && loop.IsDayPrepPointAvailable(stock);
+        }
     }
 
     bool TryFindDryLanding(out Vector3 position)
@@ -228,14 +407,28 @@ public class FishingSpot : MonoBehaviour, IInteractable
     public bool TryClaimLandedFish(FirstDayLandedFish fish, GameObject player)
     {
         if (_claiming || Phase != DemoPhase.Landed || fish == null || fish != LandedFish || !fish.ReadyToClaim ||
-            player == null || player.GetComponent<Inventory>() != Inventory.instance || !DemoAvailable(out var loop)) return false;
-        // 기존 일일 낚시 활동이 Inventory 우선 지급과 오늘 완료 기록을 소유한다.
+            player == null || Inventory.instance == null || player.GetComponent<Inventory>() != Inventory.instance) return false;
+        // 그날 첫 포획은 기존 일일 낚시 활동이 Inventory 지급과 오늘 완료 기록을 소유한다(튜토리얼/진행 그대로).
+        // 이후 포획(밤 포함)은 같은 지급 형태(품질·가격)로 가방에만 넣는다. 저장 기록은 늘지 않는다. 가방이 차면 아무것도 바꾸지 않는다.
+        var loop = DayNightShopLoopController.Instance; var stock = Stock;
+        bool daily = FirstCatchPending;
         _claiming = true;
         bool caught;
         int before = Inventory.instance.CountItems(SelectedFish);
-        // Activity id stays unchanged: old saves cannot collect the same shore activity again.
-        _stockPoint.itemResourcePath = _selectedResource; _stockPoint.grantCount = 1;
-        try { caught = loop.TryCollectDayPrepStock(_stockPoint, player); }
+        try
+        {
+            if (daily)
+            {
+                // Activity id stays unchanged: old saves cannot collect the same shore activity again.
+                stock.itemResourcePath = _selectedResource; stock.grantCount = 1;
+                caught = loop.TryCollectDayPrepStock(stock, player);
+            }
+            else
+            {
+                var instance = new ItemInstance(SelectedFish, 1) { quality = 1.03f, currentPrice = SelectedFish.basePrice };
+                caught = Inventory.instance.AddInstance(instance);
+            }
+        }
         finally { _claiming = false; }
         if (!caught)
         {
@@ -247,9 +440,18 @@ public class FishingSpot : MonoBehaviour, IInteractable
         FirstDayWorldPresentation.Acquired(SelectedFish, Inventory.instance.CountItems(SelectedFish) - before, fish.transform.position);
         GatherFeedback.Catch();
         CancelCast();
-        _lastFeedback = "물고기를 포획했어요!";
-        if (_fishShadow != null) _fishShadow.SetActive(false);
+        _lastFeedback = "물고기를 포획했어요! 물가의 그림자를 찾아 또 던져 보세요.";
         return true;
+    }
+
+    // 뭍의 물고기가 제때 잡히지 않아 물로 돌아갔다. 보상·기록·내구도 변화 없이 곧바로 다시 던질 수 있다.
+    public void OnLandedFishEscaped(FirstDayLandedFish fish)
+    {
+        if (fish == null || fish != LandedFish || Phase != DemoPhase.Landed) return;
+        ShoreFishSchool.Instance?.ReleaseEscapee(_waterTarget, System.Array.IndexOf(Species, _selectedResource));
+        CancelCast();
+        _lastFeedback = "물고기가 퍼덕이다 물로 도망쳤어요. 다시 던져 보세요.";
+        FirstDayWorldPresentation.Toast(_lastFeedback, false);
     }
 
     static Item FishItem => Resources.Load<Item>("Items/Item_Fish");
@@ -257,11 +459,10 @@ public class FishingSpot : MonoBehaviour, IInteractable
     void Update()
     {
         if (!_directPlayerDemo) return;
-        if (_fishShadow != null && _fishShadow.activeSelf)
+        if (_roaming)
         {
-            float t = Time.time * .6f;
-            _fishShadow.transform.position = _waterTarget + new Vector3(Mathf.Cos(t) * .8f, -.01f, Mathf.Sin(t) * .8f);
-            _fishShadow.transform.rotation = Quaternion.LookRotation(new Vector3(-Mathf.Sin(t), 0f, Mathf.Cos(t))) * Quaternion.Euler(0f, 90f, 0f);
+            if (_primary == null) { Destroy(gameObject); return; }
+            if (Phase == DemoPhase.Idle) UpdateRoamingAnchor();
         }
         if (Phase == DemoPhase.Idle || Phase == DemoPhase.Landed) return;
         // 낚싯대를 내려놓거나(X·도구 변경) 자리를 떠나면 줄을 거둔다.
@@ -272,13 +473,11 @@ public class FishingSpot : MonoBehaviour, IInteractable
             _lastFeedback = "낚싯대를 거뒀어요.";
             return;
         }
-        if (_bobber != null)
-        {
-            float bob = Phase == DemoPhase.Waiting ? Mathf.Sin((Time.time - _phaseStartedAt) * 3f) * .03f : -.12f;
-            _bobber.transform.position = _bobberRest + Vector3.up * bob;
-        }
+        if (Phase == DemoPhase.Waiting) UpdateWaiting();
+        if (_bobber != null && _bobber.activeSelf) PoseBobber();
         if (Phase == DemoPhase.Bite && Time.time > _biteEndsAt)
         {
+            ReleaseFish(true);
             CancelCast();
             _lastFeedback = "물고기가 달아났어요. 다시 던져 보세요.";
             FirstDayWorldPresentation.Toast(_lastFeedback, false);
@@ -292,13 +491,20 @@ public class FishingSpot : MonoBehaviour, IInteractable
 
     void Awake()
     {
-        if (_stockPoint == null)
+        if (_stockPoint == null && !_roaming)
             _stockPoint = GetComponentInParent<DaytimeStockPrepPoint>();
     }
 
     void OnDisable()
     {
         CancelCast();
+        if (_roamTrigger != null) _roamTrigger.enabled = false;
+    }
+
+    void OnDestroy()
+    {
+        if (_roamingTwin != null) Destroy(_roamingTwin.gameObject);
+        if (s_activeCast == this) s_activeCast = null;
     }
 
     public void Interact(GameObject interactor)
@@ -334,8 +540,10 @@ public class FishingSpot : MonoBehaviour, IInteractable
     {
         if (_directPlayerDemo)
         {
+            // 다른 낚시터에 줄을 던져 둔 동안에는 그쪽 진행 문구를 보인다(E도 그쪽으로 간다).
+            if (s_activeCast != null && s_activeCast != this && s_activeCast.Phase != DemoPhase.Idle) return s_activeCast._lastFeedback;
             if (Phase != DemoPhase.Idle) return _lastFeedback;
-            return DemoAvailable(out _) ? "낚시 · 낚싯대 던지기" : "낚시 · 오늘 낚시 완료";
+            return "낚싯대 던지기";
         }
         if (_isFishing)
             return _lastFeedback;
@@ -379,12 +587,25 @@ public class FishingSpot : MonoBehaviour, IInteractable
         return caught;
     }
 
+    // 찌에 붙은 물고기를 놓아준다. 톡톡 건드리던 중 이후(또는 flee)면 휙 달아나고, 다가오던 중이면 다시 돌아다닌다.
+    void ReleaseFish(bool flee)
+    {
+        var fish = _fish;
+        _fish = null;
+        var school = ShoreFishSchool.Instance;
+        if (fish == null || school == null) return;
+        school.Release(fish, flee || fish.State == ShoreFishSchool.Stage.Nibble || fish.State == ShoreFishSchool.Stage.Bite ||
+            fish.State == ShoreFishSchool.Stage.Hooked);
+    }
+
     void CancelCast()
     {
         if (_reel != null) _reel.CloseSilently();
         if (LandedFish != null) { Destroy(LandedFish.gameObject); LandedFish = null; }
+        ReleaseFish(false);
         _biteReady = false;
         if (ActiveDirectCaster == _castingPlayer) ActiveDirectCaster = null;
+        if (s_activeCast == this) s_activeCast = null;
         _castingPlayer = null;
         Phase = DemoPhase.Idle;
         if (_bobber != null) _bobber.SetActive(false);

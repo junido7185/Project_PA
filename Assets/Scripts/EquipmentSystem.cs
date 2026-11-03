@@ -11,10 +11,14 @@ public class EquipmentSystem : MonoBehaviour
     public float ActionStartedAt { get; private set; } = -100;
     public float FailedContactAt { get; private set; } = -100;
     public string LastUseFeedback { get; private set; } = string.Empty;
+    // 든 물건 모델의 원래 회전과, 그 회전·모델 원점 기준 크기/중심(PlayerCarryPose가 손에 맞출 때 쓴다).
+    public Quaternion HeldAuthoredRotation => _authoredRotation;
+    public Bounds HeldBounds { get; private set; }
     Transform _hand;
     Item _shown;
     Quaternion _authoredRotation;
     Inventory _inventory;
+    PlayerCarryPose _carry;
     public void ConfigureFirstDay()
     {
         if (FirstDayPresentation) return;
@@ -25,6 +29,9 @@ public class EquipmentSystem : MonoBehaviour
         var animator = GetComponentInChildren<Animator>();
         _hand = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightHand) : null;
         if (_hand == null) { Debug.LogError("[FIRST-DAY] Character has no right-hand socket."); return; }
+        // 든 물건 팔 자세 층. 이동·도구 동작 뒤에 실행되어 물건을 실제 손에 붙인다.
+        _carry = GetComponent<PlayerCarryPose>();
+        if (_carry == null) _carry = gameObject.AddComponent<PlayerCarryPose>();
         if (axeModel != null) axeModel.SetActive(false);
         if (pickaxeModel != null) pickaxeModel.SetActive(false);
     }
@@ -46,7 +53,9 @@ public class EquipmentSystem : MonoBehaviour
     // Shared presentation timing. Resource/bug/fish components still decide success and rewards.
     public bool TryBeginToolUse()
     {
-        if (Time.time - ActionStartedAt < .62f) return false;
+        var tool = HeldItem != null ? HeldItem.toolType : ToolType.None;
+        float reuseDelay = tool == ToolType.Axe || tool == ToolType.Pickaxe ? GatherFeedback.HeavyToolReuseDelay : .62f;
+        if (Time.time - ActionStartedAt < reuseDelay) return false;
         PlayAction();
         return true;
     }
@@ -64,7 +73,7 @@ public class EquipmentSystem : MonoBehaviour
     {
         Item item = HeldItem;
         if (_hand == null || _shown == item && (item == null || HeldVisual != null)) return;
-        if (HeldVisual != null) { HeldVisual.SetActive(false); Destroy(HeldVisual); }
+        if (HeldVisual != null) DiscardHeldVisual();
         _shown = item;
         if (item == null) return;
         var assets = FirstDayStudioAssets.Load();
@@ -75,7 +84,9 @@ public class EquipmentSystem : MonoBehaviour
         HeldVisual.name = "Held_" + item.id;
         foreach (var col in HeldVisual.GetComponentsInChildren<Collider>()) col.enabled = false;
         foreach (var body in HeldVisual.GetComponentsInChildren<Rigidbody>()) body.isKinematic = true;
-        if (item.toolType != ToolType.None) FirstDayStudioAssets.ScaleVisual(HeldVisual, .85f);
+        HeldBounds = new Bounds(Vector3.zero, Vector3.zero);
+        // 도구(도끼·곡괭이·채·낚싯대·괭이)는 손 길이 기준, 나머지(설계도 키트·씨앗 포함)는 손에 드는 물건 크기로 맞춘다.
+        if (!PlayerCarryPose.IsCarried(item)) FirstDayStudioAssets.ScaleVisual(HeldVisual, .85f);
         else
         {
             var renderers = HeldVisual.GetComponentsInChildren<Renderer>();
@@ -83,7 +94,10 @@ public class EquipmentSystem : MonoBehaviour
             {
                 Bounds bounds = renderers[0].bounds;
                 foreach (var r in renderers) bounds.Encapsulate(r.bounds);
-                HeldVisual.transform.localScale *= .38f / Mathf.Max(.001f, Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z)));
+                float fit = PlayerCarryPose.HeldSize(item) / Mathf.Max(.001f, Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z)));
+                HeldVisual.transform.localScale *= fit;
+                // 원점·원래 회전에서 잰 값이라 모델 원점 기준 중심/크기를 같은 배율로 줄이면 된다.
+                HeldBounds = new Bounds(bounds.center * fit, bounds.size * fit);
             }
         }
         HeldVisual.transform.SetParent(_hand, true);
@@ -91,9 +105,19 @@ public class EquipmentSystem : MonoBehaviour
         HeldVisual.transform.localRotation = Quaternion.Euler(0, 0, 90) * _authoredRotation;
     }
 
+    // 장착이 바뀐 이전 모델: 손 자세 층이 있으면 손에 붙은 채 짧게 줄여 없애고, 없으면 바로 지운다.
+    void DiscardHeldVisual()
+    {
+        if (_carry != null && _carry.isActiveAndEnabled) _carry.Release(HeldVisual);
+        else { HeldVisual.SetActive(false); Destroy(HeldVisual); }
+        HeldVisual = null;
+    }
+
     void LateUpdate()
     {
-        if (!FirstDayPresentation || HeldVisual == null || _shown == null || _shown.toolType != ToolType.None) return;
+        if (!FirstDayPresentation || HeldVisual == null || _shown == null || !PlayerCarryPose.IsCarried(_shown)) return;
+        // 손 자세 층(PlayerCarryPose)이 물건을 실제 손에 붙인다. 층이 없을 때만 아래 예전 운반 위치를 쓴다.
+        if (_carry != null && _carry.isActiveAndEnabled) return;
         // 작은 물건은 뼈의 회전으로 몸 안에 파묻히지 않게 몸 바깥에서 운반한다.
         HeldVisual.transform.rotation = transform.rotation * _authoredRotation;
         var renderers = HeldVisual.GetComponentsInChildren<Renderer>();

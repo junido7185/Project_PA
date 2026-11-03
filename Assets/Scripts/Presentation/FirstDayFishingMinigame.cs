@@ -18,16 +18,21 @@ public sealed class FirstDayFishingMinigame : MonoBehaviour
     TextMeshProUGUI _status;
     Action<bool> _finished;
     bool _active;
-    float _elapsed, _velocity, _seed;
+    float _elapsed, _velocity, _seed, _difficulty;
+    public float Difficulty => _difficulty;
     static readonly Color Ink = PAUiTheme.Ink;
     static readonly Color Teal = PAUiTheme.Teal;
 
-    public void Open(Item item, Action<bool> finished)
+    // PA_CONTENT_DEPTH_20261026: 물고기마다 난이도(0 쉬움 ~ 1 어려움)가 다르다. 피드백 4(10/31)부터는 찌를 문 해안 물고기
+    // 그림자의 종·크기가 난이도를 정한다(횟수 제한 없음, 같은 날 여러 번 낚아도 더 어려워지지 않는다).
+    // 어려울수록 물고기가 더 빠르고 크게 움직이며 짧게 튀고, 영역을 놓치면 진행이 더 빨리 준다. 막대 크기와 조작은 그대로다.
+    public void Open(Item item, Action<bool> finished, float difficulty = 0f)
     {
         if (IsOpen) return;
         if (_canvas == null) Build();
         Instance = this;
         _finished = finished; _elapsed = 0; _velocity = 0;
+        _difficulty = Mathf.Clamp01(difficulty);
         _seed = UnityEngine.Random.Range(0f, 6f);
         BandPosition = FishPosition = .5f; Progress = .30f;
         _active = true;
@@ -46,11 +51,14 @@ public sealed class FirstDayFishingMinigame : MonoBehaviour
         _velocity = Mathf.MoveTowards(_velocity, held ? .62f : -.50f, dt * 2.4f);
         BandPosition = Mathf.Clamp(BandPosition + _velocity * dt, BandSize / 2, 1 - BandSize / 2);
         if (BandPosition == BandSize / 2 || BandPosition == 1 - BandSize / 2) _velocity = 0;
-        FishPosition = Mathf.Clamp(.5f + .20f * Mathf.Sin(_elapsed * .75f) +
-            .08f * Mathf.Sin(_elapsed * 1.8f + _seed), .12f, .88f);
+        float d = _difficulty;
+        FishPosition = Mathf.Clamp(.5f + (.20f + .08f * d) * Mathf.Sin(_elapsed * .75f * (1f + .8f * d)) +
+            (.08f + .05f * d) * Mathf.Sin(_elapsed * 1.8f * (1f + .6f * d) + _seed) +
+            .07f * d * Mathf.Sin(_elapsed * 4.3f + _seed * 2f), .12f, .88f);
         bool inBand = Mathf.Abs(FishPosition - BandPosition) <= BandSize / 2;
-        Progress = Mathf.Clamp01(Progress + dt * (inBand ? .16f : -.10f));
-        _status.text = inBand ? "좋아요! 물고기를 따라가세요" : "초록 영역 안에 물고기를 두세요";
+        Progress = Mathf.Clamp01(Progress + dt * (inBand ? .16f : -(.10f + .06f * d)));
+        _status.text = inBand ? "좋아요! 물고기를 따라가세요"
+            : d >= .5f ? "힘이 센 물고기! 놓치지 마세요" : "초록 영역 안에 물고기를 두세요";
         _band.GetComponent<Image>().color = inBand ? new Color(.39f, .73f, .46f) : new Color(.62f, .74f, .54f);
         Paint();
         if (Progress >= 1) Complete(true);
@@ -111,7 +119,7 @@ public sealed class FirstDayFishingMinigame : MonoBehaviour
         _fill.offsetMin = new Vector2(3, 3); _fill.offsetMax = new Vector2(-3, -3);
         Label(card, "ProgressCaption", "성공", 20, Ink, new Vector2(54, 165), new Vector2(60, 28));
         _status = Label(card, "Status", "", 22, Ink, new Vector2(0, -230), new Vector2(410, 50));
-        Label(card, "Next", "끌어올린 뒤 도끼·곡괭이로 포획하세요\n[Esc] 낚시 취소", 21, Ink, new Vector2(0, -285), new Vector2(410, 65));
+        Label(card, "Next", "끌어올린 뒤 때려서 잡기(맨손 가능)\n[Esc] 낚시 취소", 21, Ink, new Vector2(0, -285), new Vector2(410, 65));
     }
 
     static RectTransform Box(Transform parent, string name, Vector2 anchor, Vector2 size, Vector2 position, Color color)
