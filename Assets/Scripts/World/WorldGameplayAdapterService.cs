@@ -790,6 +790,69 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
 
 
     // Composition only. Existing Gatherable/MiningSpot own hits and rewards.
+    // TOOL_PROGRESSION.md §4: 고지대 바위 중 높은 단부터 철 광맥으로 고른다. 귀하게 느껴지도록 바위의 1/5 이내(최소 3)로 둔다
+    // (첫 측정: 고지대 바위가 70개 중 34개라 절반이 철 광맥이었다). 같은 월드는 늘 같은 바위가 철 광맥이다(저장 스키마 변경 없음).
+    HashSet<string> PickIronRocks()
+    {
+        var stones = _generated.ResourceSpawns.Where(s => s.Kind == WorldResourceKind.Stone).ToList();
+        bool Highland(WorldResourceSpawnRecord s) => _generated.TryGetCell(s.Coordinate, out var c) && c.Biome == WorldBiomeType.Highland;
+        int Elevation(WorldResourceSpawnRecord s) => _generated.TryGetCell(s.Coordinate, out var c) ? c.Terrain.ElevationLevel : 0;
+        int count = Mathf.Min(stones.Count / 2, Mathf.Max(3, stones.Count / 5));
+        return new HashSet<string>(stones.OrderByDescending(s => Highland(s) ? 1 : 0).ThenByDescending(Elevation)
+            .ThenBy(s => s.SpawnKey, StringComparer.Ordinal).Take(count).Select(s => s.SpawnKey));
+    }
+
+    static Material _copperFleck, _ironFleck;
+
+    // 바위 윗면에 광석 알갱이를 박는다: 일반 바위는 주황빛 구리, 철 광맥은 바위를 어둡게 하고 붉은 녹빛 알갱이. 표시 전용(콜라이더 없음).
+    static void OreFlecks(GameObject rock, bool iron, Vector2Int seed)
+    {
+        if (rock == null) return;
+        var renderers = rock.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) return;
+        Bounds b = renderers[0].bounds;
+        foreach (var r in renderers) b.Encapsulate(r.bounds);
+        if (iron)
+        {
+            var block = new MaterialPropertyBlock();
+            foreach (var r in renderers)
+            {
+                r.GetPropertyBlock(block);
+                block.SetColor("_BaseColor", new Color(.52f, .5f, .52f));
+                block.SetColor("_Color", new Color(.52f, .5f, .52f));
+                r.SetPropertyBlock(block);
+            }
+        }
+        ref Material shared = ref iron ? ref _ironFleck : ref _copperFleck;
+        if (shared == null)
+        {
+            shared = new Material(renderers[0].sharedMaterial) { name = iron ? "PA_IronFleck" : "PA_CopperFleck" };
+            shared.mainTexture = null;
+            shared.color = iron ? new Color(.62f, .2f, .12f) : new Color(.93f, .52f, .22f);
+            if (shared.HasProperty("_Smoothness")) shared.SetFloat("_Smoothness", .65f);
+            if (shared.HasProperty("_Metallic")) shared.SetFloat("_Metallic", .6f);
+        }
+        var random = new System.Random(seed.x * 73856093 ^ seed.y * 19349663);
+        int count = iron ? 5 : 4;
+        for (int i = 0; i < count; i++)
+        {
+            var fleck = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            fleck.name = "OreFleck";
+            UnityEngine.Object.Destroy(fleck.GetComponent<Collider>());
+            fleck.GetComponent<Renderer>().sharedMaterial = shared;
+            // 바위를 감싸는 타원면의 위쪽 반구에서 조금 안쪽(0.88)에 두어 알갱이가 겉면에 반쯤 박혀 보이게 한다.
+            float angle = (float)random.NextDouble() * Mathf.PI * 2f, lift = .25f + .55f * (float)random.NextDouble();
+            Vector3 dir = new Vector3(Mathf.Cos(angle), lift, Mathf.Sin(angle)).normalized;
+            Vector3 p = b.center + Vector3.Scale(dir, b.extents) * .88f;
+            fleck.transform.SetParent(rock.transform, true);
+            fleck.transform.position = p;
+            fleck.transform.rotation = Quaternion.Euler(random.Next(0, 360), random.Next(0, 360), random.Next(0, 360));
+            float size = Mathf.Max(.08f, b.size.y * (.1f + .06f * (float)random.NextDouble()));
+            fleck.transform.localScale = Vector3.one;
+            fleck.transform.localScale = new Vector3(size / fleck.transform.lossyScale.x, size / fleck.transform.lossyScale.y, size / fleck.transform.lossyScale.z);
+        }
+    }
+
     bool BindDirectResources(out string reason)
     {
         reason = string.Empty;
@@ -800,11 +863,16 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
         }
         _directResourceRoot = new GameObject("DirectWorldResources").transform;
         _directResourceRoot.SetParent(_runtimeRoot.transform, false);
+        var ironRocks = FirstDay ? PickIronRocks() : new HashSet<string>();
         foreach (var spawn in _generated.ResourceSpawns)
         {
             if (spawn.Kind != WorldResourceKind.Timber && spawn.Kind != WorldResourceKind.Stone) continue;
             if (!_grid.CellToWorld(spawn.Coordinate, out Vector3 position))
             { reason = "Direct resource cell is missing: " + spawn.SpawnKey; return false; }
+            // The expanded ranked set retains save keys, but a restored player building/path/water edit
+            // can now cover an added spawn. Keep its record intact and do not project a resource there.
+            if (!_grid.TryGetCell(spawn.Coordinate, out var currentCell) ||
+                !currentCell.IsWalkable || currentCell.HasPath) continue;
             bool timber = spawn.Kind == WorldResourceKind.Timber;
             if (FirstDay)
             {
@@ -812,10 +880,18 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
                 var root=new GameObject("Direct_"+spawn.SpawnKey);root.transform.SetParent(_directResourceRoot);
                 root.transform.position=position;
                 var family=timber?assets.trees:assets.rocks;
-                FirstDayStudioAssets.Place(family[Mathf.Abs(spawn.Coordinate.x+spawn.Coordinate.y)%family.Length],root.transform,position,timber?4.5f:1.1f,spawn.Coordinate.x*37);
+                var placedVisual=FirstDayStudioAssets.Place(family[Mathf.Abs(spawn.Coordinate.x+spawn.Coordinate.y)%family.Length],root.transform,position,timber?4.5f:1.1f,spawn.Coordinate.x*37);
                 var trigger=root.AddComponent<CapsuleCollider>();trigger.isTrigger=true;trigger.radius=timber?.45f:.7f;trigger.height=2;trigger.center=Vector3.up*.8f;
                 if(timber)root.AddComponent<Gatherable>().ConfigureDirectWorld(_persistence,spawn,Resources.Load<Item>("Items/Item_Wood"));
-                else root.AddComponent<MiningSpot>().ConfigureDirectWorld(_persistence,spawn,Resources.Load<Item>("Items/Item_Ore"));
+                else
+                {
+                    // TOOL_PROGRESSION.md: 일반 바위 = 구리 광석(단단함 1), 철 광맥 바위 = 철 광석(단단함 2, 구리 곡괭이 이상).
+                    bool iron=ironRocks.Contains(spawn.SpawnKey)&&Resources.Load<Item>("Items/Item_IronOre")!=null;
+                    OreFlecks(placedVisual,iron,spawn.Coordinate);
+                    root.name=(iron?"DirectIron_":"Direct_")+spawn.SpawnKey;
+                    root.AddComponent<MiningSpot>().ConfigureDirectWorld(_persistence,spawn,
+                        Resources.Load<Item>(iron?"Items/Item_IronOre":"Items/Item_Ore"),3,iron?2:1);
+                }
                 continue;
             }
             var resource = GameObject.CreatePrimitive(timber ? PrimitiveType.Cylinder : PrimitiveType.Sphere);

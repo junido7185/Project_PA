@@ -37,6 +37,18 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
     public float kneeBendSign = -1f;
     public float footLiftSign = -1f;
 
+    // 2026-10-31 NPC 이동 통일: 플레이어와 같은 딩컴 키 포즈 이동 클립(Resources/PlayerLocomotion)을 Animator로 재생한다.
+    // 플레이어가 아닌 사람형 NPC만 해당. false면 기존 절차 보행(아래 ApplyPose)으로 즉시 돌아간다.
+    public static bool UseClipLocomotion = true;
+    public bool ClipLocomotionActive => _clipMode;
+    static RuntimeAnimatorController s_clipController;
+    static readonly int ClipMoveSpeedId = Animator.StringToHash("MoveSpeed");
+    static readonly int ClipPlaybackId = Animator.StringToHash("LocomotionPlayback");
+    static readonly int ClipGroundedId = Animator.StringToHash("Grounded");
+    bool _clipMode;
+    Vector3 _clipLastPosition;
+    float _clipSpeed;
+
     Animator _animator;
     NavMeshAgent _agent;
     PlayerController _player;
@@ -143,7 +155,11 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         bool needsNewHandler = _handler == null || _animator != nextAnimator;
         _animator = nextAnimator;
         _animator.applyRootMotion = false;
-        _animator.runtimeAnimatorController = null;
+        if (s_clipController == null) s_clipController = Resources.Load<RuntimeAnimatorController>(PlayerLocomotionAnimator.ControllerResource);
+        _clipMode = UseClipLocomotion && s_clipController != null && GetComponent<PlayerController>() == null;
+        _animator.runtimeAnimatorController = _clipMode ? s_clipController : null;
+        _clipLastPosition = transform.position;
+        _clipSpeed = 0f;
         if (!_animator.enabled)
             _animator.enabled = true;
 
@@ -172,6 +188,7 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
     {
         if (!_ready && !RefreshAvatar())
             return;
+        if (_clipMode) { DriveClipLocomotion(); return; }
 
         if (_agent == null)
             _agent = GetComponent<NavMeshAgent>();
@@ -201,6 +218,25 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         { idleBreath = .008f; idleHeadNod = .004f; elbowRestBend = .10f; if (_player == null) armRestDrop = 1f; }
         _playerMode = _player != null && _playerCalibrated && PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.FirstDayControls;
         ApplyPose();
+    }
+
+    // 클립 이동: 실제 수평 이동(에이전트·스크립트 이동 모두)으로 블렌드 속도와 발이 미끄러지지 않는 재생 배율을 넣는다.
+    void DriveClipLocomotion()
+    {
+        if (_animator == null || _animator.runtimeAnimatorController != s_clipController) { _ready = false; return; }
+        float dt = Time.deltaTime;
+        if (dt <= 0f) return;
+        Vector3 delta = transform.position - _clipLastPosition;
+        _clipLastPosition = transform.position;
+        delta.y = 0f;
+        float measured = delta.magnitude / dt;
+        if (measured > 12f) measured = 0f; // 순간이동·배치 이동은 달리기로 보지 않는다
+        _clipSpeed = Mathf.Lerp(_clipSpeed, measured, 1f - Mathf.Exp(-10f * dt));
+        if (_clipSpeed < .03f && measured == 0f) _clipSpeed = 0f;
+        CurrentPlanarSpeed = _clipSpeed;
+        _animator.SetFloat(ClipMoveSpeedId, _clipSpeed);
+        _animator.SetFloat(ClipPlaybackId, PlayerLocomotionAnimator.DefaultPlayback(_clipSpeed));
+        _animator.SetBool(ClipGroundedId, true);
     }
 
     void ApplyPose()
@@ -835,14 +871,23 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
     {
         string text = CollectHierarchyNames(transform).ToLowerInvariant();
 
-        if (text.Contains("lumber") || text.Contains("c-03")) return "Lumberjack";
-        if (text.Contains("miner") || text.Contains("c-04")) return "Miner";
-        if (text.Contains("fisher") || text.Contains("c-05")) return "Fisher";
-        if (text.Contains("chef") || text.Contains("c-06")) return "Chef";
-        if (text.Contains("blacksmith") || text.Contains("c-07")) return "Blacksmith";
-        if (text.Contains("tailor") || text.Contains("c-08")) return "Tailor";
-        if (text.Contains("carpenter") || text.Contains("c-09")) return "Carpenter";
-        if (text.Contains("farmer") || text.Contains("c-02")) return "Farmer";
+        // 역할 이름을 먼저 본다. 모델 번호는 실제 외형 기준(2026-11-02 렌더 감사: C-02 안전모 광부, C-03 밀짚모자 농부,
+        // C-04 스웨터 주민, C-09 체크 셔츠 목수)이며, 역할 이름이 없을 때만 쓴다.
+        if (text.Contains("lumber")) return "Lumberjack";
+        if (text.Contains("miner")) return "Miner";
+        if (text.Contains("farmer")) return "Farmer";
+        if (text.Contains("fisher")) return "Fisher";
+        if (text.Contains("chef")) return "Chef";
+        if (text.Contains("blacksmith")) return "Blacksmith";
+        if (text.Contains("tailor")) return "Tailor";
+        if (text.Contains("carpenter")) return "Carpenter";
+        if (text.Contains("c-02")) return "Miner";
+        if (text.Contains("c-03")) return "Farmer";
+        if (text.Contains("c-05")) return "Fisher";
+        if (text.Contains("c-06")) return "Chef";
+        if (text.Contains("c-07")) return "Blacksmith";
+        if (text.Contains("c-08")) return "Tailor";
+        if (text.Contains("c-09")) return "Carpenter";
         return "Default";
     }
 

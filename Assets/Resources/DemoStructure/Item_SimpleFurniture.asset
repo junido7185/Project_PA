@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 2021
   itemName: Chair
-  description: 
+  description: "\uB098\uBB34\uB85C \uC9E0 \uC18C\uBC15\uD55C \uC758\uC790. \uC9D1\uC774\uB098
+    \uC815\uCC29\uC9C0\uC5D0 \uB193\uC544 \uAFB8\uBA70\uC694."
   icon: {fileID: 21300000, guid: fbc012a567c6d89419b6637b6d377366, type: 3}
   maxStack: 1
   model: {fileID: 9174387294504619635, guid: f319dacf48d0e234a97f8d3aa84e1ebc, type: 3}

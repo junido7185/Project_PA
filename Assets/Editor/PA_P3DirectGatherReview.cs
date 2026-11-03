@@ -35,7 +35,32 @@ public static class PA_P3DirectGatherReview
 
     static void AudioReviewPlayState(PlayModeStateChange state)
     {
-        if (state == PlayModeStateChange.ExitingPlayMode) RestoreAudioNativeInput();
+        if (state == PlayModeStateChange.ExitingPlayMode)
+        {
+            RestoreAudioNativeInput();
+            // Every review mode owns its isolated save from bootstrap to Play exit.
+            // Clear only this run's override, including interrupted non-native reviews.
+            string ownedSaveRoot = Path.GetFullPath(Path.Combine(OutDir, "save"));
+            if (SessionState.GetString(SaveManager.ValidationRootSessionKey, string.Empty) == ownedSaveRoot)
+                SessionState.EraseString(SaveManager.ValidationRootSessionKey);
+            if (Mode == "native")
+            {
+                Note("STOP native-input session; player data remained in isolated QA save root");
+                SessionState.SetBool(Active, false);
+                SessionState.EraseString(SaveManager.ValidationRootSessionKey);
+                SessionState.EraseString(ModeKey);
+                PA_DemoThemeReview.Clear();
+            }
+        }
+    }
+
+    static void ReviewReloadCheckpoint()
+    {
+        RestoreAudioNativeInput();
+        if (!SessionState.GetBool(Active, false) || !running || finished) return;
+        Note("INCOMPLETE_DOMAIN_RELOAD: preserve captures/checks; repeat only affected checks after compilation is stable");
+        SessionState.SetBool(Active, false);
+        // Keep save isolation across reload until Play exits. Never fall back to the user's save.
     }
 
     static string OutDir => SessionState.GetString(OutKey, "Logs/VisualQA/unknown-P3_DIRECT_GATHER");
@@ -63,6 +88,9 @@ public static class PA_P3DirectGatherReview
 
     [MenuItem("Project PA/Validation/Demo P6 Applied UI Interactions")]
     public static void RunUiInteractions() => Start("ui", "P6_APPLIED_UI");
+
+    [MenuItem("Project PA/Validation/Native Production Input Session")]
+    public static void RunNativeProductionInput() => Start("native", "NATIVE_PRODUCTION");
 
     // P7 — 같은 보급 뒤 동행의 이동·집·일과·반응, Root 선택 미리보기, 도구 지급 전후 생산을 검수한다.
     [MenuItem("Project PA/Validation/Demo P7 Companion Growth Review")]
@@ -110,6 +138,9 @@ public static class PA_P3DirectGatherReview
     static void Start(string mode, string ticket)
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Run from Edit mode.");
+        // A completed native session can leave these statics until the next domain reload.
+        // Reset before activating the new session, so entering Play is not reported as an interrupted review.
+        running = false; finished = false;
         SessionState.SetString(ModeKey, mode);
         string outDir = "Logs/VisualQA/" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + ticket;
         Directory.CreateDirectory(outDir);
@@ -119,8 +150,8 @@ public static class PA_P3DirectGatherReview
         SessionState.SetString(OutKey, outDir);
         SessionState.SetBool(Active, true);
         bool route = mode == "route" || mode == "intro";
-        if (route || mode == "ui" || mode == "audio" || mode == "foot" || AmbienceReview)
         {
+            // Gathering/fishing/bug/craft/feel reviews must also isolate before SaveManager.Awake.
             string saveRoot = Path.GetFullPath(Path.Combine(outDir, "save"));
             Directory.CreateDirectory(saveRoot);
             SessionState.SetString(SaveManager.ValidationRootSessionKey, saveRoot);
@@ -139,6 +170,7 @@ public static class PA_P3DirectGatherReview
         Application.logMessageReceived -= OnLog; Application.logMessageReceived += OnLog;
         EditorApplication.playModeStateChanged -= AudioReviewPlayState; EditorApplication.playModeStateChanged += AudioReviewPlayState;
         AssemblyReloadEvents.beforeAssemblyReload -= RestoreAudioNativeInput; AssemblyReloadEvents.beforeAssemblyReload += RestoreAudioNativeInput;
+        AssemblyReloadEvents.beforeAssemblyReload -= ReviewReloadCheckpoint; AssemblyReloadEvents.beforeAssemblyReload += ReviewReloadCheckpoint;
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -173,6 +205,21 @@ public static class PA_P3DirectGatherReview
         var route = WorldAlphaPlayableController.Instance?.DemoRoute;
         if (route == null || !route.IsPlayable) return;
         running = true;
+        if (Mode == "native")
+        {
+            // An interrupted review can leave synthetic devices across a reload; native acceptance never uses them.
+            foreach (var device in InputSystem.devices.ToArray())
+                if (!device.native && (device.name == "P3Keyboard" || device.name == "P3Mouse")) InputSystem.RemoveDevice(device);
+            foreach (var device in InputSystem.devices)
+            {
+                if (!device.native || !(device is Keyboard || device is Mouse)) continue;
+                if (!device.enabled) InputSystem.EnableDevice(device);
+                if (device is Keyboard nativeKeyboard) nativeKeyboard.MakeCurrent();
+                if (device is Mouse nativeMouse) nativeMouse.MakeCurrent();
+            }
+            Note("READY native Windows input; direct Demo256 entry and companion selection are QA setup; no inventory/time/placement injection");
+            return;
+        }
         _ = Exercise();
     }
 
@@ -479,7 +526,8 @@ public static class PA_P3DirectGatherReview
         await Press(DigitKey(rodSlot)); await Delay(300);
         Face(player, fishing.transform, 1.2f, "completed fishing spot", fishing.transform.position + landSide.normalized * 1.2f);
         await Delay(400); await Press(Key.E); await Delay(250);
-        Check(Prompt().Contains("오늘 낚시 완료") && species.Sum(i => inventory.CountItems(i)) == fishStart + 1, "P4 completed daily activity cannot grant another species");
+        // PA_CONTENT_DEPTH_20261026: the shore allows repeat fishing after the daily record; E starts a new cast, no extra fish.
+        Check(fishing.Phase == FishingSpot.DemoPhase.Waiting && species.Sum(i => inventory.CountItems(i)) == fishStart + 1, "P4 after the daily record the shore allows a repeat cast without granting another fish");
         await Shot("P4_after_completion"); Finish("PASS");
     }
 
@@ -789,7 +837,8 @@ public static class PA_P3DirectGatherReview
         var craft = CraftingUI.instance;
         Require(craft != null && craft.IsOpen, "Q1 crafting open through E");
         var card = Card(craft, "판재");
-        Check(card.Key != null && !card.Key.GetComponent<UnityEngine.UI.Button>().interactable && Plain(card.Value).Contains("재료 부족"),
+        await Select(craft, card, "Q1 판재");
+        Check(card.Key != null && !Makeable(craft, card) && Plain(card.Value).Contains("재료 부족"),
             "Q1 material shortage is visible and disables crafting");
         await Shot("Q1_materials_missing");
         var scroll = craft.slotParent.GetComponentInParent<UnityEngine.UI.ScrollRect>();
@@ -804,7 +853,7 @@ public static class PA_P3DirectGatherReview
         await Press(Key.E); await Delay(400);
         card = Card(craft, "판재");
         Require(card.Key != null && TopHit(card.Key.gameObject), "Q1 visible clickable plank card");
-        await ClickUI(card.Key.gameObject, "Q1 make plank"); await Delay(350);
+        await Make(craft, card, "Q1 make plank"); await Delay(350);
         Check(inventory.CountItems(plank) == 1 && inventory.CountItems(wood) == 2 && Status(craft).Contains("제작 완료"),
             "Q1 one click consumes two Wood and produces one Plank with success status");
         await Shot("Q1_crafted");
@@ -838,6 +887,8 @@ public static class PA_P3DirectGatherReview
             await MoveMouse(ScreenCenter((RectTransform)bagSlot.transform)); await Delay(350);
             Require(bagSlot.tooltip != null && bagSlot.tooltip.gameObject.activeInHierarchy, "D2 slot hover opens tooltip");
             Check(bagSlot.tooltip.descriptionText.text.Contains("기본 가격"), "D2 tooltip includes price");
+            Check(bagSlot.tooltip.nameText.text == ItemDisplayName.For(axe), "D2 tooltip uses the existing Korean item display name");
+            Check(bagSlot.tooltip.descriptionText.text.Contains("E") && !bagSlot.tooltip.descriptionText.text.Contains("press Space"), "D2 axe hint matches first-day E input");
             await Shot("D2_tooltip");
             await MoveMouse(new Vector2(50,400)); await Delay(100);
         }
@@ -938,8 +989,11 @@ public static class PA_P3DirectGatherReview
         await Shot("D2_phone_home");
         var record = UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsInactive.Exclude,FindObjectsSortMode.None)
             .FirstOrDefault(b=>b.name == "RecordPanel_Tile");
-        Require(record != null, "D2 record tile");
-        await ClickUI(record.gameObject,"D2 phone record"); await Delay(300); await Shot("D2_feed");
+        if (record != null)
+        {
+            await ClickUI(record.gameObject,"D2 phone record"); await Delay(300); await Shot("D2_feed");
+        }
+        else Note("NOT_RUN phone feed navigation: existing home hides record tile; no fixture unlock or fabricated navigation PASS");
         await Press(Key.Escape); await Delay(300);
         Note("FIXTURE settings panel via existing phone API; visual coverage, not new home navigation");
         int settings = Array.FindIndex(SmartphoneUI.instance.tabPanels,p=>p != null && p.GetComponentInChildren<SettingsUI>(true) != null);
@@ -948,10 +1002,24 @@ public static class PA_P3DirectGatherReview
         SmartphoneUI.instance.Close(); await Delay(500);
         Note("FIXTURE dialogue and report data only for presentation coverage; no sale/score granted");
         DialogueUI.instance.Show("로건","가게를 채우고 나면 오늘의 첫 손님을 맞이해 봐요.");
-        await Delay(1800); await Shot("D2_dialogue"); DialogueUI.instance.Hide();
+        await Delay(1800);
+        var promptPanel = typeof(InteractPromptUI).GetField("_panel",Private).GetValue(InteractPromptUI.instance) as GameObject;
+        Check(DialogueUI.IsOpen && (promptPanel == null || !promptPanel.activeSelf), "D2 dialogue suppresses the overlapping interaction prompt");
+        await Shot("D2_dialogue"); DialogueUI.instance.Hide();
         var bubble = UnityEngine.Object.FindObjectsByType<NpcBubbleUI>(FindObjectsInactive.Include,FindObjectsSortMode.None).FirstOrDefault();
-        if (bubble != null) { bubble.Show("오늘은 어떤 물건이 들어왔나요?",8); await Delay(250); await Shot("D2_bubble"); bubble.HideBubble(); }
-        var report = PioneerReportCardUI.Show(new DemoPioneerReportData { settlement=25, commerce=22, development=18, exploration=16,total=81,sales=4,revenue=120,rejections=1,rankKey="A",commentKeys=new[]{"settlement.established","commerce.first_customers"},activities=new[]{"craft"},visitedBiomes=new[]{"Grassland"}},null);
+        if (bubble == null)
+        {
+            var companion = UnityEngine.Object.FindFirstObjectByType<DemoCompanionRoutine>();
+            Require(companion != null, "D2 actual companion model exists for bubble coverage");
+            Note("FIXTURE existing companion shopper presentation binding; no sale/reward or substitute NPC");
+            typeof(DemoCompanionRoutine).GetMethod("EnsureShopper",Private).Invoke(companion,new object[]{DemoSettlementController.Instance});
+            bubble = companion.GetComponentInChildren<NpcBubbleUI>(true);
+            var player = Inventory.instance.gameObject;
+            Face(player,companion.transform,2.8f,"D2 companion bubble");
+        }
+        Require(bubble != null, "D2 real NPC bubble must be captured, never silently skipped");
+        bubble.Show("오늘은 어떤 물건이 들어왔나요?",8); await Delay(400); await Shot("D2_bubble"); bubble.HideBubble();
+        var report = PioneerReportCardUI.Show(new DemoPioneerReportData { settlement=25, commerce=22, development=18, exploration=16,total=81,sales=4,revenue=120,rejections=1,rankKey="rank.a",commentKeys=new[]{"settlement.established","commerce.first_customers"},activities=new[]{"craft"},visitedBiomes=new[]{"Grassland"}},null);
         await Delay(900); await Shot("D2_report"); report.Hide();
         Note("FIXTURE reel panel with no reward callback for visual coverage only");
         var fishing = new GameObject("D2ReelPresentation").AddComponent<FirstDayFishingMinigame>();
@@ -1052,14 +1120,15 @@ public static class PA_P3DirectGatherReview
         Require(ui != null && ui.IsOpen, "crafting open");
         Note("CARDS " + string.Join(" | ", Cards(ui).Select(c => Plain(c.Value))));
         var plankCard = Card(ui, "판재");
-        Check(plankCard.Key != null && Plain(plankCard.Value).Contains("재료 부족") && !plankCard.Key.GetComponent<UnityEngine.UI.Button>().interactable,
+        await Select(ui, plankCard, "P6 판재");
+        Check(plankCard.Key != null && Plain(plankCard.Value).Contains("재료 부족") && !Makeable(ui, plankCard),
             "P6 판재 card shows 재료 부족 and is disabled with no Wood");
         var lockedCard = Card(ui, "개선 곡괭이");
         Check(lockedCard.Key != null && Plain(lockedCard.Value).Contains("광업 전문 분야를 선택해야"), "P6 개선 곡괭이 is locked until 광업 is chosen");
         var tierCard = Card(ui, "목제 가구");
         Check(tierCard.Key != null && Plain(tierCard.Value).Contains("등급 2"), "P6 목제 가구 shows its approval-tier lock");
         await Shot("P6_craft_locked");
-        await ClickUI(plankCard.Key.gameObject, "disabled 판재 card");
+        await Make(ui, plankCard, "disabled 판재 card");
         Check(inventory.CountItems(plank) == 0, "P6 clicking a card without materials crafts nothing");
         Vector3 standing = player.transform.position;
         await Press(Key.W, 400);
@@ -1070,12 +1139,13 @@ public static class PA_P3DirectGatherReview
         Note("FIXTURE Wood +8, Ore +2 (direct gathering verified in P3)");
         await Press(Key.E); await Delay(500);
         plankCard = Card(ui, "판재");
-        Check(ui.IsOpen && Plain(plankCard.Value).Contains("제작 가능") && plankCard.Key.GetComponent<UnityEngine.UI.Button>().interactable, "P6 판재 card is craftable with Wood");
-        await ClickUI(plankCard.Key.gameObject, "판재 card");
+        await Select(ui, plankCard, "P6 판재");
+        Check(ui.IsOpen && Plain(plankCard.Value).Contains("제작 가능") && Makeable(ui, plankCard), "P6 판재 card is craftable with Wood");
+        await Make(ui, plankCard, "판재 card");
         await Delay(250);
         Check(inventory.CountItems(plank) == 1 && inventory.CountItems(wood) == 6 && Status(ui).Contains("판재 ×1 제작 완료") && HotbarIndex(inventory, plank) >= 0,
             $"P6 click crafts one 판재 from 2 Wood ({inventory.CountItems(plank)} 판재, {inventory.CountItems(wood)} Wood, '{Status(ui)}')");
-        await ClickUI(Card(ui, "판재").Key.gameObject, "판재 card again");
+        await Make(ui, Card(ui, "판재"), "판재 card again");
         await Delay(250);
         Check(inventory.CountItems(plank) == 2 && inventory.CountItems(wood) == 4, "P6 a second click crafts a second 판재");
         await Shot("P6_craft_plank");
@@ -1100,7 +1170,7 @@ public static class PA_P3DirectGatherReview
         var upgradeCard = Card(ui, "개선 곡괭이");
         Check(ui.IsOpen && Plain(upgradeCard.Value).Contains("제작 가능"), "P6 광업 unlocks the 개선 곡괭이 recipe");
         await Shot("P6_craft_upgrade_ready");
-        await ClickUI(upgradeCard.Key.gameObject, "개선 곡괭이 card");
+        await Make(ui, upgradeCard, "개선 곡괭이 card");
         await Delay(250);
         Check(inventory.CountItems(improved) == 1 && inventory.CountItems(pickaxe) == 0 && inventory.CountItems(wood) == 2 && inventory.CountItems(ore) == 0,
             "P6 개선 곡괭이 consumes the pickaxe, 2 Wood and 2 Ore");
@@ -1425,7 +1495,7 @@ public static class PA_P3DirectGatherReview
             await Press(Key.X); await Delay(300);
             await Press(Key.E); await Delay(500);
             Require(CraftingUI.instance != null && CraftingUI.instance.IsOpen, "crafting open");
-            await ClickUI(Card(CraftingUI.instance, "판재").Key.gameObject, "판재 card");
+            await Make(CraftingUI.instance, Card(CraftingUI.instance, "판재"), "판재 card");
             await Delay(300);
             await Press(Key.Escape); await Delay(300);
             Check(inventory.CountItems(plank) == 1 && inventory.CountItems(wood) == 0, "P8 the workbench turns the 2 Wood into 1 판재");
@@ -2414,6 +2484,25 @@ public static class PA_P3DirectGatherReview
 
     static System.Collections.Generic.KeyValuePair<Transform, string> Card(CraftingUI ui, string name) =>
         Cards(ui).FirstOrDefault(c => Plain(c.Value).StartsWith(name));
+
+    // 2026-11-02 제작 창 2단 구성: 행 클릭 = 선택, 상세의 [만들기] = 제작. 직렬화된 레거시 패널(CraftButton 없음)은 카드 클릭 = 제작.
+    static async Task Select(CraftingUI ui, System.Collections.Generic.KeyValuePair<Transform, string> card, string label)
+    {
+        if (card.Key == null || ui.CraftButton == null) return;
+        await ClickUI(card.Key.gameObject, label + " select"); await Delay(150);
+    }
+
+    static bool Makeable(CraftingUI ui, System.Collections.Generic.KeyValuePair<Transform, string> card) =>
+        card.Key != null && (ui.CraftButton == null ? card.Key.GetComponent<UnityEngine.UI.Button>().interactable
+            : ui.SelectedRecipe != null && card.Key.name == "Recipe_" + ui.SelectedRecipe.name && ui.CraftButton.interactable);
+
+    static async Task Make(CraftingUI ui, System.Collections.Generic.KeyValuePair<Transform, string> card, string label)
+    {
+        if (card.Key == null) { Check(false, label + " card missing"); return; }
+        if (ui.CraftButton == null) { await ClickUI(card.Key.gameObject, label); return; }
+        await Select(ui, card, label);
+        await ClickUI(ui.CraftButton.gameObject, label + " 만들기");
+    }
 
     static string Plain(string rich) => System.Text.RegularExpressions.Regex.Replace(rich ?? "", "<[^>]+>", "").Replace("\n", " ");
 

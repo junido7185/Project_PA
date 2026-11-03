@@ -55,7 +55,10 @@ public sealed class DemoPlacedObject : MonoBehaviour, IInteractable
         var slot = GetComponentInChildren<ShopSlot>();
         if (slot != null) return slot.GetInteractPrompt() + (CanMove ? " / E 길게: 이동" : "");
         // 작업대 E = 제작(Canon v2 §10). 상점 운영은 P폰, 가판대는 진열/가격으로 구분한다.
-        if (GetComponentInChildren<Workbench>() != null) return "작업대 · 제작" + (CanMove ? " / E 길게: 이동" : "");
+        // 용도별 작업대(조리대·화로)는 자기 이름과 하는 일을 보여 준다.
+        var bench = GetComponentInChildren<Workbench>();
+        if (bench != null) return (bench.workbenchType == WorkbenchType.Kitchen ? "조리대 · 요리"
+            : bench.workbenchType == WorkbenchType.Forge ? "화로 · 제련" : "작업대 · 제작") + (CanMove ? " / E 길게: 이동" : "");
         return (Entry?.item != null ? ItemDisplayName.For(Entry.item) : name) + (CanMove ? " · 사용 / E 길게: 이동" : " · 사용");
     }
 }

@@ -18,7 +18,7 @@ MonoBehaviour:
     \uC704\uD55C \uBCF4\uAE09\uD488."
   icon: {fileID: 21300000, guid: 901625a7989ae8c498ab4de4f102efe5, type: 3}
   maxStack: 1
-  model: {fileID: 919132149155446097, guid: 7ebf171941044cb4081b67401ef38217, type: 3}
+  model: {fileID: 8276922957289197786, guid: 047efc65f2558394a8084a4917122d8d, type: 3}
   basePrice: 0
   toolType: 0
   category: 4

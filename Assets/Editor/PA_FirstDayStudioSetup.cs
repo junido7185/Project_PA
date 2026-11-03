@@ -70,7 +70,8 @@ public static class PA_FirstDayStudioSetup
         catalog.grasses=new[]{"Grass","Grass_2","Grass_Short"}.Select(n=>Load(nature+n+".fbx")).ToArray();
         catalog.flowers=new[]{Load(nature+"Flowers.fbx")};
         catalog.bushes=new[]{Load(nature+"Bush_1.fbx"),Load(nature+"Bush_2.fbx")};
-        catalog.workbench=Load("Assets/Models/Buildings/B05_Workbench.fbx");
+        // 2026-11-02: 현장 작업대는 PA_StationArt의 로우폴리 모델을 쓴다(없으면 기존 B05).
+        catalog.workbench=AssetDatabase.LoadAssetAtPath<GameObject>(PA_StationArt.WorkbenchPath)??Load("Assets/Models/Buildings/B05_Workbench.fbx");
         catalog.wood=Load(intake+"ULTIMATENATURE_WOODLOG.prefab");
         catalog.blueprint=MakeBlueprint();
         catalog.phone=MakePhone();
@@ -132,9 +133,17 @@ public static class PA_FirstDayStudioSetup
         string path=Root+"/"+name;
         var mesh=AssetDatabase.LoadAssetAtPath<Mesh>(path+".asset");
         if(mesh==null){mesh=new Mesh();AssetDatabase.CreateAsset(mesh,path+".asset");}
-        mesh.Clear();mesh.SetVertices(vertices);mesh.SetTriangles(triangles,0);mesh.RecalculateNormals();mesh.RecalculateBounds();EditorUtility.SetDirty(mesh);
+        mesh.Clear();mesh.SetVertices(vertices);mesh.SetTriangles(triangles,0);mesh.RecalculateNormals();FixZeroNormals(mesh);mesh.RecalculateBounds();EditorUtility.SetDirty(mesh);
         var root=new GameObject(name,typeof(MeshFilter),typeof(MeshRenderer));root.GetComponent<MeshFilter>().sharedMesh=mesh;root.GetComponent<MeshRenderer>().sharedMaterial=material;
         var prefab=PrefabUtility.SaveAsPrefabAsset(root,path+".prefab");Object.DestroyImmediate(root);return prefab;
+    }
+    // 앞뒤 삼각형이 정점을 공유하는 양면 판(설계도·폰)은 RecalculateNormals가 (0,0,0)을 만든다.
+    // URP Lit에서 NaN이 되고 Bloom이 화면 전체로 번지므로 판의 정면(-z) 법선으로 채운다.
+    static void FixZeroNormals(Mesh mesh)
+    {
+        var normals=mesh.normals;bool changed=false;
+        for(int i=0;i<normals.Length;i++)if(normals[i].sqrMagnitude<1e-6f){normals[i]=Vector3.back;changed=true;}
+        if(changed)mesh.normals=normals;
     }
     static void Rod(List<Vector3> v,List<int> t,Vector3 a,Vector3 b,float radius)
     {

@@ -61,9 +61,18 @@ public sealed class DemoPlaceableCatalog : ScriptableObject
     public DemoPlaceableEntry Find(Item item) => entries?.FirstOrDefault(e => e.item == item);
     public DemoPlaceableEntry Find(DemoPlaceableKind kind) => entries?.FirstOrDefault(e => e.kind == kind);
     public DemoToolUpgrade Upgrade(Item item) => upgrades?.FirstOrDefault(u => u.tool == item);
+    // 전문 분야 잠금: 동행 도구 업그레이드의 root(None이면 누구나)와 도구 단계 표의 철 단계 조건(ToolPower)을 함께 본다.
     public static bool RecipeUnlocked(RecipeData recipe)
     {
+        var root = RequiredRoot(recipe);
+        return root == DemoSpecialization.None || DemoSettlementController.Instance?.SelectedRoot == root;
+    }
+
+    public static DemoSpecialization RequiredRoot(RecipeData recipe)
+    {
+        if (recipe == null) return DemoSpecialization.None;
         var upgrade = Load()?.upgrades?.FirstOrDefault(u => u.recipe == recipe);
-        return upgrade == null || DemoSettlementController.Instance?.SelectedRoot == upgrade.root;
+        if (upgrade != null && upgrade.root != DemoSpecialization.None) return upgrade.root;
+        return ToolPower.RequiredRoot(recipe.outputItem);
     }
 }

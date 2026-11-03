@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
+  m_Name: Recipe_SturdyRod
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeData
+  recipeName: "\uD2BC\uD2BC\uD55C \uB09A\uC2EF\uB300"
+  icon: {fileID: 21300000, guid: b16a813869b763746b17f4f29097a354, type: 3}
+  description: 
+  ingredients:
+  - item: {fileID: 11400000, guid: 698a1d3428a5cef488c3279c66657fc1, type: 2}
+    count: 1
+  - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
+    count: 1
+  outputItem: {fileID: 11400000, guid: ba63a2609e4a9f74da81968b6b7273b0, type: 2}
+  outputCount: 1
+  baseOutputQuality: 1.2
+  ingredientQualityWeight: 0.3
+  requiredTier: 0
+  requiredWorkbench: 3
+  inputItem: {fileID: 0}
+  inputCount: 0

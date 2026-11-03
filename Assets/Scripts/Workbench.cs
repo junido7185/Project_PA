@@ -21,6 +21,8 @@ public class Workbench : MonoBehaviour, IInteractable
     const string B05HandleName = "B05_ProcessHandle";
     const string B05LightName = "B05_SuccessLight";
     const string KitchenInteractionAnchorName = "PA_KitchenInteractionAnchor";
+    // 2026-11-02 데모 작업대 공통 모델(PA_StationArt: 현장 작업대·조리대·화로). 있으면 종류와 관계없이 같은 접근점·성공 펄스를 쓴다.
+    const string StationModelName = "StationModel";
 
     [Header("작업대 정보")]
     [Tooltip("이 작업대에서 사용할 수 있는 RecipeData.requiredWorkbench 종류와 매칭된다.")]
@@ -55,7 +57,9 @@ public class Workbench : MonoBehaviour, IInteractable
     {
         if (IsFunctionalArtReady && FunctionalArtRoot != null) return true;
 
-        if (workbenchType == WorkbenchType.Kitchen)
+        Transform stationModel = transform.Find(StationModelName);
+        if (stationModel != null) return ApplyStationPresentation(stationModel, false);
+        if (workbenchType == WorkbenchType.Kitchen || workbenchType == WorkbenchType.Forge || workbenchType == WorkbenchType.SewingTable)
             return ApplyKitchenPresentation();
         if (workbenchType != WorkbenchType.BasicWorkbench) return false;
 
@@ -116,14 +120,18 @@ public class Workbench : MonoBehaviour, IInteractable
     {
         Transform sourceVisual = transform.Find(SourceVisualName);
         if (sourceVisual == null) return false;
+        return ApplyStationPresentation(sourceVisual, true);
+    }
 
+    bool ApplyStationPresentation(Transform sourceVisual, bool fitPhysics)
+    {
         FunctionalArtRoot = sourceVisual;
         _feedbackVisual = sourceVisual;
         _feedbackVisualRestScale = sourceVisual.localScale;
 
         // B06의 2x2 설치 footprint와 전면 clearance는 GridService가 계속 소유한다.
-        // 여기서는 실제 Visual보다 명백히 큰 물리/Carving 축만 줄여 보이지 않는 벽을 막는다.
-        FitKitchenPhysicsToVisibleModel(sourceVisual);
+        // 여기서는 실제 Visual보다 명백히 큰 물리/Carving 축만 줄여 보이지 않는 벽을 막는다(새 모델 프리팹은 이미 모델에 맞춘 상자).
+        if (fitPhysics) FitKitchenPhysicsToVisibleModel(sourceVisual);
 
         BoxCollider box = GetComponent<BoxCollider>();
         _interactionAnchor = transform.Find(KitchenInteractionAnchorName);
@@ -142,7 +150,7 @@ public class Workbench : MonoBehaviour, IInteractable
         _interactionAnchor.localRotation = Quaternion.identity;
         _interactionAnchor.localScale = Vector3.one;
 
-        if (displayName == "작업대" || displayName == "주방 스테이션")
+        if (workbenchType == WorkbenchType.Kitchen && (displayName == "작업대" || displayName == "주방 스테이션"))
             displayName = "조리 준비대";
 
         IsFunctionalArtReady = true;
