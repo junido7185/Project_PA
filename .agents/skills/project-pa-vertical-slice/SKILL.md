@@ -2,6 +2,8 @@
 name: project-pa-vertical-slice
 description: Turn existing Project P.A. gameplay systems and art assets into a finished-feeling Unity 3D vertical slice by working through real GameView, preserving established gameplay authorities, and autonomously fixing bounded implementation issues.
 ---
+Current production policy (2026-10-09): AGENTS.md governs approved experience edits, adaptive repair by progress/time/usage, optional tools and one-time recording. No fixed attempt/file/time caps or duplicate startup reads apply. See loop-policy.json recoveryPolicy; keep Canon, rejection and safety boundaries. Preserve existing authority/save/dirty boundaries and actual GameView acceptance.
+
 
 # Project P.A. Vertical Slice Skill
 
@@ -38,10 +40,10 @@ For those, fall back to the project's safe bounded workflow.
 Read only the minimum needed:
 
 1. `AGENTS.md`
-2. `AI_WORKFLOW/01_IDENTITY/PROJECT_PA_IDENTITY.md`
-3. `AI_WORKFLOW/01_IDENTITY/PROJECT_PA_SCOPE.md`
-4. `VERTICAL_SLICE_STUDIO_MODE.md`
-5. `PROJECT_PA_ASSET_MANIFEST.md`
+2. The current docs and active Handoff required by `AGENTS.md`
+3. `Docs/01_GAME_DESIGN/Canon/PROJECT_PA_IDENTITY.md` and the current Opening Demo Canon; read `Docs/01_GAME_DESIGN/Canon/PROJECT_PA_SCOPE.md` only for a long-term scope decision, observing its historical-snapshot warning
+4. `AI_WORKFLOW/02_AGENT_RULES/VERTICAL_SLICE_STUDIO_MODE.md`
+5. `AI_WORKFLOW/08_ASSET_CONTEXT/PROJECT_PA_ASSET_MANIFEST.md`
 6. current `git status`
 7. files directly relevant to the requested player experience
 
@@ -62,29 +64,10 @@ The player is a resident-owner-operator, not a detached manager.
 
 ## Reference grammar
 
-### Dinkum
-- close readable third-person camera
-- direct movement
-- tool use
-- hotbar immediacy
-- in-world placement
-- exploration/gathering rhythm
-
-### Animal Crossing
-- settlement warmth
-- resident presence
-- contextual HUD
-- reaction clarity
-- environmental attachment
-
-### Moonlighter
-- shop judgment
-- price/reaction legibility
-- selling tension
-
-### Dave the Diver
-- short high-energy milestone payoff
-- memorable success presentation
+Use `Docs/01_GAME_DESIGN/References/README.md` as the shared task router.
+Read only the relevant 1–3 decision sections: Dinkum action/world, Animal Crossing space/learning, Moonlighter commerce, or Dave milestones.
+Reuse the recorded problem, rationale, P.A. adoption and excluded scope. Developer intent and our inference are separate evidence types.
+Use selected IDs and recent project evidence to define the visible change. Research again only for an unanswered decision, contrary evidence or changed direction; do not reread all games or add a reference feature outside approval.
 
 ## Existing authority map
 
@@ -166,10 +149,11 @@ A functional scene that visually reads as a test map is not done.
 
 ### Phase 5 — Self-repair
 
-Default budget:
-- 3 compile/fix cycles
-- 3 targeted Play attempts
-- 1 focused validator maximum
+Progress-based recovery:
+- No fixed file count, total task duration or compile/Play/validator attempt cap within the approved goal.
+- Preserve attempts/usage; reuse valid evidence and change cause/approach when recovery is needed.
+- Checkpoint and diagnose unchanged repeated failures or ambiguous execution before retry.
+- Keep process inactivity detection, 120-second snapshots and resumable 20-minute safe handoffs.
 
 Do not stop for small mechanical issues.
 
@@ -258,7 +242,7 @@ Before claiming PASS:
 - debug labels/panels hidden
 - blocking runtime errors zero
 
-If not, continue within repair budget.
+If not, continue by observed progress, changed approach and reusable evidence within the approved goal.
 
 ## Hard stop
 
@@ -269,7 +253,7 @@ Stop only for:
 - replacement of established gameplay authority
 - major architecture rewrite
 - external package/download requirement without approval
-- unusable Unity environment after repair budget
+- an unresolved Unity/environment cause that cannot safely be recovered within the approved scope
 
 ## Suggested commands
 

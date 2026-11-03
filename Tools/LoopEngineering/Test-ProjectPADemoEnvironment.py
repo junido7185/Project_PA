@@ -4,7 +4,9 @@ Never launches Unity, installs packages, invokes gameplay tools or writes approv
 Exit 0: configuration valid; exit 1: configuration/approval error. Runtime is separate.
 """
 import argparse
+import importlib.util
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -14,7 +16,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_ROOT = Path("C:/Users/sdjsd/Desktop/Unity/Project_PA")
 ENDPOINT = "http://127.0.0.1:8080/mcp"
-TOOLS = {"read_console", "manage_editor", "execute_menu_item", "manage_scene"}
+TOOLS = {"read_console", "manage_editor", "execute_menu_item", "manage_scene", "refresh_unity", "execute_code", "manage_gameobject", "manage_prefabs", "manage_components", "manage_material", "manage_animation", "manage_ui", "manage_camera", "manage_build", "manage_profiler", "run_tests", "get_test_job"}
 ACTIVE = {"approved_not_started", "preapproved", "active", "in_progress"}
 
 
@@ -62,11 +64,21 @@ def selection(state, agent):
     if agent != owner:
         result["disposition"] = "READ_ONLY_OTHER_EDITOR_OWNER"
         return result
+    spec = importlib.util.spec_from_file_location('pa_budget_guard', ROOT / 'Tools/PaAgentConsole/production_adapter.py')
+    if spec.origin and Path(spec.origin).is_file():
+        guard = importlib.util.module_from_spec(spec); spec.loader.exec_module(guard)
+        budget_errors = guard.budget_errors(state)
+        if budget_errors:
+            result.update(disposition='BLOCKED_BUDGET', budgetErrors=budget_errors)
+            return result
+    else:
+        result.update(disposition='BUDGET_GUARD_UNAVAILABLE')
+        return result
     result.update(nextTicket=active, disposition="ELIGIBLE_PENDING_RUNTIME_AND_FILE_REVIEW")
     return result
 
 
-def rpc(method, params=None, session=None, protocol="2024-11-05", request_id=1):
+def rpc(method, params=None, session=None, protocol="2024-11-05", request_id=1, timeout=8):
     headers = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
                "MCP-Protocol-Version": protocol}
     if session:
@@ -76,7 +88,7 @@ def rpc(method, params=None, session=None, protocol="2024-11-05", request_id=1):
         payload["id"] = request_id
     if params is not None:
         payload["params"] = params
-    with urlopen(Request(ENDPOINT, data=json.dumps(payload).encode(), headers=headers), timeout=3) as response:
+    with urlopen(Request(ENDPOINT, data=json.dumps(payload).encode(), headers=headers), timeout=timeout) as response:
         raw = response.read(2_000_001)
         if len(raw) > 2_000_000:
             raise ValueError("MCP response exceeds bounded inspection limit")
@@ -140,13 +152,24 @@ def configuration(agent):
     route = selection(state, agent)
     errors.extend(route.pop("errors"))
     codex = tomllib.loads((ROOT / ".codex/config.toml").read_text(encoding="utf-8-sig"))
-    claude = read_json(ROOT / ".mcp.json")
-    for label, server in (("Codex", codex.get("mcp_servers", {}).get("unityMCP", {})),
-                          ("Claude", claude.get("mcpServers", {}).get("unityMCP", {}))):
-        if server.get("url") != ENDPOINT or server.get("enabled") is False:
-            errors.append(label + " Unity MCP endpoint is missing/disabled or differs from the local endpoint.")
+    server = codex.get("mcp_servers", {}).get("unityMCP", {})
+    owner = state.get("demoProductionRouting", {}).get("unityEditorOwner")
+    if server.get("url") != ENDPOINT:
+        errors.append("Project Unity MCP endpoint is mismatched.")
+    local = read_json(ROOT / ".claude/settings.local.json")
+    claude_mcp = read_json(ROOT / ".mcp.json").get("mcpServers", {}).get("unityMCP", {})
+    if owner == "claude-code":
+        if server.get("enabled") is not False:
+            errors.append("Codex support must have live Unity MCP disabled after the handoff.")
+        if claude_mcp.get("url") != ENDPOINT or "unityMCP" not in local.get("enabledMcpjsonServers", []):
+            errors.append("Claude lead must have the existing original Unity MCP connection enabled.")
+    elif owner == "codex":
+        if server.get("enabled") is False:
+            errors.append("Codex owner Unity MCP is disabled.")
+        if "unityMCP" in local.get("enabledMcpjsonServers", []):
+            errors.append("Non-owner Claude must not receive original Unity MCP.")
     codex_tools = set(codex.get("mcp_servers", {}).get("unityMCP", {}).get("enabled_tools", []))
-    if TOOLS - codex_tools:
+    if codex_tools and TOOLS - codex_tools:
         errors.append("Codex is missing production tools: " + ", ".join(sorted(TOOLS - codex_tools)))
     skill = ROOT / ".agents/skills/pa-demo-factory/SKILL.md"
     adapter = ROOT / ".claude/skills/pa-demo-factory/SKILL.md"
@@ -160,10 +183,38 @@ def configuration(agent):
     registry = read_json(ROOT / "Automation/LoopEngineering/validator-registry.json")
     if not registry:
         errors.append("Validator registry is empty.")
+    routing_sources = {}
     for path in ("Docs/00_CURRENT/CODEX_HANDOFF.md", "Docs/00_CURRENT/INTEGRATION_QUEUE.md"):
-        if "demoProductionRouting" not in (ROOT / path).read_text(encoding="utf-8"):
+        content = (ROOT / path).read_text(encoding="utf-8")
+        if "demoProductionRouting" in content:
+            routing_sources[path] = path
+            continue
+        # A current build-only handoff deliberately points to the preserved production handoff.
+        # Follow that exact local pointer instead of overwriting the active handoff to satisfy a keyword check.
+        pointer = re.search(r'Logs/ParallelProduction/PresentationBuild-\d{8}/backup-before/CODEX_HANDOFF\.md', content)
+        archived = (ROOT / pointer[0]).resolve() if pointer else None
+        if (archived and archived.is_relative_to(ROOT.resolve()) and archived.is_file()
+                and 'demoProductionRouting' in archived.read_text(encoding='utf-8-sig')):
+            routing_sources[path] = pointer[0]
+        else:
             errors.append(path + " does not acknowledge the selected production routing.")
-    return {"configurationReady": not errors, "errors": errors, "projectRoot": str(ROOT), "routing": route}
+    result = {"configurationReady": not errors, "errors": errors, "projectRoot": str(ROOT), "routing": route}
+    result['routingDocumentSources'] = routing_sources
+    result["baseline"] = {"head": subprocess.run(["git","rev-parse","HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip(),
+                          "branch": subprocess.run(["git","branch","--show-current"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()}
+    result["optionalTools"] = {"serena": "OPTIONAL_RG_READ_FALLBACK", "context7": "OPTIONAL_OFFICIAL_WEB_FALLBACK"}
+    result["productionEnvironment"] = {k:v for k,v in state.get("productionEnvironment",{}).items() if k in ("status","unityEditorOwner","approvalSource","validationScope")}
+    result["ownership"] = {"unityEditorOwner":owner,"codexUnityEnabled":server.get("enabled"),
+                           "claudeUnityEnabled": "unityMCP" in local.get("enabledMcpjsonServers", []),
+                           "workerIsolation":"strict empty MCP + own worktree settings"}
+    automation=state.get('productionEnvironment',{}).get('autonomous',{})
+    result['automaticContinuation']={'status':automation.get('status'),'approved':bool(automation.get('approvalSource')),
+        'mode':'existing helper + /goal + session-scoped project Mods; API reset timestamp only',
+        'modPresent':(ROOT/'Tools/LoopEngineering/mods/project-pa-production/hooks/register.js').is_file(),
+        'projectHooksEnabled':local.get('disableAllHooks') is False,
+        'oldPluginsDisabled':all(v is False for v in local.get('enabledPlugins',{}).values()),
+        'nativeInputDesktopRequired':'unlocked for native input; account and manual stop remain binding'}
+    return result
 
 
 def self_test():
@@ -173,7 +224,9 @@ def self_test():
             "chosen": {"policyId": "PREAPPROVED_MILESTONE_CONTINUATION", "approvalSource": "human",
                        "approvedTickets": ["D1", "D2"], "activeTicket": "D1", "preapprovedThrough": "D2",
                        "stopAtMilestone": "review", "status": "approved_not_started", "pushAllowed": False,
-                       "ticketDefinitions": {"D1": "scoring"}}}
+                       "ticketDefinitions": {"D1": "scoring"},
+                       "perTicketBudget": {"compileFix": 3, "targetedPlay": 3, "dedicatedValidators": 1},
+                       "results": {"D1": {"compileCycles": 0, "targetedPlayRuns": 0, "dedicatedValidatorsAdded": 0}}}}
 
     class Boundaries(unittest.TestCase):
         def test_other_owner_cannot_take_editor(self):

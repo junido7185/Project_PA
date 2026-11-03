@@ -1,3 +1,5 @@
+
+Current production policy (2026-10-09): AGENTS.md governs approved experience edits, adaptive repair by progress/time/usage, optional tools and one-time recording. No fixed attempt/file/time caps or duplicate startup reads apply. See loop-policy.json recoveryPolicy; keep Canon, rejection and safety boundaries. Preserve existing authority/save/dirty boundaries and actual GameView acceptance.
 # VERTICAL_SLICE_STUDIO_MODE
 
 > Project P.A.의 **플레이어가 실제로 보는 3D 경험을 빠르게 제품 수준으로 끌어올리기 위한 제작 모드**.
@@ -179,11 +181,12 @@ Studio Mode에서는 다음 실패를 **STOP 사유로 취급하지 말고 스�
 - 단순 null-reference
 - GameView에서 발견된 직접적인 layout/placement 문제
 
-기본 자체 복구 예산:
-- compile/fix cycle 최대 3회
-- targeted Play 최대 3회
-- validator 최대 1개
-- 동일 경험을 완성하기 위한 소규모 glue 파일 추가 허용
+자체 복구 정책:
+- 고정 파일 수·작업 총시간·compile/Play/validator 횟수 상한 없이 승인 경험을 완성한다.
+- 시도와 실제 사용량은 누적하고, 실패 원인·바뀐 접근·새 근거로 복구한다.
+- 동일 행동의 무진전 반복/모호한 실행은 checkpoint와 원인 확인으로 전환한다.
+- 프로세스 inactivity timeout과 120초 스냅샷/20분 안전 인계는 별도 유지한다.
+- 필요한 glue/표현/도구 수정은 기존 권위를 재사용하고 파일 소유 충돌을 먼저 확인한다.
 
 **진단만 하고 작업을 종료하지 않는다.**
 
@@ -198,7 +201,7 @@ Studio Mode에서는 다음 실패를 **STOP 사유로 취급하지 말고 스�
 - 호환되지 않는 SaveData migration이 필요
 - 대형 아키텍처 재작성 없이는 진행 불가
 - 승인되지 않은 외부 패키지/외부 에셋 다운로드 필요
-- Unity/환경이 복구 예산 이후에도 실행 불가
+- 현재 범위에서 안전하게 복구할 수 없는 Unity/환경 원인(시도 횟수만으로 판단하지 않음)
 
 중단 시:
 1. 무엇이 막혔는지

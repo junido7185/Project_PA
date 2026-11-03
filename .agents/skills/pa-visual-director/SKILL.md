@@ -35,11 +35,9 @@ another message between its tickets; use `demoProductionRouting` and
 
 ## Reference philosophy
 
-- Dinkum: world readability, camera, gathering, placement, and settlement grammar.
-- Animal Crossing: item/UI readability and cozy interaction grammar.
-- Moonlighter: shop, pricing, and customer-feedback grammar.
-
-Use product grammar only. Never copy distinctive copyrighted assets or designs.
+Use `Docs/01_GAME_DESIGN/References/README.md` to select only the relevant 1–3 decision sections for the active screen. It links developer rationale, observed grammar, P.A. adoption and excluded scope.
+Reuse existing decisions and captures; reopen source research only for an unanswered question, contrary evidence or changed direction. Record selected IDs with the visible change instead of copying the research into the task.
+Use product grammar with P.A.'s Canon and local assets. Never copy distinctive copyrighted assets or designs.
 
 ## Priorities
 

@@ -1,5 +1,8 @@
 # PROJECT_PA_GAME_LOOP — 하루 루프 정의
 
+> **2026-10-18 권위 구분:** 아래의 작성 시점별 구현 상태·졸업 시연 최소 기능은 과거 기록이다. 현재 데모는 [Opening Demo Canon v2](PROJECT_PA_OPENING_DEMO_CANON_V2_2026-09-16.md)와 `Docs/00_CURRENT`를 따른다. 특히 추천가/구매확률 UI, 상시 목표, 주민/관광객 구성, 여러 날·농사·마을 변화 시연을 아래 기록만으로 실행하지 않는다. 낮의 준비→밤의 영업→성장이라는 장기 방향은 유지한다. 현재 이식 판단은 [레퍼런스 결정 입구](../References/README.md)를 사용한다.
+
+
 작성: 2026-07-09
 지위: 게임플레이 작업 시 필독. 정체성 상위 문서: `Docs/01_GAME_DESIGN/Canon/PROJECT_PA_IDENTITY.md`.
 

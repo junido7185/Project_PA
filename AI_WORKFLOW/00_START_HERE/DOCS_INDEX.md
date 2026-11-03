@@ -1,3 +1,5 @@
+Current routing: read AGENTS.md and Handoff once, then only task-relevant sections. Studio production edits are authorized by the experience scope; no special keyword or repeated 3-document load is required. Older routing below is reference only.
+
 문서 라우팅
 
 1. 기본 진입
@@ -5,6 +7,8 @@
 Docs/README → 00_CURRENT 네 문서. AI_WORKFLOW는 작업 방법만 관리한다.
 
 기본적으로 전체 문서 트리를 정독하지 않는다. 현재 작업에 직접 필요한 문서만 추가로 읽는다.
+
+레퍼런스 연구 입구: `Docs/01_GAME_DESIGN/ReferenceResearch/README.md`. 게임플레이·NPC·월드·UI·상점 작업에서 최신 색인으로 관련 연구만 선택한다. 공식 Canon·현행 코드·실제 검증 결과가 우선하며 연구의 해석/가설/미확인과 관찰/측정을 구분한다. 계속 추가되는 연구 원본과 상대 링크는 유지한다.
 
 2. 기록 원칙
 
@@ -77,6 +81,8 @@ Style Grammar, 출처 입구
 과거 결정·실패
 
 월별 이력, 보관 문서 중 해당 티켓만
+
+레퍼런스 설계·손맛·배치·영업·연출 판단이 필요하면 Docs/01_GAME_DESIGN/References/README.md의 작업 표에서 관련 결정 1~3개만 읽는다. 기존 결정이 답하면 원문/웹을 재조사하지 않는다. 새 사용자 방향·반례·미해결 질문이 생겼을 때 해당 결정과 1차자료만 갱신한다. Canon·현재 approval·기존 권위가 우선하며, 참고 게임의 기능을 신규 승인 작업으로 간주하지 않는다.
 
 5. 실행 원칙
 

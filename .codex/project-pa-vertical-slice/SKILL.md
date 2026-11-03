@@ -2,6 +2,8 @@
 name: project-pa-vertical-slice
 description: Turn existing Project P.A. gameplay systems and art assets into a finished-feeling Unity 3D vertical slice by working through real GameView, preserving established gameplay authorities, and autonomously fixing bounded implementation issues.
 ---
+Current production policy (2026-10-09): AGENTS.md governs approved experience edits, adaptive repair by progress/time/usage, optional tools and one-time recording. No fixed attempt/file/time caps or duplicate startup reads apply. See loop-policy.json recoveryPolicy; keep Canon, rejection and safety boundaries. Preserve existing authority/save/dirty boundaries and actual GameView acceptance.
+
 
 # Project P.A. Vertical Slice Skill
 
@@ -166,10 +168,11 @@ A functional scene that visually reads as a test map is not done.
 
 ### Phase 5 — Self-repair
 
-Default budget:
-- 3 compile/fix cycles
-- 3 targeted Play attempts
-- 1 focused validator maximum
+Progress-based recovery:
+- No fixed file count, total task duration or compile/Play/validator attempt cap within the approved goal.
+- Preserve attempts/usage; reuse valid evidence and change cause/approach when recovery is needed.
+- Checkpoint and diagnose unchanged repeated failures or ambiguous execution before retry.
+- Keep process inactivity detection, 120-second snapshots and resumable 20-minute safe handoffs.
 
 Do not stop for small mechanical issues.
 
@@ -254,7 +257,7 @@ Before claiming PASS:
 - debug labels/panels hidden
 - blocking runtime errors zero
 
-If not, continue within repair budget.
+If not, continue by observed progress, changed approach and reusable evidence within the approved goal.
 
 ## Hard stop
 
@@ -265,7 +268,7 @@ Stop only for:
 - replacement of established gameplay authority
 - major architecture rewrite
 - external package/download requirement without approval
-- unusable Unity environment after repair budget
+- an unresolved Unity/environment cause that cannot safely be recovered within the approved scope
 
 ## Suggested commands
 
