@@ -586,8 +586,14 @@ public class DemoVisualDressingController : MonoBehaviour
             ?? GameObject.Find("B11_PlazaFountain");
         if (fountain == null) return;
 
+        var meshFilters = fountain.GetComponentsInChildren<MeshFilter>(true);
+        // Runtime cooking needs CPU mesh data in a player build. Preserve the
+        // existing blocking Box when any visual mesh cannot be cooked safely.
+        foreach (var filter in meshFilters)
+            if (filter != null && filter.sharedMesh != null && !filter.sharedMesh.isReadable) return;
+
         int configuredMeshColliders = 0;
-        foreach (MeshFilter meshFilter in fountain.GetComponentsInChildren<MeshFilter>(true))
+        foreach (MeshFilter meshFilter in meshFilters)
         {
             if (meshFilter == null || meshFilter.sharedMesh == null) continue;
 
