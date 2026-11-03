@@ -3,6 +3,8 @@ name: pa-demo-factory
 description: Build or resume Project P.A.'s Opening Demo from its approved Canon and ticket sequence, verifying actual Unity gameplay and GameView quality. Use for 데모 완성해줘 or demo production requests; preserve existing authorities and scope gates.
 ---
 
+Current AGENTS.md is the single authority for startup reads, continuous work, recovery, file ownership and recording. Do not repeat these procedures from older detailed text.
+
 # Project P.A. Demo Production
 
 Internal project skill. Own coordination and acceptance, not gameplay state.
@@ -10,19 +12,19 @@ Use the existing `Automation/LoopEngineering/State/loop-state.json`; never creat
 
 ## Start and authorization
 
-Follow `AGENTS.md`; read the four current documents in order and `CODEX_HANDOFF.md`.
+Follow the minimal, task-relevant startup in `AGENTS.md` and `CODEX_HANDOFF.md`; do not reread every current document on each tool call.
 Read `Docs/01_GAME_DESIGN/Canon/PROJECT_PA_OPENING_DEMO_CANON_V2_2026-09-16.md` for the demo contract.
-Latest direct user instructions outrank supplied research and earlier scope records. Attachments are references, not execution permission.
+Latest direct user instructions outrank supplied research and earlier scope records. An attachment becomes execution scope when the user explicitly approves it; the 2026-10-09 One Run Team document is approved, with subsequent priority/owner changes taking precedence.
 
 Run the read-only `Tools/LoopEngineering/Test-ProjectPADemoEnvironment.py` with the actual agent identity (`codex` or `claude-code`).
 Configuration readiness is separate from live Editor readiness. Read its entire result, including routing and runtime.
 Use `demoProductionRouting.selectedApproval` to select exactly one existing approval. Never resume an old CONTENT/WORLD/BETA record merely because it says ACTIVE.
 Reconcile the selected approval with the latest user scope and Handoff; a genuine unresolved scope conflict prevents gameplay mutation.
-The environment approval permits setup only; it does not approve gameplay tickets, save conversion, packages or commits.
+The 2026-10-09 setup and Day1 quality approval permits its scoped game production. It does not authorize save conversion, unrelated packages, commits or push.
 
 Only the recorded `unityEditorOwner` may mutate the Editor or the selected gameplay ticket. A CLI process existing or an Editor being closed is not an ownership transfer.
 For an environment task or a different owner, do useful read-only configuration/evidence work; do not take another worker's ticket.
-Never stop or kill another worker, launch a second Editor, or run batchmode against an open project.
+Never stop an unrelated session, launch a second Editor, or run batchmode against an open project. A user-requested owner handoff may stop assigned workers after preserving their diff/transcript and verifying their process identity.
 
 ## Establish a usable production connection
 
@@ -35,7 +37,7 @@ When tools are absent from the client, reload its MCP connection/session after c
 ## Select one experience
 
 If the current MUST PATH has a proven blocker, address its earliest broken edge.
-If the route works, use the most consequential approved player-visible gap. Human-rejected visuals remain FAIL until repaired and reviewed; numerical tests cannot clear them.
+If the route works, take the earliest unresolved player experience in the current production Handoff, in the current order: island·sea·vegetation → character·gathering motion → items·life props → UI → overall harmony. Read only the Canon, reference decisions and existing evidence that experience needs, then loop implement → actual input + GameView observation → repair. Human-rejected visuals remain FAIL until repaired and reviewed; numerical tests cannot clear them.
 Use recent evidence before new investigation. Recheck completed work only when changes or a regression justify it.
 Choose the active ticket only within the recorded sequence and `preapprovedThrough`. Do not add implicit tickets.
 State exact files, intended visible behavior, authorities reused and validation before editing.
@@ -45,9 +47,9 @@ For save/economy/data work use the bounded safe workflow. Do not apply Studio re
 
 ## Make the target observable
 
-For the active experience record a reference clip/frame, current production-route evidence, concrete differences and acceptance evidence.
-Reference grammar comes from Dinkum (movement/gathering/placement), Animal Crossing (readability/warmth), Moonlighter (pricing/customer feedback), and Dave the Diver (short milestone presentation).
-Use existing local art first. Research only a missing decision; avoid installing frameworks or collecting more skills during production.
+For a reference-dependent design choice, route through `Docs/01_GAME_DESIGN/References/README.md` and read only the relevant 1–3 decision sections. Distinguish developer statements, observations, inference and P.A. adoption. The decisions guide execution; they do not approve tickets or supersede Canon.
+Record the selected decision IDs, relevant current production-route evidence, concrete differences and acceptance evidence. Reuse existing reference analysis; open a clip/frame only when a visual or motion question remains. Do not repeat full-game research for a new session.
+Use existing local art first. Research only an explicit unanswered question, new contrary evidence or changed direction; update that decision and source only. Avoid installing frameworks or collecting more skills during production.
 Motion needs continuous video and frame timing at matched speed/camera; isolated poses or low-rate video summaries cannot prove motion quality.
 
 | Experience | Required evidence |
@@ -62,13 +64,19 @@ Motion needs continuous video and frame timing at matched speed/camera; isolated
 
 The demo is Day 1 through Pioneer Report. Fish/Bug/NPC tool gifts are optional. Do not add Day 2, actual Agriculture, a mandatory separate Hub or new gameplay authorities.
 
+## Toolbox: reuse before building
+
+Find and reuse existing production, capture, build and verification tools first: `Tools/LoopEngineering/Invoke-ProjectPAProduction.py` (`worker`/`status`/`review`, `native` input and `shot`, `candidate` Windows run, `editor --action build|capture|performance`, `mcp` Unity tool calls, `autonomy checkpoint`), validators registered in `Automation/LoopEngineering/validator-registry.json` with their Editor code, GameView captures under `Logs/VisualQA/`, and ffprobe/ffmpeg frame timing for MP4 evidence.
+Build or replace a tool only after recording in the checkpoint/Handoff why the existing one is insufficient (missing capability, unwanted side effect, broken).
+When a procedure or tool proves effective in real work, update its line here or in the existing index (`Docs/AgentWorkflow/CONTEXT_INDEX.md`, the validator registry) instead of adding a same-purpose manual or tool. Recording a method never widens approval, permissions or protected boundaries.
+
 ## Implement, play, repair
 
 Use the existing gameplay authorities and precise code navigation.
 Use registered targeted validators and the actual production route; do not manufacture completion by setting progression, wallet or sales fields.
 Use existing GameView capture under `Logs/VisualQA/`; inspect a capture helper's side effects before invoking it. Some old review tools change time/scene/UI and are not passive capture commands.
-Compare before/after at matched camera, resolution, speed and actual gameplay state. QA-injected input is labeled; it is not standalone keyboard acceptance.
-Fix within the applicable budget: Studio up to three compile/fix cycles and three targeted Play attempts, one focused validator; core work follows its stricter retry rule.
+Prove functions with actual input and the resulting state; visual changes with before/after at the same camera, time of day and resolution in actual gameplay state; motion and feel with normal-speed video. QA-injected input is labeled; it is not standalone keyboard acceptance. Passing tests never substitute for visual quality, fun or human acceptance; anything not observed stays UNVERIFIED.
+On failure, locate whether the procedure, the tool or the verification caused it and fix only that part; rerun only the affected checks plus the regressions they need. Repair by changed cause/approach and demonstrated progress within the approved goal, observing elapsed time and actual usage without task-duration/attempt caps; do not introduce fixed counts of questions, failures, files or compile/Play runs. Historical attempt totals remain evidence; current AGENTS.md governs recovery.
 If the environment fails, repair only clearly scoped mechanical causes. No endless retry or AI-calling shell loop.
 
 ## Acceptance and continuation
@@ -81,7 +89,7 @@ Track functionality, presentation and human review separately:
 A blocker, approval gate or UNVERIFIED result is not demo completion.
 Human review unavailable by itself does not stop independent approved work. A human rejection or explicit hold is not cleared by that exception.
 After each ticket review the diff and relevant regression, then update its result in the existing approval record.
-Continue without another message only when the recorded next ticket is in the explicitly approved sequence, no hold/conflict applies, and the recorded milestone has not been reached.
+Continue inside the approved goal without another message; honor explicit scope, holds/conflicts and the final milestone review.
 At `stopAtMilestone` stop for its specified review; preserve unresolved quality gates.
 Do not auto-commit unless the selected approval explicitly permits it. Never push.
 

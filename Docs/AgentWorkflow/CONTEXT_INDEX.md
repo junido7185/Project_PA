@@ -10,7 +10,10 @@
 | World / Placement | World architecture와 placement 계약, 승인된 씬 | 기존 placement/storage regression. Golden Scene 실험 금지 |
 | Art | Style Grammar, selected-assets/spec, provenance | 기존 Blender reference render·Unity wrapper 검사 |
 | Build / Crash | 루트 최신 crash report, 기존 프로세스 로그 | 원인 분류 후 compile/load. 열린 Editor에 batchmode 중복 실행 금지 |
+| 레퍼런스 설계 판단 | [작업별 결정 입구](../01_GAME_DESIGN/References/README.md)에서 관련 결정 1~3개; 기존 결정으로 답하면 검색 생략 | 현재 Canon/승인/기존 권위와 대조한 뒤 해당 구현 경로만 검증 |
 | 문서 | 현재 권위·원본 기록·코드의 문서 참조 | 링크·이력 보존·diff. tooling 경로 변경 시 compile |
+
+제작·캡처·빌드·입력 도구는 [제작 스킬 Toolbox](../../.agents/skills/pa-demo-factory/SKILL.md)에서 먼저 찾아 재사용하고, 유효했던 절차는 같은 목적의 새 문서 대신 그 줄을 갱신한다.
 
 Validator method는 [기존 registry](../../Automation/LoopEngineering/validator-registry.json) 및 해당 Editor 코드에서 확인한다. 모든 검증기를 매번 실행하지 않는다. 관련 targeted 검증 후 필요한 통합 검증만 수행한다.
 

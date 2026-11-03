@@ -69,6 +69,11 @@ public class PlayerInteraction : MonoBehaviour
             InteractPromptUI.instance?.SetPrompt("[E] " + ToolDurability.DisplayName(EquipmentSystem.CurrentHeld(gameObject)) + " 휘두르기 · " + WrongToolHint(toolHint));
             return;
         }
+        if (equipHint != null)
+        {
+            InteractPromptUI.instance?.SetPrompt(EquipHint(equipHint));
+            return;
+        }
         if (PlayerInputHandler.Instance?.FirstDayControls == true && FreeTool(EquipmentSystem.CurrentHeld(gameObject)))
         {
             InteractPromptUI.instance?.SetPrompt("[E] " + ToolDurability.DisplayName(EquipmentSystem.CurrentHeld(gameObject)) + " 휘두르기");
@@ -161,6 +166,23 @@ public class PlayerInteraction : MonoBehaviour
     float netHintDistance;
     IInteractable toolHint;
     float toolHintDistance;
+    // 빈손(이어하기 직후·X 뒤)으로 나무/바위 앞에 서면 아무 안내가 없어 E가 먹지 않는 것처럼 보였다(10/12 Windows 후보).
+    // 핫바에 맞는 도구가 있으면 그 번호를 알려 준다. 선택·채집 권위는 그대로 숫자키/E 경로다.
+    IInteractable equipHint;
+    float equipHintDistance;
+
+    static string EquipHint(IInteractable target)
+    {
+        bool tree = target is Gatherable;
+        ToolType want = tree ? ToolType.Axe : ToolType.Pickaxe;
+        string tool = tree ? "도끼" : "곡괭이", act = tree ? "나무 채집" : "광석 채집";
+        var hotbar = Inventory.instance != null ? Inventory.instance.hotbar : null;
+        if (hotbar != null)
+            for (int i = 0; i < hotbar.slots.Count; i++)
+                if (!hotbar.slots[i].IsEmpty && hotbar.slots[i].item != null && hotbar.slots[i].item.toolType == want)
+                    return "[" + (i + 1) + "] " + tool + " 들기 → [E] " + act;
+        return tree ? "나무는 도끼로 벨 수 있어요" : "바위는 곡괭이로 캘 수 있어요";
+    }
 
     static bool FreeTool(Item item) => item != null &&
         (item.toolType == ToolType.Axe || item.toolType == ToolType.Pickaxe || item.toolType == ToolType.Net);
@@ -196,6 +218,8 @@ public class PlayerInteraction : MonoBehaviour
         netHintDistance = float.MaxValue;
         toolHint = null;
         toolHintDistance = float.MaxValue;
+        equipHint = null;
+        equipHintDistance = float.MaxValue;
 
         if (!isActiveAndEnabled) return false;
         Vector3 origin = GetInteractOrigin();
@@ -211,7 +235,7 @@ public class PlayerInteraction : MonoBehaviour
             if (component == null || candidate is Shop shop && !shop.allowDebugBulkSaleInteraction) continue;
             if (component is Behaviour behaviour && !behaviour.isActiveAndEnabled) continue;
             int priority = 1;
-            bool needsEmptyHands = false, needsNet = false, needsTool = false;
+            bool needsEmptyHands = false, needsNet = false, needsTool = false, needsEquip = false;
             if (PlayerInputHandler.Instance != null && PlayerInputHandler.Instance.FirstDayControls)
             {
                 Item held = EquipmentSystem.CurrentHeld(gameObject);
@@ -219,9 +243,9 @@ public class PlayerInteraction : MonoBehaviour
                 { if (!pickup.contextual) continue; if (held != null) needsEmptyHands = true; priority = 0; }
                 // 직접 채집 대상은 같은 높이(±2m)에서만 고른다. 절벽 위/아래에서 프롬프트만 뜨고 E가 안 먹는 일을 막는다.
                 else if (candidate is Gatherable gather)
-                { if (gather.DirectDepleted || Mathf.Abs(gather.transform.position.y - transform.position.y) > 2f) continue; needsTool = FreeTool(held) && held.toolType != ToolType.Axe; if (held?.toolType != ToolType.Axe && !needsTool) continue; priority = 2; }
+                { if (gather.DirectDepleted || Mathf.Abs(gather.transform.position.y - transform.position.y) > 2f) continue; needsTool = FreeTool(held) && held.toolType != ToolType.Axe; needsEquip = held == null; if (held?.toolType != ToolType.Axe && !needsTool && !needsEquip) continue; priority = 2; }
                 else if (candidate is MiningSpot mine)
-                { if (mine.DirectDepleted || Mathf.Abs(mine.transform.position.y - transform.position.y) > 2f) continue; needsTool = FreeTool(held) && held.toolType != ToolType.Pickaxe; if (held?.toolType != ToolType.Pickaxe && !needsTool) continue; priority = 2; }
+                { if (mine.DirectDepleted || Mathf.Abs(mine.transform.position.y - transform.position.y) > 2f) continue; needsTool = FreeTool(held) && held.toolType != ToolType.Pickaxe; needsEquip = held == null; if (held?.toolType != ToolType.Pickaxe && !needsTool && !needsEquip) continue; priority = 2; }
                 else if (candidate is BugCritter bug)
                 { if (bug.Captured || bug.Fleeing) continue; if (held?.toolType != ToolType.Net) needsNet = true; priority = 2; }
                 else if (candidate is FishingSpot)
@@ -279,6 +303,11 @@ public class PlayerInteraction : MonoBehaviour
             if (needsTool)
             {
                 if (distance < toolHintDistance) { toolHint = candidate; toolHintDistance = distance; }
+                continue;
+            }
+            if (needsEquip)
+            {
+                if (distance < equipHintDistance) { equipHint = candidate; equipHintDistance = distance; }
                 continue;
             }
             bool anchored = anchor != null;
