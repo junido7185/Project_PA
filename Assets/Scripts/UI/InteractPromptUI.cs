@@ -79,11 +79,28 @@ public class InteractPromptUI : MonoBehaviour
     public void SetPrompt(string prompt)
     {
         if (promptText != null) promptText.text = prompt;
-        if (_panel != null) _panel.SetActive(true);
+        _wanted = true;
+        ApplyVisibility();
     }
 
     public void ClearPrompt()
     {
-        if (_panel != null) _panel.SetActive(false);
+        _wanted = false;
+        ApplyVisibility();
+    }
+
+    // D2 — 테마 경로에서 대화창이 실제로 떠 있는 동안만 프롬프트를 가린다(하단 겹침 방지).
+    // 요청 상태(_wanted)는 PlayerInteraction 이 그대로 소유하고, 대화창이 닫히면 자동 복원된다.
+    bool _wanted;
+
+    static bool SuppressedByDialogue => DialogueUI.IsOpen && PAUiTheme.Active;
+
+    void LateUpdate() => ApplyVisibility();
+
+    void ApplyVisibility()
+    {
+        if (_panel == null) return;
+        bool visible = _wanted && !SuppressedByDialogue;
+        if (_panel.activeSelf != visible) _panel.SetActive(visible);
     }
 }

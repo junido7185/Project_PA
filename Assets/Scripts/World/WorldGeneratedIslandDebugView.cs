@@ -18,6 +18,8 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
 
     readonly List<Mesh> _meshes = new List<Mesh>();
     readonly List<Material> _materials = new List<Material>();
+    Texture2D _surfaceMap;
+    Texture2D _heightMap;
     GameObject _runtimeRoot;
     Camera _camera;
     Vector3 _cameraPositionBeforeDisplay;
@@ -83,6 +85,17 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         }
         foreach (Mesh mesh in _meshes) ReleaseObject(mesh);
         foreach (Material material in _materials) ReleaseObject(material);
+        if (_surfaceMap != null)
+        {
+            WorldSurfaceArtProjection.DisableGlobals();
+            ReleaseObject(_surfaceMap);
+            _surfaceMap = null;
+        }
+        if (_heightMap != null)
+        {
+            ReleaseObject(_heightMap);
+            _heightMap = null;
+        }
         _meshes.Clear();
         _materials.Clear();
         _runtimeRoot = null;
@@ -99,7 +112,17 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         WorldGridDefinition definition,
         IReadOnlyList<WorldCellData> cells)
     {
-        Material[] materials = CreateMaterials();
+        bool openingArt = GetComponent<DemoRouteController>() != null;
+        Material[] materials = CreateMaterials(openingArt);
+        // 오프닝 아트: 해안 거리장/표면 맵은 표시마다 한 번만 만든다. 다른 월드 검증 경로는 이전 동작 그대로다.
+        WorldSurfaceArtProjection.ShoreField shoreField = null;
+        if (openingArt)
+        {
+            shoreField = WorldSurfaceArtProjection.BuildShoreField(definition, cells);
+            _surfaceMap = WorldSurfaceArtProjection.BuildSurfaceMap(definition, cells);
+            _heightMap = WorldSurfaceArtProjection.BuildHeightMap(definition, cells);
+            WorldSurfaceArtProjection.ApplyGlobals(definition, cells, _surfaceMap, _heightMap);
+        }
         _runtimeRoot = new GameObject(RuntimeRootName)
         {
             hideFlags = HideFlags.DontSave
@@ -115,12 +138,23 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
                     definition,
                     cells,
                     chunkCoordinate,
-                    GetComponent<DemoRouteController>() != null);
+                    openingArt);
+                string meshName = $"GeneratedChunk_{chunkX}_{chunkZ}_Visual";
+                Mesh mesh;
+                if (shoreField != null)
+                {
+                    WorldSurfaceArtProjection.ChunkArt art =
+                        WorldSurfaceArtProjection.ProjectChunk(shoreField, data);
+                    mesh = CreateMesh(meshName, data, art.Vertices, art.Colors, art.Bounds);
+                }
+                else
+                {
+                    mesh = CreateMesh(meshName, data);
+                }
                 var chunkObject = new GameObject($"GeneratedChunk_{chunkX}_{chunkZ}");
                 chunkObject.transform.SetParent(_runtimeRoot.transform, false);
                 var filter = chunkObject.AddComponent<MeshFilter>();
                 var renderer = chunkObject.AddComponent<MeshRenderer>();
-                Mesh mesh = CreateMesh($"GeneratedChunk_{chunkX}_{chunkZ}_Visual", data);
                 filter.sharedMesh = mesh;
                 renderer.sharedMaterials = materials;
                 renderer.shadowCastingMode = ShadowCastingMode.On;
@@ -136,7 +170,7 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         }
     }
 
-    Material[] CreateMaterials()
+    Material[] CreateMaterials(bool openingArt)
     {
         var colors = new[]
         {
@@ -156,7 +190,7 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
         };
         // T1: 같은 cell/mesh 투영을 유지하고 실제 Demo256의 넓은 면만 로컬 아트에 맞춘다.
         // 전역 재질/조명과 다른 월드 검증의 팔레트는 변경하지 않는다.
-        if (GetComponent<DemoRouteController>() != null)
+        if (openingArt)
         {
             colors[WorldSurfaceMaterialSlots.Grass] = new Color(.48f, .60f, .34f);
             colors[WorldSurfaceMaterialSlots.Sand] = new Color(.78f, .71f, .51f);
@@ -168,10 +202,27 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
             colors[WorldSurfaceMaterialSlots.StonePath] = new Color(.66f, .62f, .54f);
             colors[WorldSurfaceMaterialSlots.Water] = new Color(.22f, .53f, .59f);
         }
+        // 오프닝 아트 셰이더가 둘 다 있을 때만 교체하고, 하나라도 없으면 기존 URP/Lit 생성 그대로 둔다.
+        Shader surfaceShader = null;
+        Shader waterShader = null;
+        if (openingArt)
+        {
+            surfaceShader = Shader.Find("PA/StylizedWorldSurface");
+            waterShader = Shader.Find("PA/StylizedWater");
+            if (surfaceShader == null || waterShader == null)
+            {
+                surfaceShader = null;
+                waterShader = null;
+            }
+        }
         var result = new Material[WorldSurfaceMaterialSlots.Count];
         for (int i = 0; i < result.Length; i++)
         {
-            Material material = CreateMaterial(names[i], colors[i]);
+            Material material = surfaceShader != null
+                ? CreateStylizedMaterial(
+                    i == WorldSurfaceMaterialSlots.Water ? waterShader : surfaceShader,
+                    names[i], colors[i], i)
+                : CreateMaterial(names[i], colors[i]);
             result[i] = material;
             _materials.Add(material);
         }
@@ -180,21 +231,57 @@ public sealed class WorldGeneratedIslandDebugView : MonoBehaviour
 
     static Mesh CreateMesh(string meshName, WorldChunkMeshData data)
     {
+        return CreateMesh(meshName, data, data.Vertices, null, data.Bounds);
+    }
+
+    static Mesh CreateMesh(
+        string meshName,
+        WorldChunkMeshData data,
+        Vector3[] vertices,
+        Color32[] colors,
+        Bounds bounds)
+    {
         var mesh = new Mesh
         {
             name = meshName,
             indexFormat = IndexFormat.UInt32,
             hideFlags = HideFlags.DontSave
         };
-        mesh.vertices = data.Vertices;
+        mesh.vertices = vertices;
         mesh.normals = data.Normals;
         mesh.uv = data.Uvs;
+        if (colors != null) mesh.colors32 = colors;
         mesh.subMeshCount = WorldSurfaceMaterialSlots.Count;
         for (int i = 0; i < WorldSurfaceMaterialSlots.Count; i++)
             mesh.SetTriangles(data.VisualSubmeshIndices[i], i, false);
-        mesh.bounds = data.Bounds;
+        mesh.bounds = bounds;
         mesh.UploadMeshData(false);
         return mesh;
+    }
+
+    static Material CreateStylizedMaterial(Shader shader, string materialName, Color color, int slot)
+    {
+        var material = new Material(shader)
+        {
+            name = materialName,
+            hideFlags = HideFlags.DontSave
+        };
+        material.SetColor("_BaseColor", color);
+        if (slot != WorldSurfaceMaterialSlots.Water)
+            material.SetFloat("_SurfaceKind", SurfaceKind(slot));
+        return material;
+    }
+
+    // 0 = surface map이 정하는 지면(Grass/Soil/Sand/Rock), 1 Cliff, 2 DirtPath, 3 StonePath.
+    static float SurfaceKind(int slot)
+    {
+        switch (slot)
+        {
+            case WorldSurfaceMaterialSlots.Cliff: return 1f;
+            case WorldSurfaceMaterialSlots.DirtPath: return 2f;
+            case WorldSurfaceMaterialSlots.StonePath: return 3f;
+            default: return 0f;
+        }
     }
 
     static Material CreateMaterial(string materialName, Color color)

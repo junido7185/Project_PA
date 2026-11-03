@@ -3,6 +3,8 @@ name: pa-demo-completion
 description: Progress Project P.A.'s Opening Demo to end-to-end completion one earliest MUST-PATH edge at a time, deferring cosmetic polish while fixing structural visuals when required.
 ---
 
+Current AGENTS.md is the single authority for startup reads, continuous work, recovery, file ownership and recording. Do not repeat these procedures from older detailed text.
+
 Follow AGENTS.md and the current Opening Demo Canon.
 
 Priority:
@@ -29,7 +31,7 @@ Code existence alone is not verification.
 If the cause is proven, use the smallest existing authority-preserving fix.
 If runtime evidence is missing, collect narrowly scoped evidence with the connected Editor within the approved ticket. Request evidence only when it cannot be obtained within that scope.
 
-One active edge at a time. Default: stop after this bounded ticket.
+One integration edge at a time. Continue approved work under the current AGENTS.md contract.
 Under AGENTS.md's recorded PREAPPROVED_MILESTONE_CONTINUATION, use
 `demoProductionRouting` and `pa-demo-factory` to continue only the approved next
 ticket, with per-ticket evidence and the recorded owner/milestone limits.
