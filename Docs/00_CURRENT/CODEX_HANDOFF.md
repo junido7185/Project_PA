@@ -1,3 +1,13 @@
+> **2026-11-09 브랜치 통합·README (Codex):** 사용자 요청으로 최신 beta 개발과 기존 master 포트폴리오를 merge commit `420ef9e`로 통합해 원격 master에 푸시했다. 기본 README는 실제 r258 Windows 화면 12장, 낮 활동→제작→밤 영업, 생물 35종·동료·꾸밈과 구현 설명으로 개편했다. 기존 이력과 브랜치는 보존한다.
+>
+> - 변경: `README.md`, `Docs/Portfolio/2026-11/`, 이 Handoff와 `Docs/04_DEVELOPMENT_LOG/2026-11.md`. 제안서 충돌은 기존 master의 개인정보 없는 이름을 유지했다.
+> - 검증: 상대 링크 42개·이미지 12개 해시/크기·기존 회귀 요약 42/42 대조·GitHub Markdown 렌더·새 문서 공백 검사. 게임 Assets/Packages/ProjectSettings는 beta `2f9bbac`와 동일하다. 게임 재실행·컴파일 없음.
+> - 미확인: 브라우저 호스트 연결 불가로 전체 README 브라우저 미리보기. 이미지 자체는 확인했다. 기존 회귀 결과를 새 게임 검증이나 사람 수락으로 기록하지 않았다.
+> - 다음: 게임 제작은 중단 상태 그대로. 재개 범위·모션 라이선스 등은 `NEXT_SESSION_BACKLOG_2026-11-09.md`를 따른다. Unity owner/lease와 원본 미커밋 설정·세션·발표 자료는 보존했다.
+> - commit/push: 통합 `420ef9e` 원격 master 반영 완료. 후속 기록은 같은 통합 브랜치에서 커밋하고 master·현재 beta를 fast-forward로 동기화한다. force push·브랜치 삭제 없음.
+
+---
+
 > **2026-11-09 commit/push (Claude):** 사용자가 개인정보·비밀번호 제외 조건으로 허용. `af5f2f1` 이후 미커밋 1,906파일을 날짜별 커밋 5개로 나눔(`272285f` 11-03, `094ca32` 11-04, `f49b424` 11-07, `95be0a6` 11-08, `8924f91` 11-09). 작성자는 GitHub noreply. 개인 환경 설정·세션 상태·발표 대본·로그는 제외(로컬 보존). 비밀값·개인정보 검사 0건, `.meta` 누락 0. 상세: `Docs/04_DEVELOPMENT_LOG/2026-11.md`. 이 문서와 로그는 별도 문서 커밋. 남은 결정: 기존에 추적 중인 동물의 숲 의자 팬 모델을 공개 저장소에서 뺄지.
 
 > **2026-11-09 도구 환경 재설계·지속 업그레이드 체계 (Claude):** 프로젝트 세션은 pa-production-console·humanize-korean만 켬(ECC·claude-mem·Figma·github·claude-code-setup 끔, 전체가 필요하면 CLI `--settings .claude/profiles/full-tooling.settings.json`). Unity MCP는 프로젝트 `.mcp.json` HTTP 하나로 통일(데스크탑 stdio 10.2.0 정의와 대·소문자 경로 두 곳의 `UnityMCP` 중복 제거, 백업 `Logs/EnvRedesign-20261109/backup/`). 사용자 목적은 "더 나은 도구가 나오면 계속 교체"라서 `Tools/EnvRadar/check_tool_updates.py`(읽기 전용 버전 점검·후보 감시)와 `TOOL_UPGRADE_POLICY.md`(판정 기준·교체 절차·전시 전 동결·SNS 후보 22건 판정)를 만듦. 첫 점검: Claude Code 2.1.319, figma 2.2.174, fonttools 4.68, uv 0.13, Blender 4.5.15, MCP for Unity 10.3.0(전시 뒤), ffmpeg 9·pillow 13(전시 뒤). `Tools/Art/check_glyphs.py`: 사용 글자 981종 중 폰트에 없는 것은 캡처 오류 로그의 Δ 하나뿐. 이어서 사용자 승인으로 ① Unity 공식 플러그인(`unity@claude-plugins-official` 0.1.9-beta, 스킬 33·MCP/훅 없음, 상시 ~3k토큰) 프로젝트 범위 설치 ② 이 문서의 11-07 이전 항목을 `archive/CODEX_HANDOFF_ARCHIVE_20261026-20261107.md`로 원문 이동(100,641→39,603자) ③ 매월 1일 10시 점검 예약 `pa-tool-upgrade-radar`. **다음 세션 시작점: `NEXT_SESSION_BACKLOG_2026-11-09.md`** (검토 안 한 것·건너뛴 것, 플레이어 이동 모캡 CC BY-NC 교체 필요 포함). 게임 제작 재개 없음, loop-state·Unity owner 그대로.
