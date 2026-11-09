@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Bug_Beetle
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3101
+  itemName: "\uC7A5\uC218\uD48D\uB385\uC774"
+  description: "\uC232 \uAC00\uC7A5\uC790\uB9AC \uB098\uBB34 \uBC11\uB3D9\uC5D0 \uBD99\uC5B4
+    \uC788\uB294 \uD070 \uBFD4 \uB531\uC815\uBC8C\uB808. \uB2EC\uB824\uAC00\uBA74
+    \uBA3C\uC800 \uB0A0\uC544\uAC00\uB2C8 \uCC9C\uCC9C\uD788 \uB2E4\uAC00\uAC00 \uC7A0\uC790\uB9AC\uCC44\uB85C
+    \uC7A1\uC544\uC694. \uB098\uBE44\uBCF4\uB2E4 \uB450 \uBC30 \uBC1B\uC544\uC694."
+  icon: {fileID: 21300000, guid: 9069d9e2964a1f74394186148b1c3c7e, type: 3}
+  maxStack: 20
+  model: {fileID: 3660029555032109664, guid: a0b5442e06648d04a9d161f00f0bee71, type: 3}
+  basePrice: 24
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

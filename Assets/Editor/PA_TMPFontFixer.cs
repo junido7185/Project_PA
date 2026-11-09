@@ -20,7 +20,7 @@ using UnityEngine.SceneManagement;
 //        TMP_Settings.defaultFontAsset 자체를 Jalnan2 SDF 로 교체.
 //        씬 + 프리팹 + ScriptableObject 의 모든 TMP_Text 를 일괄 강제 갱신.
 //
-//  설계 의도 (Docs/UI_스프라이트_가이드.md):
+//  설계 의도 (Docs/02_IMPLEMENTATION/Systems/UI_스프라이트_가이드.md):
 //   • Jalnan2 = 굵고 둥근 한글 캐주얼 디스플레이 폰트 — 동물의 숲 톤 매칭
 //   • LiberationSans SDF 가 한글을 못 그리는 근본 문제를 자산 교체로 해결
 //   • Segoe UI Emoji 는 fallback 으로만 추가 (TMP SDF 컬러 이모지 미지원이지만

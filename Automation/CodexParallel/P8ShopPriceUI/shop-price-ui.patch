@@ -1,0 +1,169 @@
+--- a/Assets/Scripts/UI/ShopPriceUI.cs
++++ b/Assets/Scripts/UI/ShopPriceUI.cs
+@@ -26,8 +26,8 @@
+         var root = new GameObject("PriceDrag", typeof(RectTransform), typeof(Image), typeof(Slider));
+         root.transform.SetParent(_panel, false);
+         var rect = (RectTransform)root.transform;
+-        rect.sizeDelta = new Vector2(320, 20);
+-        rect.anchoredPosition = new Vector2(0, -20);
++        rect.sizeDelta = new Vector2(420, 20);
++        rect.anchoredPosition = new Vector2(0, -27);
+         root.GetComponent<Image>().color = new Color(.28f, .36f, .34f);
+         var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+         handle.transform.SetParent(root.transform, false);
+@@ -60,6 +60,10 @@
+     TextMeshProUGUI _titleTxt;       // "가격 설정" / "진열하기"
+     TextMeshProUGUI _itemNameTxt;    // 아이템 이름
+     TextMeshProUGUI _priceTxt;       // 현재 설정 가격
++    TextMeshProUGUI _currentPriceTxt;
++    TextMeshProUGUI _pendingLabelTxt;
++    TextMeshProUGUI _modeHintTxt;
++    Button[]        _adjustButtons;
+     Button          _confirmBtn;
+     Button          _retrieveBtn;
+     Button          _closeBtn;
+@@ -110,40 +114,53 @@
+         blockerGO.GetComponent<Image>().color = new Color(0, 0, 0, 0.45f);
+         blockerGO.GetComponent<Button>().onClick.AddListener(Close);
+ 
+-        // ── 메인 패널 (중앙 고정, 400×390) ────────────────────────────────────
++        // 현재 적용 값과 확정 전 임시 값을 별도 영역에서 보여 준다.
+         var panelGO = new GameObject("ShopPricePanel", typeof(RectTransform), typeof(Image));
+         _panel      = (RectTransform)panelGO.transform;
+         _panel.SetParent(canvasParent, false);
+         _panel.anchorMin        = new Vector2(0.5f, 0.5f);
+         _panel.anchorMax        = new Vector2(0.5f, 0.5f);
+         _panel.pivot            = new Vector2(0.5f, 0.5f);
+-        _panel.sizeDelta        = new Vector2(400, 390);
++        _panel.sizeDelta        = new Vector2(600, 530);
+         _panel.anchoredPosition = Vector2.zero;
+         panelGO.GetComponent<Image>().color = C_PanelBG;
+ 
+         _titleTxt = CreateLabel(_panel, "TitleTxt", "가격 설정",
+-            new Rect(-180, 166, 360, 36), 24, FontStyles.Bold, C_Header, TextAlignmentOptions.Center);
++            new Rect(-272, 236, 544, 40), 28, FontStyles.Bold, C_Header, TextAlignmentOptions.Center);
+         _itemNameTxt = CreateLabel(_panel, "ItemNameTxt", "—",
+-            new Rect(-180, 116, 360, 32), 20, FontStyles.Normal, Color.white, TextAlignmentOptions.Center);
++            new Rect(-272, 182, 544, 52), 24, FontStyles.Bold, Color.white, TextAlignmentOptions.Center);
++        _itemNameTxt.enableAutoSizing = true;
++        _itemNameTxt.fontSizeMin = 18f;
++        _itemNameTxt.fontSizeMax = 24f;
++        _currentPriceTxt = CreateLabel(_panel, "CurrentPriceTxt", "",
++            new Rect(-272, 124, 544, 28), 18, FontStyles.Normal,
++            new Color(.82f, .88f, .83f), TextAlignmentOptions.Center);
++        _pendingLabelTxt = CreateLabel(_panel, "PendingPriceLabel", "확정 전 임시 가격",
++            new Rect(-272, 87, 544, 26), 17, FontStyles.Normal,
++            C_Gold, TextAlignmentOptions.Center);
+         _priceTxt = CreateLabel(_panel, "PriceTxt", "0 G",
+-            new Rect(-180, 70, 360, 48), 34, FontStyles.Bold, C_Gold, TextAlignmentOptions.Center);
++            new Rect(-272, 60, 544, 54), 40, FontStyles.Bold, C_Gold, TextAlignmentOptions.Center);
+         ConfigureTutorialPriceDrag();
+-        BuildAdjustRow(_panel, -76, new[] { -10, -1, 1, 10 });
+-        CreateLabel(_panel, "DragHint", "버튼 또는 드래그로 가격 조절",
+-            new Rect(-180, -106, 360, 26), 16, FontStyles.Normal,
++        BuildAdjustRow(_panel, -89, new[] { -10, -1, 1, 10 });
++        _modeHintTxt = CreateLabel(_panel, "DragHint", "버튼 또는 드래그로 가격 조절",
++            new Rect(-272, -119, 544, 48), 17, FontStyles.Normal,
+             new Color(.82f, .85f, .81f), TextAlignmentOptions.Center);
+-        _confirmBtn = BuildActionBtn(_panel, "가격 확정", C_BtnGreen, new Vector2(-124, -158), OnConfirm);
+-        _retrieveBtn = BuildActionBtn(_panel, "상품 회수", C_BtnOrange, new Vector2(0, -158), OnRetrieve);
+-        _closeBtn = BuildActionBtn(_panel, "닫기", C_BtnGray, new Vector2(124, -158), Close);
++        _confirmBtn = BuildActionBtn(_panel, "가격 확정", C_BtnGreen, new Vector2(-180, -205), OnConfirm);
++        _retrieveBtn = BuildActionBtn(_panel, "상품 회수", C_BtnOrange, new Vector2(0, -205), OnRetrieve);
++        _closeBtn = BuildActionBtn(_panel, "닫기", C_BtnGray, new Vector2(180, -205), Close);
++        // 이름/기존 listener는 보존하고 버튼에 보이는 설명만 정리한다.
++        _confirmBtn.GetComponentInChildren<TextMeshProUGUI>().text = "가격 적용";
++        _closeBtn.GetComponentInChildren<TextMeshProUGUI>().text = "취소 / 닫기";
+     }
+ 
+     // ── UI 헬퍼 ─────────────────────────────────────────────────────────────────
+     void BuildAdjustRow(Transform parent, float y, int[] deltas)
+     {
+-        float totalW = 320f;
++        float totalW = 420f;
+         float btnW   = totalW / deltas.Length - 4;
+         float startX = -totalW * 0.5f + btnW * 0.5f;
+ 
++        _adjustButtons = new Button[deltas.Length];
+         for (int i = 0; i < deltas.Length; i++)
+         {
+             int d = deltas[i];
+@@ -159,6 +176,7 @@
+             rt.sizeDelta = new Vector2(btnW, 40);
+ 
+             btn.onClick.AddListener(() => AdjustPrice(d));
++            _adjustButtons[i] = btn;
+         }
+     }
+ 
+@@ -171,7 +189,7 @@
+         rt.anchorMin        = new Vector2(0.5f, 0.5f);
+         rt.anchorMax        = new Vector2(0.5f, 0.5f);
+         rt.pivot            = new Vector2(0.5f, 0.5f);
+-        rt.sizeDelta        = new Vector2(112, 40);
++        rt.sizeDelta        = new Vector2(164, 48);
+         rt.anchoredPosition = pos;
+ 
+         go.GetComponent<Image>().color = bg;
+@@ -182,13 +200,19 @@
+         var tmp     = txt.GetComponent<TextMeshProUGUI>();
+         tmp.font = TMP_Settings.defaultFontAsset;
+         tmp.text    = label;
+-        tmp.fontSize = 15;
++        tmp.fontSize = 19;
+         tmp.fontStyle = FontStyles.Bold;
+         tmp.color   = Color.white;
+         tmp.alignment = TextAlignmentOptions.Center;
+         tmp.raycastTarget = false;
+ 
+         var btn = go.GetComponent<Button>();
++        ColorBlock colors = btn.colors;
++        colors.highlightedColor = new Color(1f, 1f, .85f, 1f);
++        colors.pressedColor = new Color(.72f, .82f, .76f, 1f);
++        colors.disabledColor = new Color(.45f, .48f, .45f, .65f);
++        colors.fadeDuration = .08f;
++        btn.colors = colors;
+         if (onClick != null) btn.onClick.AddListener(onClick);
+         return btn;
+     }
+@@ -295,11 +319,11 @@
+         // 타이틀
+         bool occupied = !_slot.IsEmpty;
+         if (_titleTxt != null)
+-            _titleTxt.text = occupied ? "가격 설정" : "진열하기";
++            _titleTxt.text = occupied ? "진열 상품 · 가격 설정" : "진열하기";
+ 
+         // 아이템 이름
+         string itemName = occupied && _slot.currentItem?.data != null
+-            ? _slot.currentItem.data.itemName : "—";
++            ? ItemDisplayName.For(_slot.currentItem.data) : "진열된 상품이 없어요";
+         if (_itemNameTxt != null)
+         {
+             // Task 018 — 이미 저장·판매에 쓰이는 실제 진열 수량을 가격 결정 화면에 노출한다.
+@@ -313,12 +337,25 @@
+         if (_retrieveBtn != null)
+             _retrieveBtn.gameObject.SetActive(occupied);
+ 
++        if (_currentPriceTxt != null)
++            _currentPriceTxt.text = occupied ? $"현재 적용 가격  {_slot.EffectiveDisplayPrice:N0} G / 개" : "상품 진열 후 가격을 설정할 수 있어요";
++        if (_pendingLabelTxt != null)
++            _pendingLabelTxt.text = occupied ? "확정 전 임시 가격 · 아래 적용 버튼으로 확정" : "먼저 상품을 진열하세요";
++        if (_modeHintTxt != null)
++            _modeHintTxt.text = occupied
++                ? "±1 / ±10 또는 드래그로 1개 가격을 정하세요.\n취소하면 임시 가격만 버리고 상품은 유지해요."
++                : "상품을 선택해 진열대를 이용하세요.\n이 화면을 닫아도 재고와 가격은 바뀌지 않아요.";
++        if (_confirmBtn != null) _confirmBtn.interactable = occupied;
++        if (_adjustButtons != null)
++            foreach (Button button in _adjustButtons) button.interactable = occupied;
++
+         // 가격 표시
+         if (_priceTxt != null)
+-            _priceTxt.text = $"{_pendingPrice:N0} G";
++            _priceTxt.text = occupied ? $"{_pendingPrice:N0} G / 개" : "—";
+ 
+         if (TutorialPriceDrag != null)
+         {
++            TutorialPriceDrag.interactable = occupied;
+             // 버튼으로 범위를 넘겼을 때만 확장한다. 드래그 중 눈금은 고정한다.
+             if (_pendingPrice > TutorialPriceDrag.maxValue)
+                 TutorialPriceDrag.maxValue = _pendingPrice * 2f;

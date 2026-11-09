@@ -105,6 +105,9 @@ public class DemoVisualDressingController : MonoBehaviour
     public void RefreshDressing()
     {
         if (!autoDress) return;
+        // Canon v2 §7–8: Demo256는 배치된 실내/가판대의 authored 표현을 사용한다.
+        // Golden 야외 노점/샘플 상품/손님 스테이징을 실내에 중복 투영하지 않는다.
+        if (WorldGameplayAdapterService.Instance?.FirstDay == true) return;
 
         Shop shop = PA_ShopLocator.FindPlazaShop(); // S2 — 실내 상점 제외 앵커
         if (shop == null) return; // 상점 없는 씬에서는 아무것도 하지 않는다.
@@ -583,8 +586,14 @@ public class DemoVisualDressingController : MonoBehaviour
             ?? GameObject.Find("B11_PlazaFountain");
         if (fountain == null) return;
 
+        var meshFilters = fountain.GetComponentsInChildren<MeshFilter>(true);
+        // Runtime cooking needs CPU mesh data in a player build. Preserve the
+        // existing blocking Box when any visual mesh cannot be cooked safely.
+        foreach (var filter in meshFilters)
+            if (filter != null && filter.sharedMesh != null && !filter.sharedMesh.isReadable) return;
+
         int configuredMeshColliders = 0;
-        foreach (MeshFilter meshFilter in fountain.GetComponentsInChildren<MeshFilter>(true))
+        foreach (MeshFilter meshFilter in meshFilters)
         {
             if (meshFilter == null || meshFilter.sharedMesh == null) continue;
 

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Recipe_GrilledFish
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uC0DD\uC120 \uAD7D\uAE30"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 13db981488b225845ad6c34188af1139, type: 3}
   description: Single fish premium dish.
   ingredients:
   - item: {fileID: 11400000, guid: 514f1fa8087b6724788ea65768dcb100, type: 2}

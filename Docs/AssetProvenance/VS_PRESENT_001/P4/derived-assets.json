@@ -1,0 +1,74 @@
+{
+  "ticket": "VS-PRESENT-001-P4",
+  "librarySha256": "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
+  "libraryPreserved": true,
+  "styleGrammar": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+  "sourceProvenance": "ART-000 selected-assets.json / Quaternius CubeWorldKit + UltimateNature CC0",
+  "sourceCollections": [
+    "PA_REF_CUBEWORLDKIT_AXE_STONE",
+    "PA_REF_CUBEWORLDKIT_CHEST_CLOSED",
+    "PA_REF_CUBEWORLDKIT_PICKAXE_STONE",
+    "PA_REF_ULTIMATENATURE_ROCK_1",
+    "PA_REF_ULTIMATENATURE_WOODLOG"
+  ],
+  "blend": "Blender\\Generated\\VS_PRESENT_001_P4\\PA_StarterWorksites_r01.blend",
+  "assets": [
+    {
+      "id": "PA_StarterWorksite_Wood",
+      "role": "Wood",
+      "classification": "DERIVE ART-000 utility kit",
+      "dimensions": [
+        1.7599999904632568,
+        1.8920609951019287,
+        0.9350000023841858
+      ],
+      "pivot": "ground center",
+      "forward": "Unity wrapper -Z",
+      "footprint": "1 cell / 2x2m",
+      "clearance": "front entrance cell 2m",
+      "collider": "low platform / trigger face; existing placement occupancy",
+      "materials": "P3 PA palette / roughness0.8 metallic0",
+      "fbx": "Assets\\Art\\ProjectPA\\Derived\\Worksites\\PA_StarterWorksite_Wood.fbx",
+      "sha256": "0172662188c58a8d7b4300e14c19d62fc16d161701e0cc3037c741bfca486002",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/P4/PA_StarterWorksite_Wood_r01.png"
+    },
+    {
+      "id": "PA_StarterWorksite_Ore",
+      "role": "Ore",
+      "classification": "DERIVE ART-000 utility kit",
+      "dimensions": [
+        1.7599999904632568,
+        1.7599999904632568,
+        0.9350000023841858
+      ],
+      "pivot": "ground center",
+      "forward": "Unity wrapper -Z",
+      "footprint": "1 cell / 2x2m",
+      "clearance": "front entrance cell 2m",
+      "collider": "low platform / trigger face; existing placement occupancy",
+      "materials": "P3 PA palette / roughness0.8 metallic0",
+      "fbx": "Assets\\Art\\ProjectPA\\Derived\\Worksites\\PA_StarterWorksite_Ore.fbx",
+      "sha256": "1a82fefd699c75f7dc80b73cdd629951fedd1a46aff996ffa91eb40198abdcfb",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/P4/PA_StarterWorksite_Ore_r01.png"
+    },
+    {
+      "id": "PA_StarterWorksite_Wheat",
+      "role": "Wheat",
+      "classification": "DERIVE ART-000 utility kit",
+      "dimensions": [
+        1.7599999904632568,
+        1.7599999904632568,
+        0.9350000023841858
+      ],
+      "pivot": "ground center",
+      "forward": "Unity wrapper -Z",
+      "footprint": "1 cell / 2x2m",
+      "clearance": "front entrance cell 2m",
+      "collider": "low platform / trigger face; existing placement occupancy",
+      "materials": "P3 PA palette / roughness0.8 metallic0",
+      "fbx": "Assets\\Art\\ProjectPA\\Derived\\Worksites\\PA_StarterWorksite_Wheat.fbx",
+      "sha256": "81ecc19cbb51e1f1ddf259f4524d8fc4df36a3de803b0d08e789a5dc278c62f6",
+      "referenceRender": "Docs/AssetProvenance/VS_PRESENT_001/P4/PA_StarterWorksite_Wheat_r01.png"
+    }
+  ]
+}

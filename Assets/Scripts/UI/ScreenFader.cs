@@ -70,8 +70,15 @@ public class ScreenFader : MonoBehaviour
     // ── 외부 API: 페이드 아웃 → 콜백 → 페이드 인 시퀀스 ──────────────
     public void PlayWarpFade(Action onMidpoint)
     {
-        if (_isFading) return;
+        TryPlayWarpFade(onMidpoint);
+    }
+
+    // 기존 void 호출 계약을 유지하며 문은 거절된 요청의 잠금을 해제할 수 있다.
+    public bool TryPlayWarpFade(Action onMidpoint)
+    {
+        if (_isFading) return false;
         StartCoroutine(Co_WarpFade(onMidpoint));
+        return true;
     }
 
     private IEnumerator Co_WarpFade(Action onMidpoint)

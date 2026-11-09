@@ -15,9 +15,9 @@ MonoBehaviour:
   id: 14
   itemName: "\uD638\uBBF8"
   description: "\uBC2D\uC744 \uAC08 \uB54C \uC4F0\uB294 \uAE30\uBCF8 \uB3C4\uAD6C."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: d36cc4510faab1e479aa15d68e1257fa, type: 3}
   maxStack: 1
-  model: {fileID: 0}
+  model: {fileID: 6290239356837243247, guid: de2c9e0e4adc5994b8cccb1835d5853b, type: 3}
   basePrice: 0
   toolType: 5
   category: 4

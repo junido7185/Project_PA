@@ -1,0 +1,183 @@
+name: Project PA AI Team
+version: 1.0.0
+schema: v1
+
+models:
+
+  # ============================================================
+  # 1. MAIN CODER
+  # ============================================================
+  - name: "01 GLM 5.3 - Main Coder"
+    provider: openai
+    model: z-ai/glm-5-3
+    apiBase: https://integrate.api.nvidia.com/v1
+    apiKey: ${{ secrets.NVIDIA_API_KEY }}
+
+    roles:
+      - chat
+      - edit
+      - apply
+
+    capabilities:
+      - tool_use
+
+    defaultCompletionOptions:
+      contextLength: 131072
+      maxTokens: 16384
+
+    requestOptions:
+      timeout: 300000
+      extraBodyProperties:
+        reasoning_effort: high
+        chat_template_kwargs:
+          clear_thinking: true
+
+
+  # ============================================================
+  # 2. FAST CODER / MULTIMODAL
+  # ============================================================
+  - name: "02 GLM 5.3 Flash - Fast Coder"
+    provider: openai
+    model: z-ai/glm-5-3-flash
+    apiBase: https://integrate.api.nvidia.com/v1
+    apiKey: ${{ secrets.NVIDIA_API_KEY }}
+
+    roles:
+      - chat
+      - edit
+      - apply
+
+    capabilities:
+      - tool_use
+      - image_input
+
+    defaultCompletionOptions:
+      contextLength: 65536
+      maxTokens: 8192
+
+    requestOptions:
+      timeout: 240000
+      extraBodyProperties:
+        reasoning_effort: high
+        chat_template_kwargs:
+          clear_thinking: true
+
+
+  # ============================================================
+  # 3. SENIOR DEBUGGER
+  # ============================================================
+  - name: "03 Nemotron Ultra - Senior Debugger"
+    provider: openai
+    model: nvidia/nemotron-3-ultra-550b-a55b
+    apiBase: https://integrate.api.nvidia.com/v1
+    apiKey: ${{ secrets.NVIDIA_API_KEY }}
+
+    roles:
+      - chat
+      - edit
+      - apply
+
+    capabilities:
+      - tool_use
+
+    defaultCompletionOptions:
+      contextLength: 131072
+      maxTokens: 16384
+      temperature: 1.0
+      topP: 0.95
+
+    requestOptions:
+      timeout: 300000
+      extraBodyProperties:
+        chat_template_kwargs:
+          enable_thinking: true
+          force_nonempty_content: true
+
+
+  # ============================================================
+  # 4. SECONDARY REASONING CODER
+  # ============================================================
+  - name: "04 Nemotron Super - Reasoning Coder"
+    provider: openai
+    model: nvidia/nemotron-3-super-120b-a12b
+    apiBase: https://integrate.api.nvidia.com/v1
+    apiKey: ${{ secrets.NVIDIA_API_KEY }}
+
+    roles:
+      - chat
+      - edit
+      - apply
+
+    capabilities:
+      - tool_use
+
+    defaultCompletionOptions:
+      contextLength: 131072
+      maxTokens: 16384
+      temperature: 1.0
+      topP: 0.95
+
+    requestOptions:
+      timeout: 300000
+      extraBodyProperties:
+        chat_template_kwargs:
+          enable_thinking: true
+          force_nonempty_content: true
+
+
+  # ============================================================
+  # 5. LONG-RUNNING WORKHORSE
+  # ============================================================
+  - name: "05 Nemotron Lightning - Workhorse"
+    provider: openai
+    model: nvidia/nemotron-3.5-lightning-30b-a3b
+    apiBase: https://integrate.api.nvidia.com/v1
+    apiKey: ${{ secrets.NVIDIA_API_KEY }}
+
+    roles:
+      - chat
+      - edit
+      - apply
+
+    capabilities:
+      - tool_use
+
+    defaultCompletionOptions:
+      contextLength: 65536
+      maxTokens: 16384
+      temperature: 1.0
+      topP: 0.95
+
+    requestOptions:
+      timeout: 240000
+      extraBodyProperties:
+        chat_template_kwargs:
+          enable_thinking: true
+        reasoning_budget: 16384
+
+
+  # ============================================================
+  # 6. CODING WORKER
+  # ============================================================
+  - name: "06 Laguna XS 2.1 - Coding Worker"
+    provider: openai
+    model: poolside/laguna-xs-2.1
+    apiBase: https://integrate.api.nvidia.com/v1
+    apiKey: ${{ secrets.NVIDIA_API_KEY }}
+
+    roles:
+      - chat
+      - edit
+      - apply
+
+    capabilities:
+      - tool_use
+
+    defaultCompletionOptions:
+      contextLength: 65536
+      maxTokens: 8192
+      temperature: 1.0
+      topP: 0.95
+
+    requestOptions:
+      timeout: 180000

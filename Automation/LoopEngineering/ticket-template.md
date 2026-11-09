@@ -14,8 +14,8 @@ What should the player understand or feel after this work?
 
 ## Design References
 
-- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
-- `PROJECT_PA_DESIGN_INTENT.md`
+- `Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md`
+- `Docs/01_GAME_DESIGN/Creative/PROJECT_PA_DESIGN_INTENT.md`
 - task-specific docs from `Docs/AgentWorkflow/CONTEXT_INDEX.md`
 
 ## Allowed Paths

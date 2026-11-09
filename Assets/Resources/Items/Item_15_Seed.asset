@@ -16,9 +16,9 @@ MonoBehaviour:
   itemName: "\uC528\uC557"
   description: "\uC791\uBB3C \uC7AC\uBC30\uB97C \uC2DC\uC791\uD558\uB294 \uAE30\uBCF8
     \uC18C\uBAA8\uD488."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 27c5536ba49752343b3889835ebe63c9, type: 3}
   maxStack: 64
-  model: {fileID: 0}
+  model: {fileID: 5226952945829108980, guid: a56a5788cd20b0742a8bb35d8e5a1ef0, type: 3}
   basePrice: 20
   toolType: 6
   category: 2

@@ -57,7 +57,7 @@ public class PauseManager : MonoBehaviour
     public void Toggle()
     {
         // ESC 우선순위:
-        //   1) 창고 닫기
+        //   1) 창고 닫기 · 가격 창 닫기
         //   2) 제작 도감/작업대 화면 닫기
         //   3) 스마트폰 앱/홈 닫기
         //   4) 인벤토리 닫기
@@ -65,6 +65,13 @@ public class PauseManager : MonoBehaviour
         if (StorageUI.instance != null && StorageUI.instance.IsOpen)
         {
             StorageUI.instance.CloseBox();
+            return;
+        }
+
+        // P8: 가격 창이 열려 있으면 Esc는 가격 창만 닫는다(일시정지가 열려 영업 시간이 멈추지 않게).
+        if (ShopPriceUI.instance != null && ShopPriceUI.instance.IsOpen)
+        {
+            ShopPriceUI.instance.Close();
             return;
         }
 
@@ -122,6 +129,17 @@ public class PauseManager : MonoBehaviour
             _overlay.SetActive(true);
         }
 
+        if (PAUiTheme.Active)
+        {
+            var panel = _overlay.transform.Find("PausePanel");
+            PAUiTheme.Surface(panel.GetComponent<Image>(), PAUiTheme.Cream);
+            foreach (var label in panel.GetComponentsInChildren<TMP_Text>(true))
+                label.color = label.GetComponentInParent<Button>() != null ? Color.white : PAUiTheme.Ink;
+            PAUiTheme.Button(_resumeButton, PAUiTheme.Teal);
+            PAUiTheme.Button(_saveButton, PAUiTheme.Teal);
+            PAUiTheme.Button(_loadButton, PAUiTheme.Teal);
+            PAUiTheme.Button(_saveQuitButton, PAUiTheme.Warning);
+        }
         SetBusy(false);
         SetStatus("저장 상태를 확인하는 중...");
         _ = RefreshLoadAvailabilityAsync();
@@ -202,6 +220,15 @@ public class PauseManager : MonoBehaviour
             SetBusy(false);
             SetStatus("저장했습니다. 계속 플레이해도 안전합니다.");
         }
+        catch (System.InvalidOperationException refused) when (refused.Message == SaveManager.BusinessSaveBlockedMessage)
+        {
+            if (this == null)
+                return;
+
+            Debug.LogWarning($"[Pause] 저장 보류: {refused.Message}");
+            SetBusy(false);
+            SetStatus(refused.Message, true);
+        }
         catch (System.Exception ex)
         {
             if (this == null)
@@ -227,6 +254,13 @@ public class PauseManager : MonoBehaviour
         SetBusy(true);
         SetStatus("저장본을 불러오는 중...");
 
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == DemoRouteController.WorldScene &&
+            FindFirstObjectByType<DemoRouteController>() != null)
+        {
+            await ReloadFirstDayFromSaveAsync();
+            return;
+        }
+
         try
         {
             await SaveManager.instance.LoadGameAsync();
@@ -246,6 +280,36 @@ public class PauseManager : MonoBehaviour
             SetBusy(false);
             SetStatus("불러오지 못했습니다. 현재 진행 상태를 유지합니다.", true);
         }
+    }
+
+    // FirstDay 섬은 진행 중인 객체 위에 덮어 불러오지 않는다. 타이틀 이어하기와 같은 경로로 섬을 새로 불러와 복원한다.
+    async System.Threading.Tasks.Task ReloadFirstDayFromSaveAsync()
+    {
+        string reason = null;
+        try
+        {
+            var inspection = await SaveManager.instance.InspectContinueAsync();
+            if (this == null) return;
+            if (!inspection.CanContinue)
+                reason = string.IsNullOrEmpty(inspection.Issue) ? "불러올 저장본이 없습니다." : inspection.Issue;
+            else if (!DemoRouteController.PrepareContinue(inspection.CompanionIds, out string prepareReason))
+                reason = prepareReason;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[Pause] 불러오기 확인 실패: {ex.Message}");
+            reason = "저장본을 확인하지 못했습니다.";
+        }
+        if (this == null) return;
+        if (!string.IsNullOrEmpty(reason))
+        {
+            SetBusy(false);
+            SetStatus(reason + " 현재 진행 상태를 유지합니다.", true);
+            return;
+        }
+        Resume();
+        UnityEngine.SceneManagement.SceneManager.LoadScene(DemoRouteController.WorldScene,
+            UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
     async void SaveAndQuitFromPause()
@@ -279,6 +343,15 @@ public class PauseManager : MonoBehaviour
                 SetStatus("저장 완료 · 실제 빌드에서는 여기서 종료됩니다.");
             }
         }
+        catch (System.InvalidOperationException refused) when (refused.Message == SaveManager.BusinessSaveBlockedMessage)
+        {
+            if (this == null)
+                return;
+
+            Debug.LogWarning($"[Pause] 저장 후 종료 보류: {refused.Message}");
+            SetBusy(false);
+            SetStatus(refused.Message, true);
+        }
         catch (System.Exception ex)
         {
             if (this == null)
@@ -306,8 +379,8 @@ public class PauseManager : MonoBehaviour
 
         _statusText.text = message;
         _statusText.color = isError
-            ? new Color(1f, 0.68f, 0.55f, 1f)
-            : new Color(0.78f, 0.86f, 0.80f, 1f);
+            ? (PAUiTheme.Active ? PAUiTheme.Warning : new Color(1f, 0.68f, 0.55f, 1f))
+            : (PAUiTheme.Active ? PAUiTheme.Ink : new Color(0.78f, 0.86f, 0.80f, 1f));
     }
 
     void BuildOverlay()
@@ -368,7 +441,7 @@ public class PauseManager : MonoBehaviour
 
         _statusText = CreateText(panel.transform, "StatusText", "",
             new Vector2(0f, -205f), new Vector2(470f, 74f), 17f,
-            new Color(0.78f, 0.86f, 0.80f, 1f), FontStyles.Normal);
+            (PAUiTheme.Active ? PAUiTheme.Ink : new Color(0.78f, 0.86f, 0.80f, 1f)), FontStyles.Normal);
         _statusText.alignment = TextAlignmentOptions.Center;
         _statusText.textWrappingMode = TextWrappingModes.Normal;
 

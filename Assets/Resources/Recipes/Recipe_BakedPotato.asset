@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Recipe_BakedPotato
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uAD6C\uC6B4 \uAC10\uC790 \uAD7D\uAE30"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: dbb46ca8d57dd2c4b91ce570b064456d, type: 3}
   description: Carrot-based starter dish.
   ingredients:
   - item: {fileID: 11400000, guid: b555a286eb057e3478f5635bd71cb0fc, type: 2}

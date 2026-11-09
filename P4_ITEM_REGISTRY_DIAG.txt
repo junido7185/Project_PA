@@ -1,0 +1,1146 @@
+PROJECT P.A. — P4 ItemRegistry diagnostic
+ROOT=C:\Users\sdjsd\Desktop\Unity\Project_PA
+
+===== CONTINUATION RESULT =====
+FAIL
+System.InvalidOperationException: ItemRegistry available
+  at PA_FirstProductionR5Continuation.Check (System.Boolean condition, System.String label) [0x00026] in C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_FirstProductionR5Continuation.cs:287 
+  at PA_FirstProductionR5Continuation.Checks (FirstProductionController p) [0x00195] in C:\Users\sdjsd\Desktop\Unity\Project_PA\Assets\Editor\PA_FirstProductionR5Continuation.cs:142 
+checks=2
+
+
+===== CURRENT ItemRegistry.cs =====
+using UnityEngine;
+using System.Collections.Generic;
+
+// 역할:
+// - 씬 내 유일한 Item(ScriptableObject) 도감 싱글톤.
+// - DefaultExecutionOrder(-70) — EconomyService(-100) · TierService(-90) · GameClock(-80) 이후,
+//   나머지 MonoBehaviour 보다 먼저 초기화된다.
+// - SaveManager 가 SlotSaveData.itemId / itemName 으로 Item 원형을 복원할 때 사용한다.
+//
+// 씬 설정:
+//   빈 GameObject 에 이 컴포넌트를 붙이고, allItems 에 프로젝트 내 모든 Item 에셋을 등록한다.
+[DefaultExecutionOrder(-70)]
+public class ItemRegistry : MonoBehaviour
+{
+    public static ItemRegistry Instance { get; private set; }
+
+    [Tooltip("게임 내 모든 Item ScriptableObject 를 여기에 등록한다.")]
+    public List<Item> allItems = new List<Item>();
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        RegisterResourceItems();
+    }
+
+    // ItemRegistry remains the single lookup authority, but Resources/Items is also a canonical
+    // item source. Merge newly added resource items so save/load does not depend on manually
+    // updating every scene's serialized allItems list.
+    void RegisterResourceItems()
+    {
+        if (allItems == null) allItems = new List<Item>();
+
+        foreach (var item in Resources.LoadAll<Item>("Items"))
+            if (item != null && !allItems.Contains(item))
+                allItems.Add(item);
+    }
+
+    // id 우선, 이름 폴백으로 Item 원형을 반환한다.
+    // id == 0 이거나 id 중복 등록된 경우에도 itemName 으로 보완한다.
+    public Item Find(int id, string itemName)
+    {
+        // 1. id 로 검색 (0은 미할당 sentinel 이므로 스킵)
+        if (id != 0)
+        {
+            foreach (var item in allItems)
+                if (item != null && item.id == id) return item;
+        }
+
+        // 2. 이름 폴백
+        if (!string.IsNullOrEmpty(itemName))
+        {
+            foreach (var item in allItems)
+                if (item != null && item.itemName == itemName) return item;
+        }
+
+        return null;
+    }
+}
+
+
+===== ItemRegistry.cs.meta =====
+fileFormatVersion: 2
+guid: 4d554e9a80a15a14889d6ae19125852f
+ItemRegistry GUID=4d554e9a80a15a14889d6ae19125852f
+
+===== LIKELY WOOD / ORE ITEM ASSETS =====
+--- Assets/Resources/Items/Item_Wood.asset | score=18 | under Resources=True ---
+asset_guid=a059185af048eab4bb38e0a3b4b62602
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+0013:   m_Name: Item_Wood
+0015:   id: 3
+0016:   itemName: Wood
+0018:   icon: {fileID: 0}
+0020:   model: {fileID: 0}
+0025:   buildingToBuild: {fileID: 0}
+0026:   cropPrefab: {fileID: 0}
+
+--- Assets/Resources/Items/Item_Ore.asset | score=15 | under Resources=True ---
+asset_guid=8283f21f84e1134458262a89b7e29984
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+0013:   m_Name: Item_Ore
+0015:   id: 4
+0016:   itemName: Ore
+0018:   icon: {fileID: 21300000, guid: d0ea2ec653dd331458a02626c7a02955, type: 3}
+0020:   model: {fileID: 0}
+0025:   buildingToBuild: {fileID: 0}
+0026:   cropPrefab: {fileID: 0}
+
+--- Assets/Resources/Production/Production_Ore.asset | score=7 | under Resources=True ---
+asset_guid=abf119c1079a9bc48b068651e935b5de
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 2acd1de11a836234ca9ad07ff0d0e9a8, type: 3}
+0013:   m_Name: Production_Ore
+0015:   producedItem: {fileID: 11400000, guid: 8283f21f84e1134458262a89b7e29984, type: 2}
+
+--- Assets/Resources/Production/Production_Wood.asset | score=7 | under Resources=True ---
+asset_guid=c08a3cc6d0e450b4db1860a4c434325a
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 2acd1de11a836234ca9ad07ff0d0e9a8, type: 3}
+0013:   m_Name: Production_Wood
+0015:   producedItem: {fileID: 11400000, guid: a059185af048eab4bb38e0a3b4b62602, type: 2}
+
+--- Assets/Resources/Buildings/Building_B02_GeneralStore.asset | score=5 | under Resources=True ---
+asset_guid=79d8ec733585de84a96ab413292b786d
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+0013:   m_Name: Building_B02_GeneralStore
+0017:   prefab: {fileID: 488036040587961791, guid: b03314a5d5b51204f8cec65ce4dc5343, type: 3}
+
+--- Assets/Resources/Buildings/Building_B03_ConvenienceStore.asset | score=5 | under Resources=True ---
+asset_guid=46b2c9476422bd049a75d82e05c40704
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+0013:   m_Name: Building_B03_ConvenienceStore
+0017:   prefab: {fileID: 1315542151212264061, guid: 812257bf59506494b86d0aa078e14e10, type: 3}
+
+--- Assets/Resources/Buildings/Building_B04_DepartmentStore.asset | score=5 | under Resources=True ---
+asset_guid=c788b5d4a9ce2b141ba3dd4348fe7778
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+0013:   m_Name: Building_B04_DepartmentStore
+0017:   prefab: {fileID: 7312369173739330159, guid: d9f314b6d6b30f949bc7eb121d57a293, type: 3}
+
+--- Assets/Resources/DepartureTutorial/Worksites/Ore.asset | score=5 | under Resources=True ---
+asset_guid=5dceefdad253b494ba7a84b49212f4ec
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+0013:   m_Name: Ore
+0015:   buildingName: "Ore \uCCAB \uC791\uC5C5\uD130"
+0017:   prefab: {fileID: 1696041768503240496, guid: 6458c18371db5564ab162f9fe7e9c3aa, type: 3}
+
+--- Assets/Resources/DepartureTutorial/Worksites/Wood.asset | score=5 | under Resources=True ---
+asset_guid=38cf806d71d91a347985be7aa2844e68
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 8eefd7ff0c5a64e44affd87dfd86496a, type: 3}
+0013:   m_Name: Wood
+0015:   buildingName: "Wood \uCCAB \uC791\uC5C5\uD130"
+0017:   prefab: {fileID: 6121527331030860075, guid: 050bcb57aef4bbb44b40c9d484aeff94, type: 3}
+
+--- Assets/Resources/Items/Blueprints/Blueprint_B02_GeneralStore.asset | score=5 | under Resources=True ---
+asset_guid=d7a52a9525910514097c5ab211ce8be8
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+0013:   m_Name: Blueprint_B02_GeneralStore
+0015:   id: 1002
+0016:   itemName: "\uC124\uACC4\uB3C4: \uC7A1\uD654\uC810"
+0019:   icon: {fileID: 0}
+0021:   model: {fileID: 488036040587961791, guid: b03314a5d5b51204f8cec65ce4dc5343, type: 3}
+0026:   buildingToBuild: {fileID: 11400000, guid: 79d8ec733585de84a96ab413292b786d, type: 2}
+0027:   cropPrefab: {fileID: 0}
+
+--- Assets/Resources/Items/Blueprints/Blueprint_B03_ConvenienceStore.asset | score=5 | under Resources=True ---
+asset_guid=1b158a0dc1a8c2843a31b5c9cf2f0a6a
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+0013:   m_Name: Blueprint_B03_ConvenienceStore
+0015:   id: 1003
+0016:   itemName: "\uC124\uACC4\uB3C4: \uD3B8\uC758\uC810"
+0019:   icon: {fileID: 0}
+0021:   model: {fileID: 1315542151212264061, guid: 812257bf59506494b86d0aa078e14e10, type: 3}
+0026:   buildingToBuild: {fileID: 11400000, guid: 46b2c9476422bd049a75d82e05c40704, type: 2}
+0027:   cropPrefab: {fileID: 0}
+
+--- Assets/Resources/Items/Blueprints/Blueprint_B04_DepartmentStore.asset | score=5 | under Resources=True ---
+asset_guid=6e580f85c7ceebb40b56ce990ee740bf
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+0013:   m_Name: Blueprint_B04_DepartmentStore
+0015:   id: 1004
+0016:   itemName: "\uC124\uACC4\uB3C4: \uBC31\uD654\uC810"
+0019:   icon: {fileID: 0}
+0021:   model: {fileID: 7312369173739330159, guid: d9f314b6d6b30f949bc7eb121d57a293, type: 3}
+0026:   buildingToBuild: {fileID: 11400000, guid: c788b5d4a9ce2b141ba3dd4348fe7778, type: 2}
+0027:   cropPrefab: {fileID: 0}
+
+--- Assets/Fonts/Jalnan2_SDF.asset | score=0 | under Resources=False ---
+asset_guid=3afe92293a7925a498df5910f03da54c
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_Name: Atlas 0
+0023:   m_IgnoreMipmapLimit: 1
+0052:   m_CorrespondingSourceObject: {fileID: 0}
+0053:   m_PrefabInstance: {fileID: 0}
+0054:   m_PrefabAsset: {fileID: 0}
+0055:   m_GameObject: {fileID: 0}
+0058:   m_Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
+0059:   m_Name: Jalnan2_SDF
+0084:   m_Material: {fileID: 6864350939123126628}
+0085:   m_SourceFontFileGUID: 9adae146ba9a49345bab4b77a44ef2bb
+0088:     sourceFontFileGUID: 
+0099:     referencedFontAssetGUID: 
+0100:     referencedTextAssetGUID: 
+0105:   m_SourceFontFile: {fileID: 12800000, guid: 9adae146ba9a49345bab4b77a44ef2bb, type: 3}
+0112:   - {fileID: -1375310588639936503}
+0131:       m_LigatureGlyphID: 769
+0133:       m_LigatureGlyphID: 770
+0135:       m_LigatureGlyphID: 771
+0137:       m_LigatureGlyphID: 772
+0139:       m_LigatureGlyphID: 776
+0141:       m_LigatureGlyphID: 777
+0143:       m_LigatureGlyphID: 773
+0145:       m_LigatureGlyphID: 774
+0147:       m_LigatureGlyphID: 775
+0149:       m_LigatureGlyphID: 67
+0151:       m_LigatureGlyphID: 68
+0153:       m_LigatureGlyphID: 64
+0155:       m_LigatureGlyphID: 65
+0157:       m_LigatureGlyphID: 66
+0159:       m_LigatureGlyphID: 850
+19905:   - {fileID: 11400000, guid: 3cd3d06f818f8254a84b5c015f8d096d, type: 2}
+19907:   - regularTypeface: {fileID: 0}
+19908:     italicTypeface: {fileID: 0}
+19909:   - regularTypeface: {fileID: 0}
+19910:     italicTypeface: {fileID: 0}
+19911:   - regularTypeface: {fileID: 0}
+19912:     italicTypeface: {fileID: 0}
+19913:   - regularTypeface: {fileID: 0}
+19914:     italicTypeface: {fileID: 0}
+19915:   - regularTypeface: {fileID: 0}
+19916:     italicTypeface: {fileID: 0}
+19917:   - regularTypeface: {fileID: 0}
+19918:     italicTypeface: {fileID: 0}
+19919:   - regularTypeface: {fileID: 0}
+19920:     italicTypeface: {fileID: 0}
+19921:   - regularTypeface: {fileID: 0}
+19922:     italicTypeface: {fileID: 0}
+19923:   - regularTypeface: {fileID: 0}
+19924:     italicTypeface: {fileID: 0}
+19925:   - regularTypeface: {fileID: 0}
+19926:     italicTypeface: {fileID: 0}
+19960:   atlas: {fileID: 0}
+19965:   m_CorrespondingSourceObject: {fileID: 0}
+19966:   m_PrefabInstance: {fileID: 0}
+19967:   m_PrefabAsset: {fileID: 0}
+19968:   m_Name: Font Material
+19969:   m_Shader: {fileID: 4800000, guid: fe393ace9b354375a9cb14cdbbc28be4, type: 3}
+19970:   m_Parent: {fileID: 0}
+19985:         m_Texture: {fileID: -1375310588639936503}
+
+--- Assets/Fonts/PA_Emoji_SDF.asset | score=0 | under Resources=False ---
+asset_guid=3cd3d06f818f8254a84b5c015f8d096d
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
+0013:   m_Name: PA_Emoji_SDF
+0038:   m_Material: {fileID: 7054871084916058216}
+0039:   m_SourceFontFileGUID: af89b822cc8ecda4fba997d5dbcf0f14
+0042:     sourceFontFileGUID: 
+0053:     referencedFontAssetGUID: 
+0054:     referencedTextAssetGUID: 
+0059:   m_SourceFontFile: {fileID: 12800000, guid: af89b822cc8ecda4fba997d5dbcf0f14, type: 3}
+0066:   - {fileID: 291738322952256703}
+0085:       m_LigatureGlyphID: 2730
+0087:       m_LigatureGlyphID: 2731
+0089:       m_LigatureGlyphID: 2732
+0091:       m_LigatureGlyphID: 2733
+0093:       m_LigatureGlyphID: 2734
+0095:       m_LigatureGlyphID: 2735
+0097:       m_LigatureGlyphID: 2736
+0099:       m_LigatureGlyphID: 2737
+0101:       m_LigatureGlyphID: 2738
+0103:       m_LigatureGlyphID: 2739
+0105:       m_LigatureGlyphID: 2740
+0107:       m_LigatureGlyphID: 2741
+0109:       m_LigatureGlyphID: 2742
+0111:       m_LigatureGlyphID: 2743
+0113:       m_LigatureGlyphID: 2744
+0115:       m_LigatureGlyphID: 2745
+0117:       m_LigatureGlyphID: 2746
+0119:       m_LigatureGlyphID: 2747
+0121:       m_LigatureGlyphID: 2748
+0123:       m_LigatureGlyphID: 2749
+0125:       m_LigatureGlyphID: 2750
+0127:       m_LigatureGlyphID: 2751
+0129:       m_LigatureGlyphID: 2752
+0131:       m_LigatureGlyphID: 2753
+0133:       m_LigatureGlyphID: 2759
+0135:       m_LigatureGlyphID: 2760
+0137:       m_LigatureGlyphID: 2761
+0139:       m_LigatureGlyphID: 2762
+0141:       m_LigatureGlyphID: 2763
+0143:       m_LigatureGlyphID: 2764
+0145:       m_LigatureGlyphID: 2765
+0147:       m_LigatureGlyphID: 2766
+0149:       m_LigatureGlyphID: 2767
+0151:       m_LigatureGlyphID: 2768
+0153:       m_LigatureGlyphID: 2769
+0155:       m_LigatureGlyphID: 2770
+0157:       m_LigatureGlyphID: 2754
+0159:       m_LigatureGlyphID: 2755
+0161:       m_LigatureGlyphID: 2756
+0163:       m_LigatureGlyphID: 2757
+0165:       m_LigatureGlyphID: 2758
+0172:   - regularTypeface: {fileID: 0}
+0173:     italicTypeface: {fileID: 0}
+0174:   - regularTypeface: {fileID: 0}
+0175:     italicTypeface: {fileID: 0}
+0176:   - regularTypeface: {fileID: 0}
+0177:     italicTypeface: {fileID: 0}
+0178:   - regularTypeface: {fileID: 0}
+0179:     italicTypeface: {fileID: 0}
+0180:   - regularTypeface: {fileID: 0}
+0181:     italicTypeface: {fileID: 0}
+0182:   - regularTypeface: {fileID: 0}
+0183:     italicTypeface: {fileID: 0}
+0184:   - regularTypeface: {fileID: 0}
+0185:     italicTypeface: {fileID: 0}
+0186:   - regularTypeface: {fileID: 0}
+0187:     italicTypeface: {fileID: 0}
+0188:   - regularTypeface: {fileID: 0}
+0189:     italicTypeface: {fileID: 0}
+0190:   - regularTypeface: {fileID: 0}
+0191:     italicTypeface: {fileID: 0}
+0225:   atlas: {fileID: 0}
+0229:   m_CorrespondingSourceObject: {fileID: 0}
+0230:   m_PrefabInstance: {fileID: 0}
+0231:   m_PrefabAsset: {fileID: 0}
+0232:   m_Name: Atlas 0
+0246:   m_IgnoreMipmapLimit: 1
+0276:   m_CorrespondingSourceObject: {fileID: 0}
+0277:   m_PrefabInstance: {fileID: 0}
+0278:   m_PrefabAsset: {fileID: 0}
+0279:   m_Name: Font Material
+0280:   m_Shader: {fileID: 4800000, guid: fe393ace9b354375a9cb14cdbbc28be4, type: 3}
+0281:   m_Parent: {fileID: 0}
+0296:         m_Texture: {fileID: 291738322952256703}
+
+--- Assets/Readme.asset | score=0 | under Resources=False ---
+asset_guid=8105016687592461f977c054a80ce2f2
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: fcf7219bab7fe46a1ad266029b2fee19, type: 3}
+0013:   m_Name: Readme
+0015:   icon: {fileID: 2800000, guid: 727a75301c3d24613a3ebcec4a24c2c8, type: 3}
+0024:     linkText: Read more about URP
+
+--- Assets/Resources/DepartureTutorial/DepartureNavigation.asset | score=0 | under Resources=True ---
+asset_guid=506e3bee3a5df3b4290a9581685ef569
+0023:    �                 �  ��     �                 �  ��     �                 �  ��     �                 �  ��     �               NavMeshData PPtr<EditorExtension> m_FileID m_PathID PPtr<PrefabInstance> m_NavMeshTiles NavMeshTileData m_MeshData m_Hash bytes[0] bytes[1] bytes[2] bytes[3] bytes[4] bytes[5] bytes[6] bytes[7] bytes[8] bytes[9] bytes[10] bytes[11] bytes[12] bytes[13] bytes[14] bytes[15] NavMeshBuildSettings m_NavMeshBuildSettings agentTypeID agentRadius agentHeight agentSlope agentClimb ledgeDropHeight maxJumpAcrossDistance minRegionArea manualCellSize cellSize manualTileSize tileSize buildHeightMesh maxJobWorkers preserveTilesOutsideBounds NavMeshBuildDebugSettings debug m_Flags m_Heightmaps HeightmapData surfaceToTerrain e00 e01 e02 e03 e10 e11 e12 e13 e20 e21 e22 e23 e30 e31 e32 e33 terrainData isRotated m_HeightMeshes HeightMeshData m_Vertices x y z m_Indices m_Bounds m_Center m_Extent m_Nodes HeightMeshBVNode min max i n m_OffMeshLinks AutoOffMeshLinkData m_Start m_End m_Radius m_LinkType m_Area m_LinkDirection m_SourceBounds m_Rotation w m_Position m_AgentTypeID          �(k            �                                                                     HarborArchitecture     �  VAND   ��������                         h�ףp�  �    33�@      �@  X���u=        ��u=        ��u=��*�PUU���u=   �PUU���u=  ��    ��u=���    ��u=  ��  X���u=  ��          �   �                     �                                                                                                      W  3 ����   W  3      * W  3 ����  0 W  3       * R  3                    ���E���|�4�)�8>x  VAND       ����                 
+
+--- Assets/Resources/Items/Item_Plank.asset | score=0 | under Resources=True ---
+asset_guid=a50e382b537ceb842a0ae1d1bbbbbfbd
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+0013:   m_Name: Item_Plank
+0015:   id: 7
+0016:   itemName: Plank
+0017:   description: Processed wood for furniture and tools.
+0018:   icon: {fileID: 0}
+0020:   model: {fileID: 0}
+0025:   buildingToBuild: {fileID: 0}
+0026:   cropPrefab: {fileID: 0}
+
+--- Assets/Resources/Recipes/Recipe_Furniture.asset | score=0 | under Resources=True ---
+asset_guid=38370acf0be1e0747ab958f1652e28f6
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
+0013:   m_Name: Recipe_Furniture
+0016:   icon: {fileID: 0}
+0017:   description: Tier 2 luxury woodcraft.
+0019:   - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
+0021:   outputItem: {fileID: 11400000, guid: e6957135cb0b7aa4ab402488ab8ff835, type: 2}
+0027:   inputItem: {fileID: 0}
+
+--- Assets/Resources/Recipes/Recipe_IronBar.asset | score=0 | under Resources=True ---
+asset_guid=73182043d8b0f5a47a97554c0eb5c121
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
+0013:   m_Name: Recipe_IronBar
+0016:   icon: {fileID: 0}
+0017:   description: 2 Ore -> 1 IronBar
+0019:   - item: {fileID: 11400000, guid: 8283f21f84e1134458262a89b7e29984, type: 2}
+0021:   outputItem: {fileID: 11400000, guid: 698a1d3428a5cef488c3279c66657fc1, type: 2}
+0027:   inputItem: {fileID: 0}
+
+--- Assets/Resources/Recipes/Recipe_Plank.asset | score=0 | under Resources=True ---
+asset_guid=38a984328ef6c8b4899657d18b08671d
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
+0013:   m_Name: Recipe_Plank
+0016:   icon: {fileID: 0}
+0017:   description: 2 Wood -> 1 Plank
+0019:   - item: {fileID: 11400000, guid: a059185af048eab4bb38e0a3b4b62602, type: 2}
+0021:   outputItem: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
+0027:   inputItem: {fileID: 0}
+
+--- Assets/Scenes/MainGame/NavMesh-Ground.asset | score=0 | under Resources=False ---
+asset_guid=cfd11ef9b4e4f0c42b8130f74d29b1ec
+0023:    �                 �  ��     �                 �  ��     �                 �  ��     �                 �  ��     �               NavMeshData PPtr<EditorExtension> m_FileID m_PathID PPtr<PrefabInstance> m_NavMeshTiles NavMeshTileData m_MeshData m_Hash bytes[0] bytes[1] bytes[2] bytes[3] bytes[4] bytes[5] bytes[6] bytes[7] bytes[8] bytes[9] bytes[10] bytes[11] bytes[12] bytes[13] bytes[14] bytes[15] NavMeshBuildSettings m_NavMeshBuildSettings agentTypeID agentRadius agentHeight agentSlope agentClimb ledgeDropHeight maxJumpAcrossDistance minRegionArea manualCellSize cellSize manualTileSize tileSize buildHeightMesh maxJobWorkers preserveTilesOutsideBounds NavMeshBuildDebugSettings debug m_Flags m_Heightmaps HeightmapData surfaceToTerrain e00 e01 e02 e03 e10 e11 e12 e13 e20 e21 e22 e23 e30 e31 e32 e33 terrainData isRotated m_HeightMeshes HeightMeshData m_Vertices x y z m_Indices m_Bounds m_Center m_Extent m_Nodes HeightMeshBVNode min max i n m_OffMeshLinks AutoOffMeshLinkData m_Start m_End m_Radius m_LinkType m_Area m_LinkDirection m_SourceBounds m_Rotation w m_Position m_AgentTypeID          �(k            �                                                                     NavMesh-Ground     �   VAND   ��������                       VUK���L�  H«�*����@��*�  �@��H�=��*«�*�=��*«�*�=UUE«�H�=UUE�         � �                                       1  ,                     �?f%
+
+--- Assets/Settings/DefaultVolumeProfile.asset | score=0 | under Resources=False ---
+asset_guid=ab09877e2e707104187f6f83e2f62510
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 5485954d14dfb9a4c8ead8edb0ded5b1, type: 3}
+0013:   m_Name: LiftGammaGain
+0028:   m_CorrespondingSourceObject: {fileID: 0}
+0029:   m_PrefabInstance: {fileID: 0}
+0030:   m_PrefabAsset: {fileID: 0}
+0031:   m_GameObject: {fileID: 0}
+0034:   m_Script: {fileID: 11500000, guid: 70afe9e12c7a7ed47911bb608a23a8ff, type: 3}
+0035:   m_Name: SplitToning
+0050:   m_CorrespondingSourceObject: {fileID: 0}
+0051:   m_PrefabInstance: {fileID: 0}
+0052:   m_PrefabAsset: {fileID: 0}
+0053:   m_GameObject: {fileID: 0}
+0056:   m_Script: {fileID: 0}
+0057:   m_Name: CopyPasteTestComponent2
+0058:   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Editor.Tests:UnityEditor.Rendering.Tests:VolumeComponentCopyPasteTests/CopyPasteTestComponent2
+0072:   m_CorrespondingSourceObject: {fileID: 0}
+0073:   m_PrefabInstance: {fileID: 0}
+0074:   m_PrefabAsset: {fileID: 0}
+0075:   m_GameObject: {fileID: 0}
+0078:   m_Script: {fileID: 11500000, guid: 60f3b30c03e6ba64d9a27dc9dba8f28d, type: 3}
+0079:   m_Name: OutlineVolumeComponent
+0088:   m_CorrespondingSourceObject: {fileID: 0}
+0089:   m_PrefabInstance: {fileID: 0}
+0090:   m_PrefabAsset: {fileID: 0}
+0091:   m_GameObject: {fileID: 0}
+0094:   m_Script: {fileID: 11500000, guid: ccf1aba9553839d41ae37dd52e9ebcce, type: 3}
+0095:   m_Name: MotionBlur
+0113:   m_CorrespondingSourceObject: {fileID: 0}
+0114:   m_PrefabInstance: {fileID: 0}
+0115:   m_PrefabAsset: {fileID: 0}
+0116:   m_GameObject: {fileID: 0}
+0119:   m_Script: {fileID: 11500000, guid: 0fd9ee276a1023e439cf7a9c393195fa, type: 3}
+0120:   m_Name: TestAnimationCurveVolumeComponent
+0152:   m_CorrespondingSourceObject: {fileID: 0}
+0153:   m_PrefabInstance: {fileID: 0}
+0154:   m_PrefabAsset: {fileID: 0}
+0155:   m_GameObject: {fileID: 0}
+0158:   m_Script: {fileID: 11500000, guid: 66f335fb1ffd8684294ad653bf1c7564, type: 3}
+0159:   m_Name: ColorAdjustments
+0180:   m_CorrespondingSourceObject: {fileID: 0}
+0181:   m_PrefabInstance: {fileID: 0}
+0182:   m_PrefabAsset: {fileID: 0}
+0183:   m_GameObject: {fileID: 0}
+0186:   m_Script: {fileID: 11500000, guid: 29fa0085f50d5e54f8144f766051a691, type: 3}
+0187:   m_Name: FilmGrain
+0201:     m_Value: {fileID: 0}
+0205:   m_CorrespondingSourceObject: {fileID: 0}
+0206:   m_PrefabInstance: {fileID: 0}
+0207:   m_PrefabAsset: {fileID: 0}
+0208:   m_GameObject: {fileID: 0}
+0211:   m_Script: {fileID: 11500000, guid: 97c23e3b12dc18c42a140437e53d3951, type: 3}
+0212:   m_Name: Tonemapping
+0245:   m_CorrespondingSourceObject: {fileID: 0}
+0246:   m_PrefabInstance: {fileID: 0}
+0247:   m_PrefabAsset: {fileID: 0}
+0248:   m_GameObject: {fileID: 0}
+0251:   m_Script: {fileID: 0}
+0252:   m_Name: VolumeComponentSupportedEverywhere
+0253:   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Editor.Tests:UnityEngine.Rendering.Tests:VolumeComponentEditorSupportedOnTests/VolumeComponentSupportedEverywhere
+0258:   m_CorrespondingSourceObject: {fileID: 0}
+0259:   m_PrefabInstance: {fileID: 0}
+0260:   m_PrefabAsset: {fileID: 0}
+0261:   m_GameObject: {fileID: 0}
+0264:   m_Script: {fileID: 11500000, guid: 5a00a63fdd6bd2a45ab1f2d869305ffd, type: 3}
+0265:   m_Name: OasisFogVolumeComponent
+0286:   m_CorrespondingSourceObject: {fileID: 0}
+0287:   m_PrefabInstance: {fileID: 0}
+0288:   m_PrefabAsset: {fileID: 0}
+0289:   m_GameObject: {fileID: 0}
+0292:   m_Script: {fileID: 11500000, guid: fb60a22f311433c4c962b888d1393f88, type: 3}
+0293:   m_Name: PaniniProjection
+0305:   m_CorrespondingSourceObject: {fileID: 0}
+0306:   m_PrefabInstance: {fileID: 0}
+0307:   m_PrefabAsset: {fileID: 0}
+0308:   m_GameObject: {fileID: 0}
+0311:   m_Script: {fileID: 11500000, guid: 6bd486065ce11414fa40e631affc4900, type: 3}
+0312:   m_Name: ProbeVolumesOptions
+0348:   m_CorrespondingSourceObject: {fileID: 0}
+0349:   m_PrefabInstance: {fileID: 0}
+0350:   m_PrefabAsset: {fileID: 0}
+0351:   m_GameObject: {fileID: 0}
+0354:   m_Script: {fileID: 11500000, guid: 0b2db86121404754db890f4c8dfe81b2, type: 3}
+0355:   m_Name: Bloom
+0387:     m_Value: {fileID: 0}
+0395:   m_CorrespondingSourceObject: {fileID: 0}
+0396:   m_PrefabInstance: {fileID: 0}
+0397:   m_PrefabAsset: {fileID: 0}
+0398:   m_GameObject: {fileID: 0}
+0401:   m_Script: {fileID: 11500000, guid: 221518ef91623a7438a71fef23660601, type: 3}
+0402:   m_Name: WhiteBalance
+0414:   m_CorrespondingSourceObject: {fileID: 0}
+0415:   m_PrefabInstance: {fileID: 0}
+0416:   m_PrefabAsset: {fileID: 0}
+0417:   m_GameObject: {fileID: 0}
+0420:   m_Script: {fileID: 0}
+0421:   m_Name: CopyPasteTestComponent3
+0422:   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Editor.Tests:UnityEditor.Rendering.Tests:VolumeComponentCopyPasteTests/CopyPasteTestComponent3
+0436:   m_CorrespondingSourceObject: {fileID: 0}
+0437:   m_PrefabInstance: {fileID: 0}
+0438:   m_PrefabAsset: {fileID: 0}
+0439:   m_GameObject: {fileID: 0}
+0442:   m_Script: {fileID: 11500000, guid: d7fd9488000d3734a9e00ee676215985, type: 3}
+0443:   m_Name: DefaultVolumeProfile
+0446:   - {fileID: -9167874883656233139}
+0447:   - {fileID: 1918650496244738858}
+0448:   - {fileID: 853819529557874667}
+0449:   - {fileID: 1052315754049611418}
+0450:   - {fileID: -1170528603972255243}
+0451:   - {fileID: -8270506406425502121}
+0452:   - {fileID: -5520245016509672950}
+0453:   - {fileID: 7173750748008157695}
+0454:   - {fileID: 1666464333004379222}
+0455:   - {fileID: 9001657382290151224}
+0456:   - {fileID: -6335409530604852063}
+0457:   - {fileID: -1216621516061285780}
+0458:   - {fileID: 3959858460715838825}
+0459:   - {fileID: -7743500325797982168}
+0460:   - {fileID: 4644742534064026673}
+0461:   - {fileID: -4463884970436517307}
+0462:   - {fileID: -6288072647309666549}
+0463:   - {fileID: 7518938298396184218}
+0464:   - {fileID: -1410297666881709256}
+0465:   - {fileID: -7750755424749557576}
+0466:   - {fileID: -5139089513906902183}
+0470:   m_CorrespondingSourceObject: {fileID: 0}
+0471:   m_PrefabInstance: {fileID: 0}
+0472:   m_PrefabAsset: {fileID: 0}
+0473:   m_GameObject: {fileID: 0}
+0476:   m_Script: {fileID: 11500000, guid: 06437c1ff663d574d9447842ba0a72e4, type: 3}
+0477:   m_Name: ScreenSpaceLensFlare
+0537:   m_CorrespondingSourceObject: {fileID: 0}
+0538:   m_PrefabInstance: {fileID: 0}
+0539:   m_PrefabAsset: {fileID: 0}
+0540:   m_GameObject: {fileID: 0}
+0543:   m_Script: {fileID: 11500000, guid: 558a8e2b6826cf840aae193990ba9f2e, type: 3}
+0544:   m_Name: ShadowsMidtonesHighlights
+0571:   m_CorrespondingSourceObject: {fileID: 0}
+0572:   m_PrefabInstance: {fileID: 0}
+0573:   m_PrefabAsset: {fileID: 0}
+0574:   m_GameObject: {fileID: 0}
+0577:   m_Script: {fileID: 11500000, guid: 3eb4b772797da9440885e8bd939e9560, type: 3}
+0578:   m_Name: ColorCurves
+0760:   m_CorrespondingSourceObject: {fileID: 0}
+0761:   m_PrefabInstance: {fileID: 0}
+0762:   m_PrefabAsset: {fileID: 0}
+0763:   m_GameObject: {fileID: 0}
+0766:   m_Script: {fileID: 11500000, guid: e021b4c809a781e468c2988c016ebbea, type: 3}
+0767:   m_Name: ColorLookup
+0772:     m_Value: {fileID: 0}
+0780:   m_CorrespondingSourceObject: {fileID: 0}
+0781:   m_PrefabInstance: {fileID: 0}
+0782:   m_PrefabAsset: {fileID: 0}
+0783:   m_GameObject: {fileID: 0}
+0786:   m_Script: {fileID: 11500000, guid: c01700fd266d6914ababb731e09af2eb, type: 3}
+0787:   m_Name: DepthOfField
+0826:   m_CorrespondingSourceObject: {fileID: 0}
+0827:   m_PrefabInstance: {fileID: 0}
+0828:   m_PrefabAsset: {fileID: 0}
+0829:   m_GameObject: {fileID: 0}
+0832:   m_Script: {fileID: 11500000, guid: 74955a4b0b4243bc87231e8b59ed9140, type: 3}
+0833:   m_Name: TestVolume
+0842:   m_CorrespondingSourceObject: {fileID: 0}
+0843:   m_PrefabInstance: {fileID: 0}
+0844:   m_PrefabAsset: {fileID: 0}
+0845:   m_GameObject: {fileID: 0}
+0848:   m_Script: {fileID: 11500000, guid: 81180773991d8724ab7f2d216912b564, type: 3}
+0849:   m_Name: ChromaticAberration
+0858:   m_CorrespondingSourceObject: {fileID: 0}
+0859:   m_PrefabInstance: {fileID: 0}
+0860:   m_PrefabAsset: {fileID: 0}
+0861:   m_GameObject: {fileID: 0}
+0864:   m_Script: {fileID: 0}
+0865:   m_Name: VolumeComponentSupportedOnAnySRP
+0866:   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Editor.Tests:UnityEngine.Rendering.Tests:VolumeComponentEditorSupportedOnTests/VolumeComponentSupportedOnAnySRP
+0871:   m_CorrespondingSourceObject: {fileID: 0}
+0872:   m_PrefabInstance: {fileID: 0}
+0873:   m_PrefabAsset: {fileID: 0}
+0874:   m_GameObject: {fileID: 0}
+0877:   m_Script: {fileID: 11500000, guid: 899c54efeace73346a0a16faa3afe726, type: 3}
+0878:   m_Name: Vignette
+0899:   m_CorrespondingSourceObject: {fileID: 0}
+0900:   m_PrefabInstance: {fileID: 0}
+0901:   m_PrefabAsset: {fileID: 0}
+0902:   m_GameObject: {fileID: 0}
+0905:   m_Script: {fileID: 11500000, guid: c5e1dc532bcb41949b58bc4f2abfbb7e, type: 3}
+0906:   m_Name: LensDistortion
+0927:   m_CorrespondingSourceObject: {fileID: 0}
+0928:   m_PrefabInstance: {fileID: 0}
+0929:   m_PrefabAsset: {fileID: 0}
+0930:   m_GameObject: {fileID: 0}
+0933:   m_Script: {fileID: 11500000, guid: cdfbdbb87d3286943a057f7791b43141, type: 3}
+0934:   m_Name: ChannelMixer
+0967:   m_CorrespondingSourceObject: {fileID: 0}
+0968:   m_PrefabInstance: {fileID: 0}
+0969:   m_PrefabAsset: {fileID: 0}
+0970:   m_GameObject: {fileID: 0}
+0973:   m_Script: {fileID: 0}
+0974:   m_Name: CopyPasteTestComponent1
+0975:   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Editor.Tests:UnityEditor.Rendering.Tests:VolumeComponentCopyPasteTests/CopyPasteTestComponent1
+
+--- Assets/Settings/Mobile_RPAsset.asset | score=0 | under Resources=False ---
+asset_guid=5e6cbd92db86f4b18aec3ed561671858
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: bf2edee5c58d82540a51f03df9d42094, type: 3}
+0013:   m_Name: Mobile_RPAsset
+0018:   m_RendererData: {fileID: 0}
+0020:   - {fileID: 11400000, guid: 65bc7dbf4170f435aa868c779acfb082, type: 2}
+0078:   m_StoreActionsOptimization: 0
+0095:   m_VolumeProfile: {fileID: 11400000, guid: 10fc4df2da32a41aaa32d77bc913491c, type: 2}
+0142:     blueNoise64LTex: {fileID: 2800000, guid: e3d24661c1e055f45a7560c033dbb837, type: 3}
+0143:     bayerMatrixTex: {fileID: 2800000, guid: f9ee4ed84c1d10c49aabb9b210b0fc44, type: 3}
+
+--- Assets/Settings/PC_RPAsset.asset | score=0 | under Resources=False ---
+asset_guid=4b83569d67af61e458304325a23e5dfd
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: bf2edee5c58d82540a51f03df9d42094, type: 3}
+0013:   m_Name: PC_RPAsset
+0018:   m_RendererData: {fileID: 0}
+0020:   - {fileID: 11400000, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
+0078:   m_StoreActionsOptimization: 0
+0095:   m_VolumeProfile: {fileID: 11400000, guid: 10fc4df2da32a41aaa32d77bc913491c, type: 2}
+0142:     blueNoise64LTex: {fileID: 2800000, guid: e3d24661c1e055f45a7560c033dbb837, type: 3}
+0143:     bayerMatrixTex: {fileID: 2800000, guid: f9ee4ed84c1d10c49aabb9b210b0fc44, type: 3}
+
+--- Assets/Settings/UniversalRenderPipelineGlobalSettings.asset | score=0 | under Resources=False ---
+asset_guid=18dc0cd2c080841dea60987a38ce93fa
+0006:   m_CorrespondingSourceObject: {fileID: 0}
+0007:   m_PrefabInstance: {fileID: 0}
+0008:   m_PrefabAsset: {fileID: 0}
+0009:   m_GameObject: {fileID: 0}
+0012:   m_Script: {fileID: 11500000, guid: 2ec995e51a6e251468d2a3fd8a686257, type: 3}
+0013:   m_Name: UniversalRenderPipelineGlobalSettings
+0036:       - rid: 6852985685364965376
+0037:       - rid: 6852985685364965377
+0038:       - rid: 6852985685364965378
+0039:       - rid: 6852985685364965379
+0040:       - rid: 6852985685364965380
+0041:       - rid: 6852985685364965381
+0042:       - rid: 6852985685364965382
+0043:       - rid: 6852985685364965383
+0044:       - rid: 6852985685364965384
+0045:       - rid: 6852985685364965385
+0046:       - rid: 6852985685364965386
+0047:       - rid: 6852985685364965387
+0048:       - rid: 6852985685364965388
+0049:       - rid: 6852985685364965389
+0050:       - rid: 6852985685364965390
+0051:       - rid: 6852985685364965391
+0052:       - rid: 6852985685364965392
+0053:       - rid: 6852985685364965393
+0054:       - rid: 6852985685364965394
+0055:       - rid: 8712630790384254976
+0056:       - rid: 2677769858749562880
+0057:       - rid: 2677769858749562881
+0058:       - rid: 2677769858749562882
+0059:       - rid: 2677769858749562883
+0060:       - rid: 2677769858749562884
+0061:       - rid: 2677769858749562885
+0062:       - rid: 2677769858749562886
+0063:       - rid: 2677769858749562887
+0064:       - rid: 2677769858749562888
+0065:       - rid: 2677769858749562889
+0066:       - rid: 2677769858749562890
+0067:       - rid: 2677769858749562891
+0070:       - rid: 6852985685364965378
+0071:       - rid: 6852985685364965379
+0072:       - rid: 6852985685364965380
+0073:       - rid: 6852985685364965381
+0074:       - rid: 6852985685364965384
+0075:       - rid: 6852985685364965385
+0076:       - rid: 6852985685364965392
+0077:       - rid: 6852985685364965394
+0078:       - rid: 8712630790384254976
+0079:       - rid: 2677769858749562881
+0080:       - rid: 2677769858749562882
+0081:       - rid: 2677769858749562885
+0082:       - rid: 2677769858749562889
+0083:       - rid: 2677769858749562891
+0085:   m_ObsoleteDefaultVolumeProfile: {fileID: 0}
+0114:     - rid: 2677769858749562880
+0118:         m_GeometryPoolKernels: {fileID: 7200000, guid: 98e3d58cae7210c4786f67f504c9e899, type: 3}
+0119:         m_CopyBuffer: {fileID: 7200000, guid: 1b95b5dcf48d1914c9e1e7405c7660e3, type: 3}
+0120:         m_CopyPositions: {fileID: 7200000, guid: 1ad53a96b58d3c3488dde4f14db1aaeb, type: 3}
+0121:         m_BitHistogram: {fileID: 7200000, guid: 8670f7ce4b60cef43bed36148aa1b0a2, type: 3}
+0122:         m_BlockReducePart: {fileID: 7200000, guid: 4e034cc8ea2635c4e9f063e5ddc7ea7a, type: 3}
+0123:         m_BlockScan: {fileID: 7200000, guid: 4d6d5de35fa45ef4a92119397a045cc9, type: 3}
+0124:         m_BuildHlbvh: {fileID: 7200000, guid: 2d70cd6be91bd7843a39a54b51c15b13, type: 3}
+0125:         m_RestructureBvh: {fileID: 7200000, guid: 56641cb88dcb31a4398a4997ef7a7a8c, type: 3}
+0126:         m_Scatter: {fileID: 7200000, guid: a2eaeefdac4637a44b734e85b7be9186, type: 3}
+0127:     - rid: 2677769858749562881
+0130:         m_Shader: {fileID: 4800000, guid: 0849e84e3d62649e8882e9d6f056a017, type: 3}
+0132:     - rid: 2677769858749562882
+0136:         - {fileID: 2800000, guid: 36f118343fc974119bee3d09e2111500, type: 3}
+0137:         - {fileID: 2800000, guid: 4b7b083e6b6734e8bb2838b0b50a0bc8, type: 3}
+0138:         - {fileID: 2800000, guid: c06cc21c692f94f5fb5206247191eeee, type: 3}
+0139:         - {fileID: 2800000, guid: cb76dd40fa7654f9587f6a344f125c9a, type: 3}
+0140:         - {fileID: 2800000, guid: e32226222ff144b24bf3a5a451de54bc, type: 3}
+0141:         - {fileID: 2800000, guid: 3302065f671a8450b82c9ddf07426f3a, type: 3}
+0142:         - {fileID: 2800000, guid: 56a77a3e8d64f47b6afe9e3c95cb57d5, type: 3}
+0144:     - rid: 2677769858749562883
+0148:         m_UberPostShader: {fileID: 4800000, guid: fe4f13c1004a07d4ea1e30bfd0326d9e, type: 3}
+0149:     - rid: 2677769858749562884
+0154:         - {fileID: 2800000, guid: 654c582f7f8a5a14dbd7d119cbde215d, type: 3}
+0155:         - {fileID: 2800000, guid: dd77ffd079630404e879388999033049, type: 3}
+0156:         - {fileID: 2800000, guid: 1097e90e1306e26439701489f391a6c0, type: 3}
+0157:         - {fileID: 2800000, guid: f0b67500f7fad3b4c9f2b13e8f41ba6e, type: 3}
+0158:         - {fileID: 2800000, guid: 9930fb4528622b34687b00bbe6883de7, type: 3}
+0159:         - {fileID: 2800000, guid: bd9e8c758250ef449a4b4bfaad7a2133, type: 3}
+0160:         - {fileID: 2800000, guid: 510a2f57334933e4a8dbabe4c30204e4, type: 3}
+0161:         - {fileID: 2800000, guid: b4db8180660810945bf8d55ab44352ad, type: 3}
+0162:         - {fileID: 2800000, guid: fd2fd78b392986e42a12df2177d3b89c, type: 3}
+0163:         - {fileID: 2800000, guid: 5cdee82a77d13994f83b8fdabed7c301, type: 3}
+0164:         smaaAreaTex: {fileID: 2800000, guid: d1f1048909d55cd4fa1126ab998f617e, type: 3}
+0165:         smaaSearchTex: {fileID: 2800000, guid: 51eee22c2a633ef4aada830eed57c3fd, type: 3}
+0167:     - rid: 2677769858749562885
+0170:         m_xrOcclusionMeshPS: {fileID: 4800000, guid: 4431b1f1f743fbf4eb310a967890cbea, type: 3}
+0171:         m_xrMirrorViewPS: {fileID: 4800000, guid: d5a307c014552314b9f560906d708772, type: 3}
+0172:         m_xrMotionVector: {fileID: 4800000, guid: f89aac1e4f84468418fe30e611dff395, type: 3}
+0173:     - rid: 2677769858749562886
+0176:         stopNanPS: {fileID: 4800000, guid: 1121bb4e615ca3c48b214e79e841e823, type: 3}
+0177:         subpixelMorphologicalAntialiasingPS: {fileID: 4800000, guid: 63eaba0ebfb82cc43bde059b4a8c65f6, type: 3}
+0178:         gaussianDepthOfFieldPS: {fileID: 4800000, guid: 5e7134d6e63e0bc47a1dd2669cedb379, type: 3}
+0179:         bokehDepthOfFieldPS: {fileID: 4800000, guid: 2aed67ad60045d54ba3a00c91e2d2631, type: 3}
+0180:         cameraMotionBlurPS: {fileID: 4800000, guid: 1edcd131364091c46a17cbff0b1de97a, type: 3}
+0181:         paniniProjectionPS: {fileID: 4800000, guid: a15b78cf8ca26ca4fb2090293153c62c, type: 3}
+0182:         lutBuilderLdrPS: {fileID: 4800000, guid: 65df88701913c224d95fc554db28381a, type: 3}
+0183:         lutBuilderHdrPS: {fileID: 4800000, guid: ec9fec698a3456d4fb18cf8bacb7a2bc, type: 3}
+0184:         bloomPS: {fileID: 4800000, guid: 5f1864addb451f54bae8c86d230f736e, type: 3}
+0185:         temporalAntialiasingPS: {fileID: 4800000, guid: 9c70c1a35ff15f340b38ea84842358bf, type: 3}
+0186:         LensFlareDataDrivenPS: {fileID: 4800000, guid: 6cda457ac28612740adb23da5d39ea92, type: 3}
+0187:         LensFlareScreenSpacePS: {fileID: 4800000, guid: 701880fecb344ea4c9cd0db3407ab287, type: 3}
+0188:         scalingSetupPS: {fileID: 4800000, guid: e8ee25143a34b8c4388709ea947055d1, type: 3}
+0189:         easuPS: {fileID: 4800000, guid: 562b7ae4f629f144aa97780546fce7c6, type: 3}
+0190:         uberPostPS: {fileID: 4800000, guid: e7857e9d0c934dc4f83f270f8447b006, type: 3}
+0191:         finalPostPassPS: {fileID: 4800000, guid: c49e63ed1bbcb334780a3bd19dfed403, type: 3}
+0193:     - rid: 2677769858749562887
+0198:     - rid: 2677769858749562888
+0201:         m_DefaultSettingsVolumeProfile: {fileID: 11400000, guid: eda47df5b85f4f249abf7abd73db2cb2, type: 2}
+0202:     - rid: 2677769858749562889
+0203:       type: {class: VrsRenderPipelineRuntimeResources, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0205:         m_TextureComputeShader: {fileID: 7200000, guid: cacb30de6c40c7444bbc78cb0a81fd2a, type: 3}
+0206:         m_VisualizationShader: {fileID: 4800000, guid: 620b55b8040a88d468e94abe55bed5ba, type: 3}
+0229:     - rid: 2677769858749562890
+0230:       type: {class: RenderingDebuggerRuntimeResources, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0233:     - rid: 2677769858749562891
+0234:       type: {class: LightmapSamplingSettings, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0238:     - rid: 6852985685364965376
+0245:     - rid: 6852985685364965377
+0248:         m_AutodeskInteractive: {fileID: 4800000, guid: 0e9d5a909a1f7e84882a534d0d11e49f, type: 3}
+0249:         m_AutodeskInteractiveTransparent: {fileID: 4800000, guid: 5c81372d981403744adbdda4433c9c11, type: 3}
+0250:         m_AutodeskInteractiveMasked: {fileID: 4800000, guid: 80aa867ac363ac043847b06ad71604cd, type: 3}
+0251:         m_DefaultSpeedTree7Shader: {fileID: 4800000, guid: 0f4122b9a743b744abe2fb6a0a88868b, type: 3}
+0252:         m_DefaultSpeedTree8Shader: {fileID: -6465566751694194690, guid: 9920c1f1781549a46ba081a2a15a16ec, type: 3}
+0253:         m_DefaultSpeedTree9Shader: {fileID: -6465566751694194690, guid: cbd3e1cc4ae141c42a30e33b4d666a61, type: 3}
+0254:     - rid: 6852985685364965378
+0258:         m_CopyDepthPS: {fileID: 4800000, guid: d6dae50ee9e1bfa4db75f19f99355220, type: 3}
+0259:         m_CameraMotionVector: {fileID: 4800000, guid: c56b7e0d4c7cb484e959caeeedae9bbf, type: 3}
+0260:         m_StencilDeferredPS: {fileID: 4800000, guid: e9155b26e1bc55942a41e518703fe304, type: 3}
+0261:         m_ClusterDeferred: {fileID: 4800000, guid: 222cce62363a44a380c36bf03b392608, type: 3}
+0262:         m_StencilDitherMaskSeedPS: {fileID: 4800000, guid: 8c3ee818f2efa514c889881ccb2e95a2, type: 3}
+0263:         m_DBufferClear: {fileID: 4800000, guid: f056d8bd2a1c7e44e9729144b4c70395, type: 3}
+0264:     - rid: 6852985685364965379
+0267:         m_DebugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7, type: 3}
+0268:         m_HdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
+0269:         m_ProbeVolumeSamplingDebugComputeShader: {fileID: 7200000, guid: 53626a513ea68ce47b59dc1299fe3959, type: 3}
+0270:     - rid: 6852985685364965380
+0274:         m_FallbackErrorShader: {fileID: 4800000, guid: e6e9a19c3678ded42a3bc431ebef7dbd, type: 3}
+0275:         m_BlitHDROverlay: {fileID: 4800000, guid: a89bee29cffa951418fc1e2da94d1959, type: 3}
+0276:         m_CoreBlitPS: {fileID: 4800000, guid: 93446b5c5339d4f00b85c159e1159b7c, type: 3}
+0277:         m_CoreBlitColorAndDepthPS: {fileID: 4800000, guid: d104b2fc1ca6445babb8e90b0758136b, type: 3}
+0278:         m_SamplingPS: {fileID: 4800000, guid: 04c410c9937594faa893a11dceb85f7e, type: 3}
+0279:         m_TerrainDetailLit: {fileID: 4800000, guid: f6783ab646d374f94b199774402a5144, type: 3}
+0280:         m_TerrainDetailGrassBillboard: {fileID: 4800000, guid: 29868e73b638e48ca99a19ea58c48d90, type: 3}
+0281:         m_TerrainDetailGrass: {fileID: 4800000, guid: e507fdfead5ca47e8b9a768b51c291a1, type: 3}
+0282:     - rid: 6852985685364965381
+0286:         m_BlueNoise64LTex: {fileID: 2800000, guid: e3d24661c1e055f45a7560c033dbb837, type: 3}
+0287:         m_BayerMatrixTex: {fileID: 2800000, guid: f9ee4ed84c1d10c49aabb9b210b0fc44, type: 3}
+0288:         m_DebugFontTex: {fileID: 2800000, guid: 26a413214480ef144b2915d6ff4d0beb, type: 3}
+0289:     - rid: 6852985685364965382
+0293:         m_LightShader: {fileID: 4800000, guid: 3f6c848ca3d7bca4bbe846546ac701a1, type: 3}
+0294:         m_ProjectedShadowShader: {fileID: 4800000, guid: ce09d4a80b88c5a4eb9768fab4f1ee00, type: 3}
+0295:         m_SpriteShadowShader: {fileID: 4800000, guid: 44fc62292b65ab04eabcf310e799ccf6, type: 3}
+0296:         m_SpriteUnshadowShader: {fileID: 4800000, guid: de02b375720b5c445afe83cd483bedf3, type: 3}
+0297:         m_GeometryShadowShader: {fileID: 4800000, guid: 19349a0f9a7ed4c48a27445bcf92e5e1, type: 3}
+0298:         m_GeometryUnshadowShader: {fileID: 4800000, guid: 77774d9009bb81447b048c907d4c6273, type: 3}
+0299:         m_CopyDepthPS: {fileID: 4800000, guid: d6dae50ee9e1bfa4db75f19f99355220, type: 3}
+0300:         m_DefaultLitMaterial: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+0301:         m_DefaultUnlitMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+0302:         m_DefaultMaskMaterial: {fileID: 2100000, guid: 15d0c3709176029428a0da2f8cecf0b5, type: 2}
+0303:         m_DefaultMesh2DLitMaterial: {fileID: 2100000, guid: 9452ae1262a74094f8a68013fbcd1834, type: 2}
+0304:     - rid: 6852985685364965383
+0307:         m_DefaultMaterial: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+0308:         m_DefaultParticleMaterial: {fileID: 2100000, guid: e823cd5b5d27c0f4b8256e7c12ee3e6d, type: 2}
+0309:         m_DefaultLineMaterial: {fileID: 2100000, guid: e823cd5b5d27c0f4b8256e7c12ee3e6d, type: 2}
+0310:         m_DefaultTerrainMaterial: {fileID: 2100000, guid: 594ea882c5a793440b60ff72d896021e, type: 2}
+0311:         m_DefaultDecalMaterial: {fileID: 2100000, guid: 31d0dcc6f2dd4e4408d18036a2c93862, type: 2}
+0312:         m_DefaultSpriteMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+0313:     - rid: 6852985685364965384
+0317:         m_VolumeProfile: {fileID: 11400000, guid: ab09877e2e707104187f6f83e2f62510, type: 2}
+0318:     - rid: 6852985685364965385
+0323:     - rid: 6852985685364965386
+0327:         m_InstanceDataBufferCopyKernels: {fileID: 7200000, guid: f984aeb540ded8b4fbb8a2047ab5b2e2, type: 3}
+0328:         m_InstanceDataBufferUploadKernels: {fileID: 7200000, guid: 53864816eb00f2343b60e1a2c5a262ef, type: 3}
+0329:         m_TransformUpdaterKernels: {fileID: 7200000, guid: 2a567b9b2733f8d47a700c3c85bed75b, type: 3}
+0330:         m_WindDataUpdaterKernels: {fileID: 7200000, guid: fde76746e4fd0ed418c224f6b4084114, type: 3}
+0331:         m_OccluderDepthPyramidKernels: {fileID: 7200000, guid: 08b2b5fb307b0d249860612774a987da, type: 3}
+0332:         m_InstanceOcclusionCullingKernels: {fileID: 7200000, guid: f6d223acabc2f974795a5a7864b50e6c, type: 3}
+0333:         m_OcclusionCullingDebugKernels: {fileID: 7200000, guid: b23e766bcf50ca4438ef186b174557df, type: 3}
+0334:         m_DebugOcclusionTestPS: {fileID: 4800000, guid: d3f0849180c2d0944bc71060693df100, type: 3}
+0335:         m_DebugOccluderPS: {fileID: 4800000, guid: b3c92426a88625841ab15ca6a7917248, type: 3}
+0336:     - rid: 6852985685364965387
+0337:       type: {class: STP/RuntimeResources, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0339:         m_setupCS: {fileID: 7200000, guid: 33be2e9a5506b2843bdb2bdff9cad5e1, type: 3}
+0340:         m_preTaaCS: {fileID: 7200000, guid: a679dba8ec4d9ce45884a270b0e22dda, type: 3}
+0341:         m_taaCS: {fileID: 7200000, guid: 3923900e2b41b5e47bc25bfdcbcdc9e6, type: 3}
+0342:     - rid: 6852985685364965388
+0343:       type: {class: ProbeVolumeBakingResources, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0346:         dilationShader: {fileID: 7200000, guid: 6bb382f7de370af41b775f54182e491d, type: 3}
+0347:         subdivideSceneCS: {fileID: 7200000, guid: bb86f1f0af829fd45b2ebddda1245c22, type: 3}
+0348:         voxelizeSceneShader: {fileID: 4800000, guid: c8b6a681c7b4e2e4785ffab093907f9e, type: 3}
+0349:         traceVirtualOffsetCS: {fileID: -6772857160820960102, guid: ff2cbab5da58bf04d82c5f34037ed123, type: 3}
+0350:         traceVirtualOffsetRT: {fileID: -5126288278712620388, guid: ff2cbab5da58bf04d82c5f34037ed123, type: 3}
+0351:         skyOcclusionCS: {fileID: -6772857160820960102, guid: 5a2a534753fbdb44e96c3c78b5a6999d, type: 3}
+0352:         skyOcclusionRT: {fileID: -5126288278712620388, guid: 5a2a534753fbdb44e96c3c78b5a6999d, type: 3}
+0353:         renderingLayerCS: {fileID: -6772857160820960102, guid: 94a070d33e408384bafc1dea4a565df9, type: 3}
+0354:         renderingLayerRT: {fileID: -5126288278712620388, guid: 94a070d33e408384bafc1dea4a565df9, type: 3}
+0355:     - rid: 6852985685364965389
+0356:       type: {class: ProbeVolumeGlobalSettings, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0360:     - rid: 6852985685364965390
+0361:       type: {class: ProbeVolumeDebugResources, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0364:         probeVolumeDebugShader: {fileID: 4800000, guid: 3b21275fd12d65f49babb5286f040f2d, type: 3}
+0365:         probeVolumeFragmentationDebugShader: {fileID: 4800000, guid: 3a80877c579b9144ebdcc6d923bca303, type: 3}
+0366:         probeVolumeSamplingDebugShader: {fileID: 4800000, guid: bf54e6528c79a224e96346799064c393, type: 3}
+0367:         probeVolumeOffsetDebugShader: {fileID: 4800000, guid: db8bd7436dc2c5f4c92655307d198381, type: 3}
+0368:         probeSamplingDebugMesh: {fileID: -3555484719484374845, guid: 20be25aac4e22ee49a7db76fb3df6de2, type: 3}
+0369:         numbersDisplayTex: {fileID: 2800000, guid: 73fe53b428c5b3440b7e87ee830b608a, type: 3}
+0370:     - rid: 6852985685364965391
+0371:       type: {class: IncludeAdditionalRPAssets, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0377:     - rid: 6852985685364965392
+0378:       type: {class: ShaderStrippingSetting, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0384:     - rid: 6852985685364965393
+0385:       type: {class: ProbeVolumeRuntimeResources, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0388:         probeVolumeBlendStatesCS: {fileID: 7200000, guid: a3f7b8c99de28a94684cb1daebeccf5d, type: 3}
+0389:         probeVolumeUploadDataCS: {fileID: 7200000, guid: 0951de5992461754fa73650732c4954c, type: 3}
+0390:         probeVolumeUploadDataL2CS: {fileID: 7200000, guid: 6196f34ed825db14b81fb3eb0ea8d931, type: 3}
+0391:     - rid: 6852985685364965394
+0392:       type: {class: RenderGraphGlobalSettings, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
+0397:     - rid: 8712630790384254976
+0398:       type: {class: RenderGraphUtilsResources, ns: UnityEngine.Rendering.RenderGraphModule.Util, asm: Unity.RenderPipelines.Core.Runtime}
+0401:         m_CoreCopyPS: {fileID: 4800000, guid: 12dc59547ea167a4ab435097dd0f9add, type: 3}
+
+--- Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset | score=0 | under Resources=True ---
+asset_guid=8f586378b4e144a9851e7b34d9b748ee
+0007:   m_CorrespondingSourceObject: {fileID: 0}
+0008:   m_PrefabInstance: {fileID: 0}
+0009:   m_PrefabAsset: {fileID: 0}
+0010:   m_Name: LiberationSans SDF Material
+0011:   m_Shader: {fileID: 4800000, guid: fe393ace9b354375a9cb14cdbbc28be4, type: 3}
+0012:   m_Parent: {fileID: 0}
+0027:         m_Texture: {fileID: 28684132378477856}
+0073:   m_CorrespondingSourceObject: {fileID: 0}
+0074:   m_PrefabInstance: {fileID: 0}
+0075:   m_PrefabAsset: {fileID: 0}
+0076:   m_GameObject: {fileID: 0}
+0079:   m_Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
+0080:   m_Name: LiberationSans SDF
+0105:   m_Material: {fileID: 2180264}
+0106:   m_SourceFontFileGUID: e3265ab4bf004d28a9537516768c1c75
+0109:     sourceFontFileGUID: e3265ab4bf004d28a9537516768c1c75
+0120:     referencedFontAssetGUID: 8f586378b4e144a9851e7b34d9b748ee
+0121:     referencedTextAssetGUID: 
+0126:   m_SourceFontFile: {fileID: 0}
+4883:   - {fileID: 28684132378477856}
+7974:   - {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+7975:   - {fileID: 11400000, guid: 2f7d660a0ecf65d468229ac123595b93, type: 2}
+7976:   - {fileID: 11400000, guid: 3cd3d06f818f8254a84b5c015f8d096d, type: 2}
+7978:   - regularTypeface: {fileID: 0}
+7979:     italicTypeface: {fileID: 0}
+7980:   - regularTypeface: {fileID: 0}
+7981:     italicTypeface: {fileID: 0}
+7982:   - regularTypeface: {fileID: 0}
+7983:     italicTypeface: {fileID: 0}
+7984:   - regularTypeface: {fileID: 0}
+7985:     italicTypeface: {fileID: 0}
+7986:   - regularTypeface: {fileID: 0}
+7987:     italicTypeface: {fileID: 0}
+7988:   - regularTypeface: {fileID: 0}
+7989:     italicTypeface: {fileID: 0}
+7990:   - regularTypeface: {fileID: 0}
+7991:     italicTypeface: {fileID: 0}
+7992:   - regularTypeface: {fileID: 0}
+7993:     italicTypeface: {fileID: 0}
+7994:   - regularTypeface: {fileID: 0}
+7995:     italicTypeface: {fileID: 0}
+7996:   - regularTypeface: {fileID: 0}
+7997:     italicTypeface: {fileID: 0}
+7999:   - regularTypeface: {fileID: 0}
+8000:     italicTypeface: {fileID: 0}
+8001:   - regularTypeface: {fileID: 0}
+8002:     italicTypeface: {fileID: 0}
+8003:   - regularTypeface: {fileID: 0}
+8004:     italicTypeface: {fileID: 0}
+8005:   - regularTypeface: {fileID: 0}
+8006:     italicTypeface: {fileID: 0}
+8007:   - regularTypeface: {fileID: 0}
+8008:     italicTypeface: {fileID: 0}
+8009:   - regularTypeface: {fileID: 0}
+8010:     italicTypeface: {fileID: 0}
+8011:   - regularTypeface: {fileID: 0}
+8012:     italicTypeface: {fileID: 0}
+8013:   - regularTypeface: {fileID: 0}
+8014:     italicTypeface: {fileID: 0}
+8015:   - regularTypeface: {fileID: 0}
+8016:     italicTypeface: {fileID: 0}
+8017:   - regularTypeface: {fileID: 0}
+8018:     italicTypeface: {fileID: 0}
+8051:   atlas: {fileID: 0}
+8055:   m_CorrespondingSourceObject: {fileID: 0}
+8056:   m_PrefabInstance: {fileID: 0}
+8057:   m_PrefabAsset: {fileID: 0}
+8058:   m_Name: LiberationSans SDF Atlas
+8072:   m_IgnoreMipmapLimit: 0
+
+===== ASSETS UNDER Resources/Items =====
+Assets/Resources/Items/Blueprints/Blueprint_B01_MarketStall.asset | itemName="\uC124\uACC4\uB3C4: \uB178\uC810 \uC0C1\uC810" | id=1001
+Assets/Resources/Items/Blueprints/Blueprint_B02_GeneralStore.asset | itemName="\uC124\uACC4\uB3C4: \uC7A1\uD654\uC810" | id=1002
+Assets/Resources/Items/Blueprints/Blueprint_B03_ConvenienceStore.asset | itemName="\uC124\uACC4\uB3C4: \uD3B8\uC758\uC810" | id=1003
+Assets/Resources/Items/Blueprints/Blueprint_B04_DepartmentStore.asset | itemName="\uC124\uACC4\uB3C4: \uBC31\uD654\uC810" | id=1004
+Assets/Resources/Items/Blueprints/Blueprint_B05_Workbench.asset | itemName="\uC124\uACC4\uB3C4: \uAE30\uBCF8 \uC791\uC5C5\uB300" | id=1005
+Assets/Resources/Items/Blueprints/Blueprint_B06_KitchenStation.asset | itemName="\uC124\uACC4\uB3C4: \uC8FC\uBC29 \uC2A4\uD14C\uC774\uC158" | id=1006
+Assets/Resources/Items/Blueprints/Blueprint_B07_BlacksmithForge.asset | itemName="\uC124\uACC4\uB3C4: \uB300\uC7A5\uAC04 \uC2A4\uD14C\uC774\uC158" | id=1007
+Assets/Resources/Items/Blueprints/Blueprint_B08_SewingTable.asset | itemName="\uC124\uACC4\uB3C4: \uC7AC\uBD09 \uC2A4\uD14C\uC774\uC158" | id=1008
+Assets/Resources/Items/Blueprints/Blueprint_B09_StorageShed.asset | itemName="\uC124\uACC4\uB3C4: \uCC3D\uACE0" | id=1009
+Assets/Resources/Items/Blueprints/Blueprint_B10_Cottage.asset | itemName="\uC124\uACC4\uB3C4: NPC \uC9D1" | id=1010
+Assets/Resources/Items/Blueprints/Blueprint_B11_PlazaFountain.asset | itemName="\uC124\uACC4\uB3C4: \uAD11\uC7A5 \uC911\uC2EC \uC2DC\uC124" | id=1011
+Assets/Resources/Items/Blueprints/Blueprint_B12_TradePort.asset | itemName="\uC124\uACC4\uB3C4: \uBB34\uC5ED \uD56D\uAD6C \uBD80\uB450" | id=1012
+Assets/Resources/Items/Item_09_BakedPotato.asset | itemName="\uAD6C\uC6B4 \uAC10\uC790" | id=9
+Assets/Resources/Items/Item_10_GrilledFish.asset | itemName="\uC0DD\uC120\uAD6C\uC774" | id=10
+Assets/Resources/Items/Item_11_Furniture.asset | itemName="\uBAA9\uC81C \uAC00\uAD6C" | id=11
+Assets/Resources/Items/Item_12_ToolSet.asset | itemName="\uCCA0\uC81C \uB3C4\uAD6C" | id=12
+Assets/Resources/Items/Item_13_Clothes.asset | itemName="\uC758\uB958" | id=13
+Assets/Resources/Items/Item_14_Hoe.asset | itemName="\uD638\uBBF8" | id=14
+Assets/Resources/Items/Item_15_Seed.asset | itemName="\uC528\uC557" | id=15
+Assets/Resources/Items/Item_BreadLoaf.asset | itemName=BreadLoaf | id=5
+Assets/Resources/Items/Item_Carrot.asset | itemName=Carrot | id=2
+Assets/Resources/Items/Item_Fish.asset | itemName=Fish | id=8
+Assets/Resources/Items/Item_IronBar.asset | itemName=IronBar | id=6
+Assets/Resources/Items/Item_Ore.asset | itemName=Ore | id=4
+Assets/Resources/Items/Item_Plank.asset | itemName=Plank | id=7
+Assets/Resources/Items/Item_Wheat.asset | itemName=Wheat | id=1
+Assets/Resources/Items/Item_Wood.asset | itemName=Wood | id=3
+
+===== SERIALIZED ItemRegistry COMPONENT REFERENCES =====
+<no scene/prefab references ItemRegistry script GUID>
+
+===== CODE REFERENCES TO ItemRegistry / allItems =====
+--- Assets/Editor/PA_DataBootstrapper.cs ---
+0044:             "② ItemRegistry > All Items 에 Items/ 하위 전체 드래그\n" +
+
+--- Assets/Editor/PA_DevConsole.cs ---
+0430:             (typeof(ItemRegistry),       "ItemRegistry"),
+0525:         // ── ItemRegistry.allItems ─────────────────────────────────────────
+0526:         var reg = UnityEngine.Object.FindFirstObjectByType<ItemRegistry>();
+0529:             int ic = reg.allItems?.Count ?? 0;
+0532:                 Label  = "ItemRegistry.allItems",
+0801:         // 6) ItemRegistry.allItems 자동 채움
+0802:         var reg = UnityEngine.Object.FindFirstObjectByType<ItemRegistry>();
+0803:         if (reg != null && (reg.allItems == null || reg.allItems.Count == 0))
+0809:                 reg.allItems = items.Distinct().ToList();
+0811:                 Debug.Log($"[PA AutoFix] 📦 ItemRegistry.allItems {reg.allItems.Count}개 자동 연결");
+0812:                 Log($"📦 Items {reg.allItems.Count}개 연결"); n++;
+0885:         // 따라서 자동 수리 내부에서 동일 작업 수행 (allItems, candidates, dialogues 자동 연결).
+1031:         changed += EnsureSingleSceneComponent<ItemRegistry>(services);
+1636:             typeof(ItemRegistry), typeof(FriendshipService), typeof(HiringService),
+
+--- Assets/Editor/PA_ErrorTracker.cs ---
+0176:             if (stack != null && stack.Contains("ItemRegistry"))
+0177:                 return ("ItemRegistry.allItems 비어있음",
+
+--- Assets/Editor/PA_FeatureChecker.cs ---
+0312:         Add("1-D. 인벤토리 & 아이템", "ItemRegistry", "id→Item 딕셔너리", "✅", 3,
+0313:             () => CheckTypeAndScene("ItemRegistry"));
+
+--- Assets/Editor/PA_FirstProductionR5Continuation.cs ---
+0142:         Check(ItemRegistry.Instance != null, "ItemRegistry available");
+0145:             var resolved = ItemRegistry.Instance.Find(site.Item.id, site.Item.itemName);
+
+--- Assets/Editor/PA_SafeSceneRepair.cs ---
+0074:         changed += EnsureSingleOnHost<ItemRegistry>(services);
+0095:         var registry = UnityEngine.Object.FindFirstObjectByType<ItemRegistry>();
+0096:         if (registry != null && (registry.allItems == null || registry.allItems.Count == 0))
+0098:             registry.allItems = Resources.LoadAll<Item>("Items")
+
+--- Assets/Editor/PA_SceneValidator.cs ---
+0020:             typeof(ItemRegistry),
+0075:         // ── ItemRegistry: allItems 비어있는지 ───────────────────────────────────
+0076:         var registry = Object.FindFirstObjectByType<ItemRegistry>();
+0079:             var items = registry.allItems;
+0082:                 Debug.LogWarning("[PA Validator] ⚠️ ItemRegistry.allItems 가 비어 있습니다. Items/ 에셋을 드래그하세요.");
+
+--- Assets/Editor/PA_VerticalSlice.cs ---
+0210:         list.Add(CheckSingle<ItemRegistry>());
+0236:         // 5) ItemRegistry.allItems
+0237:         var reg = UnityEngine.Object.FindFirstObjectByType<ItemRegistry>();
+0238:         int itemCount = reg != null ? (reg.allItems?.Count ?? 0) : 0;
+0240:         list.Add($"{itemMark} ItemRegistry.allItems: {itemCount}");
+
+--- Assets/Editor/PA_Week11MilestoneValidator.cs ---
+0246:         // 초기화 순서 (Docs/04 §02): EconomyService(-100), TierService(-90), GameClock(-80), ItemRegistry(-70)
+0250:         ValidateSingle<ItemRegistry>(list, CAT, true);
+0266:         // ItemRegistry.allItems 연결
+0267:         var reg = UnityEngine.Object.FindFirstObjectByType<ItemRegistry>();
+0268:         int regCount = reg != null ? (reg.allItems?.Count ?? 0) : 0;
+0270:             ? Pass(CAT, "ItemRegistry.allItems", $"{regCount}")
+0271:             : Fail(CAT, "ItemRegistry.allItems", $"{regCount} — 8 이상 권장"));
+
+--- Assets/Scripts/ItemRegistry.cs ---
+0011: //   빈 GameObject 에 이 컴포넌트를 붙이고, allItems 에 프로젝트 내 모든 Item 에셋을 등록한다.
+0013: public class ItemRegistry : MonoBehaviour
+0015:     public static ItemRegistry Instance { get; private set; }
+0018:     public List<Item> allItems = new List<Item>();
+0027:     // ItemRegistry remains the single lookup authority, but Resources/Items is also a canonical
+0029:     // updating every scene's serialized allItems list.
+0032:         if (allItems == null) allItems = new List<Item>();
+0034:         foreach (var item in Resources.LoadAll<Item>("Items"))
+0035:             if (item != null && !allItems.Contains(item))
+0036:                 allItems.Add(item);
+0046:             foreach (var item in allItems)
+0053:             foreach (var item in allItems)
+
+--- Assets/Scripts/OutdoorPlacementController.cs ---
+0510:         return Resources.LoadAll<Item>("Items/Blueprints").FirstOrDefault(item => item != null && item.buildingToBuild == data);
+0592:             Item item = ItemRegistry.Instance != null
+0593:                 ? ItemRegistry.Instance.Find(record.itemId, record.itemName)
+0594:                 : Resources.LoadAll<Item>("Items").FirstOrDefault(candidate => candidate != null
+
+--- Assets/Scripts/PA_RuntimeSceneBinder.cs ---
+0072:         var registry = EnsureComponent<ItemRegistry>(services);
+0073:         EnsureItemRegistry(registry);
+0421:     static void EnsureItemRegistry(ItemRegistry registry)
+0424:         if (registry.allItems != null && registry.allItems.Count > 0) return;
+0426:         registry.allItems = Resources.LoadAll<Item>("Items")
+
+--- Assets/Scripts/SaveData.cs ---
+0250: // ItemRegistry.Find(itemId, itemName) 로 Item 원형을 복원한다.
+
+--- Assets/Scripts/SaveManager.cs ---
+0951:     // 기존 슬롯을 먼저 Clear 한 뒤, ItemRegistry.Find 로 원형을 찾아 채운다.
+0963:             Item item = ItemRegistry.Instance != null
+0964:                 ? ItemRegistry.Instance.Find(sd.itemId, sd.itemName)
+0969:                 Debug.LogWarning($"❓ 슬롯[{i}] 복원 실패: id={sd.itemId} name=\"{sd.itemName}\" — ItemRegistry 에 미등록");
+1057:             Item item = ItemRegistry.Instance != null
+1058:                 ? ItemRegistry.Instance.Find(record.itemId, record.itemName)
+
+--- Assets/Scripts/ShopCustomizationController.cs ---
+1093:             Item item = ItemRegistry.Instance != null ? ItemRegistry.Instance.Find(record.itemId, record.itemName) : null;
+
+--- Assets/Scripts/World/WorldGameplayAdapterService.cs ---
+0350:         ItemRegistry registry = ItemRegistry.Instance ?? FindFirstObjectByType<ItemRegistry>();
+0431:             _saveManager == null || ItemRegistry.Instance == null || _shop == null ||
+
+--- Assets/Scripts/World/WorldPersistenceService.cs ---
+0780:             Item item = ItemRegistry.Instance != null
+0781:                 ? ItemRegistry.Instance.Find(record.itemId, record.itemName)
+0782:                 : Resources.LoadAll<Item>("Items").FirstOrDefault(candidate => candidate != null &&
+
+===== CURRENT R5 CONTINUATION REGISTRY CHECKS =====
+0136:             "preserved P4 ready state restored", 20f);
+0142:         Check(ItemRegistry.Instance != null, "ItemRegistry available");
+0145:             var resolved = ItemRegistry.Instance.Find(site.Item.id, site.Item.itemName);
+0153:             "full inventory restored");
+
+===== PRESERVED SAVE QUICK CHECK =====
+path=Logs/P4-R5/Save/departure_settlement.json bytes=13067
+contains "itemName":"Wood" = 0
+contains "itemName":"Ore" = 0

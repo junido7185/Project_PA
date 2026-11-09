@@ -1,0 +1,280 @@
+diff --git a/Assets/Resources/DepartureTutorial/DepartureContinuation.prefab b/Assets/Resources/DepartureTutorial/DepartureContinuation.prefab
+index 77adf80..e3291d6 100644
+--- a/Assets/Resources/DepartureTutorial/DepartureContinuation.prefab
++++ b/Assets/Resources/DepartureTutorial/DepartureContinuation.prefab
+@@ -12,6 +12,7 @@ GameObject:
+   - component: {fileID: 4982061799146763502}
+   - component: {fileID: 8470394929383330151}
+   - component: {fileID: 7374569531784968135}
++  - component: {fileID: 5459125345858840842}
+   m_Layer: 0
+   m_Name: DepartureContinuation
+   m_TagString: Untagged
+@@ -44,7 +45,7 @@ MonoBehaviour:
+   m_Enabled: 1
+   m_EditorHideFlags: 0
+   m_Script: {fileID: 11500000, guid: f997186dc6326674e9cef5140ceca11c, type: 3}
+-  m_Name:
++  m_Name: 
+   m_EditorClassIdentifier: Assembly-CSharp::DepartureCompanionSelection
+   candidates:
+   - id: Lumberjack_01
+@@ -90,7 +91,7 @@ MonoBehaviour:
+   m_Enabled: 1
+   m_EditorHideFlags: 0
+   m_Script: {fileID: 11500000, guid: 79177b84c648e624ab54fc948f3048b7, type: 3}
+-  m_Name:
++  m_Name: 
+   m_EditorClassIdentifier: Assembly-CSharp::DepartureVoyagePresentation
+   boatPrefab: {fileID: 2227741323378753310, guid: a3ca36dd29c7cbd468c5dbf19136d407, type: 3}
+   treePrefab: {fileID: 7934636992084984661, guid: c7dcb29395b93124bb768993e8fa94c9, type: 3}
+@@ -110,5 +111,17 @@ MonoBehaviour:
+   m_Enabled: 1
+   m_EditorHideFlags: 0
+   m_Script: {fileID: 11500000, guid: a74dd5d27f031f943bcad6f653605254, type: 3}
+-  m_Name:
++  m_Name: 
+   m_EditorClassIdentifier: Assembly-CSharp::FirstIslandSettlementController
++--- !u!114 &5459125345858840842
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 3524566492540838093}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 19b056e7b243db44b9923e5bc4a3160e, type: 3}
++  m_Name: 
++  m_EditorClassIdentifier: Assembly-CSharp::FirstProductionController
+diff --git a/Assets/Scripts/Presentation/FirstIslandSettlementController.cs b/Assets/Scripts/Presentation/FirstIslandSettlementController.cs
+index 6072754..ce6257c 100644
+--- a/Assets/Scripts/Presentation/FirstIslandSettlementController.cs
++++ b/Assets/Scripts/Presentation/FirstIslandSettlementController.cs
+@@ -60,6 +60,8 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
+             !Placement.TryGetPlacement(HubId, out _) ? "첫 거점을 설치할 장소를 정하세요." :
+             !complete ? $"동행자의 임시 거처를 준비하세요. ({ShelterCount()}/2)" :
+             Time.unscaledTime < _completedAt + 2.5f ? "첫 정착이 완료되었습니다." : "오늘 밤 첫 영업을 준비하세요.";
++        var production = GetComponent<FirstProductionController>();
++        if (complete && production != null && production.IsReady) Objective = production.Objective;
+         Voyage.SetSettlementObjective(Objective);
+         _saveStatus.text = SaveFeedback;
+         var keyboard = Keyboard.current;
+@@ -131,7 +133,7 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
+ 
+     public void Begin(string id)
+     {
+-        if (!IsReady || _restoring || !BuildingIds.Contains(id) || id != HubId && !Placement.TryGetPlacement(HubId, out _)) return;
++        if (!IsReady || _restoring || !(BuildingIds.Contains(id) || GetComponent<FirstProductionController>() != null && GetComponent<FirstProductionController>().OwnsWorksite(id)) || id != HubId && !Placement.TryGetPlacement(HubId, out _)) return;
+         Cancel(); _previewId = id; _turn = 0;
+         if (Placement.TryGetPlacement(id, out var placed))
+         {
+@@ -218,7 +220,8 @@ public sealed class FirstIslandSettlementController : MonoBehaviour
+             }
+             Voyage.IslandGrid.CellToWorld(shelter.Entrance, out Vector3 destination);
+             if (NavMesh.SamplePosition(npc.transform.position, out NavMeshHit start, 4, NavMesh.AllAreas)) agent.Warp(start.position);
+-            if (agent.isOnNavMesh) agent.SetDestination(destination);
++            var producer = npc.GetComponent<ProducerNpcController>();
++            if (agent.isOnNavMesh && (producer == null || !producer.StarterWorking)) agent.SetDestination(destination);
+             var marker = shelter.GameObject.transform.Find("CompanionRole");
+             if (marker == null)
+             {
+diff --git a/Assets/Scripts/ProducerNpcController.cs b/Assets/Scripts/ProducerNpcController.cs
+index 4c40fe3..a39dde4 100644
+--- a/Assets/Scripts/ProducerNpcController.cs
++++ b/Assets/Scripts/ProducerNpcController.cs
+@@ -92,6 +92,54 @@ public class ProducerNpcController : MonoBehaviour
+     private string DisplayName =>
+         profile != null && !string.IsNullOrEmpty(profile.npcName) ? profile.npcName : gameObject.name;
+ 
++    // P4 first-settlement exception uses this producer's timer and actual stock.
++    bool _starterSession, _starterClaimed, _starterReady;
++    public bool StarterBatchReady => _starterSession && _starterReady && !_starterClaimed;
++    public bool StarterClaimed => _starterClaimed;
++    public int StarterStockCount => _starterSession ? TotalInventoryCount() : 0;
++    public bool StarterWorking => _starterSession && !_starterReady && !_starterClaimed && !_schedulePaused;
++
++    public void ConfigureStarterSession()
++    {
++        _starterSession = true; _starterClaimed = false; _starterReady = false;
++        _npcInventory.Clear(); _productionTimer = 0; _pendingProductionAmount = 0;
++        _restoredFromSave = true; _schedulePaused = true; ChangeState(State.Idle);
++    }
++
++    public void StartStarterWork()
++    {
++        if (!_starterSession || _starterClaimed || _starterReady || StarterWorking) return;
++        _schedulePaused = false;
++        BeginWork();
++    }
++
++    public bool TryClaimStarterBatch(Inventory inventory)
++    {
++        if (!StarterBatchReady || inventory == null || _npcInventory.Count != 1) return false;
++        var stock = _npcInventory[0];
++        if (!inventory.CanAddItems(stock.data, stock.count) || !inventory.AddInstance(stock)) return false;
++        _npcInventory.Clear(); _starterClaimed = true; _starterReady = false;
++        _schedulePaused = true; ChangeState(State.Idle);
++        Debug.Log("[VS-P4] STARTER_CLAIM_ONCE " + productionData.producedItem.itemName);
++        return true;
++    }
++
++    public StarterProducerSaveData CaptureStarterState() => new StarterProducerSaveData {
++        active = StarterWorking, ready = _starterReady, claimed = _starterClaimed,
++        elapsed = _productionTimer, pendingAmount = _pendingProductionAmount, stockCount = TotalInventoryCount()
++    };
++
++    public void RestoreStarterState(StarterProducerSaveData state)
++    {
++        ConfigureStarterSession();
++        if (state == null) return;
++        _starterClaimed = state.claimed; _starterReady = state.ready;
++        if (state.stockCount > 0) _npcInventory.Add(new ItemInstance(productionData.producedItem, state.stockCount));
++        if (state.active) { _schedulePaused = false; BeginWork(); }
++        _productionTimer = Mathf.Max(0, state.elapsed);
++        _pendingProductionAmount = state.pendingAmount > 0 ? state.pendingAmount : CalculateProductionAmount();
++    }
++
+     // -------- Unity 생명주기 --------
+ 
+     void Awake()
+@@ -120,7 +168,7 @@ public class ProducerNpcController : MonoBehaviour
+         _debugSchedulePaused = _schedulePaused;
+ 
+         // 스케줄에 의해 일시 정지 중이면 처리 차단
+-        if (_schedulePaused) return;
++        if (_schedulePaused || _starterSession && (_starterReady || _starterClaimed)) return;
+ 
+         switch (_currentState)
+         {
+@@ -227,6 +275,12 @@ public class ProducerNpcController : MonoBehaviour
+ 
+         // 아이템 생산
+         ProduceItems();
++        if (_starterSession)
++        {
++            _starterReady = TotalInventoryCount() > 0;
++            Debug.Log("[VS-P4] FIRST_BATCH " + productionData.producedItem.itemName + " count=" + TotalInventoryCount());
++            return; // P6 paid stock remains on the original non-starter delivery path.
++        }
+ 
+         // 납품 임계 도달 시 배달 시작
+         if (TotalInventoryCount() >= productionData.deliveryThreshold)
+@@ -404,7 +458,7 @@ public class ProducerNpcController : MonoBehaviour
+     /// </summary>
+     public void Pause()
+     {
+-        if (_schedulePaused) return;
++        if (_schedulePaused || _starterSession && (_starterReady || _starterClaimed)) return;
+         _schedulePaused = true;
+ 
+         if (_agent != null && _agent.isOnNavMesh && !_agent.isStopped)
+@@ -514,7 +568,8 @@ public class ProducerNpcController : MonoBehaviour
+         eiFactor = Mathf.Max(0.1f, eiFactor);
+ 
+         float seasonMod = SeasonModifier.GetProductionModifier(specialty);
+-        return productionData.baseProductionInterval / (workEff * eiFactor * Mathf.Max(0.1f, seasonMod));
++        float interval = productionData.baseProductionInterval / (workEff * eiFactor * Mathf.Max(0.1f, seasonMod));
++        return _starterSession ? Mathf.Clamp(interval, 12f, 20f) : interval;
+     }
+ 
+     // 실제 생산량:  max(1, round(baseAmount × workEfficiency × (1 + 0.2 × (-traitJP))))
+diff --git a/Assets/Scripts/SaveData.cs b/Assets/Scripts/SaveData.cs
+index c3fbca9..6517f67 100644
+--- a/Assets/Scripts/SaveData.cs
++++ b/Assets/Scripts/SaveData.cs
+@@ -7,6 +7,7 @@ public class SaveData
+     // 스키마 버전 — SaveManager 가 로드 시 마이그레이션에 사용한다.
+     // 새 필드가 추가되면 CurrentSaveVersion(SaveManager) 을 올리고 마이그레이션 함수를 추가한다.
+     public int version = 0;
++    public FirstProductionSaveData firstProduction; // v16 optional companion work
+     public FirstSettlementSaveData firstSettlement; // v15: optional opening settlement only
+ 
+     // 플레이어 정보
+@@ -319,3 +320,29 @@ public class FirstSettlementSaveData
+     public bool settlementCompleted;
+     public List<WorldPlacedBuildingSaveData> buildings = new List<WorldPlacedBuildingSaveData>();
+ }
++
++[System.Serializable]
++public class FirstProductionSaveData
++{
++    public int version = 1;
++    public bool completed;
++    public List<StarterWorksiteSaveData> worksites = new List<StarterWorksiteSaveData>();
++}
++
++[System.Serializable]
++public class StarterWorksiteSaveData
++{
++    public string companionId, role;
++    public WorldPlacedBuildingSaveData placement;
++    public bool playerActivityCompleted, seedIssued;
++    public FarmPlotSaveData farm;
++    public StarterProducerSaveData producer;
++}
++
++[System.Serializable]
++public class StarterProducerSaveData
++{
++    public bool active, ready, claimed;
++    public float elapsed;
++    public int pendingAmount, stockCount;
++}
+diff --git a/Assets/Scripts/SaveManager.cs b/Assets/Scripts/SaveManager.cs
+index 849d97c..3294454 100644
+--- a/Assets/Scripts/SaveManager.cs
++++ b/Assets/Scripts/SaveManager.cs
+@@ -22,7 +22,7 @@ public class SaveManager : MonoBehaviour
+     private string SaveKey => gameObject.scene.name == DepartureTutorialController.SceneName ? "departure_settlement" : "savegame";
+ 
+     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
+-    public const int CurrentSaveVersion = 15;
++    public const int CurrentSaveVersion = 16;
+ 
+     bool _loadInProgress;
+     PlayerInputHandler _input;
+@@ -75,6 +75,8 @@ public class SaveManager : MonoBehaviour
+         }
+         SaveData data = new SaveData();
+         data.firstSettlement = settlement != null && settlement.IsReady ? settlement.CaptureState() : null;
++        var production = FindFirstObjectByType<FirstProductionController>();
++        data.firstProduction = production != null && production.IsReady ? production.CaptureState() : null;
+         data.m85RecoveryRevision = 1;
+ 
+         // 1. 플레이어 정보
+@@ -266,6 +268,11 @@ public class SaveManager : MonoBehaviour
+         }
+ 
+         NormalizeSaveData(data);
++        if (!FirstProductionController.IsValidSave(data.firstProduction, data.firstSettlement))
++        {
++            Debug.LogWarning("[SaveManager] Invalid first production payload; save preserved.");
++            return;
++        }
+         var settlement = FindFirstObjectByType<FirstIslandSettlementController>();
+         if (gameObject.scene.name == DepartureTutorialController.SceneName)
+         {
+@@ -464,7 +471,13 @@ public class SaveManager : MonoBehaviour
+             }
+         }
+ 
+-        if (data.firstSettlement != null) settlement.RestoreState(data.firstSettlement);
++        if (data.firstSettlement != null)
++        {
++            var production = FindFirstObjectByType<FirstProductionController>();
++            if (production != null) production.ClearWorksitesForRestore();
++            settlement.RestoreState(data.firstSettlement);
++            if (production != null) production.RestoreState(data.firstProduction);
++        }
+ 
+         // World/furniture/hiring/presentation restore can synchronously rebind runtime roots.
+         // The saved player pose is the final authority, so apply it after every restore consumer.
+@@ -693,6 +706,7 @@ public class SaveManager : MonoBehaviour
+             data.firstSettlement = null;
+             data.version = 15;
+         }
++        if (data.version < 16) { data.firstProduction = null; data.version = 16; }
+         return data;
+     }
+ 

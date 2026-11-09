@@ -1,0 +1,1094 @@
+﻿{
+    "ticket": "ART-000",
+    "status": "PASS",
+    "unityVersion": "6000.3.2f1",
+    "error": "",
+    "materialCount": 20,
+    "assets": [
+        {
+            "id": "PA_REF_MINIMARKET_CASH_REGISTER",
+            "unityPath": "Assets/Art/External/Kenney/MiniMarket/Models/cash-register.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_MINIMARKET_CASH_REGISTER.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.44999998807907107,
+                "y": 0.0,
+                "z": -0.3999999761581421
+            },
+            "sourceSize": {
+                "x": 0.8499999642372131,
+                "y": 0.5949000120162964,
+                "z": 0.8499999642372131
+            },
+            "wrapperSize": {
+                "x": 0.7858463525772095,
+                "y": 0.550000011920929,
+                "z": 0.7858463525772095
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 259,
+            "triangles": 203,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_d76034c35ab46f1478eeb15e3eecb237.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_MINIMARKET_DISPLAY_BREAD",
+            "unityPath": "Assets/Art/External/Kenney/MiniMarket/Models/display-bread.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_MINIMARKET_DISPLAY_BREAD.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.3500000238418579,
+                "y": 0.0,
+                "z": -0.30000001192092898
+            },
+            "sourceSize": {
+                "x": 0.7000000476837158,
+                "y": 0.5,
+                "z": 0.6000000238418579
+            },
+            "wrapperSize": {
+                "x": 1.4000000953674317,
+                "y": 1.0,
+                "z": 1.2000000476837159
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 358,
+            "triangles": 362,
+            "renderers": 3,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_d76034c35ab46f1478eeb15e3eecb237.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_MINIMARKET_DISPLAY_FRUIT",
+            "unityPath": "Assets/Art/External/Kenney/MiniMarket/Models/display-fruit.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_MINIMARKET_DISPLAY_FRUIT.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.30000001192092898,
+                "y": 0.0,
+                "z": -0.30000001192092898
+            },
+            "sourceSize": {
+                "x": 0.6000000238418579,
+                "y": 0.5159605741500855,
+                "z": 0.6000000238418579
+            },
+            "wrapperSize": {
+                "x": 1.1628795862197877,
+                "y": 0.9999999403953552,
+                "z": 1.1628795862197877
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 568,
+            "triangles": 650,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_d76034c35ab46f1478eeb15e3eecb237.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_MINIMARKET_SHELF_END",
+            "unityPath": "Assets/Art/External/Kenney/MiniMarket/Models/shelf-end.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_MINIMARKET_SHELF_END.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.3999999761581421,
+                "y": 0.0,
+                "z": -0.4011094868183136
+            },
+            "sourceSize": {
+                "x": 0.7999999523162842,
+                "y": 1.0499999523162842,
+                "z": 0.4000000059604645
+            },
+            "wrapperSize": {
+                "x": 1.2190476655960084,
+                "y": 1.6000001430511475,
+                "z": 0.6095238924026489
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 525,
+            "triangles": 362,
+            "renderers": 8,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_d76034c35ab46f1478eeb15e3eecb237.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_MINIMARKET_SHOPPING_BASKET",
+            "unityPath": "Assets/Art/External/Kenney/MiniMarket/Models/shopping-basket.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_MINIMARKET_SHOPPING_BASKET.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.17499999701976777,
+                "y": 0.0,
+                "z": -0.17500001192092896
+            },
+            "sourceSize": {
+                "x": 0.3499999940395355,
+                "y": 0.25,
+                "z": 0.3500000238418579
+            },
+            "wrapperSize": {
+                "x": 0.4899999797344208,
+                "y": 0.3499999940395355,
+                "z": 0.49000003933906557
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 344,
+            "triangles": 288,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_d76034c35ab46f1478eeb15e3eecb237.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_BAG",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/bag.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_BAG.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.11005000025033951,
+                "y": 0.0,
+                "z": -0.20589998364448548
+            },
+            "sourceSize": {
+                "x": 0.22010000050067902,
+                "y": 0.5997589826583862,
+                "z": 0.41179996728897097
+            },
+            "wrapperSize": {
+                "x": 0.11009422689676285,
+                "y": 0.30000001192092898,
+                "z": 0.2059827297925949
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 60,
+            "triangles": 46,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_BARREL",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/barrel.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_BARREL.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.3799999952316284,
+                "y": 0.0,
+                "z": -0.3394530713558197
+            },
+            "sourceSize": {
+                "x": 0.7599999904632568,
+                "y": 0.6789061427116394,
+                "z": 0.6789061427116394
+            },
+            "wrapperSize": {
+                "x": 0.8395858407020569,
+                "y": 0.75,
+                "z": 0.75
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 436,
+            "triangles": 308,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_CARROT",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/carrot.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_CARROT.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.17157098650932313,
+                "y": 0.0,
+                "z": -0.17157098650932313
+            },
+            "sourceSize": {
+                "x": 0.34314197301864626,
+                "y": 0.7163037061691284,
+                "z": 0.34314197301864626
+            },
+            "wrapperSize": {
+                "x": 0.11976134777069092,
+                "y": 0.25,
+                "z": 0.11976134777069092
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 160,
+            "triangles": 148,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_CUTTING_BOARD",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/cutting-board.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_CUTTING_BOARD.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.28999999165534975,
+                "y": 0.0,
+                "z": -0.4100000262260437
+            },
+            "sourceSize": {
+                "x": 0.5799999833106995,
+                "y": 0.05999999865889549,
+                "z": 0.8200000524520874
+            },
+            "wrapperSize": {
+                "x": 0.3383333384990692,
+                "y": 0.03500000014901161,
+                "z": 0.47833338379859927
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 144,
+            "triangles": 120,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_FISH",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/fish.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_FISH.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.09891591221094132,
+                "y": 0.0,
+                "z": -0.3103913366794586
+            },
+            "sourceSize": {
+                "x": 0.19783182442188264,
+                "y": 0.32220110297203066,
+                "z": 0.6207826733589172
+            },
+            "wrapperSize": {
+                "x": 0.09210016578435898,
+                "y": 0.15000000596046449,
+                "z": 0.28900399804115298
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 240,
+            "triangles": 233,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_LOAF",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/loaf.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_LOAF.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.28987202048301699,
+                "y": 0.0,
+                "z": -0.18295200169086457
+            },
+            "sourceSize": {
+                "x": 0.5797440409660339,
+                "y": 0.4423206150531769,
+                "z": 0.3659040033817291
+            },
+            "wrapperSize": {
+                "x": 0.2621374726295471,
+                "y": 0.20000000298023225,
+                "z": 0.1654474139213562
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 132,
+            "triangles": 116,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_PLATE",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/plate.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_PLATE.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.4458869397640228,
+                "y": 0.0,
+                "z": -0.4458869397640228
+            },
+            "sourceSize": {
+                "x": 0.8917738795280457,
+                "y": 0.08999999612569809,
+                "z": 0.8917738795280457
+            },
+            "wrapperSize": {
+                "x": 0.34680095314979555,
+                "y": 0.03500000014901161,
+                "z": 0.34680095314979555
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 132,
+            "triangles": 140,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_FOODKIT_POT",
+            "unityPath": "Assets/Art/External/Kenney/FoodKit/Models/pot.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_FOODKIT_POT.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.3287247121334076,
+                "y": 0.0,
+                "z": -0.41103580594062807
+            },
+            "sourceSize": {
+                "x": 0.6574494242668152,
+                "y": 0.36079996824264529,
+                "z": 0.8220716118812561
+            },
+            "wrapperSize": {
+                "x": 0.5466597676277161,
+                "y": 0.30000001192092898,
+                "z": 0.6835407614707947
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 248,
+            "triangles": 228,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_bca1488555c58b1459c6c634058b2527.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_CUTEFISH_DOCK_LONG_NOROPE",
+            "unityPath": "Assets/Art/External/Quaternius/CuteFish/Models/Dock_Long_NoRope.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUTEFISH_DOCK_LONG_NOROPE.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -4.627816677093506,
+                "y": -0.1835477352142334,
+                "z": -10.750716209411621
+            },
+            "sourceSize": {
+                "x": 9.213139533996582,
+                "y": 5.662052154541016,
+                "z": 21.687658309936525
+            },
+            "wrapperSize": {
+                "x": 0.6508692502975464,
+                "y": 0.4000000059604645,
+                "z": 1.5321412086486817
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 2400,
+            "triangles": 1484,
+            "renderers": 1,
+            "materials": 2,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_7C5B50FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_AA9980FF_none.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_CUTEFISH_FISHINGROD_LVL1",
+            "unityPath": "Assets/Art/External/Quaternius/CuteFish/Models/FishingRod_Lvl1.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUTEFISH_FISHINGROD_LVL1.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.10418674349784851,
+                "y": -1.3878179788589478,
+                "z": -0.3771531283855438
+            },
+            "sourceSize": {
+                "x": 0.20837348699569703,
+                "y": 6.3048014640808109,
+                "z": 0.5768758058547974
+            },
+            "wrapperSize": {
+                "x": 0.04957495257258415,
+                "y": 1.5,
+                "z": 0.137246772646904
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 572,
+            "triangles": 308,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_7C5B50FF_none.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_CUTEFISH_TUNA",
+            "unityPath": "Assets/Art/External/Quaternius/CuteFish/Models/Tuna.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUTEFISH_TUNA.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -2.011409282684326,
+                "y": -1.6444404125213624,
+                "z": -3.654637336730957
+            },
+            "sourceSize": {
+                "x": 4.015641212463379,
+                "y": 3.5192956924438478,
+                "z": 5.652066230773926
+            },
+            "wrapperSize": {
+                "x": 0.3993624150753021,
+                "y": 0.34999996423721316,
+                "z": 0.5621076226234436
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 2394,
+            "triangles": 1446,
+            "renderers": 1,
+            "materials": 5,
+            "skinnedRenderers": 1,
+            "animationClips": [
+                "Fish_Armature|Swimming_Normal",
+                "Fish_Armature|Out_Of_Water",
+                "Fish_Armature|Swimming_Fast",
+                "Fish_Armature|Attack",
+                "Fish_Armature|Death",
+                "Fish_Armature|Swimming_Impulse"
+            ],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_191919FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_484848FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_817E7EFF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_4A648FFF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_9A8F5BFF_none.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_BIRCHTREE_1",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/BirchTree_1.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_BIRCHTREE_1.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.8790640234947205,
+                "y": -0.006081819534301758,
+                "z": -1.9104610681533814
+            },
+            "sourceSize": {
+                "x": 1.7018603086471558,
+                "y": 3.5737998485565187,
+                "z": 2.4797301292419435
+            },
+            "wrapperSize": {
+                "x": 1.9048187732696534,
+                "y": 3.999999761581421,
+                "z": 2.7754547595977785
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 3073,
+            "triangles": 1704,
+            "renderers": 1,
+            "materials": 4,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_D4D8CFFF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_424242FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_415536FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_536D45FF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_BUSH_1",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/Bush_1.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_BUSH_1.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.6642142534255981,
+                "y": -0.036264777183532718,
+                "z": -0.8450133204460144
+            },
+            "sourceSize": {
+                "x": 1.3284285068511963,
+                "y": 1.2417477369308472,
+                "z": 1.6900264024734498
+            },
+            "wrapperSize": {
+                "x": 1.0698055028915406,
+                "y": 0.9999999403953552,
+                "z": 1.3610061407089234
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 709,
+            "triangles": 364,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_536D45FF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_COMMONTREE_1",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/CommonTree_1.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_COMMONTREE_1.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.9712317585945129,
+                "y": -0.04246056079864502,
+                "z": -1.1743385791778565
+            },
+            "sourceSize": {
+                "x": 1.8891141414642335,
+                "y": 2.4805617332458498,
+                "z": 2.7731359004974367
+            },
+            "wrapperSize": {
+                "x": 3.0462682247161867,
+                "y": 4.0,
+                "z": 4.471786975860596
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 5357,
+            "triangles": 2888,
+            "renderers": 1,
+            "materials": 2,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_6D4B45FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_536D45FF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_FLOWERS",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/Flowers.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_FLOWERS.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.12963920831680299,
+                "y": -0.00936552882194519,
+                "z": -0.49954092502593996
+            },
+            "sourceSize": {
+                "x": 0.48948824405670168,
+                "y": 0.8289473056793213,
+                "z": 0.6136793494224548
+            },
+            "wrapperSize": {
+                "x": 0.23619751632213593,
+                "y": 0.4000000059604645,
+                "z": 0.296124666929245
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 796,
+            "triangles": 408,
+            "renderers": 1,
+            "materials": 3,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_536D45FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_00888AFF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_B2A15EFF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_GRASS_SHORT",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/Grass_Short.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_GRASS_SHORT.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.12520739436149598,
+                "y": -0.005342334508895874,
+                "z": -0.2569340765476227
+            },
+            "sourceSize": {
+                "x": 0.31621024012565615,
+                "y": 0.40457653999328616,
+                "z": 0.44173651933670046
+            },
+            "wrapperSize": {
+                "x": 0.1953958123922348,
+                "y": 0.25,
+                "z": 0.2729622721672058
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 394,
+            "triangles": 192,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_536D45FF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_ROCK_1",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/Rock_1.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_ROCK_1.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.2429550290107727,
+                "y": -0.05110141634941101,
+                "z": -0.2516341805458069
+            },
+            "sourceSize": {
+                "x": 0.48532289266586306,
+                "y": 0.8777499198913574,
+                "z": 0.4667482376098633
+            },
+            "wrapperSize": {
+                "x": 0.5529170632362366,
+                "y": 1.0,
+                "z": 0.5317553281784058
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 140,
+            "triangles": 70,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_878B96FF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_WHEAT",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/Wheat.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_WHEAT.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.21478185057640077,
+                "y": -0.0002440810203552246,
+                "z": -0.19870512187480927
+            },
+            "sourceSize": {
+                "x": 0.3577982485294342,
+                "y": 1.1022210121154786,
+                "z": 0.356484979391098
+            },
+            "wrapperSize": {
+                "x": 0.2272310107946396,
+                "y": 0.7000000476837158,
+                "z": 0.22639697790145875
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 744,
+            "triangles": 408,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_B2A15EFF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_ULTIMATENATURE_WOODLOG",
+            "unityPath": "Assets/Art/Ultimate Nature Pack - Jun 2019/FBX/WoodLog.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_ULTIMATENATURE_WOODLOG.prefab",
+            "classification": "USE_WITH_NORMALIZATION",
+            "sourceBoundsMin": {
+                "x": -0.33032363653182986,
+                "y": -0.0013821125030517579,
+                "z": -1.4981976747512818
+            },
+            "sourceSize": {
+                "x": 0.6328556537628174,
+                "y": 0.748350203037262,
+                "z": 2.670295000076294
+            },
+            "wrapperSize": {
+                "x": 0.33826711773872378,
+                "y": 0.40000003576278689,
+                "z": 1.4272969961166382
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 844,
+            "triangles": 464,
+            "renderers": 1,
+            "materials": 3,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_6D4B45FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_6D5D58FF_none.mat",
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_A58D85FF_none.mat"
+            ],
+            "reusedSource": true,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_CUBEWORLDKIT_CHEST_CLOSED",
+            "unityPath": "Assets/Art/External/Quaternius/CubeWorldKit/Models/Chest_Closed.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUBEWORLDKIT_CHEST_CLOSED.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.9180762767791748,
+                "y": -0.003073275089263916,
+                "z": -0.9607831835746765
+            },
+            "sourceSize": {
+                "x": 1.8361525535583497,
+                "y": 1.9053165912628174,
+                "z": 1.9913547039031983
+            },
+            "wrapperSize": {
+                "x": 0.6745896339416504,
+                "y": 0.699999988079071,
+                "z": 0.7316098213195801
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 3445,
+            "triangles": 2914,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_4a623d2e91a75b64fad03cbbe385a0af.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_CUBEWORLDKIT_CHEST_OPEN",
+            "unityPath": "Assets/Art/External/Quaternius/CubeWorldKit/Models/Chest_Open.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUBEWORLDKIT_CHEST_OPEN.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.9180762767791748,
+                "y": -0.0030733346939086916,
+                "z": -1.5462647676467896
+            },
+            "sourceSize": {
+                "x": 1.8361525535583497,
+                "y": 2.802769899368286,
+                "z": 2.507047653198242
+            },
+            "wrapperSize": {
+                "x": 0.4585844874382019,
+                "y": 0.699999988079071,
+                "z": 0.6261425018310547
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 3466,
+            "triangles": 2914,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_4a623d2e91a75b64fad03cbbe385a0af.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_CUBEWORLDKIT_AXE_STONE",
+            "unityPath": "Assets/Art/External/Quaternius/CubeWorldKit/Models/Axe_Stone.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUBEWORLDKIT_AXE_STONE.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.15623518824577332,
+                "y": -0.3156668543815613,
+                "z": -0.16213898360729218
+            },
+            "sourceSize": {
+                "x": 0.7376856207847595,
+                "y": 1.7136198282241822,
+                "z": 0.3242778480052948
+            },
+            "wrapperSize": {
+                "x": 0.30133867263793948,
+                "y": 0.699999988079071,
+                "z": 0.1324649155139923
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 306,
+            "triangles": 236,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_4a623d2e91a75b64fad03cbbe385a0af.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        },
+        {
+            "id": "PA_REF_CUBEWORLDKIT_PICKAXE_STONE",
+            "unityPath": "Assets/Art/External/Quaternius/CubeWorldKit/Models/Pickaxe_Stone.fbx",
+            "wrapperPath": "Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUBEWORLDKIT_PICKAXE_STONE.prefab",
+            "classification": "DERIVATIVE_SOURCE",
+            "sourceBoundsMin": {
+                "x": -0.6082801818847656,
+                "y": -0.3156668543815613,
+                "z": -0.15768977999687196
+            },
+            "sourceSize": {
+                "x": 1.2165603637695313,
+                "y": 1.7136198282241822,
+                "z": 0.31537944078445437
+            },
+            "wrapperSize": {
+                "x": 0.5679488182067871,
+                "y": 0.800000011920929,
+                "z": 0.1472342610359192
+            },
+            "bottomCenter": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "vertices": 384,
+            "triangles": 328,
+            "renderers": 1,
+            "materials": 1,
+            "skinnedRenderers": 0,
+            "animationClips": [],
+            "materialPaths": [
+                "Assets/Art/ProjectPA/Materials/Intake/PA_Source_FFFFFFFF_4a623d2e91a75b64fad03cbbe385a0af.mat"
+            ],
+            "reusedSource": false,
+            "referencesValid": true,
+            "orientation": "Source orientation retained; interaction-facing visual check pending ART-001"
+        }
+    ],
+    "validationScope": "Editor preview scene and prefab round-trip; no gameplay or final art approval"
+}

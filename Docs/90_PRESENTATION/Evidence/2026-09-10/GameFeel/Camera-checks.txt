@@ -1,0 +1,4 @@
+candidate0 height=0.1641 centerFromTop=0.5627
+candidate1 height=0.1474 centerFromTop=0.5566
+candidate2 height=0.1340 centerFromTop=0.5515
+PASS valid humanoid / code-authoritative root / controller=existing procedural

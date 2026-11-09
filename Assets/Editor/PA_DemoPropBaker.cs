@@ -34,7 +34,7 @@ public static class PA_DemoPropBaker
         ("Prop_Stump",       NaturePackDir + "/TreeStump_Moss.fbx"),
         ("Prop_WoodLog",     NaturePackDir + "/WoodLog_Moss.fbx"),
         ("Prop_Wheat",       NaturePackDir + "/Wheat.fbx"),
-        ("Prop_FroggyChair", "Assets/Prefabs/FroggyChair.prefab"),
+        // 2026-11-09 Prop_FroggyChair 제외: 라이선스 문서 없음(07 큐 결정 — 플레이어 경로 참조 0, 원본 보존). 소유 의자 PA_Decor_CozyChair로 대체.
     };
 
     [MenuItem("Project PA/Demo/Bake Demo Props")]

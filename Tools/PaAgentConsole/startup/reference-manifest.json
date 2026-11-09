@@ -1,0 +1,89 @@
+{
+  "repository": "junido7185/Project_PA",
+  "base_branch": "milestone/gameplay-beta-85",
+  "base_commit": "b121140ae6f5ca0f92078db5c2f75512dc8fc95a",
+  "status": "REVIEWED_PATCH_NOT_APPLIED_TO_GITHUB",
+  "changed_files": [
+    {
+      "path": ".agents/skills/pa-demo-factory/SKILL.md",
+      "base_sha256": "8b17be9445dc0b0f89d1230aa737feb53136df27162d6a66fc6df861cd52d46f",
+      "result_sha256": "e26d4fdba6d6955ddaa1b84d712c480e24437761af52e3a19c59db7968dceac0"
+    },
+    {
+      "path": ".agents/skills/pa-visual-director/SKILL.md",
+      "base_sha256": "77dbc1f30e85653a6e3125c0d868360764aa5f8764f04ddb48b661587047f86f",
+      "result_sha256": "b9cb42457d29f94064887bd82e70960bbee62ddc0d52e938ceb642e0a715d8e4"
+    },
+    {
+      "path": ".agents/skills/project-pa-vertical-slice/SKILL.md",
+      "base_sha256": "a68237661f14f325b1987ea1de8781132cfb5b3197fd79bd2ab5697d1aa9d6da",
+      "result_sha256": "4fd97cd35ced7399daa2024ba9fcda237a23696b7b969e1baba3594e39c2b35e"
+    },
+    {
+      "path": "AGENTS.md",
+      "base_sha256": "3c6ce992074fea43177d8b8be40f36ba0692b62d38c5753bf1b06c8b8aa310e8",
+      "result_sha256": "31f947c49958cf6186c095721c54f078021045c848fc6a79357aa006f3165d5d"
+    },
+    {
+      "path": "AI_WORKFLOW/00_START_HERE/DOCS_INDEX.md",
+      "base_sha256": "12bb825045b74ed2ea70373b2b9ab53e504b6f5f6fbc87c6d866a7d12f2839d5",
+      "result_sha256": "53feaba2042b367fa0aaaad235951942b803d8939812f9920a1201028adf5307"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/Art/VISUAL_TARGETS.md",
+      "base_sha256": "8b11bed018c1bfc78df45fd21e62541f23380c0524f048047ce0d665e1cc65f9",
+      "result_sha256": "f70b75355c42cbeb09926034568d2f97aaa7cc328fcb30bd36a54eac715a1801"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/Canon/PROJECT_PA_GAME_LOOP.md",
+      "base_sha256": "a69c48fa760df6a1fd18c746babe577ba7d2a26000701aadb446cce2bb3e6b1a",
+      "result_sha256": "650d03250e53713e06414eae0f2699441c8e497f7747d40bb97ead6376c6e3fd"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/README.md",
+      "base_sha256": "1101365b87cb690542864a13cb239db056fe33f649c2083d643d558ca92697b7",
+      "result_sha256": "874ae2b882bc6ee6c5e6e7cee708d8b55bb08be4297778ed59969244296c3dcd"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/References/ACNH_SPACE_LEARNING.md",
+      "base_sha256": null,
+      "result_sha256": "25bd7ee9351114a1a3549df09306cb995b7838ab969339ab9c6d12c518c42c44"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/References/DAVE_MILESTONES.md",
+      "base_sha256": null,
+      "result_sha256": "b5552a5c4e3ef592f88826ee2fd7d8179e97f4cb66f33d0de50a1516ff7d4b85"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/References/DINKUM_ACTION_WORLD.md",
+      "base_sha256": null,
+      "result_sha256": "bacc002a0bf4c663191335c95f8c446b409aa89714bc1633673802cf83ea7ff1"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/References/MOONLIGHTER_COMMERCE.md",
+      "base_sha256": null,
+      "result_sha256": "4aefbb7d6ed79ca43bf2e86fac42495473e129a2937e294773259fbd2026fbee"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/References/README.md",
+      "base_sha256": null,
+      "result_sha256": "9a5f55a071f0bb8c01017bfda99bfa6bb00d9da12862d1f41bfef2ddcba83a5c"
+    },
+    {
+      "path": "Docs/01_GAME_DESIGN/References/SOURCE_REGISTER.md",
+      "base_sha256": null,
+      "result_sha256": "fb116eff1ac524f272bb1c351ebc72240c1dbe8a882d950e0f2cc7a56944f844"
+    },
+    {
+      "path": "Docs/04_DEVELOPMENT_LOG/2026-10.md",
+      "base_sha256": "58de99435c7784cb8a63310de4bba3041f52cd9a6875d6c6f56ad4da8f21ac2b",
+      "result_sha256": "53984dd8d67d23f99f9e0e8514b055e98116977e2ef2dbc496f3b35584818685"
+    },
+    {
+      "path": "Docs/AgentWorkflow/CONTEXT_INDEX.md",
+      "base_sha256": "eea0996507892ad63a9e8d77a60747906fa706f420b384dca33028ace20094c3",
+      "result_sha256": "348e5fce7f46426868586b8903764b00ace28b63e89e3684b3e24ec21cb5ca95"
+    }
+  ],
+  "patch_sha256": "8367c072ecfaf741fe2a9e5187edd8e0404cb637fc0666d83cb707ad08baa46c"
+}

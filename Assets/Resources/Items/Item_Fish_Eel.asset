@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Fish_Eel
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3009
+  itemName: "\uC7A5\uC5B4"
+  description: "\uAC15\uC774 \uBC14\uB2E4\uC640 \uB9CC\uB098\uB294 \uD558\uAD6C\uC5D0\uC11C
+    \uC624\uD6C4\uBD80\uD130 \uBC24\uAE4C\uC9C0 \uAE38\uAC8C \uAD7D\uC774\uCE58\uBA70
+    \uB2E4\uB2C8\uB294 \uBB3C\uACE0\uAE30. \uC870\uB9AC\uB300\uC5D0\uC11C \uC0DD\uC120\uAD6C\uC774\uB85C
+    \uAD6C\uC6B8 \uC218 \uC788\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: c824e6cd6b5946b4eac2b0459a0ec330, type: 3}
+  maxStack: 99
+  model: {fileID: 5855768595477315114, guid: 12099ce96f4117d42a0bbc168dda9c8f, type: 3}
+  basePrice: 35
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

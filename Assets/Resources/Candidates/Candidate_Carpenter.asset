@@ -16,7 +16,7 @@ MonoBehaviour:
   specialty: 7
   hireCost: 600
   requiredTier: 0
-  spawnPrefab: {fileID: 0}
+  spawnPrefab: {fileID: 8220469387853140134, guid: 4d6f0108b5d3ef74e95b2111bbb4a69e, type: 3}
   displayName: "\uB9C8\uC744 \uBAA9\uC218"
   bio: "\uACF5\uBC29\uC5D0\uC11C \uBAA9\uC7AC \uAC00\uAD6C\uB97C \uB9CC\uB4E0\uB2E4.
     \uD488\uC9C8 \uC88B\uC740 \uBAA9\uC7AC\uB97C \uC120\uD638\uD55C\uB2E4."

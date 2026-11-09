@@ -10,7 +10,7 @@
 1. 해당 작업 유형의 검증 항목(§2)을 실제로 실행했고 결과 증거(로그/검증기 출력/스크린샷 경로)가 있다.
 2. 실행하지 못한 항목이 "확인 못 함 + 이유 + 사람이 확인하는 방법"으로 보고서에 명시됐다.
 3. `git status`로 의도한 파일만 변경됐음을 확인했다.
-4. 기록 문서(CHANGELOG_AI + 루트 기록 4종)가 갱신됐다.
+4. 해당 월 개발 이력에 결과를 한 번 기록하고, 변경된 `Docs/00_CURRENT` 항목을 갱신했다.
 
 ## 2. 작업 유형별 검증 항목
 
@@ -60,11 +60,11 @@
 - [ ] 새 UI가 기존 HUD/상호작용을 가리지 않음
 - ⚠ 최종 가독성 판정은 **사람 몫** — AI는 "사람 확인 필요"로 표시
 
-## 2-B. 과거 BLOCKED 검증기 해소 (2026-07-13 동기화)
+## 2-B. 과거 검증 증거 예시 (2026-07-13 snapshot; 현재 PASS 권위 아님)
 
 2026-06-26 당시 Editor가 열려 있어 보류됐던 2종은 Editor를 닫고 D3D11 batchmode로 실제 실행해 해소됐다.
 
-| 검증기 | 현재 상태 | 최신 증거 |
+| 검증기 | 당시 상태 | 당시 증거 |
 |---|---|---|
 | `PA_FinalDemoRouteValidator.RunFinalDemoRouteValidation` | PASS | `Logs/Fable_V3_FinalDemoRoute.log` — BreadLoaf, paid=30G |
 | `PA_LongPlayProgressionValidator.RunLongPlayProgressionValidation` | PASS | `Logs/Fable_VisualPass_LongPlayRegression.log` — money=4633G 기준선 |
@@ -73,7 +73,7 @@ D3D12는 여전히 미승인이다. 자동 Unity 실행은 계속 `-force-d3d11`
 
 ## 3. 검증 실패 시
 
-- 같은 검증기가 같은 이유로 **2회 실패 → 중단.** Codex는 세 번째 시도나 독단 수정을 하지 않고 `../05_LOGS/BUG_LOG.md`에 기록한 뒤 **사람 판단을 요청**한다.
+- 같은 검증기가 같은 이유로 **2회 실패 → 중단.** Codex는 세 번째 시도나 독단 수정을 하지 않고 `AI_WORKFLOW/05_LOGS/BUG_LOG.md`에 기록한 뒤 **사람 판단을 요청**한다.
 - 컴파일 에러 2회 반복 → 동일하게 중단·사람 요청.
 - Unity 크래시 아티팩트 발생 → 즉시 중단, 루트 크래시 리포트 규칙 확인, 새 크래시면 `PROJECT_PA_CRASH_REPORT_YYYYMMDD.md`를 **루트에** 생성 (preflight glob 규약).
 - 위험 파일 대규모 변경이 필요하면 중단·사람 승인.

@@ -216,10 +216,16 @@ public static class PA_SaveRoundTripValidator
 
         await save.SaveGameAsync();
 
-        string saveFile = Path.Combine(output, "savegame.json");
-        Require(File.Exists(saveFile), "isolated savegame.json was written");
+        string saveFile = Path.Combine(output, "savegame-v17.json");
+        Require(File.Exists(saveFile), "isolated savegame-v17.json was written");
         var savedData = JsonUtility.FromJson<SaveData>(File.ReadAllText(saveFile));
-        Require(savedData != null && savedData.version == 10, "saved JSON is schema v10");
+        Require(savedData != null && savedData.version == SaveManager.CurrentSaveVersion,
+            $"saved JSON uses gameplay schema v{SaveManager.CurrentSaveVersion}");
+        Require(savedData.worldState != null &&
+                savedData.worldState.worldMode == WorldPersistenceMigration.LegacyFixedMode &&
+                savedData.worldState.modifiedCells.Count == 0 &&
+                savedData.worldState.placedBuildings.Count == 0,
+            "Golden Regression save remains LegacyFixed without automatic world conversion");
         Require(savedData.villageCultureHasPendingChange
             && savedData.villageCulturePendingSaleDay == 2
             && savedData.villageCulturePendingCategory == "Processed",

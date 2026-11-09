@@ -1,0 +1,2 @@
+version: 2
+offered: 2026-10-03 (one-line offer in the D1-D4 closeout; no entries imported)

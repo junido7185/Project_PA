@@ -1,0 +1,4 @@
+{
+  "description": "Session-only production observation, without global hooks or worker MCP inheritance",
+  "modules": ["./register.js"]
+}

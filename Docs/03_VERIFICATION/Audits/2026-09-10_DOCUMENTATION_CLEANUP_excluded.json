@@ -1,0 +1,330 @@
+[
+  {
+    "path": "Builds/Windows/Project_PA_BurstDebugInformation_DoNotShip/Data/Plugins/x86_64/lib_burst_generated.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/copyright.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/datafiles/assets/blender_assets.cats.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/datafiles/studiolights/matcap/license.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/datafiles/studiolights/world/license.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/extensions/system/readme.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/lib2to3/Grammar.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/lib2to3/PatternGrammar.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/README.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/autopep8-2.3.1.dist-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/autopep8-2.3.1.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/certifi-2025.4.26.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/charset_normalizer-3.4.1.dist-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/charset_normalizer-3.4.1.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/Cython-3.0.11-py3.11.egg-info/dependency_links.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/Cython-3.0.11-py3.11.egg-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/Cython-3.0.11-py3.11.egg-info/SOURCES.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/Cython-3.0.11-py3.11.egg-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/idna-3.10.dist-info/licenses/LICENSE.md",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/MaterialX/libraries/README.md",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/MaterialX/_scripts/README.md",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/meson-0.63.0.dist-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/meson-0.63.0.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/mesonbuild/dependencies/data/CMakeLists.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/mesonbuild/dependencies/data/CMakeListsLLVM.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/mesonbuild/dependencies/data/CMakePathInfo.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/numpy/LICENSE.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/numpy/core/include/numpy/libdivide/LICENSE.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/numpy/core/tests/data/umath-validation-set-README.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/numpy-1.26.4-py3.11.egg-info/dependency_links.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/numpy-1.26.4-py3.11.egg-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/numpy-1.26.4-py3.11.egg-info/SOURCES.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/numpy-1.26.4-py3.11.egg-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/pip/_vendor/vendor.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/pip-24.0.dist-info/AUTHORS.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/pip-24.0.dist-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/pip-24.0.dist-info/LICENSE.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/pip-24.0.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/pycodestyle-2.13.0.dist-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/pycodestyle-2.13.0.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/requests-2.32.3.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/setuptools-63.2.0.dist-info/entry_points.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/setuptools-63.2.0.dist-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/urllib3-2.4.0.dist-info/licenses/LICENSE.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/zstandard-0.23.0-py3.11.egg-info/dependency_links.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/zstandard-0.23.0-py3.11.egg-info/requires.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/zstandard-0.23.0-py3.11.egg-info/SOURCES.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/python/lib/site-packages/zstandard-0.23.0-py3.11.egg-info/top_level.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/scripts/addons_core/cycles/license/Apache2-license.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/scripts/addons_core/cycles/license/BSD-3-Clause-license.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/scripts/addons_core/cycles/license/MIT-license.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/scripts/addons_core/cycles/license/readme.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/scripts/addons_core/cycles/license/SPDX-license-identifiers.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/scripts/addons_core/cycles/license/Zlib-license.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/4.5/scripts/addons_core/node_wrangler/README.md",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/blender.shared/materialx/libraries/README.md",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/blender.shared/usd/usd/resources/codegenTemplates/generatedSchema.classes.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/license.md",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/others/Arev-Fonts.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/others/ICS.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/others/LLVM-exception.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/others/TOST-1.0.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/Apache-2.0.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/Bitstream-Vera.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/BSD-2-Clause.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/BSD-3-Clause.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/BSL-1.0.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/bzip2-1.0.6.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/FTL.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/GPL-2.0-or-later.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/GPL-3.0-or-later.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/LGPL-2.1-or-later.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/libpng-2.0.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/libtiff.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/MIT-Khronos-old.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/MIT.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/MPL-2.0.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/NCSA.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/OFL-1.1.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/Python-2.0.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/SGI-B-2.0.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  },
+  {
+    "path": "ExternalAssetSources/Tools/Blender/Portable/blender-4.5.13-windows-x64/license/spdx/Zlib.txt",
+    "reason": "외부 Blender 배포물 문서 또는 생성된 빌드 사본; 원본 그대로 유지"
+  }
+]

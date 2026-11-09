@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_IronOre
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2028
+  itemName: "\uCCA0 \uAD11\uC11D"
+  description: "\uACE0\uC9C0\uB300 \uCCA0 \uAD11\uB9E5\uC5D0\uC11C \uCE94 \uBB35\uC9C1\uD55C
+    \uAD11\uC11D. \uD654\uB85C\uC5D0\uC11C \uCCA0 \uC8FC\uAD34\uB85C \uB179\uC5EC\uC694.
+    \uAD6C\uB9AC \uACE1\uAD2D\uC774 \uC774\uC0C1\uC774 \uC788\uC5B4\uC57C \uCE98
+    \uC218 \uC788\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: 95e3d46606603c54d8c5218f3bd03a52, type: 3}
+  maxStack: 99
+  model: {fileID: 3205180249561220562, guid: ed581cc12dc31a340b21d6360964d4ba, type: 3}
+  basePrice: 24
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

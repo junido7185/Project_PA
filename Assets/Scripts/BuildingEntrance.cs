@@ -22,10 +22,26 @@ public class BuildingEntrance : MonoBehaviour, IInteractable
     [Header("진행 잠금 (선택)")]
     [SerializeField, Min(0)] int requiredTier = 0;
     [SerializeField] string lockedPromptLabel = "아직 열리지 않았습니다";
+    System.Func<bool> additionalUnlock;
+    System.Action<GameObject> arrived;
+    bool warping;
 
     public int RequiredTier => requiredTier;
-    public bool IsUnlocked => requiredTier <= 0
-        || (TierService.Instance != null && TierService.Instance.IsUnlocked(requiredTier));
+    public bool IsUnlocked => (requiredTier <= 0
+        || (TierService.Instance != null && TierService.Instance.IsUnlocked(requiredTier)))
+        && (additionalUnlock == null || additionalUnlock());
+
+    // Demo256도 기존 문/워프 권위를 사용하며 Golden의 Tier 계약은 유지한다.
+    public void ConfigureDestination(Transform destination, string prompt,
+        System.Func<bool> unlock = null, System.Action<GameObject> onArrival = null,
+        string lockedPrompt = null)
+    {
+        targetSpawn = destination;
+        promptLabel = prompt;
+        additionalUnlock = unlock;
+        arrived = onArrival;
+        if (!string.IsNullOrEmpty(lockedPrompt)) lockedPromptLabel = lockedPrompt;
+    }
 
     public string GetInteractPrompt() => IsUnlocked ? promptLabel : lockedPromptLabel;
 
@@ -39,6 +55,7 @@ public class BuildingEntrance : MonoBehaviour, IInteractable
 
     public void Interact(GameObject interactor)
     {
+        if (warping || interactor == null) return;
         if (!IsUnlocked)
         {
             Debug.Log($"🔒 {name} — Tier {requiredTier}부터 이용할 수 있습니다.");
@@ -51,8 +68,11 @@ public class BuildingEntrance : MonoBehaviour, IInteractable
             return;
         }
 
+        warping = true;
         if (ScreenFader.Instance != null)
-            ScreenFader.Instance.PlayWarpFade(() => Warp(interactor));
+        {
+            if (!ScreenFader.Instance.TryPlayWarpFade(() => Warp(interactor))) warping = false;
+        }
         else
             Warp(interactor); // 페이더 없어도 동작은 유지 — 디버그 편의
     }
@@ -60,14 +80,26 @@ public class BuildingEntrance : MonoBehaviour, IInteractable
     // ── 실제 텔레포트 수행 (페이드 미드포인트에서 호출) ─────────────────
     private void Warp(GameObject interactor)
     {
+        warping = false;
+        if (interactor == null || targetSpawn == null) return;
+        // 월드 이동 보호를 끄지 않고 같은 월드의 안전한 목적지를 승인받는다.
+        var traversal = interactor.GetComponent<WorldPlayerTraversalGuard>();
+        if (traversal != null && !traversal.TryTeleportTo(targetSpawn.position))
+        {
+            Debug.LogWarning($"🚪 {name} — 목적지가 현재 월드에서 안전하지 않습니다.");
+            return;
+        }
         // CharacterController.enabled 토글 없이 position 을 직접 대입하면
         // 내부 누적 이동량이 한 프레임 뒤에 덮어써 실패한다. 반드시 끄고 옮긴 뒤 다시 켠다.
         CharacterController cc = interactor.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
 
-        interactor.transform.SetPositionAndRotation(targetSpawn.position, targetSpawn.rotation);
+        if (traversal == null) interactor.transform.position = targetSpawn.position;
+        interactor.transform.rotation = targetSpawn.rotation;
 
         if (cc != null) cc.enabled = true;
+        interactor.GetComponent<PlayerController>()?.ResetMotionAfterTeleport();
+        arrived?.Invoke(interactor);
 
         // 카메라가 Lerp 로 따라오면 실내→실외 구간을 한 번에 가로질러 패닝이 보인다 → 즉시 스냅
         CameraController cam = Camera.main != null

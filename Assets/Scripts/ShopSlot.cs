@@ -8,6 +8,9 @@ public class ShopSlot : MonoBehaviour, IInteractable
     [Header("진열 상태")]
     public ItemInstance currentItem;
     public int displayPrice = 0;
+    Item _priceFor; // displayPrice를 정한 상품(진열·복원 때 기록). 비어 있으면 아직 모른다.
+    [Tooltip("같은 상품을 한 가판대에 쌓을 수 있는 최대 수량. 1이면 기존처럼 한 개만 진열한다")]
+    public int stockCapacity = 1;
 
     [Header("프로토타입 표시")]
     public Vector3 displayOffset = new Vector3(0f, 0.45f, 0f);
@@ -32,6 +35,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     string _claimedBy;
     Shop _parentShop;
+    bool _purchaseInProgress;
 
     public bool IsClaimed => !string.IsNullOrEmpty(_claimedBy);
     public bool IsClaimedBy(string buyerTag) => !string.IsNullOrEmpty(buyerTag) && _claimedBy == buyerTag;
@@ -47,6 +51,14 @@ public class ShopSlot : MonoBehaviour, IInteractable
     public void ReleaseClaim(string buyerTag)
     {
         if (_claimedBy == buyerTag) _claimedBy = null;
+    }
+
+    public void BindOperatingShop(Shop shop)
+    {
+        if (_parentShop == shop) return;
+        _parentShop?.UnregisterSlot(this);
+        _parentShop = shop;
+        _parentShop?.RegisterSlot(this);
     }
 
     void Awake()
@@ -84,9 +96,14 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public void Interact(GameObject interactor)
     {
+        if (!isActiveAndEnabled || _purchaseInProgress) return;
         if (IsEmpty)
         {
             TryStockFromPlayer();
+        }
+        else if (CanTopUpFromHeld(out var heldSlot))
+        {
+            TopUp(heldSlot);
         }
         else
         {
@@ -101,8 +118,15 @@ public class ShopSlot : MonoBehaviour, IInteractable
     {
         if (IsEmpty)
             return IsSoldOutToday ? "판매대에 상품 진열 (오늘 품절)" : "판매대에 상품 진열";
-        return $"가격 확정/조정 ({currentItem.data.itemName} / {EffectiveDisplayPrice}G)";
+        if (CanTopUpFromHeld(out _))
+            return $"{ShownName(currentItem.data)} 더 진열 ({currentItem.count}/{Capacity})";
+        string stockText = currentItem.count > 1 ? $" ×{currentItem.count}" : "";
+        return $"가격 확정/조정 ({ShownName(currentItem.data)}{stockText} / {EffectiveDisplayPrice}G)";
     }
+
+    // P6: 데모 화면은 저장 ID/이름을 그대로 두고 표시 계층에서만 한국어 이름을 쓴다.
+    static string ShownName(Item item) =>
+        WorldGameplayAdapterService.Instance?.FirstDay == true ? ItemDisplayName.For(item) : item.itemName;
 
     void TryStockFromPlayer()
     {
@@ -121,14 +145,18 @@ public class ShopSlot : MonoBehaviour, IInteractable
         if (!CanStock(sourceInstance.data, logReason: true))
             return;
 
-        currentItem = new ItemInstance(sourceInstance.data, 1)
+        int moved = Mathf.Clamp(sourceInstance.count, 1, Capacity);
+        currentItem = new ItemInstance(sourceInstance.data, moved)
         {
             quality = sourceInstance.quality,
             currentPrice = sourceInstance.currentPrice
         };
 
-        sourceSlot.AddCount(-1);
-        if (displayPrice <= 0) displayPrice = currentItem.data.basePrice;
+        sourceSlot.AddCount(-moved);
+        // 2026-11-03 market-r2: 빈 칸에 다른 상품을 올리면 앞 상품의 가격(광석 11G)이 그대로 남아 조개 목걸이(112G)가 11G에 팔렸다.
+        // 가격은 그 가격을 정한 상품에만 이어진다. 같은 상품을 다시 채우면 플레이어가 정한 가격을 유지한다.
+        if (displayPrice <= 0 || _priceFor != null && _priceFor != currentItem.data) displayPrice = currentItem.data.basePrice;
+        _priceFor = currentItem.data;
 
         Inventory.instance.RefreshAllUI();
         RefreshDisplay();
@@ -144,6 +172,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
         var inv = Inventory.instance;
         if (inv == null) return false;
 
+        if (PlayerInputHandler.Instance?.FirstDayControls == true && EquipmentSystem.CurrentHeld(inv.gameObject) == null) return false;
         InventorySlot selected = inv.hotbar != null ? inv.hotbar.GetSlot(inv.selectedHotbarIndex) : null;
         if (IsUsableStockSlot(selected))
         {
@@ -153,6 +182,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
             return true;
         }
 
+        if (PlayerInputHandler.Instance?.FirstDayControls == true) return false;
         if (TryFindFirstSellable(inv.hotbar != null ? inv.hotbar.slots : null, "hotbar", out sourceSlot, out sourceInstance, out sourceHint))
             return true;
 
@@ -213,37 +243,73 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
     public void RetrieveItem() => TryTakeBackToPlayer();
 
+    int Capacity => Mathf.Max(1, stockCapacity);
+
+    // 같은 상품을 손에 들고 있고 자리가 남으면 가격 UI 대신 보충한다(D2 영업 밀도).
+    bool CanTopUpFromHeld(out InventorySlot heldSlot)
+    {
+        heldSlot = null;
+        if (IsEmpty || currentItem.count >= Capacity || Inventory.instance == null) return false;
+        var inv = Inventory.instance;
+        var selected = inv.hotbar != null ? inv.hotbar.GetSlot(inv.selectedHotbarIndex) : null;
+        if (selected == null || selected.IsEmpty || selected.instance == null || selected.instance.data != currentItem.data) return false;
+        heldSlot = selected;
+        return true;
+    }
+
+    void TopUp(InventorySlot heldSlot)
+    {
+        int moved = Mathf.Min(heldSlot.instance.count, Capacity - currentItem.count);
+        if (moved <= 0) return;
+        currentItem.count += moved;
+        heldSlot.AddCount(-moved);
+        Inventory.instance.RefreshAllUI();
+        RefreshDisplay();
+        Debug.Log($"진열 보충: {currentItem.data.itemName} ×{currentItem.count}");
+    }
+
     void TryTakeBackToPlayer()
     {
+        if (_purchaseInProgress) return;
         if (Inventory.instance == null || currentItem == null || currentItem.data == null) return;
 
-        bool added = Inventory.instance.AddInstance(currentItem);
+        ItemInstance reclaimed = currentItem;
+        bool added = Inventory.instance.AddInstance(reclaimed);
         if (!added)
         {
             Debug.LogWarning("가방이 꽉 차서 회수할 수 없습니다.");
             return;
         }
 
-        Debug.Log($"회수 완료: {currentItem.data.itemName}");
+        Debug.Log($"회수 완료: {reclaimed.data.itemName}");
         currentItem = null;
+        // AddInstance의 중간 콜백 뒤, 진열대까지 비워진 최종 거래 상태를 UI에 전파한다.
+        Inventory.instance.RefreshAllUI();
         RefreshDisplay();
     }
 
     public bool TryPurchaseByNpc(string buyerTag, out int paidAmount)
     {
         paidAmount = 0;
+        if (!isActiveAndEnabled || _purchaseInProgress ||
+            (DayNightShopLoopController.Instance != null && !DayNightShopLoopController.Instance.IsShopOpenForCustomers)) return false;
         if (string.IsNullOrEmpty(buyerTag)) return false;
         if (!TryClaim(buyerTag)) return false;
 
         try
         {
             if (IsEmpty) return false;
+            if (EconomyService.Instance == null || SalesLogManager.Instance == null) return false;
+            _purchaseInProgress = true;
 
+            // 손님 한 명은 한 개를 산다. 쌓인 재고는 다음 손님에게 남는다(용량 1이면 기존과 동일).
             int unitPrice = EffectiveDisplayPrice;
-            paidAmount = unitPrice * currentItem.count;
+            long total = unitPrice;
+            if (total < 0 || total > int.MaxValue - (long)EconomyService.Instance.Money) return false;
+            int amount = (int)total;
 
-            if (EconomyService.Instance != null)
-                EconomyService.Instance.Deposit(paidAmount, $"Shop sale[{buyerTag}]: {currentItem.data.itemName}");
+            if (!EconomyService.Instance.Deposit(amount, $"Shop sale[{buyerTag}]: {currentItem.data.itemName}")) return false;
+            paidAmount = amount;
 
             int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
 
@@ -260,19 +326,25 @@ public class ShopSlot : MonoBehaviour, IInteractable
                     hour);
             }
 
-            currentItem = null;
-            _soldOutDay = day; // Task 019 — 오늘 다 팔린 슬롯 표시
+            currentItem.count -= 1;
+            if (currentItem.count <= 0)
+            {
+                currentItem = null;
+                _soldOutDay = day; // Task 019 — 오늘 다 팔린 슬롯 표시
+            }
             RefreshDisplay();
             return true;
         }
         finally
         {
+            _purchaseInProgress = false;
             ReleaseClaim(buyerTag);
         }
     }
 
     public void RefreshDisplay()
     {
+        if (currentItem != null && currentItem.data != null) _priceFor = currentItem.data;
         ClearDisplay();
 
         // Task 019 — 오늘 품절된 빈 슬롯은 보충을 유도하는 작은 라벨을 보여준다.
@@ -288,7 +360,7 @@ public class ShopSlot : MonoBehaviour, IInteractable
                 soldOutLabelGo.transform.SetParent(soldOutRoot.transform, false);
                 soldOutLabelGo.transform.localPosition = new Vector3(0f, 0.35f, 0f);
                 var soldOutLabel = soldOutLabelGo.AddComponent<PrototypeWorldLabel>();
-                soldOutLabel.Set("품절 · 보충하세요", new Color(1f, 0.62f, 0.55f), 1.2f);
+                soldOutLabel.Set("품절 · 보충하세요", new Color(1f, 0.80f, 0.66f), WorldGameplayAdapterService.Instance?.FirstDay == true ? 2.6f : 1.2f);
             }
             return;
         }
@@ -301,13 +373,28 @@ public class ShopSlot : MonoBehaviour, IInteractable
         root.transform.localRotation = Quaternion.identity;
 
         GameObject visual = null;
-        if (currentItem.data.model != null)
+        bool firstDay = WorldGameplayAdapterService.Instance?.FirstDay == true;
+        var model = firstDay ? FirstDayStudioAssets.Load()?.ModelFor(currentItem.data) : currentItem.data.model;
+        if (model != null)
         {
-            visual = Instantiate(currentItem.data.model, root.transform);
+            visual = Instantiate(model, root.transform);
             visual.name = "ItemModel";
             visual.transform.localPosition = Vector3.zero;
-            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localRotation = model.transform.localRotation;
             visual.transform.localScale = Vector3.one * fallbackDisplayScale;
+            if (firstDay)
+            {
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                if (renderers.Length > 0)
+                {
+                    Bounds bounds = renderers[0].bounds;
+                    foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                    visual.transform.localScale *= .65f / Mathf.Max(.001f, bounds.size.x, bounds.size.y, bounds.size.z);
+                    bounds = renderers[0].bounds;
+                    foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                    visual.transform.position += root.transform.position - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+                }
+            }
         }
         else
         {
@@ -339,9 +426,19 @@ public class ShopSlot : MonoBehaviour, IInteractable
 
         var labelGo = new GameObject("ItemLabel");
         labelGo.transform.SetParent(root.transform, false);
-        labelGo.transform.localPosition = new Vector3(0f, 0.55f, 0f);
+        // 이름·가격은 진열 모델 꼭대기 위에 띄운다(모델이 가격을 가리지 않게).
+        float labelHeight = 0.55f;
+        var shown = visual.GetComponentsInChildren<Renderer>();
+        if (firstDay && shown.Length > 0)
+        {
+            Bounds top = shown[0].bounds;
+            foreach (var renderer in shown) top.Encapsulate(renderer.bounds);
+            labelHeight = Mathf.Max(labelHeight, root.transform.InverseTransformPoint(new Vector3(top.center.x, top.max.y, top.center.z)).y + 0.65f);
+        }
+        labelGo.transform.localPosition = new Vector3(0f, labelHeight, 0f);
         var label = labelGo.AddComponent<PrototypeWorldLabel>();
-        label.Set($"{currentItem.data.itemName}\n{EffectiveDisplayPrice}G", new Color(1f, 0.94f, 0.62f), 1.8f);
+        string stock = currentItem.count > 1 ? $" ×{currentItem.count}" : "";
+        label.Set($"{ShownName(currentItem.data)}{stock}\n{EffectiveDisplayPrice}G", new Color(1f, 0.94f, 0.62f), firstDay ? 2.6f : 1.8f);
     }
 
     void ClearDisplay()
@@ -352,7 +449,10 @@ public class ShopSlot : MonoBehaviour, IInteractable
         {
             var child = transform.GetChild(i);
             if (child != null && child.name == DisplayRootName)
+            {
+                child.gameObject.SetActive(false); // 지연 Destroy 프레임에도 판매된 모델을 표시하지 않는다.
                 DestroyUnityObject(child.gameObject);
+            }
         }
     }
 

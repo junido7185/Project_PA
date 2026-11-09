@@ -99,3 +99,30 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 # Large submission archives
 SubmissionPackages/*.zip
+
+# ART-000: master archives and expanded authoring sources stay local.
+/ExternalAssetSources/
+/Blender/Source/
+/Blender/Library/Sources/
+/Blender/Generated/
+/Blender/Export/
+/Tools/Art/__pycache__/
+
+# 2026-11-02 커밋 정리: 다시 만들 수 있는 빌드 가상환경·캐시, GitHub 100MB 제한을 넘는 압축본, 공개 저장소에 올리면 안 되는 제3자(딩컴) 참고 이미지
+**/.build/
+__pycache__/
+*.pyc
+Docs/Presentation/Exhibition-2026.zip
+References/Dinkum/images/
+
+# Keep exhibition/presentation materials and personal exports local.
+/Docs/Presentation/
+/Docs/90_PRESENTATION/
+/output/
+/Assets/Screenshots/
+/Assets/Screenshots.meta
+
+# Local recovery copies and disposable relay test workspaces.
+*.restore
+/Tools/LoopEngineering/tests/.relay-test-*/
+/Tools/PaAgentConsole/startup/installed-runtime.json

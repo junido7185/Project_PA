@@ -1,0 +1,102 @@
+{
+  "created": "2026-10-09",
+  "image_count": 16,
+  "images": [
+    {
+      "path": "References/Dinkum/images/01_character_creation.png",
+      "original_name": "스크린샷 2026-10-09 134750.png",
+      "bytes": 697569,
+      "sha256": "fd2f008a8995338a28d38ad649f335d7acf0e75d3476ecff6822cadb7f04e82b"
+    },
+    {
+      "path": "References/Dinkum/images/02_forest_overview.png",
+      "original_name": "스크린샷 2026-10-09 134816.png",
+      "bytes": 5485929,
+      "sha256": "0295f0a749b9ad6e175ad6959f18ff2c401f7453df7e3f596f881a765bee8c9a"
+    },
+    {
+      "path": "References/Dinkum/images/03_coast_water.png",
+      "original_name": "스크린샷 2026-10-09 134828.png",
+      "bytes": 4470380,
+      "sha256": "aaa39bd74cfe556b613c0d23653649b850e3192d1f9c9c49b8de6174acfeb316"
+    },
+    {
+      "path": "References/Dinkum/images/04_npc_dialogue_interior.png",
+      "original_name": "스크린샷 2026-10-09 134838.png",
+      "bytes": 1861388,
+      "sha256": "115a6e6b2f657a1208cc916b3628fac86b4dc5cdbc1a0651dadcb5badaa8e3e5"
+    },
+    {
+      "path": "References/Dinkum/images/05_dock_npc_water.png",
+      "original_name": "스크린샷 2026-10-09 134856.png",
+      "bytes": 3305152,
+      "sha256": "cd606aaaa4bf852583489e8e04b83724e8e590e54d3c9fbbe7638efff7e9e281"
+    },
+    {
+      "path": "References/Dinkum/images/06_notification_crop.png",
+      "original_name": "스크린샷 2026-10-09 135015.png",
+      "bytes": 182845,
+      "sha256": "61269785b55cdce650ba226b32943f37e330ee13849ba9deea4b49dcd948862a"
+    },
+    {
+      "path": "References/Dinkum/images/07_interior_hotbar.png",
+      "original_name": "스크린샷 2026-10-09 135051.png",
+      "bytes": 2826394,
+      "sha256": "25586353c984cf3a5269419f3c785665b1960cfd21e1a03f64ecae8d7dd26350"
+    },
+    {
+      "path": "References/Dinkum/images/08_inventory_tooltip.png",
+      "original_name": "스크린샷 2026-10-09 135113.png",
+      "bytes": 2542120,
+      "sha256": "fd9119f005a05d84d272d0c59f50eb42af27d8c5a2d0693d93c3d01b605da66c"
+    },
+    {
+      "path": "References/Dinkum/images/09_shovel_target.png",
+      "original_name": "스크린샷 2026-10-09 135143.png",
+      "bytes": 4831550,
+      "sha256": "76169ba4400ae5e994becc78fc82e9e2032cd39a9c1b8f52b41fb38c6d1f1b55"
+    },
+    {
+      "path": "References/Dinkum/images/10_shallow_water_action.png",
+      "original_name": "스크린샷 2026-10-09 135203.png",
+      "bytes": 4461200,
+      "sha256": "16876e40a8afeddaa710de8276af095dd8fa43ca3e531baaf2974dc2d772d047"
+    },
+    {
+      "path": "References/Dinkum/images/11_water_plants_prompt.png",
+      "original_name": "스크린샷 2026-10-09 135219.png",
+      "bytes": 4246872,
+      "sha256": "2fe92ed23151533745af89ca281a5e73d96ff89c8f59c4940509d283fb3735eb"
+    },
+    {
+      "path": "References/Dinkum/images/12_net_pose_foliage.png",
+      "original_name": "스크린샷 2026-10-09 135244.png",
+      "bytes": 4877005,
+      "sha256": "e8605e9496728b2029074a4f261271d2c5671757e9a48699c631fa75d9b8f8f6"
+    },
+    {
+      "path": "References/Dinkum/images/13_terrain_resources.png",
+      "original_name": "스크린샷 2026-10-09 135303.png",
+      "bytes": 4715415,
+      "sha256": "e84dd4a56b80e64074c08c0a2547860473faefafdfcc0e80b429e6e1b169c58a"
+    },
+    {
+      "path": "References/Dinkum/images/14_biome_transition.png",
+      "original_name": "스크린샷 2026-10-09 135316.png",
+      "bytes": 4770782,
+      "sha256": "6cd95b8e58640077e33144bee4f1e3ea5dd0a6e280ab5a89e6960765b2ed6699"
+    },
+    {
+      "path": "References/Dinkum/images/15_character_rocks.png",
+      "original_name": "스크린샷 2026-10-09 135335.png",
+      "bytes": 4549651,
+      "sha256": "afa3a6c9f3ce183a130b9aaa98fdbc7281e31e45a32024bb53c50f3838e437d7"
+    },
+    {
+      "path": "References/Dinkum/images/16_rocks_cactus_net.png",
+      "original_name": "스크린샷 2026-10-09 135420.png",
+      "bytes": 4529547,
+      "sha256": "b92bb2b9d055cb928989e3ead18371183d6fdbe0ca666aa0f520660ae6ecbb0c"
+    }
+  ]
+}

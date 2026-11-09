@@ -1,0 +1,46 @@
+[VS-PRESENT-001] BUILD_PASS scene=Assets/Scenes/PA_DepartureTutorial.unity bays=3 existingAuthorities=true saveManagers=0
+[VS-PRESENT-001] CHECK_OK existing Full HD GameView preset available
+[VS-PRESENT-001] READY existing authorities bound; stage=1
+[VS-PRESENT-001] CHECK_OK one Inventory authority
+[VS-PRESENT-001] CHECK_OK one Economy authority
+[VS-PRESENT-001] CHECK_OK one Shop authority
+[VS-PRESENT-001] CHECK_OK one original NPC buyer
+[VS-PRESENT-001] CHECK_OK development entry cannot overwrite campaign save
+[VS-PRESENT-001] CHECK_OK fresh spawn has no prefilled fruit or completed objectives
+[VS-PRESENT-001] CHECK_OK existing first-day tutorial purchase gate
+[VS-PRESENT-001] STAGE=2 objective=실습용 열매를 확보하세요. (0/3)
+[VS-PRESENT-001] CHECK_OK walk reached (-5.00, 0.04, -3.00); actual=(-4.89, 0.08, -3.00)
+[VS-PRESENT-001] CHECK_OK WASD movement reaches Bay 01 checkpoint
+[VS-PRESENT-001] CHECK_OK actual PlayerController movement, no teleport
+[VS-PRESENT-001] CHECK_OK walk reached (0.00, 0.00, -3.00); actual=(0.17, 0.08, -3.00)
+[VS-PRESENT-001] CHECK_OK walk reached (0.00, 0.00, -2.60); actual=(0.16, 0.08, -2.59)
+[VS-PRESENT-001] CHECK_OK reachable Space target = TrainingFruitTree
+[VS-PRESENT-001] STAGE=3 objective=열매를 실습 진열대에 올려보세요.
+[VS-PRESENT-001] CHECK_OK tree interaction grants three fruit through Inventory
+[VS-PRESENT-001] CHECK_OK exact three authoritative fruit
+[VS-PRESENT-001] CHECK_OK walk reached (0.16, 0.00, -3.40); actual=(0.17, 0.08, -3.61)
+[VS-PRESENT-001] CHECK_OK walk reached (7.00, 0.00, -3.40); actual=(7.16, 0.08, -3.38)
+[VS-PRESENT-001] CHECK_OK walk reached (7.00, 0.00, -2.70); actual=(6.98, 0.08, -2.72)
+[VS-PRESENT-001] CHECK_OK reachable Space target = TrainingShopSlot
+[VS-PRESENT-001] STAGE=4 objective=판매 가격을 정하세요.
+[VS-PRESENT-001] CHECK_OK Space stocks original ShopSlot
+[VS-PRESENT-001] CHECK_OK stocking transfers one fruit, no duplicated inventory
+[VS-PRESENT-001] CHECK_OK reachable Space target = TrainingShopSlot
+[VS-PRESENT-001] CHECK_OK Space opens original ShopPriceUI
+[VS-PRESENT-001] STAGE=5 objective=손님의 반응을 확인하세요.
+[VS-PRESENT-001] PRICE_CONFIRMED price=7G
+[VS-PRESENT-001] CHECK_OK real price confirm button closes UI
+[VS-PRESENT-001] DECISION buy=True probability=0.895 price=7
+[VS-PRESENT-001] STAGE=6 objective=출항 인증 완료
+[VS-PRESENT-001] COMPLETE sale=7G decisions=1 companionUnlock=true
+[VS-PRESENT-001] CHECK_OK real customer decision resolves
+[VS-PRESENT-001] CHECK_OK completion requires actual decision and sale
+[VS-PRESENT-001] CHECK_OK sale deposited once by existing EconomyService
+[VS-PRESENT-001] CHECK_OK remaining harvested inventory preserved
+[VS-PRESENT-001] CHECK_OK NPC physically approached shelf
+[VS-PRESENT-001] BASIC_FLOW_PASS before capture evidence
+[VS-PRESENT-001] CHECK_OK reachable Space target = TrainingShopSlot
+[VS-PRESENT-001] CHECK_OK reachable Space target = TrainingShopSlot
+[VS-PRESENT-001] CHECK_OK actual GameView is 1920x1080
+[VS-PRESENT-001] P0_CHECKS_PASS spawn->movement->tree->inventory->display->price->NPC->decision->economy->complete
+[VS-PRESENT-001] P0_VALIDATION_PASS

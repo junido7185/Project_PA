@@ -1,0 +1,230 @@
+[
+  {
+    "file": "title.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-story-reg258/story_01_title_ui.png",
+    "source_sha256": "9c22d33e2ffd372cdd557c39900d515a883c10f39d838c508c63179efbe853b9",
+    "export_sha256": "ddf4110069a3c65f8ba19106915e4e7b06045717d4f95ddb5c6ba603224a5b1f",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "story",
+    "capture_started_local": "2026-11-09 12:46:13",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "settlement.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-visitor-reg258/visitor_2_settled_ui.png",
+    "source_sha256": "2f760e8edbadd82b4b2e8161c0e4c3b06a6337ca4b321c6de9ca032eba9f71e8",
+    "export_sha256": "5f29f39041ba49dd2a21aff44e1e789feacba4a63f545c85e3f4e3fe319127d6",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "visitor",
+    "capture_started_local": "2026-11-09 12:57:56",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "night-shop.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-market-reg258/market_2_door_open_clean.png",
+    "source_sha256": "acc52f4318af0a89b27ebd1fffb1a35e15fc4e264c07ac6bf6f7c5c1c2a67114",
+    "export_sha256": "e9786e8375ce23858459e8ca41845545103a14cc4bf838cdca346ac75ef06034",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "market",
+    "capture_started_local": "2026-11-09 12:38:14",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "coast.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-beach-reg258/beach_8c_waterline_clean.png",
+    "source_sha256": "8722c73c5113bc27179dfc688adaea6f0964fc6030b678a9a960c1b2b7b94a39",
+    "export_sha256": "c33867e0561a18b36eb4e3583ac31c1083be7adb3346d57c6c35876ddde0972b",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "beach",
+    "capture_started_local": "2026-11-09 12:20:20",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "fishing.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-feedback-reg258/feedback_2_4_bite1_ui.png",
+    "source_sha256": "0bd986fcada0ff86df20b1d943e5b014b13845597581a39c85f137ee5e562fb2",
+    "export_sha256": "6f98e0b0f61d1126d11daad089e4eec09c1eb926e1035e019447a7d2e1a13afa",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "feedback",
+    "capture_started_local": "2026-11-09 12:30:13",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "collection.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-ui-reg258/ui_3e_collection_tab_insect_ui.png",
+    "source_sha256": "92409a5115ebc73e227c381f057b25855b670fc56f9521e563196617e09c1e7e",
+    "export_sha256": "af8d60cc4381b352936c56ac8551c6874df652094be8666f1b972e87d1a32368",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "ui",
+    "capture_started_local": "2026-11-09 12:47:42",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "crafting.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-crafting-reg258/crafting_4_kitchen_ui.png",
+    "source_sha256": "91634c646d243968e46db59f0a3214f224038215ddf1651129fafa847c430415",
+    "export_sha256": "4439a63cac21dabbecdac5771f69285a22c8535d2314a3c3a4b6aaac7846bdcc",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "crafting",
+    "capture_started_local": "2026-11-09 12:24:02",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "price.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-ui-reg258/ui_5_price_ui.png",
+    "source_sha256": "3d280025f3d2799bb4f1765ca16865dcebb5079008b85984980597ffd42ffca2",
+    "export_sha256": "2eb0e31f2df26887d30b7bd76ee4733d80d4e81462090c120b7fe0c31c892790",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "ui",
+    "capture_started_local": "2026-11-09 12:47:42",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "interior.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-decorset-reg258/decorset_2_room_clean.png",
+    "source_sha256": "85aabd181e4926087faf1ba4d1fed070afb89b75856fd3129ca2aca3c8785bb6",
+    "export_sha256": "4745179573a53d8d8008e9baa8148b35e5fa46a734bfd2c99187310b389ee26f",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "decorset",
+    "capture_started_local": "2026-11-09 12:26:47",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "residents.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-gift-reg258/gift_liked_1b_emote_ui.png",
+    "source_sha256": "425c371a6028da55e626d8c8169d7c04b4c9e5f6b273db8dba71fc1885e7811c",
+    "export_sha256": "5f59d5a5c71372a2d1b24ef858c01beeb65cfddbfa2875b74a7864d3afa3f89c",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "gift",
+    "capture_started_local": "2026-11-09 12:33:29",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "report.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-visitor-reg258/visitor_3b_report_phone_ui.png",
+    "source_sha256": "16294c350bbf022120bde6fa19f3395fcb40fdd5864bcbde21e87bdcc27884f2",
+    "export_sha256": "15ffaa53b726baa8233f3b9e526e8220144a624a70e7539a458c1feecd353f52",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "visitor",
+    "capture_started_local": "2026-11-09 12:57:56",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  },
+  {
+    "file": "workstations.jpg",
+    "source": "Logs/ParallelProduction/Feedback-20261103/capture-crafting-reg258/crafting_9_stations_clean.png",
+    "source_sha256": "f1fdf07df66ba07fcf23a59ffdedb79f9a9de93adceb7d6bd6f89e3f76c53fa7",
+    "export_sha256": "6d65110981dcb77c6e57c5ccf6ca76c7ee70a9d4cb1fef5acd0b8f545596c664",
+    "source_pixels": [
+      3840,
+      2160
+    ],
+    "export_pixels": [
+      1600,
+      900
+    ],
+    "plan": "crafting",
+    "capture_started_local": "2026-11-09 12:24:02",
+    "capture_result": "ok",
+    "unity_version": "6000.3.2f1",
+    "source_kind": "Windows standalone scenario capture"
+  }
+]

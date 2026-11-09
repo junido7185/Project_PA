@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Crystal
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2052
+  itemName: "\uC218\uC815 \uC6D0\uC11D"
+  description: "\uBC14\uC704 \uAC00\uAE4C\uC6B4 \uD759\uC5D0\uC11C \uB098\uC628 \uBCF4\uB78F\uBE5B
+    \uC218\uC815 \uB369\uC5B4\uB9AC. \uD314\uC544\uB3C4 \uC88B\uACE0, \uC791\uC5C5\uB300\uC5D0\uC11C
+    \uBC1B\uCE68\uC5D0 \uC138\uC6CC \uC9D1\uC774\uB098 \uAC00\uAC8C\uC5D0 \uB458
+    \uC218\uB3C4 \uC788\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: b8d696504d495d440aaa7e5abd33d42f, type: 3}
+  maxStack: 99
+  model: {fileID: 267011017762703913, guid: 1463ca20887965a4ea8affc9580a09d0, type: 3}
+  basePrice: 32
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

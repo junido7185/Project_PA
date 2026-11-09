@@ -43,6 +43,8 @@ public class PA_ErrorTracker : EditorWindow
         // 두 번 등록 방지
         Application.logMessageReceivedThreaded -= OnLog;
         Application.logMessageReceivedThreaded += OnLog;
+        EditorApplication.update -= RepaintPending;
+        EditorApplication.update += RepaintPending;
     }
 
     // ── 캡처된 항목 ───────────────────────────────────────────────────────────
@@ -63,6 +65,13 @@ public class PA_ErrorTracker : EditorWindow
 
     static readonly List<CapturedError> _buffer = new();
     const int MAX_BUFFER = 200;
+    static int _repaintPending;
+
+    static void RepaintPending()
+    {
+        if (System.Threading.Interlocked.Exchange(ref _repaintPending, 0) == 0) return;
+        if (HasOpenInstances<PA_ErrorTracker>()) GetWindow<PA_ErrorTracker>().Repaint();
+    }
 
     static void OnLog(string condition, string stackTrace, LogType type)
     {
@@ -102,9 +111,8 @@ public class PA_ErrorTracker : EditorWindow
             if (_buffer.Count > MAX_BUFFER) _buffer.RemoveAt(_buffer.Count - 1);
         }
 
-        // 윈도우가 열려있으면 다시 그리기
-        if (HasOpenInstances<PA_ErrorTracker>())
-            EditorApplication.delayCall += () => GetWindow<PA_ErrorTracker>().Repaint();
+        // Threaded 로그에서는 Unity API를 호출하지 않고, Editor update에서 갱신한다.
+        System.Threading.Interlocked.Exchange(ref _repaintPending, 1);
     }
 
     static bool _filterErrorsOnly = false; // OnLog 가 즉시 참조하기 위해 static

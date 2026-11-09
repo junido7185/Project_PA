@@ -1,0 +1,306 @@
+{
+  "status": "PASS",
+  "assets": [
+    {
+      "id": "PA_REF_MINIMARKET_CASH_REGISTER",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_MINIMARKET_CASH_REGISTER.png",
+      "sampledColorCount": 19,
+      "meanSampledSaturation": 0.25513500113864146,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_MINIMARKET_DISPLAY_BREAD",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_MINIMARKET_DISPLAY_BREAD.png",
+      "sampledColorCount": 32,
+      "meanSampledSaturation": 0.37088691551052255,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_MINIMARKET_DISPLAY_FRUIT",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_MINIMARKET_DISPLAY_FRUIT.png",
+      "sampledColorCount": 16,
+      "meanSampledSaturation": 0.6444964982178994,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_MINIMARKET_SHELF_END",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_MINIMARKET_SHELF_END.png",
+      "sampledColorCount": 22,
+      "meanSampledSaturation": 0.29007455561785345,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_MINIMARKET_SHOPPING_BASKET",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_MINIMARKET_SHOPPING_BASKET.png",
+      "sampledColorCount": 9,
+      "meanSampledSaturation": 0.25265371009379556,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_BAG",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_BAG.png",
+      "sampledColorCount": 5,
+      "meanSampledSaturation": 0.44425152437041077,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_BARREL",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_BARREL.png",
+      "sampledColorCount": 22,
+      "meanSampledSaturation": 0.3743873492231807,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_CARROT",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_CARROT.png",
+      "sampledColorCount": 8,
+      "meanSampledSaturation": 0.6427595265712538,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_CUTTING_BOARD",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_CUTTING_BOARD.png",
+      "sampledColorCount": 4,
+      "meanSampledSaturation": 0.522176815442458,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_FISH",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_FISH.png",
+      "sampledColorCount": 20,
+      "meanSampledSaturation": 0.20021830606435928,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_LOAF",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_LOAF.png",
+      "sampledColorCount": 13,
+      "meanSampledSaturation": 0.5139285790538023,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_MUSHROOM",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_MUSHROOM.png",
+      "sampledColorCount": 6,
+      "meanSampledSaturation": 0.5584650277033473,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_PLATE",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_PLATE.png",
+      "sampledColorCount": 5,
+      "meanSampledSaturation": 0.056881235863606924,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_FOODKIT_POT",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_FOODKIT_POT.png",
+      "sampledColorCount": 6,
+      "meanSampledSaturation": 0.17078470344574057,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_MINIARCADE_ARCADE_MACHINE",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_MINIARCADE_ARCADE_MACHINE.png",
+      "sampledColorCount": 25,
+      "meanSampledSaturation": 0.317771743181949,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_MINIARCADE_PRIZES",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_MINIARCADE_PRIZES.png",
+      "sampledColorCount": 25,
+      "meanSampledSaturation": 0.3267401961365561,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUTEFISH_DOCK_LONG_NOROPE",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUTEFISH_DOCK_LONG_NOROPE.png",
+      "sampledColorCount": 2,
+      "meanSampledSaturation": 0.5358295816607898,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUTEFISH_FISHINGROD_LVL1",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUTEFISH_FISHINGROD_LVL1.png",
+      "sampledColorCount": 1,
+      "meanSampledSaturation": 0.607231302625062,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUTEFISH_KOI",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUTEFISH_KOI.png",
+      "sampledColorCount": 5,
+      "meanSampledSaturation": 0.2721153915268613,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUTEFISH_TUNA",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUTEFISH_TUNA.png",
+      "sampledColorCount": 5,
+      "meanSampledSaturation": 0.29479418628505694,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_BIRCHTREE_1",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_BIRCHTREE_1.png",
+      "sampledColorCount": 4,
+      "meanSampledSaturation": 0.3217772989490683,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_BUSH_1",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_BUSH_1.png",
+      "sampledColorCount": 1,
+      "meanSampledSaturation": 0.6066973079448457,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_COMMONTREE_1",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_COMMONTREE_1.png",
+      "sampledColorCount": 2,
+      "meanSampledSaturation": 0.608777038537498,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_FLOWERS",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_FLOWERS.png",
+      "sampledColorCount": 3,
+      "meanSampledSaturation": 0.78511934074352,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_GRASS_SHORT",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_GRASS_SHORT.png",
+      "sampledColorCount": 1,
+      "meanSampledSaturation": 0.6066973079448457,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_ROCK_1",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_ROCK_1.png",
+      "sampledColorCount": 1,
+      "meanSampledSaturation": 0.19459102902374675,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_WHEAT",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_WHEAT.png",
+      "sampledColorCount": 1,
+      "meanSampledSaturation": 0.7486607142857143,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_WOODLOG",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_ULTIMATENATURE_WOODLOG.png",
+      "sampledColorCount": 3,
+      "meanSampledSaturation": 0.4507218577097912,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CART",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUBEWORLDKIT_CART.png",
+      "sampledColorCount": 1,
+      "meanSampledSaturation": 0.0,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CHEST_CLOSED",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUBEWORLDKIT_CHEST_CLOSED.png",
+      "sampledColorCount": 3,
+      "meanSampledSaturation": 0.34876311395857423,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CHEST_OPEN",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUBEWORLDKIT_CHEST_OPEN.png",
+      "sampledColorCount": 3,
+      "meanSampledSaturation": 0.34876311395857423,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_AXE_STONE",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUBEWORLDKIT_AXE_STONE.png",
+      "sampledColorCount": 2,
+      "meanSampledSaturation": 0.2623978585517047,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_PICKAXE_STONE",
+      "preview": "Docs/AssetProvenance/Previews/PA_REF_CUBEWORLDKIT_PICKAXE_STONE.png",
+      "sampledColorCount": 2,
+      "meanSampledSaturation": 0.2623978585517047,
+      "colorMeasurement": "unique source material colors or UV vertex texture samples; excludes lighting, not screen pixels",
+      "sourceForward": "source orientation retained; contact-sheet camera looks from Blender -Y/+X/+Z",
+      "previewNormalization": "longest source extent = 2m for comparison; Unity uses per-item target height"
+    }
+  ],
+  "packedImageCount": 8,
+  "librarySha256": "1c446a916071b1997abc5917fcefab1e56102e431578b97b070f00a0f61ede09",
+  "renderEngine": "Cycles CPU, 16 samples",
+  "renderScope": "source look and shape review; final Unity day/night shadows remain ART-001"
+}

@@ -19,6 +19,14 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 
 ---
 
+## [BLOCKED] 2026-09-11 — P4-R2 정적 검사 스크립트의 UTF-8 읽기 실패
+
+- 증상: `python Logs/P4-R2/check_contract.py`가 50행의 `StarterWorksiteInteraction.cs.read_text()`에서 `UnicodeDecodeError: 'cp949' codec can't decode byte 0x80 in position 557`로 종료 1을 반환했다. C# 계약 assertion이나 Unity 실행 실패가 아니다.
+- 원인: 내가 작성한 검사 스크립트의 일부 `read_text()` 호출에 `encoding='utf-8'`을 빠뜨렸다. 앞선 메서드 비교·거래 순서 등 21 assertions는 예외 없이 진행했지만 최종 결과 파일 작성 전 중단되어 전체 정적 검사는 PASS가 아니다.
+- 시도: Runtime compile 오류 0/기존 CS8785 경고 1; Editor compile 오류 0/기존 CS8785·CS0414 경고 2. 신규 정책을 명시적으로 포함하는 `Logs/P4-R2/IncludePolicy.targets`를 사용했다. 검사 1회 실패 뒤 수정·재실행하지 않았다. 계획한 managed contract harness도 생성/실행 전 중단했다.
+- 중단 이유: AGENTS.md의 실패 시 기록·중단 규칙. 재개 시 검사 스크립트의 모든 UTF-8 읽기를 명시하고 정책 계약 검증 및 최종 diff 검토를 완료해야 한다. 기존 작업은 보존하며 P4-R2 완료/전체 P4 PASS로 판정하지 않는다.
+- 관련: `Logs/P4-R2/static-check-failure.txt`, `check_contract.py`, `runtime-compile.log`, `editor-compile.log`. Unity Play 0회, full opening 0회. SaveData/SaveManager·P3·씬·프리팹 무변경.
+
 ## [BLOCKED] 2026-07-17 — 직접 Camera.Render 검증 경로의 Unity 네이티브 렌더 크래시
 
 - 증상: `PA_ThemeCornerValidator` 첫 D3D11 Play Mode 실행이 빈 진열대 코너 0/월드 라벨 0 판정까지 통과한 뒤 첫 1920×1080 캡처의 `Camera.Render()`에서 Unity 프로세스 자체가 충돌했다. 관리 예외나 C# assertion 실패가 아니다.
@@ -455,3 +463,552 @@ AI가 작업 중 만난 버그, 2회 실패로 중단한 문제, 발견했지만
 - 시도한 것: 존재하지 않는 계획 경로 1회, 존재하지 않는 loop-state 경로 1회, 잘못된 wildcard 인자 1회. 같은 추측 경로와 wildcard 명령은 재사용하지 않았다.
 - 해결: `Get-ChildItem -Recurse -File -Filter`로 실제 경로를 한 번씩 확정한 뒤 루트 계획 문서와 `Automation/LoopEngineering/State/loop-state.json`을 명시 경로로 읽었다. 이후 검색은 확인된 개별 파일/디렉터리만 사용했다.
 - 영향: 모두 코드 수정 전후의 읽기 전용 조회 실패다. 씬·프리팹·에셋·저장·패키지·Unity 상태에는 영향이 없고, Task 131 Runtime/Editor 순차 빌드와 30/30 계약은 별도로 통과했다.
+
+## [RESOLVED] 2026-08-06 — WORLD-001 WorldGridDebugView 스크립트 자산명 불일치
+
+- 증상: `WorldSandbox` builder 직후의 같은 도메인 검사는 `WorldGridDebugView` 1개를 확인했지만, 첫 D3D11 validator 프로세스가 씬을 다시 연 뒤에는 `WorldGridService`만 남고 `WorldGridDebugView` 수가 0이어서 Play Mode 진입 전에 중단됐다.
+- 원인: 12경로 상한을 지키려고 두 `MonoBehaviour`를 `WorldGridService.cs` 한 파일에 함께 선언했다. Unity 씬 재로드에 필요한 스크립트 자산명과 `WorldGridDebugView` 클래스명이 일치하지 않아, 같은 도메인의 `AddComponent<T>`는 성공해도 다음 Editor 프로세스에서 해당 컴포넌트를 복원할 수 없었다.
+- 시도한 것: builder 1회 PASS 뒤 전용 validator 1회 실패. 좌표/데이터 검사는 시작 전이었고 기존 씬·저장·Packages·ProjectSettings는 변경되지 않았다.
+- 복구 계획: 이미 만든 Editor 도구 파일과 `.meta`를 `Assets/Scripts/World/WorldGridDebugView.cs`로 이동해 GUID를 재사용하고, 실제 컴포넌트 이름과 파일명을 맞춘다. debug 구현은 공통 base에 두며 Editor 도구는 같은 파일의 `UNITY_EDITOR` 구간에 유지한다. WorldSandbox만 builder로 다시 저장한 뒤 전용 validator를 한 번만 재실행한다.
+- 중단 조건: 같은 `WorldGridDebugView` 재로드 실패가 반복되면 세 번째 실행 없이 중단한다.
+- 복구 진행: 파일명/GUID 복구 후 builder는 재로드 가능한 `WorldGridDebugView` 1개와 Missing Script/Reference 0으로 PASS했다. 다음 validator는 해당 원인이 아니라 기존 `PA_RuntimeSceneBinder`가 Play Mode에서 전역 서비스 root를 만드는 동안 runtime root도 정확히 3개라고 가정한 validator 계약 때문에 멈췄다. Edit Mode의 authored root 3개/manager 0 계약은 유지하고, Play Mode는 필수 root 보존·동일 manager 중복 0·Shop/NPC instance 0을 검사하도록 분리한다.
+- 해결: 수정된 계약으로 `WorldSandbox`를 다시 열어 D3D11 Play Mode 검증을 완료했다. authored root 3개, `WorldGridDebugView` 1개, Missing Script/Reference 0, runtime 전역 manager 중복 0, Shop/NPC instance 0을 확인했고 256셀·10,000회 좌표 왕복·경계·chunk·읽기 전용·debug geometry 검사가 모두 PASS했다. 최종 로그는 `Logs/WORLD001_Validation_Final.log`이며 blocking Console Error/Exception/Assert와 신규 crash는 0이다.
+
+## [RESOLVED] 2026-08-06 — WORLD-002 합성 Chunk seam 검사 범위 오류
+
+- 증상: 첫 D3D11 WORLD-002 validator에서 단일 Chunk의 256 top face, 280 cliff face, winding/normal/index, 결정론 checksum까지 통과한 뒤 합성 2-Chunk seam의 `17개` 기대 검사만 실패했다.
+- 원인: 경계 X 좌표의 모든 정점을 모아 상면 17개뿐 아니라 월드 남·북 외곽 cliff cap의 동일한 아래쪽 정점까지 포함했다. 두 Chunk의 경계 위치 집합은 같은 방식으로 생성되지만 검사 수량의 범위가 상면 seam 계약보다 넓었다.
+- 시도한 것: 구현/씬을 바꾸지 않고 첫 validator를 중단했다. 로그는 `Logs/WORLD002_Validation.log`이며 Unity native crash, compile error, scene/save/package 변경은 없다.
+- 복구 계획: 합성 평면의 권위 높이 2m에 있는 상면 경계 정점만 모아 Z=-1..31의 17개 위치와 양쪽 집합 동일성을 검사한다. 수정 뒤 같은 validator는 한 번만 재실행한다.
+- 중단 조건: 같은 상면 seam 불일치가 반복되면 세 번째 실행 없이 WORLD-002를 중단한다.
+- 해결: 상면 경계 높이로 한정한 두 번째 D3D11 검사에서 두 Chunk의 17개 경계 위치가 정확히 일치했다. 최종 WORLD-002 Edit/Play Mode 검증도 top face 256, cliff face 280, checksum `ADF9201BC8265BC5`, blocking Console 0으로 통과했다. 증거는 `Logs/WORLD002_Validation_Final.log`에 남겼다.
+
+## [RESOLVED] 2026-08-06 — WORLD-001 회귀 검증 배치 진입점 이름 오기
+
+- 증상: WORLD-002 완료 직전 WORLD-001 D3D11 회귀 명령이 `executeMethod method 'RunWorldSandboxValidation' ... could not be found`로 검증 본문 진입 전에 종료됐다.
+- 원인: 실제 공개 진입점 `PA_WorldSandboxTools.RunValidation` 대신 존재하지 않는 메서드 이름을 명령 인자로 전달했다.
+- 영향: Unity 스크립트 컴파일은 오류 0으로 끝났고 코드·씬·에셋은 변경되지 않았다. 기능 실패나 회귀 결과가 아니다.
+- 해결: 잘못된 명령을 재사용하지 않고 실제 공개 진입점으로 한 번만 다시 실행해 D3D11 회귀 결과를 확정한다. 같은 진입 오류가 반복되면 세 번째 실행 없이 중단한다.
+- 최종 결과: `PA_WorldSandboxTools.RunValidation` 재실행에서 Edit/Play 검증, 256셀 결정성, 10,000회 좌표 왕복, debug mesh, blocking Console 0이 모두 통과했다. 증거는 `Logs/WORLD002_WORLD001_Regression_Final.log`에 남겼다.
+
+## [RESOLVED] 2026-08-06 — WORLD-004 validator 지역 변수 definite-assignment 컴파일 오류
+
+- 증상: WORLD-004 구현 뒤 첫 Runtime compile에서 `WorldChunkTerrain.cs`의 validator가 `CS0165: 할당되지 않은 'pond' 지역 변수를 사용했습니다` 한 건으로 중단됐다.
+- 원인: `Require(water.Succeeded && TryGetCell(..., out pond) && ...)` 조건식에서 할당한 지역 변수를 다음 `Require`에서도 사용했으나, C# 컴파일러는 사용자 정의 `Require`의 성공이 해당 `out` 할당을 보장한다고 추론하지 않는다.
+- 영향: validator 표현 한 곳의 컴파일 문제이며 surface transaction, mesh, scene, Save, Package, ProjectSettings에는 실행 또는 변경 영향이 없다. Unity는 아직 실행하지 않았다.
+- 해결: `WorldCellData pond`를 조건식 전에 명시 선언해 definite-assignment를 보장하고 같은 순차 Runtime/Editor compile을 한 번만 다시 실행한다. 동일 오류가 반복되면 세 번째 시도 없이 중단한다.
+- 복구 실패 및 중단: 선언을 조건식 앞으로 옮겼지만 초기값을 주지 않아 컴파일러의 definite-assignment 판정은 달라지지 않았고, 두 번째 Runtime compile도 같은 `CS0165`로 중단됐다. 규칙에 따라 세 번째 compile과 추가 구현을 수행하지 않는다.
+- 다음 재개 지점: 새 continuation에서 먼저 `WorldCellData pond = default;`로 초기화하거나 `TryGetCell` 성공 검사를 별도 문장으로 분리한 뒤, Runtime compile을 1회만 실행한다. 통과하기 전에는 Editor compile, Unity D3D11 validator, WORLD-004 완료 문서, 로컬 commit, WORLD-005를 시작하지 않는다.
+- 최종 결과: 새 continuation에서 `pond`를 `default`로 초기화하고 물 편집 성공·셀 조회·water invariant 검사를 별도 문장으로 분리했다. 이어서 Runtime/Editor 순차 compile이 모두 오류 0으로 통과했으며 기존 `CS8785`와 Editor `CS0414` 경고만 유지됐다.
+
+## [RESOLVED] 2026-08-06 — WORLD-004 water collider validator의 vertex 순서 가정 오류
+
+- 증상: 첫 D3D11 WORLD-004 검증에서 물 셀 생성, shoreline 및 전용 water material slot은 통과했으나 `water geometry is excluded from terrain collider triangle streams` 계약이 실패했다.
+- 원인: validator가 모든 terrain collider index가 `WaterIndices.Min()`보다 작아야 한다고 가정했다. 그러나 물 셀이 Chunk 순회 초반에 있으면 그 뒤 생성되는 정상 지면·절벽 vertex index는 첫 water vertex보다 커지므로, 실제 collider 포함 여부와 관계없이 실패한다.
+- 영향: 실패 지점은 Edit Mode validator의 검증식이다. 생성기는 물 triangle을 `WaterIndices`에만 추가하고 collider mesh는 `TopIndices`와 `CliffIndices`만 사용하지만, Play Mode raycast 증거까지는 아직 도달하지 못했다.
+- 복구 계획: 물 전용 vertex index 집합과 `TopIndices`/`CliffIndices`의 교집합이 비어 있는지 직접 검사한다. 같은 D3D11 validator를 한 번만 재실행하고, 동일 계약이 다시 실패하면 추가 시도 없이 중단한다.
+- 최종 결과: `WaterIndices`의 vertex 집합과 `TopIndices`/`CliffIndices`의 교집합이 비어 있는지 직접 검사하도록 수정했다. 두 compile이 오류 0으로 통과했고, 두 번째 D3D11 실행은 `EDIT_MODE_PASS`, `PLAY_MODE_PASS`, `FINISHED_PASS ground=4 path=2 water=true shoreline=true walkability=true rollback=true`로 완료됐다. collider raycast는 수면이 아니라 terrain bed를 맞았으며 blocking 예외와 새 crash는 0이었다.
+
+## [RESOLVED] 2026-08-10 — WORLD-005 scene-local MonoScript 직렬화
+
+- 증상: 첫 Editor builder 저장에서 placement service와 debug controller가 asset GUID 대신 scene-local `MonoScript` 객체를 참조했다.
+- 원인: attachable MonoBehaviour 두 개가 클래스명과 일치하지 않는 하나의 `WorldBuildingPlacement.cs`에 함께 있었다.
+- 영향: 첫 builder는 기능 코드를 정상 compile했지만 GUID/meta 장기 안정성 기준을 만족하지 못했다. Prototype_FirstDay, MainGame, prefab, Save, Packages, ProjectSettings에는 영향이 없었다.
+- 해결: service와 controller를 각각 클래스명과 일치하는 파일로 분리하고 meta GUID를 고정한 뒤 Editor builder가 두 컴포넌트를 재부착했다. 최종 WorldSandbox는 direct GUID reference 2개, embedded MonoScript 0, authored root 3이며 전체 validator와 회귀가 통과했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-002 회귀 executeMethod 클래스명 오기
+
+- 증상: WORLD-005 회귀 묶음 중 WORLD-002 명령이 `PA_WorldTerrainTools` 클래스를 찾지 못해 validator 본문 진입 전에 종료됐다.
+- 원인: 실제 공개 진입점 `PA_WorldChunkTerrainTools.RunTerrainValidationBatch` 대신 존재하지 않는 클래스명을 전달했다.
+- 영향: compile/validator 구현 실패가 아니며 코드·씬·에셋 변경 및 crash는 0이었다. 뒤의 WORLD-001 명령은 같은 shell이 중단되어 별도로 실행했다.
+- 해결: 잘못된 명령을 반복하지 않고 실제 선언을 확인한 뒤 올바른 진입점으로 한 번 실행했다. `Logs/WORLD005_WORLD002_Regression_Rerun.log`는 Edit/Play 및 blocking Console 0으로 `FINISHED_PASS`했고 WORLD-001도 이어서 PASS했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-006B 고정 판매대 이동 취소 Transform 스냅
+
+- 증상: 첫 D3D11 WORLD-006B validator에서 보호 셀 거부와 원자성까지 통과했지만, 실제 배치 장부의 `가까운 가구 이동`을 연 뒤 닫았을 때 판매대가 제작된 시작 Transform과 정확히 일치하지 않았다. 셀·회전 record는 그대로였다.
+- 원인: `CancelActivePlacement`가 이동 시작 Transform을 보존하지 않고 `anchor`와 `rotation`에서 셀 중심 Transform을 다시 계산했다. 최초 배치가 grandfather된 고정 판매대처럼 제작 오프셋을 가진 경우 취소가 같은 셀 안에서 시각적 스냅을 만들었다.
+- 영향: Play Mode 런타임 검증에서만 발생했고 씬은 저장되지 않았다. 재고, `ShopSlot`, 점유 record, SaveData, Packages, ProjectSettings에는 손상이 없으며 신규 crash도 없다.
+- 복구: 이동 시작 시 실제 world position/rotation을 캡처하고, 취소 시 해당 Transform을 정확히 복원하는 최소 수정만 적용한다. 컴파일 뒤 같은 validator를 한 번만 재실행하며 동일 실패가 반복되면 세 번째 시도 없이 중단한다.
+- 최종 결과: 수정 뒤 D3D11 검증에서 실제 배치 장부의 이동 취소가 authored 시작 위치·회전을 정확히 복원했다. 이어서 이동·270° 회전, 고객 완전 경로, 146G 판매, v10 배치 투영과 세 회귀가 모두 PASS했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-006B validator의 ShopSlot 단일 수량 판매 가정
+
+- 증상: 취소 복원 수정 뒤 validator는 고객의 완전 NavMesh 경로까지 통과했고 실제 판매 로그도 `BreadLoaf +146G`를 남겼지만, 검증기는 판매 실패로 판정했다.
+- 원인: 실제 `ShopSlot.TryPurchaseByNpc`는 진열된 스택 전체를 한 번에 판매한다. 검증기는 2개 × 73G 중 한 개만 팔려 73G와 잔여 1개가 남는다고 잘못 가정했다.
+- 영향: 판매·경제·통계 기능은 정상 작동했고 EconomyService 잔액은 500G→646G로 증가했다. 실패는 validator assertion 하나뿐이며 씬·저장·패키지에는 영향이 없다.
+- 해결: 기존 스택 전체 판매 계약에 맞춰 146G 입금과 빈 슬롯을 검사한다. 이는 구현 수정이 아닌 명백한 validator 가정 정정이며, 해당 원인으로는 한 번만 재실행한다.
+
+## [RESOLVED] 2026-08-10 — WORLD-007 격리 repository fixture 디렉터리 누락
+
+- 증상: 첫 D3D11 WORLD-007 validator가 v10→v11, 128×128 seed, 4개 sparse edit, B09와 resource capture까지 통과한 뒤 `Logs/WorldPersistence/<timestamp>/world007.json` 쓰기에서 `DirectoryNotFoundException`으로 중단됐다.
+- 원인: custom-root `LocalJsonSaveRepository`는 전달된 root가 이미 존재한다는 기존 계약인데 validator가 timestamp 디렉터리를 만들지 않았다.
+- 영향: 격리 증거 파일이 생성되기 전의 fixture 실패다. 프로덕션 persistentDataPath, 저장 파일, live Scene/Prefab/Packages/ProjectSettings와 기존 사용자 저장에는 영향이 없고 crash도 없다.
+- 복구: validator가 custom repository를 만들기 직전에 해당 격리 디렉터리를 생성한다. 구현 저장 경로는 바꾸지 않으며 같은 validator를 한 번만 재실행한다.
+- 확인: `Logs/WORLD007_Validation_Pass.log`에서 격리 JSON 저장·로드와 전체 WORLD-007 검증이 PASS했다. 프로덕션 repository 계약 변경은 없다.
+
+## [RESOLVED] 2026-08-10 — WORLD-007 dry terraform waterSurface 불변식 불일치
+
+- 증상: repository JSON 왕복까지 통과한 두 번째 WORLD-007 실행에서 높이를 0→1로 올린 dry cell `(59,13)`이 `waterDepthLevels=0`, `waterSurfaceLevel=0`으로 저장되어 restore preflight에 거부됐다.
+- 원인: `WorldCellData.WithElevationLevel`이 dry cell에서도 이전 `WaterSurfaceLevel`을 복사했다. 기존 생성자와 snapshot 계약은 물 없는 셀의 `waterSurfaceLevel == elevationLevel`을 요구한다.
+- 영향: 잘못된 delta는 live world 적용 전에 거부되어 복원 상태나 사용자 저장 손상은 없다. 물 셀 terraform은 기존 preflight가 계속 차단한다.
+- 복구: dry cell의 높이를 바꿀 때만 water surface sentinel을 새 elevation과 동기화한다. 실제 물이 있는 셀은 기존 값을 유지하며, 이 원인으로 validator를 한 번만 재실행한다.
+- 확인: `Logs/WORLD007_Validation_Pass.log`에서 높이·지면·길·물 4개 sparse delta의 repository round-trip과 오염 payload 사전 거부가 PASS했다.
+
+## [RESOLVED] 2026-08-10 — WORLD-008 신규 validator C# definite-assignment/import 충돌
+
+- 증상: 첫 D3D11 compile에서 신규 `WorldNavigationService.cs`만 `Debug` 이름 충돌과 short-circuit `out` 변수 definite-assignment 오류로 중단됐다.
+- 원인: `System.Diagnostics` 전체 import가 `UnityEngine.Debug`와 충돌했고, 조건식 뒤에서 사용하는 `level`/`destinationHit`을 조건 내부에서 선언해 C# 컴파일러가 항상 할당된 것으로 증명할 수 없었다.
+- 영향: 새 WORLD-008 assembly가 생성되기 전의 정적 오류다. Scene·Prefab·Packages·ProjectSettings·SaveData와 기존 런타임 상태에는 변화가 없고 Unity native crash도 없다.
+- 복구: `Stopwatch`만 alias하고 `out` 변수를 조건식 전에 초기화한다. 기능 설계나 API는 바꾸지 않으며 이 원인에 대한 컴파일 재시도는 한 번만 수행한다.
+- 확인: `Logs/WORLD008_Compile_Retry.log`와 강화된 `Logs/WORLD008_Strengthened_Compile.log`가 Runtime/Editor compile 오류 0으로 종료됐고, `Logs/WORLD008_Validation_Final.log`도 전체 PASS했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 validator 두 번째 채집 사유 definite-assignment
+
+- 증상: WORLD-009 첫 D3D11 compile에서 `WorldGameplayAdapterService.cs` validator의 `gatherReasonB`가 `CS0165`로 중단됐다.
+- 원인: 두 번의 `TryGatherNext`를 `&&`로 연결한 조건 안에서 두 번째 `out` 변수를 선언한 뒤 Require 메시지에서 사용해, 첫 호출 실패 시 두 번째 호출이 실행되지 않는 단락 평가를 컴파일러가 정확히 감지했다.
+- 영향: 신규 validator assembly 생성 전의 정적 오류다. 런타임 adapter, Scene, Prefab, Packages, ProjectSettings, SaveData와 사용자 저장에는 실행 또는 변경 영향이 없고 Unity native crash도 없다.
+- 복구: 두 채집 호출을 별도 bool 문장으로 평가한 뒤 결과를 함께 검증한다. 기능/API를 바꾸지 않으며 같은 D3D11 validator는 한 번만 재실행한다. 동일 오류가 반복되면 추가 구현 없이 중단한다.
+- 확인: 두 호출을 별도 문장으로 분리한 재시도에서 Runtime/Editor compile과 WORLD-009 Edit Mode 계약이 오류 0으로 통과했다. 다음 중단은 이 원인이 아니라 기존 `PA_RuntimeSceneBinder` 전역 권위와 신규 어댑터 권위 수량 계약의 통합 문제였다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 기존 RuntimeSceneBinder 권위 중복 생성
+
+- 증상: WORLD-009 첫 Play Mode 검증에서 D3D11과 adapter Ready는 통과했지만 Economy/GameClock/DayNight/Save/ItemRegistry를 각 1개만 유지한다는 수량 계약이 실패했다.
+- 원인: 모든 씬에서 먼저 실행되는 기존 `PA_RuntimeSceneBinder`가 `[Services]`에 전역 권위를 이미 제공하는데, 초기 adapter 구현이 별도 비활성 runtime root에 같은 컴포넌트를 추가했다. 활성화 시 일부 singleton은 지연 파괴되고 `SaveManager`처럼 자체 중복 방어가 없는 타입은 그대로 중복됐다.
+- 영향: validator가 자원·제작·판매를 시작하기 전에 중단됐다. 격리 repository 주입 전이므로 사용자 저장 영향은 없고 Scene/Prefab/Packages/ProjectSettings/SaveData 변경 및 Unity native crash도 없다.
+- 복구: adapter는 `PA_RuntimeSceneBinder`가 만든 기존 권위를 조회·채택하고, generated runtime root에는 Player Inventory와 B01/B05 기능 인스턴스만 둔다. 수량 진단을 assertion에 포함하고 같은 Play Mode 경로를 한 번 검증한다.
+- 확인: 수정 후 Economy/GameClock/DayNight/Save는 모두 정확히 1개로 확인되어 별도 manager stack 중복이 해소됐다. 남은 `Inventory=0` 표시는 실제 파괴가 아니라 `HideFlags.DontSave` 런타임 증거를 제외하는 validator 조회 API 문제로 분리됐다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 DontSave Player Inventory 조회 누락
+
+- 증상: 기존 전역 권위 채택 수정 후 수량 진단은 `adapter=1, inventory=0, economy=1, clock=1, loop=1, save=1`로 종료됐다.
+- 원인: player와 gameplay runtime root는 scene YAML 오염 방지를 위해 `HideFlags.DontSave`다. validator가 사용한 `Object.FindObjectsByType<Inventory>`는 이 객체를 결과에서 제외했지만 adapter의 직접 참조와 `Inventory.instance`는 정상 활성 상태였다.
+- 영향: 수량 assertion 이전까지 adapter Ready와 기존 전역 권위 단일화는 통과했다. 자원/제작/판매와 저장은 아직 실행 전이며 사용자 저장, Scene, Prefab, Packages, ProjectSettings, SaveData 영향 및 crash는 없다.
+- 복구: `Resources.FindObjectsOfTypeAll<Inventory>` 결과를 유효하고 로드된 scene 객체로 제한해 DontSave runtime inventory를 세고, 그 하나가 `Inventory.instance`와 adapter의 PlayerInventory에 동일한지 함께 검증한다. 프로덕션 로직은 변경하지 않는다.
+- 확인: `Logs/WORLD009_Validation_DontSaveFix.log`에서 adapter/player/B01/B05 권위, Timber 2회 채집, Plank 제작·진열, NpcController 이동·구매, Economy 수익, 격리 SaveManager 저장, 재시작 상태 변조, seed/resource/inventory/clock/shop/economy 복원이 모두 PASS했다. blocking Console Error/Exception/Assert와 신규 crash는 0이다.
+
+## [RESOLVED] 2026-08-11 — WORLD-001 회귀의 runtime Light 1개 구가정
+
+- 증상: WORLD-009 전용 validator와 WORLD-007/008, CraftingRecipeCard, CustomerArrival, FinalDemoRoute 회귀 통과 후 WORLD-001 회귀가 Play Mode의 `scene has exactly one Light`에서 중단됐다. Edit Mode authored scene의 Light 1개, Missing Script/Reference 0 계약은 이미 통과했다.
+- 원인: WORLD-001 당시 WorldSandbox에는 gameplay instance가 없었지만, WORLD-009가 실제 B01/B05 기능 프리팹을 runtime-only root에 연결하면서 해당 기능 에셋의 보조 Light가 함께 활성화됐다. validator가 authored light와 승인된 runtime helper light를 구분하지 않았다.
+- 영향: 첫 WORLD-001 runtime assertion 단계의 구계약 실패다. WorldGrid와 adapter 전용 검증은 정상이며 Scene YAML, Prefab, Packages, ProjectSettings, SaveData, 사용자 저장 및 crash 영향은 없다.
+- 복구: Edit Mode는 정확히 Light 1개를 계속 요구한다. Play Mode는 authored `Directional Light` root의 Directional Light 1개를 유지하면서 추가 Light가 오직 `WorldGameplay_Runtime` 아래에만 있는지 검사한다. 무관한 runtime light는 계속 거부한다.
+- 확인: 수정 후 같은 회귀에서 authored Directional Light 1개와 adapter-local helper Light 1개만 존재하는 계약이 PASS했다. 다음 중단은 Light가 아니라 WORLD-009 이후에도 runtime grid가 16×16일 것이라는 별도의 구가정이었다.
+
+## [RESOLVED] 2026-08-11 — WORLD-001 회귀의 runtime 16×16 fixture 구가정
+
+- 증상: Light 계약 수정 후 WORLD-001 회귀가 Play Mode grid `128×128`을 발견하고 `16×16` 기대에서 중단됐다. Edit Mode의 authored 16×16 fixture 검증은 전체 PASS했다.
+- 원인: WORLD-001은 authored fixture와 Play Mode authority가 동일한 시절의 validator다. WORLD-009 adapter는 승인된 deterministic seed 9009의 provisional 128×128 결과를 실제 `WorldGridService`에 설치하므로 runtime 크기·지면/물/길 구성·chunk 수·checksum이 의도적으로 달라진다.
+- 영향: generated gameplay adapter의 정상 부트 이후 stale assertion만 실패했다. 전용 WORLD-009와 WORLD-007/008 및 Golden gameplay 회귀는 PASS이며 Scene/Prefab/Packages/ProjectSettings/SaveData/사용자 저장과 crash 영향은 없다.
+- 복구: Edit Mode는 기존 16×16, 256셀, 단일 chunk checksum 계약을 그대로 유지한다. 승인 adapter가 Ready인 Play Mode는 128×128, 16,384셀, 8×8 chunk 좌표, 유효 surface enum, deterministic seed 9009 checksum을 검증하고 이후 프레임 안정성은 runtime checksum끼리 비교한다.
+- 확인: WORLD-009 회귀에서 authored fixture와 generated runtime 권위를 분리한 뒤 PASS했고, WORLD-010은 같은 128×128 grid를 64개 visible chunk로 투영해 restart 후에도 유지했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-010 컴파일 definite-assignment 오류 2건
+
+- 증상: 첫 컴파일에서 `WorldAlphaPlayableController`의 `out reason`, 세 번째 컴파일에서 validator의 `gatherB`/`fishReason`이 `CS0165`로 중단됐다.
+- 원인: null 검사와 `out` 호출을 `&&` short-circuit 식으로 결합한 뒤 해당 지역 변수를 실패 메시지에서 사용했다.
+- 영향: 새 WORLD-010 assembly가 생성되기 전의 정적 오류였다. Scene/Prefab/Packages/ProjectSettings/SaveData와 런타임 상태에는 영향이 없고 native crash도 없었다.
+- 해결: 모든 `out` 값을 조건문 전에 초기화하고 호출 결과를 별도 bool 문장으로 평가했다. `Logs/WORLD010_Compile_04.log`, `Logs/WORLD010_Compile_05.log`에서 Runtime/Editor compile 오류 0을 확인했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-010 validator의 가짜 scene restart
+
+- 증상: 첫 M70 검증은 save 전 단계까지 통과했지만 `SceneManager.LoadScene` 직후 새 `WorldAlphaPlayableController`를 찾지 못해 중단됐다.
+- 원인: 같은 Play Mode 안의 scene reload는 프로젝트 전역 `RuntimeInitializeOnLoadMethod` 조립을 다시 수행하지 않는다. validator가 이를 실제 Play Mode restart와 같은 계약으로 잘못 취급했다.
+- 영향: production save/load나 runtime 조립 결함이 아니라 검증 절차의 restart 모델 오류였다. 저장 파일은 격리된 `Logs/WorldAlpha/<timestamp>` 아래에만 생성됐고 신규 crash는 없었다.
+- 해결: validator가 실제로 Play Mode를 종료하고 저장된 깨끗한 WorldSandbox를 다시 연 뒤 Play Mode에 재진입하도록 변경했다. `Logs/WORLD010_M70_Validation_02.log`에서 save→exit→re-enter→load와 v11 checksum까지 PASS했다.
+
+## [RESOLVED] 2026-08-11 — DayNightShopLoop Golden validator의 비판매 Seed 선택
+
+- 증상: 첫 Golden DayNightShopLoop 실행은 실제 판매 가능한 준비 지점이 존재하는데도 sellable inventory 기대값에서 실패했다.
+- 원인: validator가 sellable Fish/Wheat/Ore와 non-sellable Seed가 섞인 목록에서 임의의 첫 두 지점을 골랐다. Seed를 수집한 뒤에도 두 항목 모두 판매 가능하다고 가정했다.
+- 영향: 실제 낮 준비·판매 기능의 회귀가 아니라 비결정적인 validator fixture 선택 문제였다.
+- 해결: 기존 ShopSlot 계약에 맞춰 sellable 준비 지점을 우선 정렬하고 두 개가 존재하는지 명시적으로 검증했다. `Logs/WORLD010_Golden_DayNightShopLoop_02.log`에서 `sellableInventory=20`으로 PASS했다.
+
+## [RESOLVED] 2026-08-11 — WORLD-009 회귀 checksum의 B01 가구 누락
+
+- 증상: M70에서 B01 판매대를 이동·저장하도록 연결한 뒤 첫 WORLD-009 회귀가 restore checksum 기대값에서만 실패했다.
+- 원인: 구 validator의 기대 checksum은 terrain/building/resource만 캡처하고, 이제 기존 `PlaceableSaveData`로 투영되는 B01 판매대 가구 record를 포함하지 않았다.
+- 영향: 실제 restore 결과는 정상이며 검증 기대값만 오래된 상태였다. SaveData schema는 v11 그대로다.
+- 해결: 기대 checksum도 실제 adapter capture를 사용하도록 정합했다. `Logs/WORLD010_Regression_WORLD009_02.log`에서 seed/resource/inventory/clock/shop/economy/furniture restore와 Console 0이 PASS했다.
+
+## [RESOLVED] 2026-08-11 — 승인된 M70 범위에서 blocked → active → blocked 반복
+
+- 증상: WORLD bounded ticket 완료 뒤 다음 사람 메시지를 요구하는 기본 규칙이 이미 선승인된 M70 연속 범위에도 적용되어 동일한 `next ticket required` blocker가 반복됐다.
+- 원인: bounded-ticket 기본 게이트는 있었지만, 사람이 milestone과 ticket sequence를 명시적으로 선승인한 경우를 표현하고 소비하는 제한적 정책 예외가 없었다.
+- 해결: `PREAPPROVED_MILESTONE_CONTINUATION`을 추가했다. loop-state에 승인 범위가 기록되고 다음 ticket이 그 범위 안에 있을 때만 한 번에 하나씩 검증·로컬 커밋 후 자동 전환하며, 동일 blocker는 한 번만 기록한다.
+- 안전 경계: M70은 `WORLD-005`, `WORLD-006`, `WORLD-006B`, `WORLD-007`, `WORLD-008`, `WORLD-009`, `WORLD-010`만 승인한다. hard blocker, D3D11/crash, Git 안전 규칙은 유지하고 WORLD-010 또는 `M70_PLAYABLE_WORLD_ALPHA_COMPLETE`에서 중단한다.
+- 현재 상태: 기준 commit `e0b5678`에서 위 sequence가 이미 완료됐으므로 재실행하지 않았다. `nextTicket=null`, completion reached로 기록했고 WORLD-011/MainGame은 새 사람 승인 대상이다.
+
+## [RESOLVED] 2026-08-11 — BETA-003 workbench 전환 validator의 deferred card destruction
+
+- 증상: `Logs/BETA003_D3D11_Validation.log`와 `Logs/BETA003_D3D11_Validation_Retry.log`에서 B05/B06/B07 런타임 배치, D3D11, walkable cell, 시설 간격, 역할 표지, Kitchen 카드 3개의 활성·크기·viewport·재료 부족 표시까지 PASS한 뒤 Forge 카드 수가 5개로 집계되어 중단됐다.
+- 원인: `CraftingUI.GenerateSlotsForContext`는 이전 카드를 Play Mode의 지연 `Destroy`로 제거하고 새 카드를 같은 프레임에 만든다. validator가 Forge 컨텍스트를 연 그 프레임에 Kitchen 카드 3개와 Forge 카드 2개를 함께 세었다. 첫 재시도는 Kitchen 검증과 Forge 열기 사이에 프레임을 두었지만, 실제 제거 예약은 Forge를 여는 시점에 발생하므로 같은 원인이 반복됐다.
+- 영향: 실제 제작·품질·가격·B01 판매 assertion에 도달하기 전의 validator 순서 문제다. Runtime/Editor 정적 컴파일은 오류 0이며 Scene/Prefab/Packages/ProjectSettings/Save schema 변경, 사용자 저장 영향, native crash는 없다. BETA-003은 완료 또는 커밋되지 않았고 M85 다음 티켓도 시작하지 않았다.
+- 중단: 프로젝트 규칙의 동일 원인 2회 실패 후 세 번째 시도 금지에 따라 이 세션에서는 추가 Unity 실행을 하지 않는다.
+- 권장 다음 조치: 새 세션에서 Forge를 한 번 연 뒤 최소 한 프레임을 기다리고 카드 수를 검사하도록 validator stage를 분리한다. 프로덕션 UI 로직을 변경할 필요는 없다. 그 후 BETA-003 D3D11 통합 검증을 1회 수행하고, 통과할 때만 회귀·문서·로컬 티켓 커밋으로 진행한다.
+- 사람 승인 및 해결: 2026-08-12 사람이 stage 최소 수정과 세 번째 격리 D3D11 실행을 명시적으로 승인했다. Kitchen·Forge·Basic 각 컨텍스트를 연 뒤 다음 validator stage/frame에서 검사하도록 분리했다. `Logs/BETA003_D3D11_Validation_ThirdApproved.log`에서 카드 수 3/2/2, 재료 부족 무차감·무지급, 5개 실제 제작, 품질·가격, B01 진열·판매와 Console 0이 PASS했다. 네 번째 재시도는 필요하지 않았다.
+
+## [HARD_BLOCKER] 2026-08-12 — BETA-005 짧은 고객 방문의 성향 패널 관찰 프레임 누락
+
+- 증상: `Logs/BETA005_D3D11_Validation.log`와 `Logs/BETA005_D3D11_Validation_Final.log`가 모두 Miner/Tailor 실데이터, D3D11, 고가 Miner 방문 시작과 월드/HUD 성향 표시를 PASS한 뒤 `the visible Miner preference remains readable during the actual visit` assertion에서 중단됐다.
+- 확인된 실제 경로: 두 실행 모두 `Miner_01`이 Plank 250G를 `PurchaseEvaluator`로 평가해 `p=0.00`, PASS(보류) 결정을 냈고 `SalesLogManager`가 Day 2 보류 1건을 기록했다. native crash, Scene/Prefab/Packages/ProjectSettings/Save schema 변경은 없다.
+- 원인: validator가 stage 전환마다 처음 3번의 Editor update를 일괄 건너뛴다. WorldSandbox의 짧은 고객 이동·평가가 그 사이 완료되어, 실제로 갱신된 `CustomerPreferencePresentationController`를 validator가 non-idle 프레임에 샘플링하지 못했다. 고객 속도/구경 시간과 FSM 시작 직후 명시 refresh 보정 후에도 같은 validator 관찰 assertion이 반복됐다.
+- 영향: BETA-005의 두 번째 Tailor 저가 구매와 최종 구매/거절 통합 assertion에는 도달하지 못했다. 구현은 미커밋 상태로 보존하며 BETA-006은 시작하지 않는다.
+- 중단: 동일 원인 2회 실패 규칙에 따라 세 번째 BETA-005 D3D11 실행과 추가 validator 수정은 금지한다. BETA-005는 `BETA_005_HARD_BLOCKER`다.
+- 최소 후속 조치: 사람 승인 후 validator의 전역 `frames < 4` 대기를 초기 부트 stage에만 적용하거나 stage 1/2에서는 첫 update부터 `ObservePreference`를 실행하도록 순서만 고친 뒤 D3D11을 1회 실행한다. assertion 삭제·경고화·하드코딩·프로덕션 권위 변경은 하지 않는다.
+- 승인 실행 결과(2026-08-13): 전역 frame skip을 bootstrap stage 0에만 제한하고 승인된 추가 D3D11 1회를 실행했다. 카테고리 반응을 포함한 stage 0 assertion과 실제 Miner 250G 보류/SalesLog 기록은 PASS했지만, 첫 stage 1 Editor callback 전에 실제 방문이 완료되어 동일 가시성 assertion이 세 번째로 실패했다.
+- 현재 판정: `HARD_BLOCKER_BETA_005_VALIDATION`. 승인된 실행 횟수를 모두 소비했으므로 네 번째 실행과 추가 수정을 하지 않는다. 다음 최소 후보는 `TryBeginCustomerVisit` 직후 같은 stage에서 실제 live preference UI를 동기 표본화하는 것으로, 새 사람 승인 대상이다.
+
+## [HARD_BLOCKER] 2026-08-20 — BETA-005 승인 실행 전 Unity Editor 라이선스 부재
+
+- 증상: `Logs/BETA005_D3D11_Validation_SynchronousPreference.log`에서 Unity 6000.3.2f1이 `No valid Unity Editor license found`를 기록하고 return code 198로 종료했다.
+- 범위: project load, GfxDevice/D3D11 초기화, `PA_Beta005CustomerStrategyValidator` executeMethod, Play Mode가 모두 시작되지 않았다. 로그의 `[BETA-005]`와 graphics 초기화 표식은 각각 0건이다.
+- 사전 결과: 동기 live-HUD 표본 수정은 Runtime/Editor `dotnet build` 오류 0이다. 기존 CS8785/CS0414 경고 외 새 컴파일 문제는 없다.
+- 영향: 기능 assertion 결과가 아니므로 BETA-005 PASS나 승인된 validation-debt 판정을 만들 수 없다. 새 crash, Scene/Prefab/Packages/ProjectSettings/Save schema 변경도 없다.
+- 중단: 동일 Unity 실행을 자동 재시도하지 않는다. 사용자가 Unity Hub/Editor에서 유효한 라이선스를 복구한 뒤 보존된 13개 경로와 현재 validator에서 재개한다.
+
+## [RESOLVED] 2026-08-20 — BETA-005 라이선스 및 live preference 증거 차단 해소
+
+- 라이선스 해결: Unity Hub/Licensing Client가 Personal activation `statusCode=200`, `LicenseUpdate Added`, EULA `Agreed`를 기록했다. 이전 return code 198 실행은 project load 전 환경 실패였으므로 기능 시도 횟수로 소비하지 않았다.
+- 증거 해결: 기본 플레이에서 alpha 0인 개발 `CustomerPreferenceCanvas` 대신 `BeginNewGame()` 이후 실제 WorldSandbox player HUD와 현재 runtime customer를 방문 생성 성공 직후 같은 stage에서 표본화했다. 고객 활성, profile 문구, HUD screen bounds를 실제로 확인하고 숨겨진 Canvas는 진단값으로만 남겼다.
+- 결과: `Logs/BETA005_D3D11_Validation_SynchronousPreference_Licensed_Correction.log`가 Miner 보류와 Tailor 구매, 재고·경제·SalesLog·feedback·demand·HUD assertion 및 Console 0으로 `FINISHED_PASS`했다.
+- 회귀: BETA-004, CustomerPresentation, CustomerArrival 검증도 모두 D3D11 PASS했다. 새 crash와 Scene/Prefab/Packages/ProjectSettings/Save schema content 변경은 없다.
+- 최종 판정: 두 기존 blocker는 종료하고 `BETA_005_COMPLETE`로 기록한다. 자동 캡처만 비차단 `CAPTURE_EVIDENCE_DEBT`로 유지한다.
+
+## [VALIDATION_DEBT] 2026-08-21 — BETA-007 generated resident spawn NavMesh readiness
+
+- 증상: `Logs/BETA007_D3D11_Validation.log`는 WorldSandbox/D3D11/HUD/B08를 PASS한 뒤 generated resident spawn anchor의 NavMesh assertion에서 중단됐다. 승인된 보정은 런타임 carving 뒤 anchor를 실제 NavMesh hit로 재투영하고 준비 상태를 기다리게 했지만 `Logs/BETA007_D3D11_Correction.log`도 `ResidentSpawnAnchorsReady` timeout으로 같은 bootstrap 단계에서 종료됐다.
+- 영향: 실제 Farmer hire, Wheat ShopSlot 판매, Day 2 전환, village visual, resident DialogueUI assertion에는 도달하지 못했다. 두 실행 모두 native crash 0이며 Scene/Prefab/Packages/ProjectSettings/SaveData/SaveManager 변경은 없다.
+- 원인 분류: 실제 고용 이전에 validator가 종료되어 hired resident 실패는 증명되지 않았다. 다만 생성 시 유효했던 네 anchor 중 하나만 나중에 투영 실패해도 invalid Transform을 영구 보존하고 전체 readiness를 false로 두는 production 위험이 확인됐다.
+- 정적 보정: runtime building obstacle과 NavMesh rebuild가 안정된 뒤 anchor를 만들고, current navigation revision에서 재투영되는 지점만 유지해 `HiringService.spawnPointRotation`에 다시 동기화한다. seed 재결속 실패도 성공으로 숨기지 않는다.
+- 사후 결과: Runtime/Editor 정적 compile 오류 0. 기존 CS8785/CS0414 경고만 유지된다. 두 허용 실행을 이미 사용했으므로 보정 후 세 번째 D3D11 실행은 하지 않았고 실제 hire→판매→Day 2→대화는 미검증으로 남긴다.
+- 판정: validator-only 사유를 HARD BLOCKER로 확대하지 않는 장기 Goal 정책에 따라 `BETA_007_IMPLEMENTED_WITH_VALIDATION_DEBT` checkpoint로 보존한다. assertion 삭제·완화와 결과 하드코딩은 하지 않았다.
+
+## [VALIDATION_DEBT] 2026-08-21 — BETA-008 Day 5 duplicate-item fixture revenue shortfall
+
+- 첫 실행: `Logs/BETA008_D3D11_Validation.log`는 runtime 관광객 생성 frame에 시작한 shopping FSM이 `NpcController.Start`의 Idle 초기화에 덮이는 실제 lifecycle 결함을 찾았다. 방문을 다음 frame에 시작하도록 production 경로를 수정했다.
+- 보정 실행: `Logs/BETA008_D3D11_Correction.log`는 일반 Day 1 관광객 구매, Day 1~4 실제 판매·정산·날짜 증가, Day 2~5 명시 납품과 Day 5 실제 Farmer 유료 고용까지 PASS했다. 이후 Day 5 누적 매출 989G가 목표 1,050G에 못 미쳐 종료됐다.
+- 원인: validator의 high-value stocking이 Inventory slot을 매번 다시 정렬하면서 같은 `GrilledFish` stack에서 네 개를 골랐다. 서로 다른 네 상품의 processed-value ceiling을 검증하려던 fixture 계약과 달랐으며, 실제 progression target이나 거래 권위 결함은 아니다.
+- 정적 보정: 선택한 `Item`을 `HashSet<Item>`에 기록해 서로 다른 sellable 상품만 네 슬롯에 진열한다. assertion, 매출 목표, 실제 `EconomyService`/`ShopSlot`/`HiringService` 권위는 완화하지 않았다.
+- 사후 결과: 최종 source의 Runtime/Editor compile 오류 0, JSON/diff 검사 PASS, native crash 0. Scene/Prefab/Packages/ProjectSettings/SaveData/SaveManager 변경은 없다.
+- 판정: 승인된 D3D11 두 실행을 모두 사용해 세 번째 실행은 하지 않는다. 최종 fixture correction과 Day 6~7/Week 1 completion은 미검증으로 남기고 `BETA_008_IMPLEMENTED_WITH_VALIDATION_DEBT` checkpoint로 보존한다.
+
+## [VALIDATION_DEBT] 2026-08-21 — BETA-009 persistence validator pre-save fixture failures
+
+- 첫 실행: `Logs/BETA009_D3D11_Validation.log`는 신규 validator의 `hireReason` 지역변수가 초기화되지 않은 CS0165로 Editor compile 전에 종료됐다. production 코드나 save data에는 접근하지 않았다.
+- 보정 실행: 초기화만 고친 `Logs/BETA009_D3D11_Correction.log`는 D3D11 fresh-session 구성, Day 2, 명시 납품, player 이동, sparse terraform, B09와 ItemInstance 저장물까지 통과했다. 이후 B01을 `(1,-1)`로 옮기는 fixture가 bounded placement zone을 벗어나 save 전에 종료됐다.
+- 원인: 기존 B01 배치 계약에서 검증된 유효 좌표는 `(1,0)`인데 validator가 잘못된 좌표를 요청했다. 실제 저장·복원 코드 실패나 데이터 손상 증거가 아니다.
+- 정적 교정: assertion이나 production 권위를 완화하지 않고 좌표만 `(1,0)`으로 수정했다. 최종 Runtime/Editor compile 오류 0, native crash 0이다.
+- 판정: 승인된 두 D3D11 실행을 모두 사용했으므로 세 번째 실행은 하지 않는다. save/restart/load/continue/repeated-load 단계는 미검증이며 `BETA_009_IMPLEMENTED_WITH_VALIDATION_DEBT`로 보존해 BETA-010의 첫 통합 검증에서 재개한다.
+
+## [HARD_BLOCKER] 2026-08-21 — BETA-010 saved player facing is lost after restart load
+
+- 최초 실행: `Logs/BETA010_PersistenceRestart_Initial.log`는 실제 v12 save와 Editor Play restart를 완료했다. world checksum, B09 storage는 복원됐고 player는 저장 cell에 있었지만 facing assertion이 실패했다.
+- 최소 보정: SaveManager가 world/furniture/hiring/WorldAlpha restore 뒤 saved safe position과 rotation을 다시 적용하도록 했다. validator는 actual/saved cell과 facing error를 기록하도록 강화했다.
+- 교정 실행: `Logs/BETA010_PersistenceRestart_Correction.log`도 `currentCell=(64,61)`, `savedCell=(64,61)`, `facingError=137`로 동일 실패했다. 저장 JSON의 quaternion은 137°를 정확히 보유한다.
+- 영향: restart/load는 작동하지만 저장 방향이 다음 frame에 소실된다. 복원 후 계속 플레이와 repeated-load stage, BETA-010 full loop 및 Golden regression은 실행되지 않았다.
+- 안전: Runtime/Editor compile 오류 0, native crash 0, save corruption 0, Scene/Prefab/Packages/ProjectSettings 변경 0. assertion 삭제·완화·강제 PASS 없음.
+- 중단: 동일 원인 두 번 실패와 승인 실행 소진으로 세 번째 D3D11 및 추가 추측 수정을 금지한다. 다음 최소 조치는 실제 adapter `PlayerRoot`와 tagged player identity, `PlayerController`의 internal facing state를 같은 프레임에서 계측한 뒤 authoritative restore API 하나로 동기화하는 것이다.
+
+## [RESOLVED_TOOLING] 2026-08-31 — 발표자료 PDF/자동 검사 도구 호환성
+
+- PowerPoint COM의 `ExportAsFixedFormat` 축약 호출이 현재 PowerPoint 16.0 interop에서 형 변환 오류를 냈다. PPTX는 이미 정상 저장돼 있었으며 `SaveAs(..., 32)` PDF 내보내기로 전환해 7쪽 PDF를 생성했다.
+- 제공 `slides_test.py`는 환경에 `numpy`가 없어 시작되지 않았다. 패키지를 프로젝트에 추가하지 않고 PowerPoint COM으로 슬라이드 크기·노트·shape 경계·텍스트 bound를 검사하고, 1920×1080 PNG 7장을 직접 검수했다.
+- 최종 PPTX/PDF는 각각 7장/7쪽, 1440×810이며 PDF는 `pypdf`로 재개방됐다. Unity 프로젝트 파일과 원본 디자인 마스터에는 영향이 없다.
+
+## [RESOLVED_TOOLING] 2026-09-01 — 정체성 문서 복합 검증 명령 PowerShell 구문 오류
+
+- 문서 검증용 읽기 전용 PowerShell 명령에서 `"FAIL|$f:$n"`를 사용해 변수명 뒤 `:`가 드라이브 구문으로 해석되는 ParserError가 1회 발생했다.
+- 명령은 parse 단계에서 종료되어 프로젝트 파일, 감사 문서, PPT, Unity 상태에는 영향이 없다.
+- 같은 복합 명령은 재사용하지 않고 `${f}` 표기와 분리된 읽기 전용 검사로 교체했다.
+
+## [RESOLVED] 2026-09-06 — ART-000 Blender library texture dependency
+- First run: Logs/ART000/Blender_Library_01.log, exit 1. Kenney GLB references external Textures/colormap.png; initial library copy omitted images, and global fallback found different same-name palettes.
+- Deterministic correction: copy GLB relative Textures dependencies, resolve BLEND images only within the selected source pack, verify byte identity before reuse. No source archive/model overwritten.
+- Corrected execution passed: Logs/ART000/Blender_Library_02.log, ART000_BLENDER_LIBRARY_PASS 33. Final packed-image reopen/render also passed. Unity intake PASS (28 assets); this was not a gameplay/Unity crash.
+- Earlier dotnet --no-restore attempt reported missing generated project.assets.json (NETSDK1004); ordinary dotnet build regenerated existing dependency metadata and passed with 0 errors. No package was added.
+
+## [RESOLVED] 2026-09-06 — ART-000 library reopen lazy image buffer
+- Reference-render first run stopped before rendering because it required Image.has_data before reading packed pixels.
+- Read-only diagnostic Logs/ART000/Blender_ImageBuffer_Diagnostic.log proves all 8 file images are packed; reading pixels loads valid 32x32/512x512 buffers and has_data becomes true.
+- Correction: check packing first, read packed pixels, then assert decoded data and dimensions. This keeps the texture integrity assertion. No missing texture, source overwrite, or Blender crash.
+- Source library correction separately passed: Logs/ART000/Blender_Library_02.log, ART000_BLENDER_LIBRARY_PASS 33.
+
+## [RESOLVED] 2026-09-06 — ART-000 source animation preservation audit
+- Final source comparison found that append(objects) retained only two referenced actions per Koi/Tuna, although the source BLEND and Unity FBX each contain six.
+- The builder now appends all source actions and keeps otherwise unreferenced actions in muted NLA tracks. Previous generated library preserved under Blender/Generated/ART000; source BLEND files unchanged.
+- Evidence: Logs/ART000/Blender_Library_AnimationComplete.log, Blender_Animation_Audit_Final.log and Blender_ReferenceRender_Final.log PASS; library-animation-audit.json proves all six source actions per fish.
+- A read-only inline --python-expr diagnostic had a Windows quote-parsing NameError; it made no file change. Replaced it with the saved audit_library_integrity.py diagnostic, which provided the source/library evidence above.
+
+
+## 2026-09-06 ? ART-000 staged diff whitespace / REVIEWED
+
+- ?? ?? staged `git diff --check`? Unity? ??? ? YAML ?? ?? ??? ?? license? ??/??? ? ?? ????. ?? ??? Logs/ART000/Git_Diff_Check_Raw.txt? ????.
+- ?? ??? .meta/.prefab/.mat ?? ?? license ???? ??? ????. ??/Unity serialized ???? ?? ?? ???? ?? ?? ???. ?? ??? ?????? ?? diff ??? PASS. ?? ?? ??? HARD BLOCKER? ???? ???.
+
+## 2026-09-07 — CONTENT-001 editor compile: project sync API
+
+- 첫 자산 빌더 compile이 내부 UnityEditor.SyncVS 접근 CS0122로 중단됐다. 증거: Logs/Content/CONTENT001/Build.log. Runtime validator 미진입, native crash 없음.
+- 기존 IDE 패키지의 IExternalCodeEditor 사용을 확인하고 공개 Unity.CodeEditor.CodeEditor.CurrentEditor.SyncAll()로 최소 교정했다. 같은 원인의 첫 실패이며 교정 compile 결과를 뒤에 기록한다.
+## 2026-09-07 — CONTENT-001 asset builder: concrete collider prerequisite
+
+- 공개 IDE API 교정 뒤 Runtime/Editor Unity compile 오류 0. 자산 생성 중 NpcDialogue의 RequireComponent(Collider)에 구체 Collider가 없어 AddComponent가 실패했다. 증거: Logs/Content/CONTENT001/Build_Correction.log. 앞선 compile 오류와 다른 원인이다.
+- 빌더와 같은 검증 fixture에 CapsuleCollider를 먼저 추가하도록 교정했다. Golden 읽기 감사 결과 기존 보리는 Profile_Lumberjack을 참조하며, World의 독립 보리와 구분해 보존한다. scene dirty 없음. 같은 원인 첫 실패.
+## 2026-09-07 — CONTENT-001 batch GameView capture timeout
+
+- OpeningValidation.log의 실제 상호작용·+2 멱등성·채집·v13 저장·v12 호환·반복 load·순서 교환 검사가 전부 CHECK_OK였으나 마지막 ScreenCapture 파일이 배치 실행에서 생성되지 않아 전체 VALIDATION_FAIL.
+- 일반 GameView를 여는 D3D11 에디터 실행으로 캡처 환경을 교정한다. 직접 Camera.Render는 사용하지 않는다. 같은 원인 첫 실패. 캡처를 제거하거나 완료 판정을 완화하지 않는다.
+- 앞선 빌더 Collider 문제는 Build_ColliderCorrection.log BUILD_PASS로 해소. dotnet --no-restore의 생성 임시 assets 파일 부재는 정상 build 복원으로 해소했고 RuntimeCompile_Restore.log 및 EditorCompile.log는 오류 0.
+
+- CONTENT-001 최종 해소 증거: OpeningValidation_Release.log VALIDATION_PASS, Build_ColliderCorrection.log BUILD_PASS, Runtime/EditorCompile_Release 오류0. UI 관찰로 발견한 복원 문구·카메라·인사 후 안내도 최종 검증했다. 같은 원인의 반복 실패나 native crash 없음.
+
+## 2026-09-07 — CONTENT-002 first-night Space approach / first failure
+
+- FirstNightValidation.log는 실제 시작·보리 인사·채집·낮 영업 차단까지 PASS 후 ShopSlot_00의 공간 상호작용 접근점을 찾지 못해 중단됐다. 경제 거래/밤 판단 미진입, native crash 없음.
+- 첫 fixture는 판매대 중심에서 반경1.2m·8방향만 시도했다. 기존 BETA-004가 Slot.Interact 직접 호출로 검증했던 것과 달리 이번은 실제 PlayerInteraction 공간 탐색을 요구한다. 프리팹 Collider/높이·월드 점유를 읽기 감사한 뒤 최소 교정한다. 첫 실패이며 같은 원인 교정 검증은 아직 실행하지 않았다.
+
+## 2026-09-07 — 상담 문서 도구 오류 / 교정
+
+- 첫 patch는 원문 최신 상태를 최종 상태로 잘못 적어 문맥 검사에서 거부됐다. 파일 변경 없이 정확한 원문으로 한 번 교정하여 성공했다.
+- 기록 append 명령은 스마트 인용부호가 PowerShell 문자열 경계로 해석되어 파싱 단계에서 거부됐다. 해당 명령은 실행되지 않았고 파일 변경은 없었다. 스마트 인용부호를 없앤 명령으로 한 번 교정한다.
+- 서로 다른 문서 도구 원인 각 1회이며 게임 코드/Unity 검증 실패가 아니다. 같은 원인 두 번 실패 경계에 도달하지 않았다.
+
+## 2026-09-08 — VS-PRESENT-001 P1 재開 / capture timeout · STOP
+
+- 이번 세션 D3D11 Play 검증 1회: PA_DepartureContinuationChecks.CheckSelection의 캡처에서 InvalidOperationException: GameView capture was not written in time: 03_CompanionSelection.png. PA_SafeGameViewCapture.CaptureAsync 위치는 Assets/Editor/PA_ThemeCornerValidator.cs:468, 호출은 PA_DepartureContinuationChecks.cs:124. 최종 [VS-P1] FAIL, Edit Mode 복귀.
+- 미인증 P0 보호, 필수 참조, SaveManager 부재, 0/1명 확정 거부, unknown ID 거부, 2명 활성화, 3번째 차단, 취소/교체와 serialized reference 검사는 통과. 캡처 이후 확정/ID 전달/동결 검사는 미도달. 새 캡처는 파일 수정 시각이 갱신됐지만 정상 캡처 완료는 확인 못 함.
+- 같은 실행에서 기존 ShopOpenSign.Awake → EnsureLabel (Assets/Scripts/ShopOpenSign.cs:62) → PrototypeWorldLabel.OnValidate/EnsureText (Assets/Scripts/UI/PrototypeWorldLabel.cs:15/40) → AddComponent<TextMeshPro> 경로의 SendMessage cannot be called during Awake, CheckConsistency, or OnValidate 오류 관찰. 원인 코드 수정이나 오류 필터링은 하지 않았다.
+- 증거: Logs/VS_PRESENT_001/ResumeP1_EditorExcerpt.log, Docs/Presentation/2026-09-08/P1-validation.json. 이전 PASS 결과는 이번 결과와 분리했다. compile은 ResumeCompile.log 오류0/기존 경고3; 최초 no-restore의 NETSDK1004는 일반 build로 해소.
+- AGENTS.md의 실패 시 기록 후 멈춤 규칙에 따라 추가 수정/재실행 중단. commit/push 없음. 다음 작업은 위 두 오류의 제한된 조사와 교정 여부 판단이며 P2 또는 기존 CONTENT 범위로 확대하지 않는다.
+
+## 2026-09-09 — VS-PRESENT-001-P1-RECOVERY PASS
+
+- 사람의 recovery ticket으로 이전 STOP 해제. 기존 P1 코드/후보/프리팹을 보존하고 공용 GameView 캡처 lifecycle과 PrototypeWorldLabel/ShopOpenSign 초기화만 최소 교정했다. OnValidate 구조 생성 제거, ShopOpenSign 초기화 Start로 이동. 새 label/캡처 framework 없음.
+- Runtime → Editor 순차 build 오류0, 기존 CS8785/CS0414 경고만 유지. D3D11 실제 GameView 첫 recovery 실행 PASS. P0 미인증 보호, 후보3/선택2, 0·1명 확정/unknown ID/3번째 거부, 취소·교체·참조, 확정 ID 1회 전달·동결 모두 PASS.
+- 새 03_CompanionSelection.png 1920×1080, 229720 bytes, 2026-09-09T01:35:56Z. 기존 파일 기준선과 새 쓰기/연속 크기 안정화 확인. Camera.Render 호출 없음. blocking Console/OnValidate 오류/native crash 0. 종료 시 기존 JobTempAlloc 진단은 별도 기존 Editor 종료 부채로 남긴다.
+- 증거: Docs/Presentation/2026-09-08/P1-validation.json, P1-recovery-excerpt.txt. 전체 로그와 순차 compile: Logs/VS_PRESENT_001/P1_Recovery_Editor.log, Recovery_RuntimeCompile.log, Recovery_EditorCompile.log.
+- 범위: 기존 미커밋 P1 구현과 이번 recovery만 local checkpoint, 개인 .claude/settings.json 제외. P0/CONTENT/Blender/씬/Save/ProjectSettings 변경 없음. 실제 P0 인증 완료부터 연결은 이번 개발용 진입 검사에서 확인 못 함.
+- 다음: 사용자 §13 승인에 따라 P1 local commit 후 VS-PRESENT-001-P2 자동 진행. 배/WorldGrid 재사용, 신규 권위 없음, push 금지.
+
+
+## 2026-09-09 — VS-P3 첫 통합 입력 검증 / 진열대 접근
+
+- D3D11-01.log: P0 실제 이동·나무·열매 획득 PASS 뒤 진열대 접근 검증이 부모 Shop/ShopSlot 탐색 조건에 걸렸다. 실제 위치 (6.98, 0.08, -2.55); P3 미진입, native crash 없음.
+- P0 기능 코드는 변경하지 않고 P3 검증 입력에 실제 PlayerInteraction 타깃이 잡힐 때까지 짧게 전진하는 단계를 추가했다. 같은 원인 첫 실패, 후속 검증 예정.
+
+
+## 2026-09-09 — VS-P3 D3D11-02 / companion NavMeshAgent 연결
+
+- 기존 P0 접근 fixture 교정은 PASS. P0 판매→P1 선택→P2 도착→P3 자연물 차단·거점 배치·90도 회전·이동까지 PASS.
+- 첫 거처 확정 후 BindShelters에서 Unity의 missing-component 객체를 C# ?? 연산자가 유효한 참조로 처리하여 NavMeshAgent.speed 설정 중 MissingComponentException. P3 구현 오류(B), native crash 없음.
+- FirstIslandSettlementController에서 Unity null 비교 뒤 AddComponent하도록 최소 교정. 이번 continuation에서 이 원인에 대한 추가 교정 검증은 D3D11-03 1회만 진행한다.
+
+- D3D11-03은 P3 진입 전 가격 UI가 열리지 않은 상태를 validator가 confirm 성공으로 잘못 간주하여 P0 normal retry timeout. P3 NavMeshAgent 교정 경로는 미실행. P0 authority 변경 없음.
+- 동일한 P0 흐름을 반복하지 않고 D3D11-02의 실제 sale→selection→arrival→hub PASS를 재사용한다. 기존 OpenDevelopmentSelection을 사용하는 RunRemaining으로 P3 미완 검증만 진행한다. 전체 단일 실행 PASS라고 주장하지 않는다. 가격 UI 열림 assertion과 기존 grid snapshot의 row-major 순서를 validator에 교정했다.
+
+- D3D11-04: 18:15:19 Editor loading completed/RunRemaining 호출 뒤 로그 종료, 재개 시 Unity 프로세스 없음. Play 검증 마커와 PASS/FAIL 없음. Unity crash 폴더 및 Windows Application 1000/1001에서 관련 native crash 기록 확인되지 않음. 종료 원인은 확인 못 함. 코드 변경 없이 D3D11-05에서 중단된 잔여 검증을 회수한다.
+
+- D3D11-05 초기에 Recovering Scene Backups 모달 대기를 확인하여 Yes 기본 버튼으로 Assets/_Recovery에 백업 2개를 보존했다. 복구본으로 원본 씬을 교체하지 않았고 P3 commit에서 제외한다.
+- 실행은 개발용 P1 선택/배 NPC 생성까지 PASS 후 P2 fade arrival timeout. 비활성 Editor에서 프로젝트 runInBackground=0으로 게임 시간 진행이 정지한 검증 환경 문제(3). PA_FirstSettlementChecks에서 Game View focus 및 Play 검증 중에만 Application.runInBackground=true, 종료 때 원래 값 복원하도록 교정한다. Runtime gameplay/ProjectSettings 변경 없음.
+- 초기 중단된 세션의 빈 Library/StateCache JSON은 Unity가 자체 처리했다. 이 Editor cache 진단과 CancellationTokenSource 종료 진단은 P3 gameplay 오류와 분리하여 기록한다.
+
+- Compile-06: 명령이 진행중 session으로 반환됐는데 완료 전 다음 build/Unity를 시작한 실행 순서 오류. Unity Temp/obj 정리와 겹쳐 GeneratedMSBuildEditorConfig 경로 부재/NETSDK1004 발생. 코드 컴파일 오류로 분류하지 않으며, 현재 Unity 종료 후 Runtime 완료 확인→Editor 완료 확인 순서로 재검증한다.
+
+- D3D11-06: P3 placement/cancel/rotation/move, 두 거처와 실제 동행 NPC 입구 도착, 완료/다음 목표, 무료 설치, 자연물 보존, 기존 B09 storage 회귀, SaveManager save/restore 전부 PASS. Editor 재진입 예약이 asset refresh 중 유실돼 실제 Ctrl+P Play 재진입으로 이어갔으며 fresh reentry exact persisted state/one SaveManager/runtime errors zero/P3_VALIDATION_PASS 확인.
+- 완료 캡처 직접 검사에서 얇은 거처 canvas가 뒷면 culling으로 사라지는 시각 결함 발견. 기존 FBX/Blender 재생성 없이 거처 전용 PA_ShelterCanvas 재질의 _Cull=0으로 교정한다. 저장된 동일 정착지의 reload/capture만 D3D11-07에서 확인. 검증기의 재진입 예약은 저장 phase를 다음 Editor update에서도 재개하도록 보완했다.
+
+- 최종 D3D11-07: CANVAS_TWO_SIDED_PASS, fresh reentry exact persisted state, restored companions reached their linked shelters, thin canvas renders both faces, runtime errors zero, P3_VALIDATION_PASS. 03 최종 PNG 1920×1080 직접 확인. RuntimeCompile-Final/EditorCompile-Final은 각각 종료 후 다음 명령을 실행하여 오류0 확인; Compile-06 실행 순서/Temp 충돌 해소.
+
+
+## 2026-09-09 — VS-P4 Blender provenance serialization
+
+- 세 작업터 FBX/blend/reference render 생성 후 JSON에서 Collection is not JSON serializable. bpy library load가 전달 목록을 Collection 객체로 치환한 원인. source collection name을 분리하고 manifest-only 복구로 이미 생성된 모델/렌더를 재사용한다. 첫 실패, 원본 library 해시 유지.
+
+
+## 2026-09-09 — VS-P4 검증 재개
+
+- 컴파일 실행 준비에서 잘못된 csproj 이름(MSB1009), Unity 종료 후 Temp restore 파일 부재(NETSDK1004)를 각각 확인했다. 실제 Assembly-CSharp.csproj와 일반 dotnet build를 사용해 순차 Runtime/Editor 오류 0으로 해소했다. 소스 컴파일 결함은 없었다.
+- D3D11-01: 실제 광부·농부 선택/항해/정착/작업터/직접 채광·파종·수확/기존 생산 타이머/미수령 재고 복원 PASS. 수령 fixture가 순간 이동 직후 목표를 검사한 다음 지형 이동 보호·충돌 보정으로 농부 작업터를 선택하여 광부 수령 assertion 실패. 첫 실패. 기존 WorldPlayerTraversalGuard.TryTeleportTo와 물리 안정 후 대상 검사로 접근 fixture를 교정한다. 생산/Inventory 보상 우회 없음.
+- 첫 화면 검사: 작업터가 거점 뒤에 가려지는 검증 배치와 작업 도착 거리 때문에 역할을 읽기 어려웠다. 첫 focused visual correction으로 검증용 두 작업터를 남쪽 평지에 배치하고 P4 NPC 작업 도착 거리/방향을 정돈한다. 자연물 이동·삭제 없음.
+
+
+## 2026-09-10 — OPENING-FEEL-001 전환 / 검증 준비
+
+- 사용자 지시로 P4 보류. D3D11-02는 광부 수령 및 중복 방지까지 통과했으나 농부 수령 후 예상 Inventory 수량 assertion 실패. P4 추가 조사/재시도 중지, 미커밋 구현·증거 보존. OPENING-FEEL 작업 전 상태는 Logs/OpeningFeel001/Before에 별도 보존했다.
+- 기존 사용자 Unity Editor PID5280이 실행 중이어서 Camera-01 신규 실행은 프로젝트 점유 오류 창에서 중지됐다. 새 오류 창만 닫고 기존 Editor의 Play를 종료해 동일 Editor에서 검증한다. 저장 씬/사용자 데이터는 수정하지 않았다.
+- 전용 검증기에서 internal SyncVS 직접 호출 CS0122. 첫 교정으로 이미 프로젝트 setup이 쓰는 Unity.CodeEditor.CodeEditor.CurrentEditor.SyncAll을 재사용한다. Runtime 코드 오류 없음.
+
+- OPENING-FEEL 첫 flow 검증: 전방 tree/shelf, 뒤/두 칸 거리 거절, 마우스 UI 10회 연속, 실제 NPC 판매 후 stock0/표시 제거/정확한 금액, 마우스 P0→P1 진입 PASS. P1 Enter가 EventSystem의 마지막 후보 카드 Submit과 겹쳐 선택을 취소했다. 선택 확정 처리를 EventSystem보다 앞에서 실행하고 선택된 UI를 해제하여 중복 입력을 막는다. 첫 실패/첫 교정.
+
+- 모션 contact sheet 직접 확인 후 1회 focused correction: SafeGameViewCapture가 구도 변경 없는 캡처에서도 카메라 transform을 복원하여 연속 이동에서 추적을 되감음. configureCamera를 제공한 구도 변경 캡처만 transform 복원한다. NPC 기본 idle 팔 벌어짐은 기존 절차 pose의 armRestDrop으로 줄인다. 완료 CTA가 빈 판매대를 가리던 위치는 오른쪽으로 이동한다.
+
+- 재개 P1 입력 probe: Enter 직전 Miner_01/Farmer_01, Enter 프레임에는 Miner_01만 남음. 실행 순서 조정만으로 EventSystem Submit을 막지 못한 것을 확인했다. 카드 pointer 클릭 직후 선택 UI focus를 해제하여 교정. 잔여 targeted 실행에서 실제 Enter 확정/페이드/배/섬/P3 배치와 NPC 거처 도착 PASS.
+- 잔여 저장 fixture의 custom root 폴더 누락으로 DirectoryNotFoundException. 기존 LocalJsonSaveRepository는 호출자가 폴더를 준비하는 계약이므로 검증기에서 Directory.CreateDirectory 추가. Save authority 변경 없음. 후속 저장/복원 exact state PASS.
+- 새 출항 페이드 이전에 저장 복원 SkipTravel 요청이 도착할 수 있으므로 기존 Elapsed 값에 즉시 반영하게 수정. Sailing 조건 때문에 요청을 잃던 비동기 순서 문제이며 새 저장 상태/권위 없음.
+- 저장 targeted에서 강제 낙하 위치 복구 PASS 후 post recovery stop 속도 assertion 실패. 원인 확인 없이 같은 검사를 반복하지 않고 fresh restore에서 입력/좌표/CharacterController 실제 속도를 기록한다.
+
+- fresh Play에서 보존 중인 P4 SaveData v16의 null firstProduction이 빈 worksites 객체로 직렬화되고 P4 IsValidSave가 거절하는 것을 확인했다. 같은 실행에서 상태가 그대로였다는 이전 exact state assertion은 복원 성공 증거가 아니므로 정정한다. SaveManager를 실제로 검증하도록 저장 후 잔액을 변경하고 Load로 원래 잔액 복구를 확인하는 조건을 추가했다.
+- P4 코드/프리팹을 고치거나 덮어쓰지 않는다. Logs/OpeningFeel001/CheckpointValidation에 eab53b0 기반 detached 검증 사본을 만들고 이번 feel 파일과 P3 카메라 연결 두 줄만 적용했다. 원래 사용자 Editor PID5280 유지. 이 사본의 검증 결과만 최종 commit 판정에 사용한다.
+- stop 진단에서 입력0/실제 속도0을 확인했다. 복원 직후 동행자 이동·충돌이 안정되기 전에 200ms 한 프레임으로 단정하던 fixture를 정돈: 동행자 도착 대기, 부두 밖 보행, 제한 시간 안 실제 속도 정지 확인. 신규 movement authority 없음.
+- 사본 첫 Unity import는 기존 패키지 registry ETIMEDOUT 대기. 해당 사본 프로세스만 종료하고 이미 설치된 Library/PackageCache를 복사해 동일 버전으로 재개한다. manifest/lock/package 추가 변경 없음.
+
+- 검증 사본의 local package가 Library 내부에 있으면 일부 패키지 assembly가 무시되어 SRP의 Mathematics/Collections 참조 compile 실패. 사본 캐시만 경로 검증 후 Logs/OpeningFeel001/OfflinePackageSource로 이동하고 사본 manifest를 같은 설치 버전의 file 경로로 연결했다. 원본 manifest/lock은 보존. 원본 resolved set 밖의 패키지 이름 0 확인.
+- Isolated-SaveRecovery-Local: Unity Runtime/Editor compile 성공. 실제 저장 후 +11G → Load 원래 잔액 복원, 정착 state exact, 강제 낙하 복귀와 정지, missing reference 검사 PASS. CHECKS_FAIL 원인은 최초 import의 UnityEditor.Search.SearchDatabase.EnumerateAll 인덱스 예외였으며 gameplay/Save 예외가 아니다. 오류 필터링 없이 새 Editor fresh restore로 이어간다. 종료 JobTempAlloc 경고는 기존 부채.
+
+- Isolated-FreshRestore: 새 Editor/Play에서 실제 SaveManager로 P3 exact state/동일 동행자2/SaveManager1 PASS. 반복된 SearchDatabase 예외의 원인은 사본 UserSettings/Search.index 누락이었다. 원본의 Assets 상대경로 인덱스 설정만 사본으로 복사 후 Isolated-FinalRoute Editor 시작에서 해당 예외 0 확인. 저장 gameplay PASS를 반복하지 않고 최종 연속 경로를 한 번 실행한다.
+
+- Isolated-FinalRoute 최종 1회: P0 실제 이동/채집3/진열1/가격확정/PurchaseEvaluator 판매/금액1회, 마우스 CTA, 후보2/Enter 확정, 페이드/배/섬, P3 거점/거처2/NPC 도착, 부두 밖 이동, SaveManager 실제 잔액 및 state 복원, 낙하 복구/정지, 필수 참조, runtime errors0 모두 PASS. CHECKS_PASS. 검색 초기화 예외 없음. 08_P3_GameplayCamera.png 1920×1080 직접 검사 완료. staged diff 공백 PASS; 원래 P4 prefab 공백4줄은 보존.
+
+
+## 2026-09-11 ? P4-R1 static-check line-ending mismatch (resolved)
+
+- First static method comparison stopped at Pause(): Git blob used LF, working file used CRLF, and apply_patch introduced LF on the touched lines. This was a comparison/patch-format issue, not a demonstrated gameplay failure.
+- Inspected before/after/baseline bytes before retrying. Preserved original CRLF with exactly the two authorized replacements; normalized only comparison input when checking baseline method bodies.
+- Corrected check passed once: both methods baseline-identical, all other producer bytes preserved. No Unity Play or gameplay retry. Evidence: Logs/P4-R1/static-checks.txt and producer-r1.diff.
+
+## 2026-09-11 — P4-R3 binding migration compile failure (stopped)
+
+- First Runtime compile failed with CS0103 at `StarterWorksiteInteraction.cs:37` and `:42`: the farming/mining configuration lines still reference the removed `owner` parameter after `Configure` changed to accept `WorksiteBinding`.
+- Cause: the editing script's text replacements did not match these lines. The new profile fields exist, but these activity configuration calls have not yet been migrated to them. This is a new incomplete-edit compile defect, not a demonstrated Unity gameplay failure.
+- Stopped after this first compile, without a repair/retry, following the project failure-stop rule. Evidence: `Logs/P4-R3/runtime-compile.log`. The worktree currently does not compile; P4-R3 is NOT PASS.
+- Editor compile, managed binding checks, profile prefab generation and Unity Play were not run. Existing Producer/ProcurementPolicy/P2/P3/Save sources remain untouched. Milestone/current-state/development-log documents were not updated.
+- Resume point: finish the two profile-backed activity configuration calls and the profile-backed status prompt, then compile and validate the authorized three-runtime-file change. No P4-R4, commit or push.
+
+## 2026-09-11 — P4-R4 atomic restore scope blocker (source inspection)
+
+- Newly identified defect: a spatially invalid P4 payload can reach placement rejection after SaveManager has already changed live state. Two otherwise valid placed owner records with the same anchor pass FirstProductionController.IsValidSave, but the second TryPlace rejects occupied cells. This is source-level evidence; no Unity reproduction was run.
+- Evidence: SaveManager.LoadGameInternalAsync calls FirstIslandSettlementController.PrepareRestoreAsync before restoring money/inventory, then clears worksites and restores settlement/P4 near the end. PrepareRestoreAsync changes confirmed selection and voyage state on fresh entry. FirstProductionController.RestoreState throws on placement failure without rolling back earlier placements or the global restore.
+- Scope blocker: WorldBuildingPlacementService.Evaluate checks the current grid and can ignore only one moving instance; the inspected authority exposes no staging API for an entire saved P3 + P4 layout before live mutation. A real-grid bounds check alone cannot validate overlap, obstacles or navigation atomically. Adding the required authority seam exceeds the three approved runtime files; duplicating world/placement rules would violate the Reuse Map.
+- Stopped before runtime edits under the explicit architecture/scope failure rule. Runtime/Editor compile and automated static/managed checks not run; targeted Unity Play/save 0. Existing dirty v16 remains unapproved. No current-state/development-log update, commit or push. Resume requires an authority/scope decision recorded in CODEX_HANDOFF.md.
+
+## 2026-09-15 — DIRECT-GATHERING-01 discovery scope blocker
+
+- Source inspection: generated-resource TryGatherNext is not a proximity interaction; MiningSpot/FishingSpot use daily stock-prep completion rather than per-spawn depletion. Gatherable.Harvest ignores AddItem failure before Destroy. No runtime reproduction performed.
+- User explicitly requires stopping after discovery if existing gathering materially differs. Stopped before code/assets/Play; proposed three-runtime-file adaptation and two canonical tool assets are recorded in CODEX_HANDOFF.md. Existing world/persistence/Inventory authorities need no replacement. One Windows rg wildcard argument error corrected once; no repeated check failure.
+## 2026-09-15 — DIRECT-GATHERING-01A encoding correction failed / STOP
+
+- First draft write: PowerShell pipe default encoding replaced new Korean strings/comments with question marks. Existing file content was read explicitly as UTF-8 and preserved.
+- One permitted correction set OutputEncoding=UTF8, then Python Path.read_text() used default cp949 and threw UnicodeDecodeError at Gatherable.cs before modifying files. Correction failed; no further implementation attempts.
+- Draft three runtime files and two tool assets preserved. Exact next action and validation budget in CODEX_HANDOFF.md. Compile/Play not run. Resume requires explicit user instruction per failure policy; no scope expansion needed for encoding repair.
+
+## 2026-09-15 - DIRECT-GATHERING-01A authorized recovery resolved
+- Prior encoding blocker resolved under explicit completion-first instructions. Build intermediate assets regenerated; validator-only inaccessible SyncVS removed. No runtime compile errors.
+- Play 1 used an overly restrictive NPC NavMesh criterion for the CharacterController player. Replaced with existing WorldCellReachability + actual interaction selection. Play 2 passed 78 gameplay checks, runtime errors 0 including exit; only optional PNG assertion failed. Raw failure retained, optional capture classification corrected, recorded-evidence audit PASS. No third Play. See development log and Logs/DIRECT-GATHERING-01A/Play/acceptance-audit.txt.
+- Final documentation insertion used a Korean search marker over a legacy PowerShell pipe and could not find it. Completed the two remaining insertions using ASCII anchors; no repeated development entry or runtime change.
+
+## 2026-09-16 DIRECT-GATHERING-01B - early Hotbar refresh
+
+First targeted Play stopped at Net selection (9 checks) with a caught MissingReferenceException in HotbarUI. New adapter composition refreshed the inventory after UI creation but before HotbarUI.Start, causing Start to destroy pre-created slots still held in its list. Repair stays in BindFishingAndBugs: skip the initial refresh and allow existing Start to initialize the UI; keep refresh for an already composed population. First-attempt evidence: Logs/DIRECT-GATHERING-01B/PlayAttempt1/result.txt and play-1.log. User completion-first budget authorizes a second targeted Play; no 01A or HotbarUI changes.
+
+Repair result: compile cycle 2 PASS; targeted Play attempt 2 passed all 64 checks with zero runtime errors/exceptions/asserts including Play exit. Evidence: Logs/DIRECT-GATHERING-01B/Play/result.txt.
+
+## 2026-09-16 - PLACEABLE-01 integrity helper / repaired
+- Post-Play PowerShell helper wrapped ConvertFrom-Json array as one nested object and falsely reported save file-set mismatch. Direct SHA-256 inspection matched both original hashes; no save mutation occurred. One mechanical correction used Python JSON parsing and file-set/hash comparison: both saves unchanged, frozen 13/13 unchanged (Logs/PLACEABLE-01/integrity.txt). No runtime failure or additional Play attempt.
+
+
+## 2026-09-16 - INTEGRATION-01 validator setup / repaired
+- Play attempt 1 stopped after D3D11 check: reflection invocation attempted to isolate a null SaveManager in departure before settlement. Runtime error count 0; captured validator TargetException in Logs/INTEGRATION-01/play-1-result.txt. Added a validator-only null guard; world SaveManager still uses the isolated repository. Attempt 2 completed 90 connected checks with runtime errors 0 including exit; no third Play.
+- Initial integrity helper skipped Git-quoted non-ASCII asset paths; final integrity evidence explicitly covers 820 enumerated source/scene/resource/package/settings paths, not every repository asset. No false whole-repository checksum claim.
+
+## 2026-09-17 — PASS 1 Studio / INCOMPLETE, Play 3/3
+- 1차 ComposeCompanions: NpcDialogue RequireComponent(Collider)에 concrete collider 선행 필요. CapsuleCollider 먼저 생성하여 수정.
+- 2차 Demo256 ready/runtime errors 0; validator FindObjectsByType가 DontSave runtime player를 제외해 권위 assertion 실패. Resources.FindObjectsOfTypeAll+scene/active 필터로 수정했으나 섬 재검증 미도달.
+- 3차 UnityEditor.Connect UnityConnectWebRequestException / Token Exchange failed가 항해 중 발생. validator가 runtime error로 집계해 종료. Logs/FirstDayStudio/Play-20260917-110302/errors.txt 및 result.txt 원문 보존. 추가 Play 없음.
+- GameView gate 미완료: SPACE 표지 잔존, 항해 마감 부족, 항구/보급/탐험 실화면 없음. 정확한 재개 지점은 Docs/00_CURRENT/CODEX_HANDOFF.md.
+
+## 2026-09-18 — Opening Demo structural session / compiled, runtime unverified
+
+- Authorized replacement Play resolved prior Editor authentication blocker: PASS 1 gameplay 84/84, runtime errors 0. Visual acceptance still fails on terrain density/steps and harbor framing; evidence is Play-20260917-134119. Import-axis/UI fixes after capture are compile/edit-mode checked only.
+- Source review during new implementation caught functional ShopSlot prefab used as held model; item references now use visual art. Move source release now refuses an existing preview, preserves original state on failed restoration, clears the restoration target on success, and notifies existing navigation. Grid protection uses a bound cache. Compile gate/logs under Logs/DemoStructure, latest complete-compile.log exit 0.
+- No new A–H Play/validator was requested or executed. Runtime issues, NPC navigation and structural-shell/UI/art quality remain unverified. The latest user explicitly deferred these passes; do not repeat prior visual work automatically.
+
+
+## 2026-09-19 - TUTORIAL HOTBAR diagnostic tooling calibration / recovered
+- Initial queued-input probe did not assert wasPressedThisFrame under the default Editor input update, so its result was not used as gameplay evidence. Explicit Dynamic update required reflection because the typed overload is internal; the direct call produced a diagnostic CodeDom accessibility error. The same bounded diagnostic path was corrected to use reflection and assert the actual key pulse before sampling.
+- A regression tool call during Play transition returned success=false/message=null. The same runner succeeded after readiness. Earlier Console entries included FindObjectsOfTypeAll main-thread exception and MCP WebSocket-not-initialised error; their complete stacks were not retained, so no definitive source classification or error-free whole-session claim is made. Final Console error query returned 0. No gameplay code change was made for these tooling errors and no extra regression run was performed after PASS.
+
+## 2026-09-24 — T0–T1 visual capture / regression tooling / supplemental route QA null resolved
+
+- Capture defect: PA_VisualQACapture requested Full HD but Screen.SetResolution left Editor Free Aspect at 929×1310. Reused existing ConfigureGameView preset; real 1920×1080 PNG decoded/opened. Fixed in existing helper, no new capture framework.
+- MUST PATH first attempt: unfocused Play stayed at frame2, then WorldAlpha adapter startup exceeded 20s. Existing validator gained GameView focus/background execution and batch-only Editor exit; one retry PASS consoleErrors0. First failure and final result preserved under Logs/VisualQA/T1/.
+- Supplemental camera night/interior/side review: in-memory QA continuation hit NullReference twice at the companion UI step. Read-only observation after failures: PA_DepartureTutorial Stage6; tutorial/presentation/CompanionButton present; active FindFirstObjectByType<DepartureCompanionSelection>() null. Both failures terminate in MCPDynamicCode/tool execution with no product-code exception frame. The first proven broken edge was the QA continuation's active-only lookup followed by an unchecked dereference, not Register/SceneLoaded. The continuation prefab is active, its selection component is enabled, and no product path disables or destroys that root. `PA_Integration01Checks` now enumerates loaded-scene selections including inactive objects and asserts exact count, scene ownership, active/enabled state and tutorial CTA references before invoking the existing button. No product lifecycle, scene or prefab change.
+- First A/B before/after and actual 18m W/Space traversal remain valid captured evidence. Later supplemental failure does not erase independent direct-entry MUST PATH PASS, and that PASS does not validate repeatable product-entry/full visual completion.
+- Capture comparison caveat: GameClock ForceSet did not emit minute tick, so after PNG HUD retained old time; exact UI equality unverified. No screenshot edits or visual PASS claim.
+- T1-R1 validation: Runtime/Editor compile and Console checks are recorded in the September log. The previous failed session's exact inactive/missing state remains unobserved, so it is not promoted into a product bug. Resume T1 visual review through the corrected existing QA route; if its explicit lifecycle assertion fails, stop on that assertion rather than dereferencing null. Do not start T2. Evidence: Logs/VisualQA/T1/supplemental-blocker.txt, comparison-conditions.txt; ticket report in Docs/04_DEVELOPMENT_LOG/2026-09.md.
+
+## 2026-09-25 — T1 visual review / unresolved visible-entry and ground-target acceptance
+
+- Fresh-entry lifecycle assertions PASS before CTA (loaded1/scene1/active/enabled/tutorial reference true); no new companion lifecycle failure. T1 review ended PARTIAL, not final visual PASS.
+- Existing PlayerInteraction target search returned false near the visible Shop/Base front at `(254,1.1,90)` facing the root. Placed structures expose zero BuildingEntrance components; the small visible cottage and much wider shop perimeter colliders need a later alignment/interaction review. Do not infer an exact root cause or claim usable entry from the PNG. No mesh/scale/collider fix in T1.
+- Directly-ahead loose Wood overlaps the character at both24m and16m despite a valid E pickup prompt. Actual GameClock20/NightReady images still look daytime in both configurations. These remain visible acceptance defects; no GameClock or lighting edits.
+- Tool-only limits: diagnostic call13 used a nonexistent member and was corrected once in13b; call23 used an unavailable type and was not rerun; its optional tent-contact movement never executed. OS foreground precondition failed, so no key was sent and no workaround built. Pillow was absent; built-in System.Drawing decoded PNG metadata without installation. Dynamic ExitPlaymode was safety-filter rejected; dedicated manage_editor.stop succeeded without disabling safety checks. None is a product runtime exception or additional Play attempt.
+- Exact calls, images, states, limited conclusions and validation are indexed at `Logs/VisualQA/T1/review-20260925/EVIDENCE.md`; outcome is recorded in the September development log. Stop at T1; T2 not started.
+
+## 2026-09-25 - T2-A: visible Shop/Base door has no Demo256 entry chain
+
+- Proven first edge: visible B10 mesh has no selection collider/InteractionAnchor; root perimeter target centers do not match the sampled visible-door approach. Existing T1 empty-hand lookup=false, no new retry.
+- Downstream blocker: DemoPlacedObject routes ShopBase to management, with no BuildingEntrance/interior/return binding in Demo256 builder/placement callback. Legacy Golden Tier1 interior is a different route; a child door alone would also be shadowed by the FirstDay parent resolver.
+- Stopped under AGENTS architecture-assumption rule. No global range increase, progression bypass, new entry authority, product edits or new Play. Normal-movement door/entry/return NOT RUN.
+- One read-only MCP diagnostic returned success=false/message=null without a product stack; not retried or used as proof. Current Console errors/warnings0. Exact source/YAML and original T1 runtime provenance: `Logs/VisualQA/T2-A/review-20260925/EVIDENCE.md`.
+- Remaining dependency: bounded Demo256 destination/progression/return integration preserving placed operating Shop, world placement and traversal authority. T2-B not started.
+
+
+### 2026-09-25 T2-A implementation review
+- Initial missing new-script import resolved by full AssetDatabase refresh. OS foreground input failed twice; no keys sent, method stopped. Existing validator placement bypasses inventory: fixture results retained as such, actual Hotbar acceptance separately passed.
+- Missing front boundary let S overshoot exit; authored boundary/exit alignment corrected. Boundary compressed camera in cutaway; targeted camera exclusion corrected, real GameView verified.
+- Remaining: exterior cottage proportions/flat door panel, sparse room, interior nature overlap and unverified autonomous customer traversal. Functional door roundtrip is not final visual PASS. See Logs/VisualQA/T2-A/implementation-20260925/EVIDENCE.md.
+
+
+### 2026-09-26 T2-A — 동시 페이드에서 문 잠금 유지 재현
+
+실제 ScreenFader.PlayWarpFade가 진행 중일 때 exit.Interact 호출 → 페이드 종료 후 다시 호출해도 IsInside=True/doorWarping=True. 기존 페이더는 요청을 조용히 무시하지만 새 BuildingEntrance의 warping 플래그는 남는 것이 원인. 요청 수락 bool API를 추가하고 거절 시 잠금 해제 수정 완료. 원 callback 1회/거절 시 이동 없음/잠금 해제 후 실제 E 입장·퇴장·재입장 PASS, compile/Console 오류0. 후속 증거 `Logs/VisualQA/T2-A/site-20260926/fade-after.txt`. 근거 `Logs/VisualQA/T2-A/site-20260926/fade-before.txt`. 별도 stale live-site query의 null은 중단 동안 Play가 종료된 상태를 사용한 검증 전제 오류이며, Edit 상태 확인 후 새 review에서 정상 실행.
+
+
+## 2026-09-27 — T2~T7 presentation / Windows candidate
+- FIXED: Demo256에 legacy 야외 market dressing 주입; FirstDay scope 제외. 상점 간판 역방향 수정.
+- FIXED: debug label 일괄 비활성이 실제 ShopSlot 가격/품절 라벨까지 숨김; ShopSlot 자식 보존. 상시 과일 판매대를 빈 소유 counter로 교체. 카운터 item.model은 gameplay root가 아닌 visual child 참조로 held ShopSlot 복제 차단.
+- QA corrected: supplied kit 준비 전 접근, 가구 예약/판매대 점유 셀 접근 실패는 inventory 무소비 상태 확인 후 유효 위치 사용. T5 root.position 컴파일 오타1회 수정 후 PASS. Unity/MCP 장기 중단 중 refresh timeout/연결 끊김; 재접속에서 Editor Edit/idle 확인. 첫 build delayed callback이 직접 재시도 뒤 실행되어2개 output 유지.
+- OPEN / T7 environment: candidate 실행/타이틀 렌더는 성공하나 Windows foreground activation 실패, NEW GAME window mouse messages 무효. 전체 standalone MUST PATH 미검증. 강제 종료 없이 WM_CLOSE exit0. Golden title에서 non-accessible CollisionMeshData tripo_node_0e21523b4건; release-ready 전 조사 필요. Build0errors/185shaderwarnings.
+- Evidence: Logs/VisualQA/Continuation-20260926/EVIDENCE.md and T7/README.md. User-authorized sequence continued through independent work; stopping reason is remaining standalone input path blocked.
+
+
+### 2026-09-27 ShopPolish — resolved presentation/QA incidents
+가격표를 가린 구매 말풍선과 과한 판매대 조명을 실제 GameView에서 확인 후 측면 offset/조명0.8로 수정했다. Report4코멘트의 닫기 버튼 하단 여유는 본문18px로 확보. 최종 관련 거래/화면 검증 PASS; `Logs/VisualQA/ShopPolish-20260927/EVIDENCE.md`. private DisplayName 접근 compile 오류1회는 기존 public profile 사용으로 해결. 중단 전 execute_code null 응답은 script refresh 뒤 해소, 파괴적 재시작/설정 변경 없음. 기존 Windows 문제는 재시도하지 않음.
+
+
+### 2026-09-27 ReportCandidate — standalone STEP1 input boundary / build warning
+
+새 Candidate-ShopPolish-20260927-194240은 실제 마우스 NEW GAME→출항STEP1 진입 성공. foreground=game, SendInput D1.2초 반환성공 후 화면상 이동 확인 실패. 키보드 수신/이동 차단 원인은 미확정; 동일 입력·포커스 재시도 없이 사람 검수 경로 기록. 정착→Report standalone PASS 아님. Player.log 출항 진입 `Failed to create agent because there is no valid NavMesh`1건은 이번 경로에서 관찰했으나 구매 영향 미검증. 기존title collider4건 유지. Build uncompiled-code warning1건, 납품 runtime DLL/PDB143source 일치와 새 숨김 IL 확인; 경고 자체 원인 해소는 미주장. 근거 `Logs/VisualQA/ReportCandidate-20260927/DELIVERY_REPORT.md`. 무관 소스·전역 설정 변경 없음.
+## 2026-09-29 — PHONE-SHOP GameView 정지 판정 정정
+
+Pause=false였고 Editor는 응답했으나 `Application.isFocused=false`, `runInBackground=false`라 프레임이 멈춘 상태였다. Play 중 `runInBackground=true`로 임시 전환하자 frameCount가 즉시 증가하고 GameView 캡처가 갱신됐다. 게임 자체 정지로 판정했던 이전 기록은 철회한다. 촬영 후 설정을 false로 복원했다. 세로 GameView 프리셋 변경 중 화면 크기가 재변경되어 해당 캡처는 무효이며 세로 화면비 품질은 미검증이다.
+## 2026-09-30 — 타이틀 이어하기 / 구 저장과 FirstDay 섬 경로 불일치
+- OPEN: v16 `savegame.json`은 파싱되지만 빈 `firstSettlement` 기록 때문에 타이틀 씬에서 `[SaveManager] Settlement saves require the departure entry.`로 거부된다.
+- 격리 백업 후 월드 진입 순서를 시험했으나 저장된 B01 고정 진열 참조 3개가 현재 FirstDay 섬에 없어 shop-sign binding과 ShopSlot 복원이 실패했다. 위치·시간·상점 전체 복원 PASS 아님. 우회 코드는 되돌렸고 원본 저장 해시는 불변이다.
+- 저장 마이그레이션 또는 구 저장용 호환 경로 결정이 필요하다. 증거: `Logs/VisualQA/TitleScreen-20260929/SaveBackups/`, Unity Console 경고.
+
+## 2026-10-03 — D4 GameView evidence review: business clock display (RETRACTED: image-reading error)
+
+- 앞선 Codex 검수에서 축소된 캡처를 보고 영업 중 시계를 `0:13` 등으로 읽어 첫 자리 누락을 보고했다. 같은 증거 `Logs/VisualQA/DemoCompletion-20261003-003953/D2_open_12s.png`를 원본 해상도로 다시 확인하면 `20:13`으로 정상이다. Claude의 현재 Handoff도 원본 표시가 정상임을 확인했다. 첫 자리 누락이라는 버그 판정과 그에 따른 수정 요구를 철회한다.
+- 이 정정은 캡처 판독에 관한 것이다. fixture의 GameClock.ForceSet 이후 ClockHUD가 갱신되지 않던 별도 문제는 P1에서 수정·검증한 기록을 따른다. 휴대폰 알림 진입 불가와 마감 뒤 시작 문구 잔류는 P2의 실제 플레이 검증 대상이다.
+- 이번 정정에서 Unity/게임 소스 변경 또는 재실행은 하지 않았다.
+
+## 2026-10-03 — FEEDBACK-REVIEW-001 environment doctor acknowledgement error (RESOLVED: preparation docs)
+
+- Read-only `python -X utf8 Tools/LoopEngineering/Test-ProjectPADemoEnvironment.py --agent codex` exited 1: configurationReady=false, runtimeReady=true, Editor connection verified. Two errors require CODEX_HANDOFF.md and INTEGRATION_QUEUE.md to acknowledge routing.
+- The check at lines 163-165 requires literal `demoProductionRouting`; the current D4 closeout documents describe the selected approval/Claude owner but omit that literal. Separately, the launcher correctly refuses the stopped D4 milestone. This is not evidence that the live Unity connection is broken.
+- No repair/retry or approval mutation performed. At an authorized resume, reconcile actual approval/status and document acknowledgements, then rerun the failed preparation check once. Do not clear the human-review gate merely to launch.
+- 2026-10-03 completion-instruction preparation: updated the Handoff/Queue to identify `demoProductionRouting` and the proposed P1-P11 contract while preserving the stopped D4 approval. Failed doctor check rerun once: configurationReady=true/errors=[], runtimeReady=true/Editor connection verified. Preparation mode is separate from production activation; approval remains inactive.
+
+## 2026-10-03 — CLAUDE-LAUNCHER-ENCODING-001 (FIXED)
+
+- Windows PowerShell5.1/codepage949가 BOM 없는 UTF8 실행기의 inline Korean here-string을 잘못 읽어 preparation prompt가 깨졌다. AST/CheckOnly만으로 실제 prompt 경계를 검증하지 못한 원인이다.
+- 한글 준비 문장을 별도 Markdown에서 명시적 UTF8로 읽도록 수정. 실제 host/native capture에서 전체426자 exact match PASS, approval hash 불변, 실제 Claude/Unity 미실행. CheckOnly의 UTF8/한글 검사 PASS.
+- 검증 fixture의 native stub 해석 guard는 PATH에 두 후보를 찾아 중단했다. PATH를 격리하는 한 번의 교정 뒤 같은 검사 PASS. 증거 Logs/ClaudeLauncherEncoding-20261003-060607-335/result.json. 기존 깨진 Claude 대화 입력은 수동 교정하거나 그 준비 세션을 정상 종료 후 새로 시작해야 한다.
+
+## 2026-10-06 — D2 runtime tooltip binding / BLOCKED_BUDGET
+
+WorldGameplayAdapterService.ComposeInventoryUI creates HotbarUI/InventoryUI without ItemTooltip; slot hover cannot open it. Confirmed source1001/1039 + Play -082709 Require failure after9 assertions/errors0. Earlier -082532 QA timeScale capture cancelled placement; corrected. Compile3/3, Play2/3, validator1/1: no further source repair authorized. Pending existing-ItemTooltip factory/binding patch at Logs/CodexDemoPolish/D2-20261006-082207/PENDING-TooltipBinding.patch, unapplied. Needs renewed compile/Play budget; do not reset ticket.
+
+## 2026-10-06 — D2 resume: tooltip binding fixed; presentation/coverage incomplete
+
+Earlier tooltip-binding blocker resolved by approved patch/native compile, real hover/price verified. -135051 island failed when Mouse.current changed from P3Mouse to native Mouse at tent1, plus Package Manager authentication error; cause not proven, did not recur in -135635 PASS31/errors0. Departure -135435 PASS10/errors0. Remaining: tooltip exposes English stale Space description (actual E); DialoguePanel bottom156 overlaps prompt at138/height52; bubble fixture skips absent NPC and therefore supplies no NpcBubbleUI screenshot. Report fixture rankKey=A should be rank.a; C shown is fixture issue, not proven score bug. Total compile4/4, Play5/5, validator1/1 exhausted. No further repair/Play. Logs/CodexDemoPolish/D2-Resume-20261006-091224/EVIDENCE.md

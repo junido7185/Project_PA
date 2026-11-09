@@ -1,0 +1,188 @@
+[
+  {
+    "file": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "original_path": "Docs/Presentation/2026-09-08/P1-validation.json",
+    "destination": "Docs/90_PRESENTATION/Evidence/2026-09-08/P1-validation.json",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "original_path": "PROJECT_PA_FULL_GAME_BACKLOG.md",
+    "destination": "Docs/02_IMPLEMENTATION/Backlog/PROJECT_PA_FULL_GAME_BACKLOG.md",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "original_path": "PROJECT_PA_CORE_SLICE_PLAN.md",
+    "destination": "Docs/90_PRESENTATION/Demo/PROJECT_PA_CORE_SLICE_PLAN.md",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "original_path": "AI_WORKFLOW/03_TASKS/DESIGN_RESIDENT_REQUEST.md",
+    "destination": "Docs/03_VERIFICATION/StateSnapshots/2026-07-17_DESIGN_RESIDENT_REQUEST.md",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "original_path": "Docs/Codex/VISUAL_TOOLCHAIN.md",
+    "destination": "Docs/03_VERIFICATION/Audits/VISUAL_TOOLCHAIN.md",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "original_path": "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "destination": "Docs/99_ARCHIVE/Superseded/2026-09-07_ACTIVE_TASK.md",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "AI_WORKFLOW/05_LOGS/BUG_LOG.md",
+    "original_path": "PROJECT_PA_TODO.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "Docs/AssetProvenance/VS_PRESENT_001/P4/derived-assets.json",
+    "original_path": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+    "destination": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md",
+    "reason": "보호된 사용자 작업 원문"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-06.md",
+    "original_path": "PROJECT_PA_STATUS.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-06.md",
+    "original_path": "PROJECT_PA_SESSION_REPORT.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-06.md",
+    "original_path": "PROJECT_PA_TODO.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-08.md",
+    "original_path": "PROJECT_PA_STATUS.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-08.md",
+    "original_path": "PROJECT_PA_SESSION_REPORT.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-08.md",
+    "original_path": "PROJECT_PA_TODO.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/90_PRESENTATION/Evidence/2026-09-08/P0-integrity.json",
+    "original_path": "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "destination": "Docs/99_ARCHIVE/Superseded/2026-09-07_ACTIVE_TASK.md",
+    "reason": "당시 Git 변경/검증 원장; 현재 링크가 아닌 역사 기록"
+  },
+  {
+    "file": "Blender/Scripts/build_worksite_assets.py",
+    "original_path": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+    "destination": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md",
+    "reason": "보호된 P4 사용자 작업 원문; 이동 원장으로 해석"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-07.md",
+    "original_path": "PROJECT_PA_STATUS.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-07.md",
+    "original_path": "PROJECT_PA_SESSION_REPORT.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-07.md",
+    "original_path": "PROJECT_PA_TODO.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Automation/LoopEngineering/State/loop-state.json",
+    "original_path": "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "destination": "Docs/99_ARCHIVE/Superseded/2026-09-07_ACTIVE_TASK.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Automation/LoopEngineering/State/loop-state.json",
+    "original_path": "Docs/WorldArchitecture/WORLD_BOUNDED_BACKLOG.md",
+    "destination": "Docs/02_IMPLEMENTATION/Architecture/WORLD_BOUNDED_BACKLOG.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Automation/LoopEngineering/State/loop-state.json",
+    "original_path": "PROJECT_PA_STATUS.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Automation/LoopEngineering/State/loop-state.json",
+    "original_path": "PROJECT_PA_SESSION_REPORT.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Automation/LoopEngineering/State/loop-state.json",
+    "original_path": "PROJECT_PA_TODO.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/undated.md",
+    "original_path": "PROJECT_PA_STATUS.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/undated.md",
+    "original_path": "PROJECT_PA_SESSION_REPORT.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/undated.md",
+    "original_path": "PROJECT_PA_TODO.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/AssetProvenance/git-review.json",
+    "original_path": "PROJECT_PA_ART_STYLE_GRAMMAR.md",
+    "destination": "Docs/01_GAME_DESIGN/Art/PROJECT_PA_ART_STYLE_GRAMMAR.md",
+    "reason": "당시 Git 변경/검증 원장; 현재 링크가 아닌 역사 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-09.md",
+    "original_path": "PROJECT_PA_STATUS.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-09.md",
+    "original_path": "PROJECT_PA_SESSION_REPORT.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  },
+  {
+    "file": "Docs/04_DEVELOPMENT_LOG/2026-09.md",
+    "original_path": "PROJECT_PA_TODO.md",
+    "destination": "Docs/04_DEVELOPMENT_LOG/README.md",
+    "reason": "원본 출처/당시 변경 파일 기록"
+  }
+]

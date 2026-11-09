@@ -42,4 +42,15 @@ public class Farmland : MonoBehaviour
         isOccupied = false;
         currentCrop = null;
     }
+
+    public void ClearLandAndDestroyCrop()
+    {
+        GameObject crop = currentCrop;
+        ClearLand();
+        if (crop == null) return;
+
+        crop.SetActive(false);
+        if (Application.isPlaying) Destroy(crop);
+        else DestroyImmediate(crop);
+    }
 }

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 // SPY-002 — 고객 타입 / 성향 프레젠테이션 (A. 고객 성향 힌트).
 //
-// 설계 의도 (PROJECT_PA_CREATIVE_NORTH_STAR.md "NPC Roles" / "Shop Operation Fantasy"):
+// 설계 의도 (Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md "NPC Roles" / "Shop Operation Fantasy"):
 // - NPC 가 익명의 군중이 아니라, 저마다 취향을 가진 "주민 손님"으로 읽히게 한다.
 // - 구매 확률/경제 계산을 절대 바꾸지 않는 읽기 전용(presentation-only) 사이드카다.
 //

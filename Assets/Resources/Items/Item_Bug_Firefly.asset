@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Bug_Firefly
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3111
+  itemName: "\uC560\uBC18\uB527\uBD88\uC774"
+  description: "\uBC24\uC5D0 \uAC15\uAC00 \uD480\uC232 \uC704\uC5D0\uC11C \uAF41\uBB34\uB2C8
+    \uBD88\uBE5B\uC744 \uAE5C\uBE61\uC774\uB294 \uC791\uC740 \uBC18\uB527\uBD88\uC774.
+    \uBE5B\uC774 \uBA48\uCD98 \uC790\uB9AC\uB97C \uBCF4\uACE0 \uC0B4\uAE08\uC0B4\uAE08
+    \uB2E4\uAC00\uAC00\uC694."
+  icon: {fileID: 21300000, guid: 97add69955937ed489be8b047491faa7, type: 3}
+  maxStack: 20
+  model: {fileID: 4028309468037738131, guid: fea786a53d961404a8a45d7d3fb4e55e, type: 3}
+  basePrice: 18
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

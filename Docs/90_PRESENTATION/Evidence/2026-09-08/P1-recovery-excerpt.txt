@@ -1,0 +1,23 @@
+[VS-P1] CHECK_OK existing Full HD GameView preset
+[VS-P1] CHECK_OK development entry preserves uncertified P0 state
+[VS-P1] CHECK_OK uncertified P0 button stays disabled
+[VS-P1] CHECK_OK required font, profiles and models present
+[VS-P1] CHECK_OK selection session cannot write campaign save
+[VS-P1] CHECK_OK three actual candidate cards
+[VS-P1] CHECK_OK zero selection cannot depart
+[VS-P1] CHECK_OK invalid confirmation rejected
+[VS-P1] CHECK_OK one selection cannot depart
+[VS-P1] CHECK_OK one selection confirmation rejected
+[VS-P1] CHECK_OK unknown candidate rejected
+[VS-P1] CHECK_OK two selections enable departure
+[VS-P1] CHECK_OK third candidate blocked
+[VS-P1] CHECK_OK deselection disables departure
+[VS-P1] CHECK_OK selection change retained
+[SafeGameViewCapture] baseline exists=True bytes=570181 utc=2026-09-08T00:17:58.3852582Z path=C:\Users\sdjsd\Desktop\Unity\Project_PA\Docs\Presentation\2026-09-08\03_CompanionSelection.png
+[SafeGameViewCapture] graphics=Direct3D11 gameView=(x:1.33, y:30.00, width:1704.00, height:961.33) frame=2
+[SafeGameViewCapture] fresh stable bytes=229720 utc=2026-09-09T01:35:56.2743529Z frame=155
+[VS-P1] CONFIRMED Miner_01,Farmer_01
+[VS-P1] CHECK_OK exactly two immutable IDs handed off once
+[VS-P1] CHECK_OK confirmed selection frozen
+[VS-P1] CHECK_OK runtime error count zero
+[VS-P1] PASS

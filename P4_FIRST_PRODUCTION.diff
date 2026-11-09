@@ -1,0 +1,558 @@
+diff --git a/Assets/Scripts/Presentation/FirstProductionController.cs b/Assets/Scripts/Presentation/FirstProductionController.cs
+new file mode 100644
+index 0000000..74f5003
+--- /dev/null
++++ b/Assets/Scripts/Presentation/FirstProductionController.cs
+@@ -0,0 +1,154 @@
++using System;
++using System.Collections.Generic;
++using System.Linq;
++using TMPro;
++using UnityEngine;
++using UnityEngine.UI;
++
++// P4 connects the selected opening companions to existing placement, activities and producers.
++public sealed class FirstProductionController : MonoBehaviour
++{
++    public const string ResourceRoot = "DepartureTutorial/Worksites/";
++    public bool IsReady { get; private set; }
++    public bool Complete => IsReady && _sites.Count == 2 && _sites.Values.All(s => s.Producer.StarterClaimed);
++    public string Objective { get; private set; } = "동행자들의 첫 작업을 준비하세요.";
++    public FirstIslandSettlementController Settlement { get; private set; }
++    public IReadOnlyDictionary<string, StarterWorksiteInteraction> Sites => _sites;
++    public string[] Owners => Settlement.Selection.ConfirmedIds.ToArray();
++    readonly Dictionary<string, StarterWorksiteInteraction> _sites = new Dictionary<string, StarterWorksiteInteraction>();
++    readonly Dictionary<string, Button> _buttons = new Dictionary<string, Button>();
++    float _completedAt = -1;
++    TextMeshProUGUI _status;
++
++    public static string Role(string id) => id == "Lumberjack_01" ? "Wood" : id == "Miner_01" ? "Ore" : id == "Farmer_01" ? "Wheat" : null;
++    public static string WorksiteId(string owner) => "pa-worksite-" + owner;
++    public bool OwnsWorksite(string id) => IsReady && Owners.Any(o => WorksiteId(o) == id);
++    public static WorldBuildingPlacementDefinition Definition(string owner) => new WorldBuildingPlacementDefinition(
++        "PA_STARTER_" + Role(owner), ResourceRoot + Role(owner), new[] { Vector2Int.zero }, Vector2Int.down);
++
++    void Awake() { Settlement = GetComponent<FirstIslandSettlementController>(); }
++    void Update()
++    {
++        if (!Settlement.SettlementCompleted) return;
++        if (_completedAt < 0) _completedAt = Time.unscaledTime;
++        if (!IsReady && Time.unscaledTime - _completedAt >= 3) Initialize();
++        if (!IsReady) return;
++        foreach (string owner in Owners)
++        {
++            if (!_sites.ContainsKey(owner) && Settlement.Placement.TryGetPlacement(WorksiteId(owner), out var placed)) Attach(owner, placed);
++            if (_sites.TryGetValue(owner, out var site))
++            {
++                Settlement.Voyage.IslandGrid.CellToWorld(Placed(owner).Entrance, out var entrance);
++                site.Producer.workSpot.position = entrance;
++            }
++        }
++        string next = Owners.FirstOrDefault(o => !_sites.ContainsKey(o));
++        Objective = next != null ? Profession(next) + "의 첫 작업터를 준비하세요." :
++            _sites.Values.Any(s => !s.PlayerActivityCompleted) ? "작업터에서 첫 활동을 직접 해보세요." :
++            _sites.Values.Any(s => s.Producer.StarterWorking) ? "동행자들의 첫 생산 활동을 확인하세요." :
++            !Complete ? "정착 지원 물량을 수령하세요." : "첫 상품을 준비하세요.";
++        foreach (string owner in Owners)
++            _buttons[owner].GetComponentInChildren<TextMeshProUGUI>().text = Profession(owner) + (_sites.ContainsKey(owner) ? " 작업터 이동" : " 작업터 설치 · 무료");
++        _status.text = string.Join("\n", Owners.Select(o => Profession(o) + " · " + (_sites.TryGetValue(o,out var s) ? s.Status : "작업터를 선택하세요")));
++    }
++
++    public WorldPlacedBuildingRuntime Placed(string owner)
++    {
++        Settlement.Placement.TryGetPlacement(WorksiteId(owner),out var p); return p;
++    }
++    string Profession(string owner) => Settlement.Selection.candidates.First(c => c.id == owner).profession;
++    public void Initialize()
++    {
++        if (IsReady || !Settlement.SettlementCompleted) return;
++        foreach (var owner in Owners) Settlement.Placement.RegisterDefinition(WorksiteId(owner), Definition(owner));
++        var root = transform.Find("PA_SettlementUI");
++        for (int i=0;i<Owners.Length;i++)
++        {
++            string owner = Owners[i];
++            var panel = DepartureCompanionSelection.Panel(root, WorksiteId(owner), 1480, 682+i*74, 405, 62, new Color(.65f,.34f,.21f));
++            panel.GetComponent<Image>().raycastTarget = true;
++            var button = panel.gameObject.AddComponent<Button>(); button.targetGraphic = panel.GetComponent<Image>();
++            button.onClick.AddListener(() => Settlement.Begin(WorksiteId(owner)));
++            var label = Settlement.Selection.Label(panel,"Label",Profession(owner),8,4,389,54,23,new Color(.97f,.94f,.85f)); label.alignment=TextAlignmentOptions.Center;
++            _buttons[owner] = button;
++        }
++        var statusPanel = DepartureCompanionSelection.Panel(root,"ProductionStatus",1030,26,855,142,new Color(.97f,.94f,.85f,.98f));
++        _status = Settlement.Selection.Label(statusPanel,"Status","",20,12,815,118,23,new Color(.17f,.23f,.23f));
++        IsReady = true;
++        Debug.Log("[VS-P4] READY owners=" + string.Join(",",Owners));
++    }
++
++    StarterWorksiteInteraction Attach(string owner, WorldPlacedBuildingRuntime placed)
++    {
++        var site = placed.GameObject.AddComponent<StarterWorksiteInteraction>();
++        site.Configure(this, owner, Settlement.Voyage.Companions[Array.IndexOf(Owners,owner)]);
++        _sites.Add(owner,site);
++        return site;
++    }
++
++    public FirstProductionSaveData CaptureState()
++    {
++        var state = new FirstProductionSaveData { completed = Complete };
++        foreach (string owner in Owners)
++        {
++            var entry = new StarterWorksiteSaveData { companionId=owner, role=Role(owner) };
++            if (_sites.TryGetValue(owner,out var site))
++            {
++                var p = Placed(owner);
++                entry.placement = new WorldPlacedBuildingSaveData { instanceId=p.InstanceId, buildingId=p.Definition.StableId,
++                    anchorX=p.Anchor.x, anchorZ=p.Anchor.y, rotationQuarterTurns=p.QuarterTurns };
++                entry.playerActivityCompleted=site.PlayerActivityCompleted; entry.seedIssued=site.SeedIssued;
++                entry.producer=site.Producer.CaptureStarterState(); entry.farm=site.Farm != null ? site.Farm.CaptureSaveState() : null;
++            }
++            state.worksites.Add(entry);
++        }
++        return state;
++    }
++
++    public static bool IsValidSave(FirstProductionSaveData state, FirstSettlementSaveData settlement)
++    {
++        if (state == null) return true;
++        if (settlement == null || !settlement.settlementCompleted || state.version!=1 || state.worksites==null || state.worksites.Count!=2 ||
++            state.worksites.Any(s=>s==null) || state.worksites.Select(s=>s.companionId).Distinct().Count()!=2) return false;
++        foreach(var s in state.worksites)
++        {
++            if (!settlement.companionIds.Contains(s.companionId) || Role(s.companionId)==null || s.role!=Role(s.companionId)) return false;
++            if (s.placement==null) { if(s.producer!=null || s.playerActivityCompleted || s.seedIssued) return false; continue; }
++            var p=s.placement;var producer=s.producer;
++            if (p.instanceId!=WorksiteId(s.companionId) || p.buildingId!=Definition(s.companionId).StableId || p.anchorX<0 || p.anchorX>=16 ||
++                p.anchorZ<0 || p.anchorZ>=16 || p.rotationQuarterTurns<0 || p.rotationQuarterTurns>3 || producer==null ||
++                float.IsNaN(producer.elapsed) || float.IsInfinity(producer.elapsed) || producer.elapsed<0 || producer.stockCount<0 || producer.stockCount>40 ||
++                producer.claimed && (producer.stockCount!=0 || producer.active || producer.ready) ||
++                producer.ready != (producer.stockCount>0) || producer.active && (producer.ready || producer.claimed) ||
++                (producer.active || producer.ready || producer.claimed) && !s.playerActivityCompleted) return false;
++        }
++        return state.completed==state.worksites.All(s=>s.producer!=null && s.producer.claimed);
++    }
++
++    public void ClearWorksitesForRestore()
++    {
++        foreach(var site in _sites.Values) if(site!=null) site.Producer.Pause();
++        foreach(string owner in Owners) if(Settlement.Placement.TryGetPlacement(WorksiteId(owner),out _)) Settlement.Placement.TryRemove(WorksiteId(owner));
++        _sites.Clear();
++    }
++
++    public void RestoreState(FirstProductionSaveData state)
++    {
++        if (state==null) return;
++        Initialize();
++        var playerCollider=Settlement.Selection.Tutorial.player.GetComponent<CharacterController>();
++        bool playerWasEnabled=playerCollider.enabled;
++        playerCollider.enabled=false; // Saved approach poses may occupy the reserved entrance, never the footprint.
++        try
++        {
++        foreach(var record in state.worksites.Where(s=>s.placement!=null))
++        {
++            var p=record.placement;
++            var result=Settlement.Placement.TryPlace(p.instanceId,new Vector2Int(p.anchorX,p.anchorZ),p.rotationQuarterTurns);
++            if(!result.Succeeded) throw new InvalidOperationException("P4 restore placement rejected: "+result.Failure);
++            Attach(record.companionId,Placed(record.companionId)).Restore(record);
++        }
++        }
++        finally { playerCollider.enabled=playerWasEnabled; }
++    }
++}
+diff --git a/Assets/Scripts/Presentation/StarterWorksiteInteraction.cs b/Assets/Scripts/Presentation/StarterWorksiteInteraction.cs
+new file mode 100644
+index 0000000..d4654f1
+--- /dev/null
++++ b/Assets/Scripts/Presentation/StarterWorksiteInteraction.cs
+@@ -0,0 +1,135 @@
++using System.Linq;
++using UnityEngine;
++
++// Interaction proxy delegates rewards to existing gathering/farming/mining and producer inventories.
++public sealed class StarterWorksiteInteraction : MonoBehaviour, IInteractable
++{
++    public string Owner { get; private set; }
++    public ProducerNpcController Producer { get; private set; }
++    public bool PlayerActivityCompleted { get; private set; }
++    public bool SeedIssued { get; private set; }
++    public FarmPlotInteraction Farm { get; private set; }
++    public string Status => Producer.StarterClaimed ? "지원 물량 수령 완료" : Producer.StarterBatchReady ? "첫 생산 " + Item.itemName + " ×" + Producer.StarterStockCount + " · SPACE 수령" :
++        Producer.StarterWorking ? "첫 " + Item.itemName + " 생산 중" : "SPACE · " + (Role=="Wheat" ? "파종 / 수확 체험" : Role=="Ore" ? "광맥 채굴 체험" : "공용 도끼로 원목 채집");
++    public Item Item => Producer.productionData.producedItem;
++    string Role => FirstProductionController.Role(Owner);
++    FirstProductionController _flow;
++    GameObject _npc, _activity;
++    MiningSpot _mining;
++    DaytimeStockPrepPoint _stock;
++    Transform _tool, _batchVisual;
++    PrototypeWorldLabel _label;
++    string _lastStatus;
++
++    public void Configure(FirstProductionController flow,string owner,GameObject npc)
++    {
++        _flow=flow; Owner=owner; _npc=npc;
++        Producer=npc.GetComponent<ProducerNpcController>();
++        if(Producer==null) Producer=npc.AddComponent<ProducerNpcController>();
++        Producer.profile=flow.Settlement.Selection.candidates.First(c=>c.id==owner).profile;
++        Producer.productionData=Resources.Load<ProductionData>("Production/Production_"+Role);
++        Producer.specialty=Role=="Wood"?NpcSpecialty.Lumberjack:Role=="Ore"?NpcSpecialty.Miner:NpcSpecialty.Farmer;
++        Producer.workSpot=new GameObject("StarterWorkPosition_"+owner).transform;
++        Producer.workSpot.SetParent(transform,false);
++        flow.Settlement.Voyage.IslandGrid.CellToWorld(flow.Placed(owner).Entrance,out var entrance);
++        Producer.workSpot.position=entrance;
++        Producer.dropOffPoint=Producer.workSpot;
++        Producer.arriveDistance=.5f;
++        Producer.ConfigureStarterSession();
++        var labelRoot=new GameObject("ProductionLabel");labelRoot.transform.SetParent(transform,false);labelRoot.transform.localPosition=new Vector3(0,1.8f,0);
++        _label=labelRoot.AddComponent<PrototypeWorldLabel>();
++        _activity=new GameObject("ExistingPlayerActivity");_activity.transform.SetParent(transform,false);_activity.transform.localPosition=Vector3.up*.13f;
++        var activityLabel=new GameObject("Label");activityLabel.transform.SetParent(_activity.transform,false);activityLabel.AddComponent<PrototypeWorldLabel>();
++        if(Role=="Wheat")
++        {
++            var col=_activity.AddComponent<BoxCollider>();col.isTrigger=true;col.enabled=false;
++            _activity.AddComponent<Farmland>();
++            Farm=_activity.AddComponent<FarmPlotInteraction>(); Farm.Configure("p4-farm-"+owner,"정착 실습 밭");Farm.growthSecondsPerStage=3;
++            activityLabel.SetActive(false);
++        }
++        else if(Role=="Ore")
++        {
++            _stock=_activity.AddComponent<DaytimeStockPrepPoint>();_stock.Configure("p4-mine-"+owner,"Items/Item_Ore",2,"정착 실습 광맥");
++            _mining=_activity.AddComponent<MiningSpot>();_mining.Configure(_stock);activityLabel.SetActive(false);
++        }
++        var toolPrefab=Resources.Load<GameObject>(FirstProductionController.ResourceRoot+"Tool_"+Role);
++        if(toolPrefab!=null)
++        {
++            _tool=Instantiate(toolPrefab,npc.transform).transform;_tool.name="P4WorkTool_"+owner;
++            _tool.localPosition=new Vector3(.38f,.8f,.32f);_tool.gameObject.SetActive(false);
++        }
++        var batch=new GameObject("ActualFirstBatch");batch.transform.SetParent(transform,false);batch.transform.localPosition=new Vector3(.45f,.2f,-.15f);_batchVisual=batch.transform;
++        if(Item.model!=null)
++        {
++            var model=Instantiate(Item.model,_batchVisual);model.transform.localScale=Vector3.one*.5f;
++            foreach(var c in model.GetComponentsInChildren<Collider>()) c.enabled=false;
++        }
++        _batchVisual.gameObject.SetActive(false);
++    }
++
++    void OnDestroy()
++    {
++        if(_tool!=null) Destroy(_tool.gameObject);
++    }
++    void Update()
++    {
++        if(Producer==null) return;
++        if(!PlayerActivityCompleted && _stock!=null && DayNightShopLoopController.Instance.IsDailyActivityCompleted(_stock.activityId)) CompleteActivity();
++        bool working=Producer.GetFsmState()=="Working" && Producer.StarterWorking;
++        if(working)
++        {
++            var facing=transform.position-_npc.transform.position;facing.y=0;
++            if(facing.sqrMagnitude>.01f)_npc.transform.rotation=Quaternion.LookRotation(facing);
++        }
++        if(_tool!=null)
++        {
++            _tool.gameObject.SetActive(working);
++            float swing=Mathf.Sin(Time.time*(Role=="Wheat"?3:6));
++            _tool.localRotation=Role=="Wheat"?Quaternion.Euler(25+swing*18,0,-20):Quaternion.Euler(-30+swing*55,0,Role=="Ore"?25:-25);
++        }
++        _batchVisual.gameObject.SetActive(Producer.StarterBatchReady);
++        if(_lastStatus!=Status){_lastStatus=Status;_label.Set(Status,new Color(.17f,.23f,.23f),1.65f);}
++    }
++
++    public string GetInteractPrompt() => Status;
++    public void Interact(GameObject interactor)
++    {
++        if(Producer.StarterBatchReady)
++        {
++            Producer.TryClaimStarterBatch(Inventory.instance);return;
++        }
++        // Player activity remains available after NPC work begins; free NPC support is only once.
++        int before=Inventory.instance.CountItems(Item);
++        if(Role=="Wheat")
++        {
++            if(!SeedIssued)
++            {
++                var seed=Resources.Load<Item>("Items/Item_15_Seed");
++                if(!Inventory.instance.CanAddItems(seed,1) || !Inventory.instance.AddItem(seed,1)) return;
++                SeedIssued=true;
++            }
++            Farm.Interact(interactor);
++        }
++        else if(Role=="Ore") _mining.Interact(interactor);
++        else
++        {
++            if(!Inventory.instance.CanAddItems(Item,1)) return;
++            var log=new GameObject("PlayerHarvestLog");log.transform.SetParent(_activity.transform,false);
++            var gather=log.AddComponent<Gatherable>();gather.dropItem=Item;gather.requiredTool=ToolType.None;
++            gather.Interact(interactor);
++        }
++        if(Inventory.instance.CountItems(Item)>before) CompleteActivity();
++    }
++    void CompleteActivity()
++    {
++        if(PlayerActivityCompleted)return;
++        PlayerActivityCompleted=true;Producer.StartStarterWork();
++        Debug.Log("[VS-P4] PLAYER_ACTIVITY "+Owner+" "+Item.itemName);
++    }
++    public void Restore(StarterWorksiteSaveData saved)
++    {
++        PlayerActivityCompleted=saved.playerActivityCompleted;SeedIssued=saved.seedIssued;
++        if(Farm!=null) Farm.RestoreSaveState(saved.farm);
++        Producer.RestoreStarterState(saved.producer);
++    }
++}
+diff --git a/Assets/Editor/PA_FirstProductionSetup.cs b/Assets/Editor/PA_FirstProductionSetup.cs
+new file mode 100644
+index 0000000..8104353
+--- /dev/null
++++ b/Assets/Editor/PA_FirstProductionSetup.cs
+@@ -0,0 +1,57 @@
++using System;
++using System.IO;
++using System.Linq;
++using UnityEditor;
++using UnityEngine;
++
++public static class PA_FirstProductionSetup
++{
++    const string Root="Assets/Resources/DepartureTutorial/Worksites";
++    public static void Configure()
++    {
++        Directory.CreateDirectory(Root);AssetDatabase.Refresh();
++        foreach(string role in new[]{"Wood","Ore","Wheat"})
++        {
++            var root=new GameObject("PA_StarterWorksite_"+role);
++            try
++            {
++                var source=PA_DepartureContinuationSetup.Require<GameObject>("Assets/Art/ProjectPA/Derived/Worksites/PA_StarterWorksite_"+role+".fbx");
++                var visual=(GameObject)PrefabUtility.InstantiatePrefab(source,root.transform);visual.transform.localRotation=Quaternion.Euler(0,180,0);
++                foreach(var r in visual.GetComponentsInChildren<Renderer>()) r.sharedMaterials=r.sharedMaterials.Select(m=>PA_DepartureContinuationSetup.Require<Material>("Assets/Resources/DepartureTutorial/Materials/"+m.name.Split('.')[0]+".mat")).ToArray();
++                var collider=root.AddComponent<BoxCollider>();collider.size=new Vector3(1.72f,.16f,1.72f);collider.center=Vector3.up*.08f;
++                var target=new GameObject("InteractionTarget");target.transform.SetParent(root.transform,false);target.transform.localPosition=new Vector3(0,.7f,-.7f);
++                var trigger=target.AddComponent<BoxCollider>();trigger.isTrigger=true;trigger.size=new Vector3(1.5f,1.3f,.65f);
++                var entrance=new GameObject("InteractionAnchor");entrance.transform.SetParent(root.transform,false);entrance.transform.localPosition=Vector3.back*2;
++                var renderers=root.GetComponentsInChildren<Renderer>();Bounds bounds=renderers[0].bounds;foreach(var r in renderers)bounds.Encapsulate(r.bounds);
++                if(bounds.size.x>2 || bounds.size.z>2 || Mathf.Abs(bounds.min.y)>.02f)throw new InvalidOperationException("Worksite bounds "+role+" "+bounds);
++                var prefab=PrefabUtility.SaveAsPrefabAsset(root,Root+"/PA_StarterWorksite_"+role+".prefab");
++                var data=AssetDatabase.LoadAssetAtPath<BuildingData>(Root+"/"+role+".asset");
++                if(data==null){data=ScriptableObject.CreateInstance<BuildingData>();AssetDatabase.CreateAsset(data,Root+"/"+role+".asset");}
++                data.buildingName=role+" 첫 작업터";data.price=0;data.requiredTier=0;data.prefab=prefab;EditorUtility.SetDirty(data);
++                string tool=role=="Wood"?"AXE_STONE":role=="Ore"?"PICKAXE_STONE":"CHEST_CLOSED";
++                var toolRoot=new GameObject("Tool_"+role);
++                try
++                {
++                    var toolSource=PA_DepartureContinuationSetup.Require<GameObject>("Assets/Art/ProjectPA/Prefabs/Intake/PA_REF_CUBEWORLDKIT_"+tool+".prefab");
++                    var instance=(GameObject)PrefabUtility.InstantiatePrefab(toolSource,toolRoot.transform);
++                    var rr=instance.GetComponentsInChildren<Renderer>();var b=rr[0].bounds;foreach(var r in rr)b.Encapsulate(r.bounds);
++                    instance.transform.localScale*= (role=="Wheat"?.32f:.8f)/Mathf.Max(b.size.x,Mathf.Max(b.size.y,b.size.z));
++                    foreach(var col in instance.GetComponentsInChildren<Collider>())col.enabled=false;
++                    PrefabUtility.SaveAsPrefabAsset(toolRoot,Root+"/Tool_"+role+".prefab");
++                }
++                finally{UnityEngine.Object.DestroyImmediate(toolRoot);}
++                Debug.Log("[VS-P4] WRAPPER_PASS "+role+" "+bounds);
++            }
++            finally{UnityEngine.Object.DestroyImmediate(root);}
++        }
++        var continuation=PrefabUtility.LoadPrefabContents(PA_DepartureContinuationSetup.PrefabPath);
++        try
++        {
++            if(continuation.GetComponent<FirstProductionController>()==null)continuation.AddComponent<FirstProductionController>();
++            PrefabUtility.SaveAsPrefabAsset(continuation,PA_DepartureContinuationSetup.PrefabPath);
++        }
++        finally{PrefabUtility.UnloadPrefabContents(continuation);}
++        AssetDatabase.SaveAssets();Unity.CodeEditor.CodeEditor.CurrentEditor.SyncAll();
++        Debug.Log("[VS-P4] SETUP_PASS canonical Wood Ore Wheat");
++    }
++}
+diff --git a/Assets/Editor/PA_FirstProductionChecks.cs b/Assets/Editor/PA_FirstProductionChecks.cs
+new file mode 100644
+index 0000000..885eabe
+--- /dev/null
++++ b/Assets/Editor/PA_FirstProductionChecks.cs
+@@ -0,0 +1,188 @@
++using System;
++using System.IO;
++using System.Linq;
++using System.Reflection;
++using System.Threading.Tasks;
++using UnityEditor;
++using UnityEditor.SceneManagement;
++using UnityEngine;
++using UnityEngine.InputSystem;
++using UnityEngine.InputSystem.LowLevel;
++using UnityEngine.SceneManagement;
++using Object=UnityEngine.Object;
++
++[InitializeOnLoad]
++public static class PA_FirstProductionChecks
++{
++    const string Key="PA.FirstProduction.Checks";
++    const string Output="Docs/Presentation/2026-09-09/P4";
++    const string Saves="Logs/VS_PRESENT_001/P4/ValidationSave";
++    static Task _task; static Keyboard _keyboard; static double _start;
++    static PA_FirstProductionChecks()
++    {
++        EditorApplication.update+=Tick;
++        EditorApplication.playModeStateChanged+=mode=>{
++            if(!SessionState.GetBool(Key,false))return;
++            if(mode==PlayModeStateChange.EnteredPlayMode){_task=null;_start=EditorApplication.timeSinceStartup;SessionState.SetBool(Key+".Background",Application.runInBackground);Application.runInBackground=true;}
++            if(mode==PlayModeStateChange.EnteredEditMode && SessionState.GetBool(Key+".Done",false))
++            {
++                bool fail=SessionState.GetBool(Key+".Error",false);SessionState.SetBool(Key,false);
++                Debug.Log(fail?"[VS-P4] VALIDATION_FAIL":"[VS-P4] P4_VALIDATION_PASS");
++                if(Environment.GetCommandLineArgs().Contains("-executeMethod"))EditorApplication.Exit(fail?1:0);
++            }
++        };
++        Application.logMessageReceived+=(message,stack,type)=>{
++            if(SessionState.GetBool(Key,false) && (type==LogType.Error || type==LogType.Exception || type==LogType.Assert))SessionState.SetBool(Key+".Error",true);
++        };
++    }
++    public static void Run()
++    {
++        Directory.CreateDirectory(Output);Directory.CreateDirectory(Saves);
++        SessionState.SetBool(Key,true);SessionState.SetBool(Key+".Done",false);SessionState.SetBool(Key+".Error",false);
++        EditorSceneManager.OpenScene("Assets/Scenes/PA_DepartureTutorial.unity");
++        PA_DepartureContinuationChecks.ConfigureGameView();
++        EditorWindow.GetWindow(typeof(Editor).Assembly.GetType("UnityEditor.GameView")).Focus();
++        EditorApplication.EnterPlaymode();
++    }
++    static void Tick()
++    {
++        if(!SessionState.GetBool(Key,false) || SessionState.GetBool(Key+".Done",false) || !EditorApplication.isPlaying)return;
++        var p=Object.FindFirstObjectByType<FirstProductionController>();
++        if(_task==null && p!=null && p.Settlement.Selection.Tutorial!=null && p.Settlement.Selection.Tutorial.IsReady)_task=Checks(p);
++        if(_task!=null && _task.IsCompleted)
++        {
++            if(_task.IsFaulted){Debug.LogError("[VS-P4] "+_task.Exception.GetBaseException());SessionState.SetBool(Key+".Error",true);}
++            Finish();
++        }
++        else if(EditorApplication.timeSinceStartup-_start>480){Debug.LogError("[VS-P4] bounded timeout");Finish();}
++    }
++    static void Finish()
++    {
++        if(_keyboard!=null && _keyboard.added)InputSystem.RemoveDevice(_keyboard);
++        SessionState.SetBool(Key+".Done",true);Application.runInBackground=SessionState.GetBool(Key+".Background",false);EditorApplication.ExitPlaymode();
++    }
++    static async Task Checks(FirstProductionController p)
++    {
++        _keyboard=InputSystem.AddDevice<Keyboard>("P4ValidationKeyboard");_keyboard.MakeCurrent();
++        var pairs=new[]{new[]{"Miner_01","Farmer_01"},new[]{"Lumberjack_01","Miner_01"},new[]{"Lumberjack_01","Farmer_01"}};
++        for(int pair=0;pair<3;pair++)
++        {
++            if(pair>0){await FreshScene();p=Object.FindFirstObjectByType<FirstProductionController>();}
++            var s=p.Settlement;var selection=s.Selection;
++            selection.OpenDevelopmentSelection();
++            foreach(var id in pairs[pair])Check(selection.Toggle(id),"select canonical "+id);
++            selection.DepartureButton.onClick.Invoke();
++            var companions=s.Voyage.Companions.ToArray();
++            await Until(()=>s.IsReady,"P1 -> actual P2 voyage arrival");
++            for(int i=0;i<3;i++)
++            {
++                s.Begin(s.BuildingIds[i]);
++                var cell=i==0?new Vector2Int(6,5):i==1?new Vector2Int(9,4):new Vector2Int(8,7);
++                var result=s.PreviewAt(cell,i==1?1:0);Check(result.Succeeded && s.Commit(),"P3 canonical hub/shelter placement "+i);
++            }
++            await Until(()=>p.IsReady,"P3 completion unlocks P4");
++            Check(p.Owners.SequenceEqual(pairs[pair]) && s.Voyage.Companions.SequenceEqual(companions),"same selected IDs and original companion objects");
++            var save=s.EnsureSaveManager();ConfigureRepository(save);
++            int money=EconomyService.Instance.Money;
++            foreach(string owner in p.Owners)
++            {
++                string id=FirstProductionController.WorksiteId(owner);s.Begin(id);
++                Check(!s.PreviewAt(new Vector2Int(10,6),0).Succeeded,"worksite rejects natural overlap");
++                var cell=FindValid(s,id,owner==p.Owners[0]?new Vector2Int(5,4):new Vector2Int(8,4));
++                Check(s.PreviewAt(cell,0).Succeeded && s.Commit(),"free grid worksite "+owner);
++                await Until(()=>p.Sites.ContainsKey(owner),"worksite owner binding");
++            }
++            Check(s.Placement.RegisteredCount==5 && p.Sites.Count==2 && EconomyService.Instance.Money==money,"3 settlement + 2 free worksites no duplicates");
++            Check(p.Sites.Values.Select(site=>site.Item).Distinct().Count()==2 && p.Sites.Values.All(site=>site.Item.basePrice>0 && (int)site.Item.category==0),"two distinct canonical raw sellable products");
++            if(pair==0)await Capture("01_Companion_Worksites.png");
++            foreach(string owner in p.Owners)
++            {
++                var site=p.Sites[owner];int before=Inventory.instance.CountItems(site.Item);
++                await Interact(site,s);
++                if(site.Farm!=null)
++                {
++                    await Until(()=>site.Farm.CurrentCrop!=null,"existing FarmPlot planted existing seed");
++                    // Save an actual in-flight planting and restore it using the existing crop path.
++                    await save.SaveGameAsync();await save.LoadGameAsync();site=p.Sites[owner];
++                    await Until(()=>site.Farm.CurrentCrop!=null && site.Farm.CurrentCrop.isFullyGrown,"existing crop growth after restore");
++                    await Interact(site,s);
++                }
++                await Until(()=>p.Sites[owner].PlayerActivityCompleted,"actual player activity "+owner);
++                Check(Inventory.instance.CountItems(p.Sites[owner].Item)>before,"activity adds canonical inventory "+owner);
++            }
++            Check(p.Sites.Values.All(site=>site.Producer.StarterWorking || site.Producer.StarterBatchReady),"both real ProducerNpcController sessions started");
++            // No timer injection or direct ProduceItems invocation.
++            await Until(()=>p.Sites.Values.All(site=>site.Producer.StarterBatchReady),"existing producer timers produced first batches",40);
++            if(pair==0)await Capture("02_FirstProduction.png");
++            var expected=p.Sites.Values.ToDictionary(site=>site.Owner,site=>Inventory.instance.CountItems(site.Item)+site.Producer.StarterStockCount);
++            await save.SaveGameAsync();await save.LoadGameAsync();
++            Check(p.Sites.Values.All(site=>site.Producer.StarterBatchReady),"unclaimed stock restored");
++            foreach(string owner in p.Owners)
++            {
++                await Interact(p.Sites[owner],s);
++                Check(p.Sites[owner].Producer.StarterClaimed && Inventory.instance.CountItems(p.Sites[owner].Item)==expected[owner],"one-time transfer of actual NPC stock "+owner);
++                Check(!p.Sites[owner].Producer.TryClaimStarterBatch(Inventory.instance),"repeat claim rejected");
++            }
++            await Until(()=>p.Complete && p.Objective=="첫 상품을 준비하세요.","P4 complete -> P5 objective only");
++            Check(EconomyService.Instance.Money==money,"support exception does not spend/grant money");
++            PA_DepartureContinuationChecks.ValidateReferences(p.gameObject);
++            if(pair==0)await Capture("03_P4_Complete.png");
++            await save.SaveGameAsync();string json=JsonUtility.ToJson(p.CaptureState());
++            await FreshScene();p=Object.FindFirstObjectByType<FirstProductionController>();ConfigureRepository(p.Settlement.EnsureSaveManager());
++            await p.Settlement.ResumeAsync();
++            await Until(()=>p.IsReady,"fresh reentry P4 ready");
++            Check(p.Complete && JsonUtility.ToJson(p.CaptureState())==json,"fresh reentry exact worksite ownership production and completion");
++            Check(p.Settlement.Placement.RegisteredCount==5 && p.Settlement.Voyage.Companions.Count==2,"reload no duplicate structures/companions");
++            foreach(var site in p.Sites.Values)
++                Check(Inventory.instance.CountItems(site.Item)==expected[site.Owner] && !site.Producer.TryClaimStarterBatch(Inventory.instance),"reload cannot duplicate support "+site.Owner);
++            Check(!SessionState.GetBool(Key+".Error",false),"no blocking errors pair "+pair);
++            File.WriteAllText(Output+"/P4-pair-"+pair+".json",JsonUtility.ToJson(p.CaptureState(),true));
++            Debug.Log("[VS-P4] COMBINATION_PASS "+string.Join(",",pairs[pair]));
++        }
++        // v15 P3 saves migrate without inventing production or a second free grant.
++        var legacy=new SaveData{version=15,firstSettlement=new FirstSettlementSaveData{settlementCompleted=true}};
++        var migrated=(SaveData)typeof(SaveManager).GetMethod("MigrateSaveData",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(p.Settlement.EnsureSaveManager(),new object[]{legacy});
++        Check(migrated.version==16 && migrated.firstProduction==null && migrated.firstSettlement.settlementCompleted,"v15 -> v16 additive migration");
++        File.WriteAllText(Output+"/P4-validation.json","{\"status\":\"PASS\",\"combinations\":3,\"runtimeErrors\":0,\"saveAndFreshReentry\":true,\"duplicateClaims\":0,\"input\":\"fixture approach pose then real SPACE -> PlayerInteraction -> original activity\",\"graphics\":\"D3D11\"}");
++    }
++    static Vector2Int FindValid(FirstIslandSettlementController s,string id,Vector2Int preferred)
++    {
++        foreach(var c in Enumerable.Range(2,12).SelectMany(z=>Enumerable.Range(2,12).Select(x=>new Vector2Int(x,z))).OrderBy(c=>(c-preferred).sqrMagnitude))
++            if(s.Placement.Evaluate(id,c,0).Succeeded)return c;
++        throw new InvalidOperationException("No free worksite cell");
++    }
++    static async Task Interact(StarterWorksiteInteraction site,FirstIslandSettlementController s)
++    {
++        var player=s.Selection.Tutorial.player;var traversal=player.GetComponent<WorldPlayerTraversalGuard>();
++        var interaction=player.GetComponent<PlayerInteraction>();var method=typeof(PlayerInteraction).GetMethod("TryFindInteractable",BindingFlags.Instance|BindingFlags.NonPublic);
++        bool reachable=false;
++        for(int direction=0;direction<8;direction++)
++        {
++            float angle=direction*Mathf.PI/4;var offset=new Vector3(Mathf.Sin(angle),0,-Mathf.Cos(angle))*1.55f;
++            if(!traversal.TryTeleportTo(site.transform.position+offset+Vector3.up*.12f))continue;
++            player.LookAt(new Vector3(site.transform.position.x,player.position.y,site.transform.position.z));
++            await Task.Delay(250); // Let collision/ground protection settle before checking the live target.
++            Physics.SyncTransforms();object[] args={null,null};
++            if((bool)method.Invoke(interaction,args) && ReferenceEquals(args[0],site)){reachable=true;break;}
++        }
++        Check(reachable,"actual PlayerInteraction worksite target "+site.Owner);
++        InputSystem.QueueStateEvent(_keyboard,new KeyboardState(UnityEngine.InputSystem.Key.Space));await Task.Delay(130);
++        InputSystem.QueueStateEvent(_keyboard,new KeyboardState());await Task.Delay(250);
++    }
++    static async Task FreshScene()
++    {
++        var operation=EditorSceneManager.LoadSceneAsyncInPlayMode("Assets/Scenes/PA_DepartureTutorial.unity",new LoadSceneParameters(LoadSceneMode.Single));
++        while(!operation.isDone)await Task.Delay(50);
++        await Until(()=>{var p=Object.FindFirstObjectByType<FirstProductionController>();return p!=null && p.Settlement.Selection.Tutorial!=null && p.Settlement.Selection.Tutorial.IsReady;},"fresh departure scene initialized");
++        _keyboard.MakeCurrent();
++    }
++    static void ConfigureRepository(SaveManager save)=>typeof(SaveManager).GetMethod("SetRepositoryForValidation",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(save,new object[]{new LocalJsonSaveRepository(Path.GetFullPath(Saves))});
++    static Task Capture(string name)=>PA_SafeGameViewCapture.CaptureAsync(Path.GetFullPath(Output+"/"+name),Camera.main,null,1920,1080,600);
++    static async Task Until(Func<bool> predicate,string label,float seconds=30)
++    {
++        double end=EditorApplication.timeSinceStartup+seconds;
++        while(!predicate() && EditorApplication.timeSinceStartup<end)await Task.Delay(70);
++        Check(predicate(),label);
++    }
++    static void Check(bool condition,string label){if(!condition)throw new InvalidOperationException(label);Debug.Log("[VS-P4] CHECK_OK "+label);}
++}

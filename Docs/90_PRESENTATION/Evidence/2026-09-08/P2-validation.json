@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "ids": [
+    "Miner_01",
+    "Farmer_01"
+  ],
+  "seconds": 12.0,
+  "sameCompanionObjects": true,
+  "deckMovement": true,
+  "islandMovement": true,
+  "existingGrid": true,
+  "runtimeErrors": 0,
+  "runDate": "2026-09-09",
+  "entry": "explicit development selection; P0 not rerun",
+  "screenshots": [
+    {
+      "file": "04_Boat_To_Island.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "bytes": 511083,
+      "sha256": "d0ef918346f0329b12cb4465e3997bb026ee54093a612a5291365d9c20aca6fe",
+      "freshStableWrite": true
+    },
+    {
+      "file": "05_Island_FirstArrival.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "bytes": 748684,
+      "sha256": "eb7da3ef4383249c25dd51708856cd7cc4bb2a2855556d11710ff5c0f12fbd10",
+      "freshStableWrite": true
+    }
+  ],
+  "compileErrors": 0,
+  "missingRequiredReferences": 0,
+  "missingScripts": 0,
+  "nativeCrashes": 0,
+  "fullP0ToP2Run": "NOT_RUN",
+  "otherVerifiedPair": [
+    "Lumberjack_01",
+    "Farmer_01"
+  ]
+}

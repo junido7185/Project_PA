@@ -61,6 +61,27 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
     public void SetSlot(InventorySlot slot)
     {
         EnsureFallbackText();
+        bool firstDay = PlayerInputHandler.Instance?.FirstDayControls == true;
+        if (firstDay)
+        {
+            var labelRect = fallbackText.rectTransform;
+            labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = new Vector2(1, 0);
+            labelRect.offsetMin = new Vector2(3, 4); labelRect.offsetMax = new Vector2(-3, 23);
+            fallbackText.enableAutoSizing = true; fallbackText.fontSizeMin = 10; fallbackText.fontSizeMax = 13;
+            fallbackText.textWrappingMode = TextWrappingModes.NoWrap;
+            if (icon != null)
+            {
+                icon.preserveAspect = true;
+                icon.rectTransform.offsetMin = new Vector2(12, 25);
+                icon.rectTransform.offsetMax = new Vector2(-12, -14);
+            }
+            if (countText != null)
+            {
+                countText.alignment = TextAlignmentOptions.TopRight;
+                countText.fontSize = 16; countText.color = new Color(.12f,.2f,.2f);
+                countText.margin = new Vector4(0, 3, 4, 0);
+            }
+        }
 
         if (slot == null || slot.IsEmpty)
         {
@@ -78,20 +99,21 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
             bool hasIcon = slot.item.icon != null;
             if (icon != null)
             {
-                icon.enabled = true;
+                icon.enabled = hasIcon || !firstDay;
                 icon.sprite = slot.item.icon;
                 icon.color = hasIcon ? Color.white : new Color(0.92f, 0.82f, 0.58f, 0.95f);
             }
 
             if (fallbackText != null)
             {
-                fallbackText.text = hasIcon ? "" : BuildFallbackLabel(slot);
-                fallbackText.enabled = !hasIcon;
+                fallbackText.text = hasIcon && !firstDay ? "" : BuildFallbackLabel(slot);
+                fallbackText.enabled = firstDay || !hasIcon;
             }
 
             if (countText != null)
                 countText.text = slot.count > 1 ? slot.count.ToString() : "";
         }
+        if (firstDay) PAUiTheme.Slot(this, slot);
     }
 
     void EnsureFallbackText()
@@ -121,7 +143,31 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
         string name = slot?.item != null && !string.IsNullOrEmpty(slot.item.itemName)
             ? slot.item.itemName
             : "ITEM";
-        if (name.Length > 6) name = name.Substring(0, 6);
+        if (PlayerInputHandler.Instance?.FirstDayControls == true)
+        {
+            // 구리·철 단계 도구와 튼튼한 낚싯대는 기본 도구와 구분되게 단계 이름을 쓴다(ToolDurability.DisplayName 표).
+            if (slot.item.toolType != ToolType.None)
+            {
+                string tierName = ToolDurability.DisplayName(slot.item);
+                if (!string.IsNullOrEmpty(tierName) && tierName.Contains(" ")) return tierName;
+            }
+            switch (slot.item.toolType)
+            {
+                case ToolType.Axe: return "도끼";
+                case ToolType.Pickaxe: return "곡괭이";
+                case ToolType.FishingRod: return "낚싯대";
+                case ToolType.Net: return "잠자리채";
+                case ToolType.Shovel: return "삽";
+            }
+            switch (slot.item.id)
+            {
+                case 2012: return "상점 키트";
+                case 2013: return "텐트 키트";
+                case 2014: return "작업대";
+                case 2020: return "가판대";
+            }
+            return ItemDisplayName.For(slot.item);
+        }
         return name;
     }
 
@@ -140,7 +186,8 @@ public class InventorySlotUI : MonoBehaviour, IBeginDragHandler, IEndDragHandler
         DragContext.draggedInstance = new ItemInstance(s.item, amount)
         {
             quality = s.instance != null ? s.instance.quality : 1f,
-            currentPrice = s.instance != null ? s.instance.currentPrice : 0
+            currentPrice = s.instance != null ? s.instance.currentPrice : 0,
+            durabilityUsed = s.instance != null ? s.instance.durabilityUsed : 0
         };
         DragContext.draggedCount = amount;
         DragContext.fromSlotIndex = index;

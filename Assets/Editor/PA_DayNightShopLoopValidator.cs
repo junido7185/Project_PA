@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -139,8 +140,13 @@ public static class PA_DayNightShopLoopValidator
 
             var controller = RequireOne<DayNightShopLoopController>("DayNightShopLoopController");
             Require(controller.gameObject.scene.IsValid(), "day/night controller is bound to the loaded scene");
-            DaytimeStockPrepPoint[] prepPoints = Object.FindObjectsByType<DaytimeStockPrepPoint>(FindObjectsSortMode.None);
-            Require(prepPoints.Length >= 2, "two runtime day prep stock points exist");
+            DaytimeStockPrepPoint[] prepPoints = Object
+                .FindObjectsByType<DaytimeStockPrepPoint>(FindObjectsSortMode.None)
+                .OrderByDescending(IsSellablePrepPoint)
+                .ThenBy(point => point.activityId, StringComparer.Ordinal)
+                .ToArray();
+            Require(prepPoints.Count(IsSellablePrepPoint) >= 2,
+                "two sellable runtime day prep stock points exist");
 
             ClearRuntimeInventory();
             controller.ResetDayPrepForValidation();
@@ -230,6 +236,14 @@ public static class PA_DayNightShopLoopValidator
             CountSellable(Inventory.instance.hotbar.slots, ref count);
 
         return count;
+    }
+
+    static bool IsSellablePrepPoint(DaytimeStockPrepPoint point)
+    {
+        if (point == null || string.IsNullOrWhiteSpace(point.itemResourcePath)) return false;
+        Item item = Resources.Load<Item>(point.itemResourcePath);
+        return item != null && item.category != ItemCategory.Tool &&
+               item.toolType == ToolType.None;
     }
 
     static void CountSellable(System.Collections.Generic.List<InventorySlot> slots, ref int count)

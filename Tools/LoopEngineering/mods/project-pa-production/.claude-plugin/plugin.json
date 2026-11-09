@@ -1,0 +1,7 @@
+{
+  "name": "project-pa-production",
+  "version": "1.0.0",
+  "types": "./types/index.d.ts",
+  "description": "Project P.A. usage observation and safe production pause; existing LoopEngineering owns scheduling and state.",
+  "author": {"name": "Project P.A."}
+}

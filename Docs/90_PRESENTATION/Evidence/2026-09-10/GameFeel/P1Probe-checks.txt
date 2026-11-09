@@ -1,0 +1,11 @@
+PASS clickable Candidate_Miner_01
+PASS clickable Candidate_Farmer_01
+before Enter selected=Miner_01,Farmer_01 active=True
+sample=0 current=OpeningFeelKeyboard held=True frame=73 confirmed=False selected=Miner_01
+sample=1 current=OpeningFeelKeyboard held=True frame=75 confirmed=False selected=Miner_01
+sample=2 current=OpeningFeelKeyboard held=True frame=77 confirmed=False selected=Miner_01
+sample=3 current=OpeningFeelKeyboard held=True frame=80 confirmed=False selected=Miner_01
+sample=4 current=OpeningFeelKeyboard held=True frame=83 confirmed=False selected=Miner_01
+sample=5 current=OpeningFeelKeyboard held=True frame=86 confirmed=False selected=Miner_01
+sample=6 current=OpeningFeelKeyboard held=True frame=89 confirmed=False selected=Miner_01
+sample=7 current=OpeningFeelKeyboard held=True frame=92 confirmed=False selected=Miner_01

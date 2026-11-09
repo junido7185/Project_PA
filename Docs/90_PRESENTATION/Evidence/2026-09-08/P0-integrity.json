@@ -1,0 +1,21 @@
+{
+  "changedSinceBaseline": [
+    "AI_WORKFLOW/03_TASKS/ACTIVE_TASK.md",
+    "Assets/Fonts/Jalnan2_SDF.asset",
+    "Assets/Scripts/PA_RuntimeSceneBinder.cs",
+    "Automation/LoopEngineering/State/loop-state.json"
+  ],
+  "protectedCorePreserved": true,
+  "screenshots": {
+    "01_PA_Company_FirstView.png": {
+      "width": 1920,
+      "height": 1080,
+      "sha256": "9d1a97f997996b19a70c7bc53fa0a5bd285b5ea2815ceeb7cf4a3a5a16fdfd94"
+    },
+    "02_Tutorial_PriceAndReaction.png": {
+      "width": 1920,
+      "height": 1080,
+      "sha256": "ff33ec6e51248597a00836b6c8a9a32783af5b01355bf98f116d6819f6c49fbc"
+    }
+  }
+}

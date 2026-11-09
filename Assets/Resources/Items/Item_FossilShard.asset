@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_FossilShard
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2041
+  itemName: "\uD654\uC11D \uC870\uAC01"
+  description: "\uB3CC \uC18D\uC5D0 \uC18C\uC6A9\uB3CC\uC774 \uAECD\uB370\uAE30 \uBB34\uB2AC\uAC00
+    \uB0A8\uC740 \uD654\uC11D \uC870\uAC01. \uD30C\uAE30 \uC790\uAD6D\uC5D0\uC11C
+    \uAC00\uC7A5 \uB4DC\uBB3C\uAC8C \uB098\uC640\uC694."
+  icon: {fileID: 21300000, guid: f72a3dabe8f4b8643923cd72a0477c46, type: 3}
+  maxStack: 99
+  model: {fileID: 8519983540490202047, guid: 2e31e5134622fad498647c90e42e488f, type: 3}
+  basePrice: 64
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

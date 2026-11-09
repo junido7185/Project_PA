@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_SeaweedRoll
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2046
+  itemName: "\uD574\uCD08 \uC0DD\uC120\uB9D0\uC774"
+  description: "\uCC38\uCE58\uB97C \uD574\uCD08\uB85C \uB9D0\uC544 \uAD6C\uC6CC \uC370\uC5C8\uC5B4\uC694.
+    \uB09A\uC2DC\uC640 \uD574\uBCC0 \uC90D\uAE30\uB97C \uD568\uAED8 \uD55C \uB0A0
+    \uB9CC\uB4E4 \uC218 \uC788\uACE0, \uC0DD\uC120\uAD6C\uC774\uBCF4\uB2E4 \uC870\uAE08
+    \uB354 \uBC1B\uC544\uC694."
+  icon: {fileID: 21300000, guid: 49bb443da6a182742b1e1f1415f4c08e, type: 3}
+  maxStack: 12
+  model: {fileID: 2009128053205975425, guid: 3ba95a772c61c6a49bf972eee759ef6a, type: 3}
+  basePrice: 62
+  toolType: 0
+  category: 1
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

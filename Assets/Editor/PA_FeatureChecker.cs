@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  PA_FeatureChecker — Docs/기능_명세서.md 자동 검증
+//  PA_FeatureChecker — Docs/03_VERIFICATION/StateSnapshots/2026-04-28_기능_명세서.md 자동 검증
 //  메뉴: P.A. System > 🩺 Implementation Checker (priority = 5)
 //
 //  설계 의도:
@@ -116,7 +116,7 @@ public class PA_FeatureChecker : EditorWindow
         EditorGUILayout.EndHorizontal();
 
         EditorGUILayout.LabelField(
-            "Docs/기능_명세서.md §1~§7 자동 검증. 명세 기대 ↔ 실제 상태 좌우 비교.",
+            "Docs/03_VERIFICATION/StateSnapshots/2026-04-28_기능_명세서.md §1~§7 자동 검증. 명세 기대 ↔ 실제 상태 좌우 비교.",
             EditorStyles.miniLabel);
     }
 

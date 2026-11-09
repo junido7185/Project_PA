@@ -1,137 +1,138 @@
-# Project P.A. (Pioneer Assistance)
+# Project P.A.
 
-낮에는 섬에서 자원을 모으고 거점을 세우고, 밤에는 직접 연 가게에서 물건값을 정해 파는 **3D 코지 생활·상점 경영 시뮬레이션**입니다.
-Unity 6·C#으로 1인 개발 중인 졸업작품(2025.12 ~)입니다. 손님 NPC는 성격에 따라 플레이어가 정한 가격을 보고 구매 여부를 스스로 판단합니다.
+**낮에는 섬을 가꾸고, 밤에는 그 섬의 잡화점 주인이 됩니다.**
 
 <p align="center">
-  <img src="Docs/Portfolio/hero-settlement.jpg" width="820" alt="섬에 첫 거점과 동료 거처 두 채를 배치한 실제 플레이 화면">
+  <img src="Docs/Portfolio/2026-11/title.jpg" width="960" alt="배 위의 플레이어와 동료, 바다 건너 섬이 보이는 Project P.A.의 실제 타이틀 화면">
 </p>
 
-> 화면과 코드 링크는 기본 브랜치(`master`, 2026-08-06)가 아니라 최신 작업 브랜치 [`milestone/gameplay-beta-85`](https://github.com/junido7185/Project_PA/tree/milestone/gameplay-beta-85)의 커밋 [`b121140`](https://github.com/junido7185/Project_PA/tree/b121140ae6f5ca0f92078db5c2f75512dc8fc95a)(2026-10-06) 기준입니다.
+Project P.A.(Pioneer Assistance)는 섬 생활과 상점 경영을 엮은 3D 게임입니다. 낮에 주운 조개, 직접 낚은 물고기, 작업대에서 만든 물건을 저녁 가게에 내놓습니다. 무엇을 팔지, 얼마를 받을지 정하는 것도 플레이어의 몫입니다.
 
-## 지금 플레이할 수 있는 흐름
+약 1년 동안 만든 개인 졸업작품입니다. 낮에 했던 일이 밤의 가게에 남고, 가게를 운영하는 일이 다시 주민과 마을의 생활로 이어지는 게임을 목표로 개발하고 있습니다.
 
-| 1. 판매 교육: 가격 정하기 | 2. 손님이 가격을 보고 구매 | 3. 함께 갈 동료 2명 선택 |
-|---|---|---|
-| ![가격 설정 패널](Docs/Portfolio/01-price.jpg) | ![손님 반응 말풍선](Docs/Portfolio/02-reaction.jpg) | ![동료 선택 화면](Docs/Portfolio/03-companions.jpg) |
-| **4. 배를 타고 섬으로** | **5. 격자 위에 거점 배치(R로 회전)** | **6. 정착 후 첫 영업 준비** |
-| ![배 위의 플레이어와 동료](Docs/Portfolio/04-boat.jpg) | ![설치 가능 영역 미리보기](Docs/Portfolio/05-placement.jpg) | ![완성된 거점 앞의 플레이어](Docs/Portfolio/06-settled.jpg) |
+| 개발 | 엔진·언어 | 현재 버전 |
+| --- | --- | --- |
+| 1인 개발 · 2025년 말부터 | Unity 6 · C# · URP | Windows 첫날 데모 · 2026.11.09 기준 |
 
-밤 영업에서는 손님이 진열 상품과 가격을 보고 구매 여부를 정하고, 휴대폰 등급 심사 앱에서 누적 매출과 다음 등급 목표를 확인합니다.
+[플레이 내용](#섬에서-보내는-하루) · [구현 이야기](#화면-뒤에서-돌아가는-것들) · [실행 방법](#실행하기) · [개발 기록](Docs/04_DEVELOPMENT_LOG/README.md)
 
-| 구매 판정이 화면에 보이는 순간 | 휴대폰 등급 심사 앱 |
-|---|---|
-| <img src="Docs/Portfolio/night-reaction.jpg" width="360" alt="Tailor_01: 가격 적정, 구매 (69%)"> | <img src="Docs/Portfolio/audit-app.jpg" width="360" alt="누적 매출과 다음 등급 심사 목표"> |
+## 섬에서 보내는 하루
 
-모든 화면은 Unity Editor Play Mode에서 검증 스크립트가 찍은 실제 게임 화면입니다. `Docs/01_GAME_DESIGN/Art/TARGET_*.png`는 AI로 만든 아트 방향 참고 이미지라 여기에 쓰지 않았습니다.
+출항 전 짧은 판매 교육을 받고, 세 명의 후보 중 함께 갈 동료 두 명을 고릅니다. 배가 섬에 닿으면 보급품을 챙기고 가게와 동료의 텐트를 놓습니다. 그 뒤부터는 섬을 돌아다니며 첫 영업을 준비합니다.
 
-## 한눈에 보기
+| 아침, 가게와 동료의 거처를 세운 뒤 | 밤, 불을 켜고 손님을 맞는 가게 |
+| --- | --- |
+| ![나무와 풀밭 사이에 배치한 잡화점과 동료의 텐트](Docs/Portfolio/2026-11/settlement.jpg) | ![창문과 간판에 불이 켜진 잡화점 앞으로 모여드는 손님들](Docs/Portfolio/2026-11/night-shop.jpg) |
 
-| 항목 | 내용 |
-|---|---|
-| 형태 | 개인 졸업작품, 1인 개발 (기획·설계·AI 에이전트 작업 지휘·통합·검증) |
-| 엔진 | Unity 6 (6000.3.2f1), URP, C#, New Input System, AI Navigation(NavMesh) |
-| 규모 | 런타임 C# 169개 파일, 메뉴로 실행하는 검증기 96개 |
-| 진입 | `Assets/Scenes/Prototype_FirstDay.unity` → NEW GAME → 출항 교육 → 섬 |
-| 개발 방식 | AI 코딩 에이전트(Codex, Claude Code)로 구현. 자세한 내용은 [개발 방식](#개발-방식) |
+나무와 광석을 모으거나 낚시를 하고, 해변을 걷다가 작은 발견물을 줍기도 합니다. 모은 재료는 그대로 팔아도 되고 요리나 공예품으로 만들어도 됩니다. 해가 지면 진열대에 물건을 올리고 가격을 정한 뒤, 휴대폰의 상점 앱으로 문을 엽니다. 손님은 상품과 가격을 살펴보고 구매하거나 돌아갑니다. 영업이 끝나면 매출과 첫날의 활동을 보고서로 확인합니다.
 
-## 구조
+첫 정착부터 첫 영업까지는 약 5분의 시연 동선으로 묶었습니다. 낚시와 곤충 채집, 꾸미기는 그 사이에 골라 즐기는 활동입니다.
 
-```mermaid
-flowchart LR
-  subgraph Day[낮: 준비]
-    Tutorial[DepartureTutorialController] --> Player[PlayerController<br/>CharacterController]
-    Settle[FirstIslandSettlementController] --> Place[WorldBuildingPlacementService<br/>격자 배치·회전·롤백]
-    Place --> Grid[WorldGridService]
-  end
-  subgraph Night[밤: 상점]
-    Npc[NpcController<br/>NavMesh 상태 머신] --> Eval[PurchaseEvaluator<br/>순수 함수 구매 판정]
-    Eval --> Slot[ShopSlot]
-    Slot --> Econ[EconomyService] --> Tier[TierService]
-  end
-  Clock[GameClock] --> Loop[DayNightShopLoopController]
-  Loop --> Save[SaveManager<br/>v17 저장·사전 검증 후 복원]
-  Save --> Repo[ISaveRepository<br/>LocalJsonSaveRepository]
-  Save --> Persist[WorldPersistenceService<br/>정렬 후 체크섬]
-  Persist --> Grid
-  Settle --> Save
-  Entrance[BuildingEntrance] --> Cam[CameraController]
+## 같은 섬에서도 찾는 곳과 시간이 다릅니다
+
+![얕은 바닷속 바위와 해초, 모래와 풀밭이 이어지는 실제 해안 화면](Docs/Portfolio/2026-11/coast.jpg)
+
+바다에는 물고기 그림자가 다니고, 꽃 위나 나무 밑동에는 곤충이 머뭅니다. 생물을 추가할 때는 생김새와 함께 발견하는 장소와 잡는 방법도 다르게 만들었습니다.
+
+| 발견할 것 | 게임 안에서의 행동 |
+| --- | --- |
+| 정어리·고등어·넙치 | 정어리는 무리로 다니고, 고등어는 빠르게 방향을 틀며, 넙치는 오래 멈춰 쉽니다. |
+| 송어·장어·붕어 | 강, 하구, 고지대 연못으로 서식 구역을 나눴습니다. 출현 시간도 다릅니다. |
+| 장수풍뎅이·호박벌·방아깨비 | 나무 밑동에 붙어 있거나 꽃 사이를 날고, 땅에서 폴짝 뜁니다. 날거나 뛰는 동안에는 내려앉기를 기다려야 합니다. |
+| 왕귀뚜라미·애반딧불이 | 해 질 녘의 울음과 풀 떨림, 밤 강가의 깜빡이는 빛으로 찾습니다. |
+
+| 물가에서 입질을 기다리는 중 | 찾은 생물은 휴대폰 도감에 기록 |
+| --- | --- |
+| ![해안에서 낚싯대를 드리우고 입질에 반응하는 플레이어](Docs/Portfolio/2026-11/fishing.jpg) | ![발견한 곤충과 아직 찾지 못한 곤충의 실루엣이 나뉜 도감](Docs/Portfolio/2026-11/collection.jpg) |
+
+현재 도감에는 **물고기 11종, 곤충 12종, 해변 발견물 6종, 땅속 발견물 6종으로 총 35종**이 들어 있습니다. 아직 못 찾은 것은 실루엣과 서식지 힌트로 남고, 발견한 것은 이름과 설명, 판매·제작·선물·소장 쓰임을 확인할 수 있습니다. 한 분야를 채우면 가게에 놓을 기념패를 받습니다.
+
+## 주운 물건이 저녁의 상품이 되기까지
+
+재료마다 쓰임이 겹치도록 만들었습니다. 구리 주괴를 도구에 쓸 수도 있지만, 해변 유리와 엮어 펜던트를 만들 수도 있습니다. 생선은 그대로 진열하거나 조리대에서 요리하고, 해변에서 모은 조개는 목걸이와 장식의 재료가 됩니다.
+
+| 조리대에서 재료와 결과를 확인 | 진열한 물건의 가격은 직접 결정 |
+| --- | --- |
+| ![조리대에서 생선구이의 재료와 제작 수량을 고르는 화면](Docs/Portfolio/2026-11/crafting.jpg) | ![구리 광석의 판매 가격과 수량을 조절하는 화면](Docs/Portfolio/2026-11/price.jpg) |
+
+손님마다 좋아하는 상품 분류와 가격 민감도가 다릅니다. 같은 물건도 손님에 따라 반응이 달라집니다. 물건이 팔리면 진열 수량이 줄고 소지금이 늘며, 판매 기록과 영업 보고서에도 같은 거래를 남깁니다.
+
+```text
+해변 유리 + 구리 주괴 → 펜던트 제작 → 진열·가격 설정 → 손님의 구매 판단 → 매출·보고서
 ```
 
-## 핵심 구현
+현장 작업대, 조리대, 용광로는 각각 가공·공예, 요리, 제련을 맡습니다. 광업 전문 분야에서는 개선한 도구를 광부에게 건네 생산을 도울 수도 있습니다.
 
-### 1. 성격에 따라 달라지는 구매 판정
-[`PurchaseEvaluator.cs#L22-L134`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/PurchaseEvaluator.cs#L22-L134)
+## 가게에도, 동료에게도 생활이 남도록
 
-- 품질을 반영한 적정가 대비 판매가 비율을 구간 선형 곡선으로 기본 구매 확률로 바꿉니다: ≤0.7배 95%, 1.0배 70%, 1.5배 10%, 초과 시 5%([`L60-L69`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/PurchaseEvaluator.cs#L60-L69)).
-- 손님 프로필의 MBTI 축 세 가지를 수식에 넣습니다. S/N은 상품 분류(생활용품·사치품·가공품·원자재) 선호, T/F는 선호 증폭과 가격 민감도, E/I는 충동구매 보정입니다. J/P 축은 구매가 아니라 NPC 일과(`NpcScheduleController`)에 씁니다.
-- `UnityEngine.Random`을 쓰지 않고 호출자가 넘긴 `System.Random`만 쓰는 정적 함수라, 검증기에서 고정 시드를 넣으면 판정을 재현할 수 있습니다. 게임 안의 NPC는 이름 문자열의 `GetHashCode()`로 시드를 정하고([`NpcController.cs#L101-L104`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/NpcController.cs#L101-L104)) RNG가 NPC마다 상태를 이어 가므로, 실행 환경이나 호출 순서가 달라도 같은 결과가 나온다고 보장하지는 않습니다.
-- 위 "가격 적정, 구매 (69%)" 말풍선이 이 함수의 결과가 화면에 나온 모습입니다.
+상품을 늘리는 것과 함께 가게 안에서 지내는 모습도 다듬었습니다. 나무 의자를 산호빛이나 바다빛으로 칠하고, 러그를 바꾸고, 도감 기념패를 벽에 겁니다. 해변이나 땅속에서 찾은 작은 물건은 책상 위에 올려 둘 수 있습니다. 손님은 의자에 앉아 쉬거나 놓인 장식을 알아보고 말을 건넵니다.
 
-### 2. 실내외 이동 때 위치가 되돌아가고 카메라가 길게 쓸려 가던 문제
-[`BuildingEntrance.cs#L81-L111`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/BuildingEntrance.cs#L81-L111) · [`CameraController.cs#L83-L87`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/CameraController.cs#L83-L87)
+| 판매 공간과 생활 공간이 함께 있는 가게 | 좋아하는 선물을 받은 동료의 반응 |
+| --- | --- |
+| ![널판 바닥과 판벽, 침대와 책상, 러그와 진열대를 갖춘 가게 내부](Docs/Portfolio/2026-11/interior.jpg) | ![선물을 받은 동료의 표정과 대사, 친밀도 표시](Docs/Portfolio/2026-11/residents.jpg) |
 
-실내를 별도 씬으로 나누면 NavMesh·시간·인벤토리·상점·저장 참조를 다시 연결해야 해서, 같은 씬 안의 분리된 공간으로 두고 문이 캐릭터를 옮기게 했습니다. 그러자 두 가지 문제가 생겼습니다.
-- `CharacterController`가 켜진 상태로 위치를 바꾸면 내부에 쌓인 이동량이 다음 프레임에 위치를 덮어써 워프가 실패했습니다. → 컨트롤러를 끄고 옮긴 뒤 다시 켜고, 이동 속도 상태도 초기화합니다.
-- 카메라가 Lerp로 따라오며 실내와 실외 사이를 한 번에 가로질렀습니다. → 워프 직후 `SnapToTarget()`으로 즉시 고정합니다.
+함께 온 동료에게는 이름과 역할, 선물 취향이 있습니다. 낮과 밤, 들고 있는 물건과 주변 상황에 따라 대사가 바뀌고, 저녁에는 모여 이야기를 나누거나 가게를 찾습니다. 가게 문은 사람이 가까이 오면 열리고, 손님은 문을 거쳐 드나듭니다. 실내에 들어가면 지붕과 앞벽을 걷어 내부가 보이게 했습니다.
 
-이후 섬 월드가 생기면서 워프 목적지가 걸을 수 있는 칸인지 먼저 확인하는 단계(`WorldPlayerTraversalGuard.TryTeleportTo`)를 추가했습니다.
+## 화면 뒤에서 돌아가는 것들
 
-### 3. 저장 데이터 버전 관리와 "적용 전에 거절하기"(부분 구현)
-[`SaveManager.cs#L344-L440`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/SaveManager.cs#L344-L440) · [`ISaveRepository.cs`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/Services/ISaveRepository.cs)
+기능 하나를 붙인 뒤에도 다른 기능과 이어지는 구간을 계속 손봤습니다. 건물을 옮긴 뒤 손님이 들어오는지, 물건이 팔린 뒤 기록이 맞는지, 저장하고 다시 열어도 같은 상태인지까지 확인하는 과정이 개발의 큰 부분이었습니다.
 
-- 저장 형식은 v17입니다. `MigrateSaveData`(L705~)가 v0부터 단계별로 변환하지만, 이 변환은 FirstDay 섬이 아닌 씬에서만 탑니다(L377-L382). FirstDay 섬에서는 v16 이하 저장을 변환하지 않고 원본을 둔 채 거절합니다(L368-L369).
-- 손상 JSON·상위 버전·v16 이하·섬 준비 미완료는 런타임을 건드리기 전에 거절합니다(L347-L375). 다만 L403의 `PrepareRuntimeForStateRestore()` 이후 월드·배치 복원 단계(L417·L428·L438·L440)의 실패는 오류만 기록하고 아직 롤백하지 않아, 트랜잭션형 로드로 바꾸는 것이 다음 과제입니다.
-- 저장소는 `ISaveRepository` 비동기 인터페이스 뒤에 두었고, 검증기는 별도 폴더를 주입해 사용자 저장을 건드리지 않습니다.
-- 섬 상태 체크섬은 타일·건물·가구·자원 목록을 키로 정렬한 뒤 계산해, 이 목록들의 저장 순서에는 영향을 받지 않습니다([`WorldPersistenceService.cs#L248-L303`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/World/WorldPersistenceService.cs#L248-L303)). 다만 문자열 키를 LINQ `OrderBy` 기본 비교(문화권 영향)로 정렬하고 건물 내부 보관 아이템(`storedItems`)은 정렬하지 않아, 완전한 순서 무관은 아닙니다.
+| 구현 | 신경 쓴 부분 | 코드 |
+| --- | --- | --- |
+| 섬 지형과 물가 | 격자 월드를 청크 메시로 만들고 지표·절벽·수면을 구분합니다. 해안 식생과 물속 바위로 물가의 깊이를 표현했습니다. | [WorldChunkTerrain](Assets/Scripts/World/WorldChunkTerrain.cs), [CoastalVegetationField](Assets/Scripts/Presentation/CoastalVegetationField.cs) |
+| 건물·가구 배치 | 회전한 점유 칸과 입구를 검사하고, 불가능한 위치는 미리 알려 줍니다. 생성에 실패하면 점유 상태를 되돌립니다. | [WorldBuildingPlacementService](Assets/Scripts/World/WorldBuildingPlacementService.cs), [WorldHotbarPlacementController](Assets/Scripts/World/WorldHotbarPlacementController.cs) |
+| 손님의 구매 | 적정가 대비 판매가, 상품 분류 선호, 가격 민감도와 성격을 계산합니다. 외부에서 난수 생성기를 받아 판정을 검증할 수 있게 했습니다. | [PurchaseEvaluator](Assets/Scripts/PurchaseEvaluator.cs) |
+| 실내외 이동 | 캐릭터 이동 컨트롤러를 처리한 뒤 위치를 옮기고, 카메라를 즉시 맞춰 먼 공간 사이로 화면이 쓸려 가는 현상을 막았습니다. | [BuildingEntrance](Assets/Scripts/BuildingEntrance.cs), [CameraController](Assets/Scripts/CameraController.cs) |
+| 저장과 이어하기 | 현재 v17 형식의 진행·배치·수집 기록을 복원합니다. 현재 섬과 호환되지 않는 v16 이하 저장은 사유를 안내하고 원본을 보존합니다. 검증에는 별도 저장 경로를 씁니다. | [SaveManager](Assets/Scripts/SaveManager.cs), [WorldPersistenceService](Assets/Scripts/World/WorldPersistenceService.cs) |
+| 생물과 도감 | 종류별 행동은 기존 포획 흐름으로 연결하고, 도감은 가방에서 처음 획득한 항목을 기록합니다. 같은 날 잡은 곤충이 이어하기로 다시 생기지 않도록 포획 기록도 저장합니다. | [BugCritter](Assets/Scripts/BugCritter.cs), [DiscoveryLog](Assets/Scripts/World/DiscoveryLog.cs) |
 
-### 4. 회전 가능한 격자 배치와 실패 시 되돌리기
-[`WorldBuildingPlacementService.cs#L381-L435`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/World/WorldBuildingPlacementService.cs#L381-L435)
+### 실행해서 확인하는 과정
 
-- 건물 점유 칸과 입구를 90° 단위로 회전해 계산하고, 범위 밖·물·길·경사·입구 막힘 등 실패 이유를 20가지로 구분해 돌려줍니다(`WorldBuildingPlacementFailure`, L14-L36).
-- 배치는 "판정 → 점유 칸 확정 → 생성" 순서이고, 생성 중 예외가 나면 점유 칸을 되돌립니다. 첫 정착 배치를 저장에서 복원하다 예외가 나면 직전 배치를 다시 적용합니다([`FirstIslandSettlementController.cs#L266-L284`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Scripts/Presentation/FirstIslandSettlementController.cs#L266-L284)).
+Windows 실행 파일에 시나리오별로 입력을 넣고 화면을 찍는 도구를 만들었습니다. 2026년 11월 9일 기준 출항·정착·제작·영업·생물·꾸밈을 포함한 **42개 시나리오가 모두 통과했고, 기록된 오류와 예외는 0건**입니다. [결과 원문](Docs/Portfolio/2026-11/verification-summary.txt) · [캡처 도구 코드](Assets/Scripts/Presentation/ExhibitionCaptureDirector.cs)
 
-### 5. 카메라 거리를 수치로 고르기
-화면 속 캐릭터 크기를 감으로 정하지 않고, 후보 거리 세 개에서 캐릭터 렌더러 경계를 화면에 투영해 높이 비율을 쟀습니다([`PA_OpeningFeelChecks.cs#L112-L117`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Assets/Editor/PA_OpeningFeelChecks.cs#L112-L117), 결과 [`Camera-checks.txt`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Docs/90_PRESENTATION/Evidence/2026-09-10/GameFeel/Camera-checks.txt)). A안(16.4%)을 고른 뒤 최종 카메라에서 15.7%로 맞췄습니다([`Flow-checks.txt`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Docs/90_PRESENTATION/Evidence/2026-09-10/GameFeel/Flow-checks.txt) 첫 줄).
+새 게임에서 첫 영업 보고서까지 한 세션으로 확인한 관람객 동선은 약 4분 20초였습니다. 자동 시나리오는 위치·재료·시간 등을 설정하기도 하며, 직접 조작했을 때의 손맛이나 전체 게임 완성을 보증하지는 않습니다. 낚시 릴 감각과 캐릭터 모션은 계속 다듬을 부분입니다.
 
-![카메라 후보 A/B/C 비교](Docs/Portfolio/camera-candidates.jpg)
+<details>
+<summary>영업 보고서와 제작 설비 화면</summary>
 
-### 6. 실제 이동량으로 걷기·멈춤 애니메이션 전환
-입력값이 아니라 실제로 움직인 거리로 속도를 계산해 애니메이터에 넘깁니다(`PlayerController.ActualPlanarSpeed`). 벽에 막히면 입력이 있어도 대기 자세로 바뀌고(검증 항목 "collision stop drives idle from actual velocity"), NPC는 `NavMeshAgent.velocity`를 씁니다.
+| 첫 영업을 마친 뒤의 보고서 | 작업대·조리대·용광로 |
+| --- | --- |
+| ![휴대폰에서 확인하는 첫날 영업 보고서와 활동 평가](Docs/Portfolio/2026-11/report.jpg) | ![섬에 설치한 현장 작업대, 조리대와 용광로](Docs/Portfolio/2026-11/workstations.jpg) |
 
-| 플레이어 이동 (대기 → D → W → A → 대기) | NPC 이동 후 정지 |
-|---|---|
-| ![플레이어 이동 연속 프레임](Docs/Portfolio/player-motion.gif) | ![NPC 걷기 후 정지 연속 프레임](Docs/Portfolio/npc-walk-stop.gif) |
+</details>
 
-두 GIF는 검증 스크립트가 실제 입력 이벤트를 넣으며 100~200ms 간격으로 찍은 프레임을, 포트폴리오 정리 중(2026-10-13) Claude Code로 이어 붙인 것이라 실제 재생 속도와 다릅니다.
+## 여기까지 만든 과정
 
-## 검증 방법
+이전 정착 프로토타입에서는 작은 섬에서 건물을 놓고 판매가 되는지를 확인했습니다. 이후 탐험할 수 있는 섬과 정착 동선을 연결하고, 채집과 제작, 밤 영업을 한 번의 플레이로 묶었습니다. 최근에는 해안과 식생, 생물의 행동, 가게의 생활감에 시간을 썼습니다.
 
-- **에디터 검증기:** 메뉴로 실행하는 검증·리뷰 도구가 96개 있고, 그중 39개는 실행 메서드·전제 조건·실패 시 조치와 함께 [`validator-registry.json`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Automation/LoopEngineering/validator-registry.json)에 등록했습니다. Play Mode에서 New Input System에 실제 키 입력을 넣고, 1920×1080 화면을 캡처하고, PASS/FAIL과 JSON 증거를 남깁니다.
-- **증거 예시:** 출항 교육 [`P0-validation.json`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Docs/90_PRESENTATION/Evidence/2026-09-08/P0-validation.json), 정착 [`P3-validation.json`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Docs/90_PRESENTATION/Evidence/2026-09-09/P3/P3-validation.json), 저장 복원 [`Checkpoint-SaveRecovery-checks.txt`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Docs/90_PRESENTATION/Evidence/2026-09-10/GameFeel/Checkpoint-SaveRecovery-checks.txt) ("load actually restores changed money").
-- **NUnit 테스트:** 이어하기 호환성 테스트 2개뿐입니다. 대부분의 검증이 Play Mode 시나리오 검증기라 CI에서 돌지 않습니다.
+| 이전 정착 화면 | 현재의 정착 화면 |
+| --- | --- |
+| ![작은 섬 위에서 관리 거점과 동료 거처의 위치를 정하던 이전 프로토타입](Docs/Portfolio/hero-settlement.jpg) | ![탐험 가능한 섬의 풀밭에 가게와 동료의 텐트를 배치한 현재 데모](Docs/Portfolio/2026-11/settlement.jpg) |
 
-## 아직 안 된 것
+서로 다른 시기의 빌드·맵·카메라로 찍은 개발 기록입니다. 같은 조건에서 성능이나 화질을 비교한 화면은 아닙니다.
 
-- Windows 단독 실행 빌드(2026-09-27 후보)는 에이전트 자동 입력으로 NEW GAME → 출항 교육 첫 단계까지만 확인했습니다. 같은 빌드로 엔딩까지 직접 플레이했다는 기록은 있지만 캡처 증거는 없고, 이후 경로의 자동 검증은 Editor에서만 했습니다.
-- 마지막 다듬기 작업(D2)은 툴팁의 키 안내 오류(Space/E), 대화와 안내 문구 겹침이 남은 상태로 멈춰 있습니다.
-- 섬 16×16 구역의 첫 생산 단계는 부분 구현이고, 섬에서 밤 상점으로 이어지는 흐름은 별도 데모 맵에서만 연결돼 있습니다.
-- 시각 품질은 사람이 최종 확인하지 않았습니다. 캐릭터 발 접지와 양손 들기 자세가 어색합니다.
-- 캐릭터·건물 일부는 AI 3D 생성 도구(Tripo)로 만든 에셋이며 라이선스 확인이 출시 전 과제로 남아 있습니다. 자연 에셋과 애니메이션은 Quaternius(CC0)입니다.
+개발 중 내린 결정과 수정 과정은 [월별 개발 로그](Docs/04_DEVELOPMENT_LOG/README.md)에 남겼습니다. [게임 기획](Docs/01_GAME_DESIGN/README.md), [아이템과 도감](Docs/01_GAME_DESIGN/Content/COLLECTION.md), [기능별 구현 문서](Docs/02_IMPLEMENTATION/README.md)에서도 이어 볼 수 있습니다.
 
-## 개발 방식
+## 실행하기
 
-구현에는 AI 코딩 에이전트(Codex, Claude Code)를 사용했고, 코드와 문서의 상당 부분을 에이전트가 작성했습니다. 저는 게임 정체성·핵심 루프·데모 범위와 작업 티켓을 정하고, 에이전트 운영 규칙과 검증 기준을 만든 뒤, 결과를 컴파일·기능별 검증기·Play Mode 경로·Game View 확인으로 점검해 통합했습니다.
+1. 이 저장소를 내려받아 **Unity 6000.3.2f1**로 엽니다. 패키지 목록은 [manifest.json](Packages/manifest.json)에 있습니다.
+2. `Assets/Scenes/Prototype_FirstDay.unity`를 열고 Play를 누릅니다.
+3. 타이틀에서 **새 게임**을 선택하면 출항 교육부터 시작합니다.
 
-- 운영 규칙: 쓸 수 있는 경로와 보호 파일(기준 씬, 저장 스키마 등), 티켓당 시도 2회·변경 파일 15개 제한, 같은 원인으로 두 번 실패하면 멈추는 규칙, 씬·저장 형식·밸런스 변경 시 사람 승인 단계([`AGENTS.md`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/AGENTS.md), [`loop-policy.json`](https://github.com/junido7185/Project_PA/blob/b121140ae6f5ca0f92078db5c2f75512dc8fc95a/Automation/LoopEngineering/loop-policy.json)).
-- 결정 예시: FirstDay 섬에서 v16 이하 저장은 변환하지 않고 원본을 보존한 채 사유만 안내하기로 했고(`SaveManager.cs` L324 주석), 실내를 별도 씬 대신 같은 씬의 분리 공간으로 두기로 했습니다.
-- 기록: `milestone/gameplay-beta-85`의 커밋 98개 중 12개(2026-07-09 ~ 2026-07-13)에 AI 공동 작성(`Co-Authored-By`) 표기가 있습니다.
+| 조작 | 키 |
+| --- | --- |
+| 이동 / 달리기 | WASD 또는 방향키 / 왼쪽 Shift |
+| 섬에서 상호작용·도구 사용 / 점프 | E / Space |
+| 손에 들 물건 선택 / 빈손 | 숫자 1~9 또는 마우스 휠 / X |
+| 가방 / 휴대폰 | I 또는 Tab / P |
+| 배치 | 마우스로 위치 지정 · E 확정 · R 회전 · Esc 또는 우클릭 취소 |
 
-## 실행
+출항 교육과 개별 화면의 조작은 화면 안내를 따릅니다. 저장·이어하기는 게임 내 메뉴를 사용합니다. Windows 실행 파일은 저장소에 포함하지 않았습니다. 빌드 진입점은 [PA_ExhibitionBuild](Assets/Editor/PA_ExhibitionBuild.cs)의 `BuildBatch`입니다.
 
-0. `git checkout milestone/gameplay-beta-85`
-1. Unity 6000.3.2f1로 저장소를 엽니다. `Packages/manifest.json`의 `com.coplaydev.unity-mcp`(에디터용 AI 연동 패키지)는 게임 실행에 필요하지 않아, 설치가 막히면 지워도 됩니다.
-2. `Assets/Scenes/Prototype_FirstDay.unity`를 열고 Play → NEW GAME.
-3. 조작: WASD 이동, 상호작용은 출항 교육에서 Space·섬에서 E(`PlayerInputHandler.cs` L154), 섬에서 Space 점프, R 건물 회전, F5 저장 / F9 불러오기.
+## 개발과 에셋 출처
 
-이전 개발용 README는 [Docs/README_DEVELOPMENT_master.md](Docs/README_DEVELOPMENT_master.md)로 옮겼습니다.
+기획과 게임의 방향, 작업 범위와 결과 검수는 직접 맡고, 코드·문서 작성과 반복 작업에는 Claude Code와 Codex를 사용했습니다. 외부 에셋을 가져와 연결한 부분과 프로젝트용으로 제작한 모델·도구를 함께 사용합니다.
+
+자연 에셋 일부는 Quaternius의 CC0 자료입니다. 캐릭터와 건물 일부에는 Tripo 생성 에셋을 사용했으며, 개별 상업 이용 증빙은 출시 전에 정리할 항목으로 남아 있습니다. 현재 플레이어 이동 모션에는 Bandai Namco Research Motion Dataset의 **CC BY-NC 4.0** 자료가 포함되어 있어 상업 출시 전 교체가 필요합니다. [에셋 출처 대장](Docs/05_ASSET_PROVENANCE/ASSET_AND_TOOL_PROVENANCE.md) · [모션 원문·라이선스](Assets/Art/External/BandaiNamcoResearch/README.txt)
+
+본문의 최신 이미지는 2026년 11월 9일 검증 빌드 r258의 실제 Windows 게임 화면입니다. 일부 화면은 HUD를 숨겼으며, 웹 표시용으로 크기와 JPEG 용량만 줄였습니다. [이미지별 출처와 촬영 조건](Docs/Portfolio/2026-11/README.md)

@@ -11,8 +11,10 @@ public class PrototypeWorldLabel : MonoBehaviour
 
     TextMeshPro _text;
 
-    void Awake() => EnsureText();
-    void OnValidate() => EnsureText();
+    void Awake() => _text = GetComponent<TextMeshPro>();
+    // Validation can run inside AddComponent/deserialization. Never mutate hierarchy here.
+    void OnValidate() => _text = GetComponent<TextMeshPro>();
+    void Start() => EnsureText();
 
     void LateUpdate()
     {

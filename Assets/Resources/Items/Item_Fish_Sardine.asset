@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Fish_Sardine
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3003
+  itemName: "\uC815\uC5B4\uB9AC"
+  description: "\uC791\uC740 \uADF8\uB9BC\uC790\uAC00 \uC11C\uB108 \uB9C8\uB9AC\uC529
+    \uBAB0\uB824\uB2E4\uB2C8\uB294 \uC740\uBE5B \uBB3C\uACE0\uAE30. \uC7A1\uAE30
+    \uC27D\uACE0 \uD754\uD574\uC694. \uC138 \uB9C8\uB9AC\uB97C \uBAA8\uC73C\uBA74
+    \uC870\uB9AC\uB300\uC5D0\uC11C \uD55C \uC811\uC2DC\uB85C \uAD6C\uC6CC \uD314
+    \uC218 \uC788\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: 31034466aafd6a3428127bdc628a513a, type: 3}
+  maxStack: 99
+  model: {fileID: 2158922894146888523, guid: a28f2fe0cb733224a9c32f88b16a2985, type: 3}
+  basePrice: 9
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

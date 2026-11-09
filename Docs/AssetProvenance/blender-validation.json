@@ -1,0 +1,1371 @@
+{
+  "status": "PASS",
+  "blenderVersion": "4.5.13 LTS",
+  "assets": [
+    {
+      "id": "PA_REF_MINIMARKET_CASH_REGISTER",
+      "meshes": 1,
+      "vertices": 361,
+      "polygons": 203,
+      "dimensions": [
+        0.8499999940395355,
+        0.8500000238418579,
+        0.5949000120162964
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap"
+          ]
+        }
+      ],
+      "smoothPolygons": 126,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 3.010634580045007,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_MINIMARKET_DISPLAY_BREAD",
+      "meshes": 3,
+      "vertices": 646,
+      "polygons": 362,
+      "dimensions": [
+        0.7000000476837158,
+        0.6000000238418579,
+        0.5
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.001",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap"
+          ]
+        }
+      ],
+      "smoothPolygons": 229,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 4.264789325621678,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_MINIMARKET_DISPLAY_FRUIT",
+      "meshes": 1,
+      "vertices": 1192,
+      "polygons": 650,
+      "dimensions": [
+        0.6000000238418579,
+        0.6000000238418579,
+        0.5159605741500854
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.002",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap"
+          ]
+        }
+      ],
+      "smoothPolygons": 557,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.675655814105994,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_MINIMARKET_SHELF_END",
+      "meshes": 8,
+      "vertices": 690,
+      "polygons": 362,
+      "dimensions": [
+        0.800000011920929,
+        0.40000003576278687,
+        1.050000071525574
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.003",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap"
+          ]
+        }
+      ],
+      "smoothPolygons": 176,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 4.145329279912403,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_MINIMARKET_SHOPPING_BASKET",
+      "meshes": 1,
+      "vertices": 464,
+      "polygons": 288,
+      "dimensions": [
+        0.3499999940395355,
+        0.3500000238418579,
+        0.25
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.004",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap"
+          ]
+        }
+      ],
+      "smoothPolygons": 151,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 0.6806774396100082,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_BAG",
+      "meshes": 1,
+      "vertices": 92,
+      "polygons": 46,
+      "dimensions": [
+        0.22010000050067902,
+        0.41179996728897095,
+        0.5997589826583862
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.005",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 44,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.57016925592192,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_BARREL",
+      "meshes": 1,
+      "vertices": 484,
+      "polygons": 308,
+      "dimensions": [
+        0.7599999904632568,
+        0.6789062023162842,
+        0.6789062023162842
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.006",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 61,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 2.5203565186820924,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_CARROT",
+      "meshes": 1,
+      "vertices": 284,
+      "polygons": 148,
+      "dimensions": [
+        0.34314197301864624,
+        0.34314197301864624,
+        0.7163037061691284
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.007",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 146,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 0.28377105516847223,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_CUTTING_BOARD",
+      "meshes": 1,
+      "vertices": 178,
+      "polygons": 120,
+      "dimensions": [
+        0.5799999833106995,
+        0.8200000524520874,
+        0.06000000238418579
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.008",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 52,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.1090885158337187,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_FISH",
+      "meshes": 1,
+      "vertices": 593,
+      "polygons": 233,
+      "dimensions": [
+        0.19783182442188263,
+        0.6207826733589172,
+        0.322201132774353
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.009",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 218,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 0.3213569669124281,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_LOAF",
+      "meshes": 1,
+      "vertices": 154,
+      "polygons": 116,
+      "dimensions": [
+        0.5797440409660339,
+        0.3659040033817291,
+        0.4423206150531769
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.010",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 30,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.0605494825867936,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_MUSHROOM",
+      "meshes": 1,
+      "vertices": 132,
+      "polygons": 80,
+      "dimensions": [
+        0.12487046420574188,
+        0.14418800175189972,
+        0.13919998705387115
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.011",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 48,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 0.056526220112573355,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_PLATE",
+      "meshes": 1,
+      "vertices": 132,
+      "polygons": 140,
+      "dimensions": [
+        0.8917739391326904,
+        0.8917739391326904,
+        0.08999999612569809
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.012",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 118,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.330102876701858,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_FOODKIT_POT",
+      "meshes": 1,
+      "vertices": 328,
+      "polygons": 228,
+      "dimensions": [
+        0.6574494242668152,
+        0.8220716118812561,
+        0.36079999804496765
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.013",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 136,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.92842019354066,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_MINIARCADE_ARCADE_MACHINE",
+      "meshes": 1,
+      "vertices": 724,
+      "polygons": 392,
+      "dimensions": [
+        0.4000000059604645,
+        0.5374999940395355,
+        0.7249999642372131
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.014",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.002"
+          ]
+        }
+      ],
+      "smoothPolygons": 300,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.8364932699369092,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_MINIARCADE_PRIZES",
+      "meshes": 1,
+      "vertices": 784,
+      "polygons": 464,
+      "dimensions": [
+        0.800000011920929,
+        0.4000000059604645,
+        0.8000000715255737
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "colormap.015",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 1.0,
+          "metallic": 0.0,
+          "textures": [
+            "colormap.002"
+          ]
+        }
+      ],
+      "smoothPolygons": 237,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 3.468655837510596,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUTEFISH_DOCK_LONG_NOROPE",
+      "meshes": 1,
+      "vertices": 810,
+      "polygons": 702,
+      "dimensions": [
+        9.213139533996582,
+        21.687660217285156,
+        5.662050247192383
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "DarkWood",
+          "baseColorLinear": [
+            0.11927328258752823,
+            0.0632803663611412,
+            0.05076603218913078,
+            1.0
+          ],
+          "saturationLinear": 0.5743721386063444,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Wood",
+          "baseColorLinear": [
+            0.20189261436462402,
+            0.10397916287183762,
+            0.07928955554962158,
+            1.0
+          ],
+          "saturationLinear": 0.6072686670626678,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "String",
+          "baseColorLinear": [
+            0.30319520831108093,
+            0.23388192057609558,
+            0.13874994218349457,
+            1.0
+          ],
+          "saturationLinear": 0.5423742249873028,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "LightWood",
+          "baseColorLinear": [
+            0.4019647240638733,
+            0.3199729323387146,
+            0.21526160836219788,
+            1.0
+          ],
+          "saturationLinear": 0.46447636950352833,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 575.3762884540483,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUTEFISH_FISHINGROD_LVL1",
+      "meshes": 1,
+      "vertices": 156,
+      "polygons": 152,
+      "dimensions": [
+        0.20837348699569702,
+        0.5768750756978989,
+        6.304802060127258
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Metal",
+          "baseColorLinear": [
+            0.10673344880342484,
+            0.10739176720380783,
+            0.1523226648569107,
+            1.0
+          ],
+          "saturationLinear": 0.29929371375107966,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Wood.001",
+          "baseColorLinear": [
+            0.20189261436462402,
+            0.10397916287183762,
+            0.07928955554962158,
+            1.0
+          ],
+          "saturationLinear": 0.6072686670626678,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 2.6184548964956775,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUTEFISH_KOI",
+      "meshes": 1,
+      "vertices": 844,
+      "polygons": 762,
+      "dimensions": [
+        3.1824986934661865,
+        5.674792528152466,
+        4.480219125747681
+      ],
+      "actions": [
+        "Attack",
+        "Death",
+        "Out_Of_Water",
+        "Swimming_Fast",
+        "Swimming_Impulse",
+        "Swimming_Normal"
+      ],
+      "materials": [
+        {
+          "name": "Koi_Fins",
+          "baseColorLinear": [
+            0.3775978684425354,
+            0.3079835772514343,
+            0.18695227801799774,
+            1.0
+          ],
+          "saturationLinear": 0.5048905366200471,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Koi_Light",
+          "baseColorLinear": [
+            0.49882546067237854,
+            0.49882546067237854,
+            0.49882546067237854,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Koi_Dark",
+          "baseColorLinear": [
+            0.08556552231311798,
+            0.08556552231311798,
+            0.08556552231311798,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Eyes",
+          "baseColorLinear": [
+            0.00996480230242014,
+            0.00996480230242014,
+            0.00996480230242014,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Koi_Main",
+          "baseColorLinear": [
+            0.35367217659950256,
+            0.07219455391168594,
+            0.05095497518777847,
+            1.0
+          ],
+          "saturationLinear": 0.8559259716789095,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 240,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 35.06518446560949,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUTEFISH_TUNA",
+      "meshes": 1,
+      "vertices": 821,
+      "polygons": 732,
+      "dimensions": [
+        3.9034225940704346,
+        5.632118105888367,
+        3.5192536115646362
+      ],
+      "actions": [
+        "Attack.001",
+        "Death.001",
+        "Out_Of_Water.001",
+        "Swimming_Fast.001",
+        "Swimming_Impulse.001",
+        "Swimming_Normal.001"
+      ],
+      "materials": [
+        {
+          "name": "Tuna_Main",
+          "baseColorLinear": [
+            0.21771706640720367,
+            0.20715275406837463,
+            0.21036605536937714,
+            1.0
+          ],
+          "saturationLinear": 0.04852312459084051,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Tuna_Top",
+          "baseColorLinear": [
+            0.06880210340023041,
+            0.1269107311964035,
+            0.2755615711212158,
+            1.0
+          ],
+          "saturationLinear": 0.7503203980138243,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Tuna_Fins",
+          "baseColorLinear": [
+            0.3253033757209778,
+            0.27557483315467834,
+            0.10563685745000839,
+            1.0
+          ],
+          "saturationLinear": 0.6752666423584358,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Tuna_Dark",
+          "baseColorLinear": [
+            0.06396504491567612,
+            0.06396504491567612,
+            0.06396504491567612,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Eyes.001",
+          "baseColorLinear": [
+            0.00996480230242014,
+            0.00996480230242014,
+            0.00996480230242014,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 35.16521523683332,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_BIRCHTREE_1",
+      "meshes": 1,
+      "vertices": 866,
+      "polygons": 880,
+      "dimensions": [
+        1.7018603682518005,
+        2.4797297716140747,
+        3.5737998839467764
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Black",
+          "baseColorLinear": [
+            0.05496654286980629,
+            0.05496654286980629,
+            0.05496654286980629,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "DarkGreen",
+          "baseColorLinear": [
+            0.05316007137298584,
+            0.09083576500415802,
+            0.03697298839688301,
+            1.0
+          ],
+          "saturationLinear": 0.5929688224105277,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "White",
+          "baseColorLinear": [
+            0.6554416418075562,
+            0.685953676700592,
+            0.6257363557815552,
+            1.0
+          ],
+          "saturationLinear": 0.08778627910951599,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Green",
+          "baseColorLinear": [
+            0.08744194358587265,
+            0.15232062339782715,
+            0.05986013635993004,
+            1.0
+          ],
+          "saturationLinear": 0.6070122677768404,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 25.100854135249392,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_BUSH_1",
+      "meshes": 1,
+      "vertices": 184,
+      "polygons": 182,
+      "dimensions": [
+        1.3284286260604858,
+        1.6900262832641602,
+        1.2417476177215576
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Green.001",
+          "baseColorLinear": [
+            0.08744194358587265,
+            0.15232062339782715,
+            0.05986013635993004,
+            1.0
+          ],
+          "saturationLinear": 0.6070122677768404,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Berry",
+          "baseColorLinear": [
+            0.46719855070114136,
+            0.02703203447163105,
+            0.03821314498782158,
+            1.0
+          ],
+          "saturationLinear": 0.9421401576887105,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 7.674614681862295,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_COMMONTREE_1",
+      "meshes": 1,
+      "vertices": 1450,
+      "polygons": 1444,
+      "dimensions": [
+        1.8891142010688782,
+        2.773136019706726,
+        2.4805617220699787
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Green.002",
+          "baseColorLinear": [
+            0.08744194358587265,
+            0.15232062339782715,
+            0.05986013635993004,
+            1.0
+          ],
+          "saturationLinear": 0.6070122677768404,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "DarkGreen.001",
+          "baseColorLinear": [
+            0.05316007137298584,
+            0.09083576500415802,
+            0.03697298839688301,
+            1.0
+          ],
+          "saturationLinear": 0.5929688224105277,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Wood.002",
+          "baseColorLinear": [
+            0.15292617678642273,
+            0.07036010175943375,
+            0.05951124429702759,
+            1.0
+          ],
+          "saturationLinear": 0.6108498522124095,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 13.175162853483926,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_FLOWERS",
+      "meshes": 1,
+      "vertices": 223,
+      "polygons": 220,
+      "dimensions": [
+        0.48948825895786285,
+        0.6136792600154877,
+        0.8289473243057728
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Green.003",
+          "baseColorLinear": [
+            0.08744194358587265,
+            0.15232062339782715,
+            0.05986013635993004,
+            1.0
+          ],
+          "saturationLinear": 0.6070122677768404,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Yellow",
+          "baseColorLinear": [
+            0.44797465205192566,
+            0.3547384738922119,
+            0.11264380812644958,
+            1.0
+          ],
+          "saturationLinear": 0.7485487011140246,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Cyan",
+          "baseColorLinear": [
+            0.0,
+            0.24749420583248138,
+            0.25293979048728943,
+            1.0
+          ],
+          "saturationLinear": 1.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 0.43695656088675605,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_GRASS_SHORT",
+      "meshes": 1,
+      "vertices": 120,
+      "polygons": 108,
+      "dimensions": [
+        0.31621022522449493,
+        0.44173651933670044,
+        1.2012620568275452
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Green.004",
+          "baseColorLinear": [
+            0.08744194358587265,
+            0.15232062339782715,
+            0.05986013635993004,
+            1.0
+          ],
+          "saturationLinear": 0.6070122677768404,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 0.9207670408213744,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_ROCK_1",
+      "meshes": 1,
+      "vertices": 37,
+      "polygons": 36,
+      "dimensions": [
+        0.48532287776470184,
+        0.4667481333017349,
+        0.8777499794960022
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Rock",
+          "baseColorLinear": [
+            0.24421121180057526,
+            0.25826212763786316,
+            0.30319520831108093,
+            1.0
+          ],
+          "saturationLinear": 0.19454132154353698,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 1.2892967849038541,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_WHEAT",
+      "meshes": 1,
+      "vertices": 212,
+      "polygons": 212,
+      "dimensions": [
+        0.3577982634305954,
+        0.35648488998413086,
+        1.1022210747760255
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Yellow.001",
+          "baseColorLinear": [
+            0.44797465205192566,
+            0.3547384738922119,
+            0.11264380812644958,
+            1.0
+          ],
+          "saturationLinear": 0.7485487011140246,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 0.6495203647064045,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_ULTIMATENATURE_WOODLOG",
+      "meshes": 1,
+      "vertices": 252,
+      "polygons": 242,
+      "dimensions": [
+        0.6328557133674622,
+        2.670295238494873,
+        0.7483499663649127
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Mushroom_Bottom",
+          "baseColorLinear": [
+            0.3757456839084625,
+            0.26797693967819214,
+            0.2341083288192749,
+            1.0
+          ],
+          "saturationLinear": 0.37695005200297305,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Wood.003",
+          "baseColorLinear": [
+            0.15292617678642273,
+            0.07036010175943375,
+            0.05951124429702759,
+            1.0
+          ],
+          "saturationLinear": 0.6108498522124095,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        },
+        {
+          "name": "Mushroom_Top",
+          "baseColorLinear": [
+            0.15232135355472565,
+            0.1101718321442604,
+            0.09684429317712784,
+            1.0
+          ],
+          "saturationLinear": 0.3642106578160504,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": []
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 7.738074515131302,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CART",
+      "meshes": 1,
+      "vertices": 16,
+      "polygons": 14,
+      "dimensions": [
+        2.0,
+        2.0,
+        1.2342312932014465
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Atlas",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": [
+            "Atlas.png"
+          ]
+        }
+      ],
+      "smoothPolygons": 0,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 25.090306878089905,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CHEST_CLOSED",
+      "meshes": 1,
+      "vertices": 1517,
+      "polygons": 1420,
+      "dimensions": [
+        1.8361525535583496,
+        1.9913546442985535,
+        1.9053165912628174
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Atlas.001",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": [
+            "Atlas.png.001"
+          ]
+        }
+      ],
+      "smoothPolygons": 641,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 50.3474522283359,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_CHEST_OPEN",
+      "meshes": 1,
+      "vertices": 1517,
+      "polygons": 1420,
+      "dimensions": [
+        2.0438942909240723,
+        2.790694236755371,
+        3.119874596595764
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Atlas.002",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": [
+            "Atlas.png.002"
+          ]
+        }
+      ],
+      "smoothPolygons": 641,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 62.38451999734389,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_AXE_STONE",
+      "meshes": 1,
+      "vertices": 122,
+      "polygons": 123,
+      "dimensions": [
+        0.7376856207847595,
+        0.3242776691913605,
+        1.7136200666427612
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Atlas.003",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": [
+            "Atlas.png.003"
+          ]
+        }
+      ],
+      "smoothPolygons": 123,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 2.412241898593493,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    },
+    {
+      "id": "PA_REF_CUBEWORLDKIT_PICKAXE_STONE",
+      "meshes": 1,
+      "vertices": 168,
+      "polygons": 172,
+      "dimensions": [
+        1.2165604829788208,
+        0.31537926197052,
+        1.7136200666427612
+      ],
+      "actions": [],
+      "materials": [
+        {
+          "name": "Atlas.004",
+          "baseColorLinear": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "saturationLinear": 0.0,
+          "roughness": 0.5,
+          "metallic": 0.0,
+          "textures": [
+            "Atlas.png.004"
+          ]
+        }
+      ],
+      "smoothPolygons": 172,
+      "bevelModifiers": 0,
+      "meshSurfaceAreaLocal": 2.422121949493885,
+      "measurementCaveat": "Modifiers only measure live bevels; applied bevel geometry is assessed visually. Source units precede Unity wrapper normalization."
+    }
+  ]
+}

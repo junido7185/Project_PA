@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_CollectionPlaque
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2051
+  itemName: "\uB3C4\uAC10 \uAE30\uB150\uD328"
+  description: "\uB3C4\uAC10\uC758 \uD55C \uC139\uC158\uC744 \uB2E4 \uCC44\uC6B0\uBA74
+    \uBC1B\uB294 \uAE30\uB150\uD328. \uC9D1\uC774\uB098 \uAC00\uAC8C\uC5D0 \uC138\uC6CC
+    \uB450\uBA74 \uC9C0\uAE08\uAE4C\uC9C0 \uCC3E\uC740 \uAC83\uB4E4\uC774 \uB5A0\uC62C\uB77C\uC694(\uAFB8\uBC08
+    \uC804\uC6A9)."
+  icon: {fileID: 21300000, guid: e6c621f3523221b478e3311b859229ab, type: 3}
+  maxStack: 4
+  model: {fileID: 4220706670986845374, guid: 1ca32ab159633d4418c7d6686ef662d1, type: 3}
+  basePrice: 0
+  toolType: 0
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

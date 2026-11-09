@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 // SPY-002 — 고객 타입 / 성향 프레젠테이션 (B. 구매/거절 이유 + D. 마을 정체성 연결).
 //
-// 설계 의도 (PROJECT_PA_CREATIVE_NORTH_STAR.md "Village-Change Principle"):
+// 설계 의도 (Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md "Village-Change Principle"):
 // - 손님이 왜 샀는지/왜 거절했는지를 짧고 귀여운 생활형 톤으로 보여준다.
 // - 단순 "판매 성공/실패 알림"이 아니라, 그 거래가 마을 경제·주민 생활로 이어진다는 점을 한 줄 덧붙인다.
 // - 구매 확률, 경제 계산, PurchaseEvaluator 로직은 절대 바꾸지 않는 읽기 전용 사이드카다.
@@ -25,6 +25,8 @@ public class PurchaseFeedbackPresentationController : MonoBehaviour
     }
 
     public static PurchaseFeedbackPresentationController Instance { get; private set; }
+    // CONTENT-002: 실제 평가의 관찰 신호. 구매 의사와 결제 성공은 SalesLog에서 구분한다.
+    public static event System.Action<NpcProfile, PurchaseEvaluator.Result, Item, int, string> OnDecisionRecorded;
 
     [Header("Feedback Feed")]
     public bool autoCreateUI = true;
@@ -86,6 +88,7 @@ public class PurchaseFeedbackPresentationController : MonoBehaviour
             _entries.RemoveAt(_entries.Count - 1);
 
         RefreshUI();
+        OnDecisionRecorded?.Invoke(profile, result, item, displayPrice, customerName);
     }
 
     static string BuildReactionLine(string name, PurchaseEvaluator.Result result, Item item, int displayPrice)

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ee998d9f6e6d2544a41f655fae30b84, type: 3}
+  m_Name: Recipe_ShellDecor
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeData
+  recipeName: "\uC870\uAC1C \uC7A5\uC2DD"
+  icon: {fileID: 21300000, guid: 26abb6302543f9c4c8ada7091ca95822, type: 3}
+  description: 
+  ingredients:
+  - item: {fileID: 11400000, guid: 34503345646bd1d4f9540e8be0481863, type: 2}
+    count: 2
+  - item: {fileID: 11400000, guid: d4dd083d7feb7fa49bf0509a54c6e401, type: 2}
+    count: 1
+  - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}
+    count: 1
+  outputItem: {fileID: 11400000, guid: ff810636cf5e91943b34df736ed4523d, type: 2}
+  outputCount: 1
+  baseOutputQuality: 1.2
+  ingredientQualityWeight: 0.3
+  requiredTier: 0
+  requiredWorkbench: 1
+  inputItem: {fileID: 0}
+  inputCount: 0

@@ -1,0 +1,1800 @@
+using System;
+using System.Collections;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+#if UNITY_EDITOR
+using System.IO;
+using System.Threading.Tasks;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.Rendering;
+#endif
+
+// WORLD-010: player-facing composition of the already validated WORLD-001~009
+// seams. It remains WorldSandbox-only and delegates every mutation to the
+// existing grid, placement, crafting, shop, economy and save authorities.
+[DisallowMultipleComponent]
+[DefaultExecutionOrder(200)]
+public sealed class WorldAlphaPlayableController : MonoBehaviour
+{
+    const float LandmarkReachDistance = 4f;
+
+    WorldGridService _grid;
+    WorldGridDebugView _gridDebug;
+    WorldGeneratedIslandDebugView _islandView;
+    WorldBuildingPlacementService _buildings;
+    WorldGameplayAdapterService _adapter;
+    WorldPlayerTraversalGuard _traversalGuard;
+    Vector3 _movementOrigin;
+    bool _projectionRefreshRequested;
+    bool _developmentOverlayVisible;
+    bool _startPromptVisible;
+    string _lastAction = "플레이 가능한 섬 생활을 준비하고 있습니다.";
+
+    public static WorldAlphaPlayableController Instance { get; private set; }
+    public bool IsReady { get; private set; }
+    public bool HasMoved { get; private set; }
+    public bool HasGathered { get; private set; }
+    public bool HasCrafted { get; private set; }
+    public bool HasTerraformed { get; private set; }
+    public bool HasPlacedBuilding { get; private set; }
+    public bool HasMovedBuilding { get; private set; }
+    public bool HasMovedSalesDisplay { get; private set; }
+    public bool HasStockedProduct { get; private set; }
+    public bool HasOpenedShop { get; private set; }
+    public bool HasCustomerPurchase { get; private set; }
+    public bool HasRevenue { get; private set; }
+    public bool HasSaved { get; private set; }
+    public bool HasRestored { get; private set; }
+    public bool HasStartedBeta { get; private set; }
+    public bool HasReachedShop { get; private set; }
+    public bool HasReachedWorkbench { get; private set; }
+    public bool DevelopmentOverlayVisible => _developmentOverlayVisible;
+    public bool StartPromptVisible => IsReady && _startPromptVisible;
+    public bool PlayerFacingHudVisible => IsReady && HasStartedBeta && !_developmentOverlayVisible;
+    public CampaignOpeningController Opening => GetComponent<CampaignOpeningController>();
+    public DemoRouteController DemoRoute => GetComponent<DemoRouteController>();
+    public CampaignFirstShopNightController FirstNight => GetComponent<CampaignFirstShopNightController>();
+    public string PlayerControlHint =>
+        Opening != null && Opening.HasStarted && !Opening.OpeningComplete
+            ? "WASD 이동 · Space 대화/채집 · I 가방 · F5 저장 · Esc 메뉴"
+            : FirstNight?.NeedsGuidance == true
+            ? "WASD 이동 · Space 진열/가격/간판 · I 가방 · F5 저장 · Esc 메뉴"
+            : "WASD 이동 · Space 상호작용 · B 생산자 납품 구매 · P 휴대폰(채용/피드) · F5 저장 · F9 불러오기 · Esc 메뉴";
+    public Rect PlayerFacingHudScreenRect
+    {
+        get
+        {
+            float width = Mathf.Min(720f, Screen.width - 420f);
+            float left = (Screen.width - width) * 0.5f;
+            return new Rect(left, 18f, width, 260f);
+        }
+    }
+    public string CurrentPlayerObjective => ResolvePlayerObjective();
+    public string ShopMerchandisingSummary =>
+        _adapter?.SalesDisplayReadability?.BuildSummary() ?? "판매대 상태 확인 중";
+    public string CustomerStrategySummary =>
+        _adapter?.CustomerStrategySummary ?? "손님 성향 확인 중";
+    public string VillageResponseSummary =>
+        VillageCultureVisualController.Instance?.PlayerFacingSummary ??
+        "마을 반응 · 판매 기록을 기다리는 중";
+    public string LastAction => _lastAction;
+    public WorldGameplayAdapterService Adapter => _adapter;
+    public WorldGridService Grid => _grid;
+    public WorldBuildingPlacementService Buildings => _buildings;
+    public WorldGeneratedIslandDebugView IslandView => _islandView;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void BootstrapWorldSandbox()
+    {
+        if (SceneManager.GetActiveScene().name != "WorldSandbox" ||
+            FindFirstObjectByType<WorldAlphaPlayableController>() != null)
+        {
+            return;
+        }
+
+        WorldGridService grid = FindFirstObjectByType<WorldGridService>();
+        if (grid != null) grid.gameObject.AddComponent<WorldAlphaPlayableController>();
+    }
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+        Instance = this;
+    }
+
+    IEnumerator Start()
+    {
+        _grid = GetComponent<WorldGridService>();
+        _gridDebug = GetComponent<WorldGridDebugView>();
+        _islandView = GetComponent<WorldGeneratedIslandDebugView>();
+        _buildings = GetComponent<WorldBuildingPlacementService>();
+
+        float started = Time.realtimeSinceStartup;
+        while (Time.realtimeSinceStartup - started < 20f)
+        {
+            _adapter = WorldGameplayAdapterService.Instance ??
+                       FindFirstObjectByType<WorldGameplayAdapterService>();
+            if (_adapter != null && _adapter.IsReady) break;
+            yield return null;
+        }
+
+        if (_grid == null || _gridDebug == null || _islandView == null ||
+            _buildings == null || _adapter == null || !_adapter.IsReady)
+        {
+            _lastAction = "World Alpha could not resolve one of its validated adapters.";
+            Debug.LogError($"[WORLD-010] RUNTIME_FAIL {_lastAction}");
+            yield break;
+        }
+
+        ConfigurePlayerTraversal();
+        SubscribeWorldChanges();
+        if (!_islandView.DisplayGridSnapshot(_adapter.BoundSeed))
+        {
+            _lastAction = $"The generated {_grid.Definition.Width}x{_grid.Definition.Height} projection could not be displayed.";
+            Debug.LogError($"[WORLD-010] RUNTIME_FAIL {_lastAction}");
+            yield break;
+        }
+        ConfigureCameraFollow();
+
+        _movementOrigin = _adapter.PlayerRoot.transform.position;
+        IsReady = true;
+        _startPromptVisible = true;
+        ApplyDevelopmentMode(false);
+        _lastAction = "새 섬 생활을 시작해 첫날 동선을 익혀 보세요.";
+        Debug.Log($"[WORLD-010] RUNTIME_READY playableWorldAlpha=true movement=true projection={_islandView.GeneratedChunkCount}chunks");
+    }
+
+    void Update()
+    {
+        if (!IsReady) return;
+        if (DemoRoute != null) return;
+        if (WasDevelopmentTogglePressed())
+            SetDevelopmentOverlayVisible(!_developmentOverlayVisible);
+        if (!HasStartedBeta && (Input.GetKeyDown(KeyCode.Return) ||
+                                Input.GetKeyDown(KeyCode.KeypadEnter) ||
+                                Input.GetKeyDown(KeyCode.Space)))
+        {
+            BeginNewGame();
+        }
+        if (HasStartedBeta && !_developmentOverlayVisible &&
+            (SmartphoneUI.instance == null || !SmartphoneUI.instance.IsOpen) &&
+            Input.GetKeyDown(KeyCode.B))
+        {
+            LongPlayProgressionController progression = LongPlayProgressionController.Instance;
+            string result = "오늘 구매할 생산자 납품이 없습니다.";
+            if (progression != null && progression.TryPurchaseCurrentDaySupply(out result))
+                _lastAction = $"생산자 납품 구매 완료 · {result}";
+            else
+                _lastAction = result;
+        }
+        if (!HasMoved && _adapter.PlayerRoot != null)
+        {
+            Vector3 delta = _adapter.PlayerRoot.transform.position - _movementOrigin;
+            delta.y = 0f;
+            HasMoved = delta.sqrMagnitude >= 2.25f;
+        }
+        RefreshPlayerFacingProgress();
+        if (_adapter.CustomerPurchaseCompleted)
+        {
+            HasCustomerPurchase = true;
+            HasRevenue = EconomyService.Instance != null &&
+                         EconomyService.Instance.CumulativeRevenue > 0;
+        }
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (loop != null && loop.PlayerHasOpenedShopToday)
+            HasOpenedShop = true;
+        if (SalesLogManager.Instance != null && GameClock.Instance != null &&
+            SalesLogManager.Instance.GetDailyDecisionStats(GameClock.Instance.CurrentDay).purchases > 0)
+        {
+            HasCustomerPurchase = true;
+            HasRevenue = EconomyService.Instance != null &&
+                         EconomyService.Instance.CumulativeRevenue > 0;
+        }
+    }
+
+    void LateUpdate()
+    {
+        if (!IsReady || !_projectionRefreshRequested) return;
+        _projectionRefreshRequested = false;
+        if (_islandView.DisplayGridSnapshot(_adapter.BoundSeed))
+            ConfigureCameraFollow(false);
+    }
+
+    void OnDestroy()
+    {
+        UnsubscribeWorldChanges();
+        if (Instance == this) Instance = null;
+    }
+
+    void ConfigurePlayerTraversal()
+    {
+        GameObject player = _adapter.PlayerRoot;
+        CharacterController controller = player.GetComponent<CharacterController>();
+        if (controller == null) controller = player.AddComponent<CharacterController>();
+        controller.height = 1.8f;
+        controller.radius = 0.42f;
+        controller.center = new Vector3(0f, 0.9f, 0f);
+        controller.stepOffset = 0.35f;
+        controller.slopeLimit = 45f;
+        PlayerController movement = player.GetComponent<PlayerController>();
+        if (movement == null) movement = player.AddComponent<PlayerController>();
+        movement.ApplyOpeningFeel();
+        _traversalGuard = player.GetComponent<WorldPlayerTraversalGuard>();
+        if (_traversalGuard == null)
+            _traversalGuard = player.AddComponent<WorldPlayerTraversalGuard>();
+        _traversalGuard.Configure(_grid);
+    }
+
+    void ConfigureCameraFollow(bool resetPose = true)
+    {
+        Camera camera = Camera.main;
+        if (camera == null || _adapter?.PlayerRoot == null) return;
+        Transform target = _adapter.PlayerRoot.transform;
+        CameraController follow = camera.GetComponent<CameraController>();
+        if (follow == null) follow = camera.gameObject.AddComponent<CameraController>();
+        if (resetPose || !follow.OpeningFraming || follow.target != target || camera.orthographic)
+        {
+            // T1 visual review: keep the player and held tools readable during normal Demo256 play.
+            // 출항 교육/기존 캠페인의 구도는 유지한다.
+            if (DemoRoute != null) follow.ConfigureOpening(target, 16f, 45f, 40f);
+            else follow.ConfigureOpening(target, 12.5f, 40f, 34f);
+        }
+        if (resetPose) follow.SnapToTarget();
+    }
+
+    void SubscribeWorldChanges()
+    {
+        _grid.Terraform.Changed -= OnTerraformChanged;
+        _grid.Terraform.Changed += OnTerraformChanged;
+        _grid.SurfaceEditor.Changed -= OnSurfaceChanged;
+        _grid.SurfaceEditor.Changed += OnSurfaceChanged;
+    }
+
+    void UnsubscribeWorldChanges()
+    {
+        if (_grid == null) return;
+        _grid.Terraform.Changed -= OnTerraformChanged;
+        _grid.SurfaceEditor.Changed -= OnSurfaceChanged;
+    }
+
+    void OnTerraformChanged(WorldTerraformEditResult result)
+    {
+        if (result.Succeeded)
+        {
+            HasTerraformed = true;
+            RequestProjectionRefresh();
+        }
+    }
+
+    void OnSurfaceChanged(WorldSurfaceEditResult result)
+    {
+        if (result.Succeeded) RequestProjectionRefresh();
+    }
+
+    public void RequestProjectionRefresh()
+    {
+        _projectionRefreshRequested = true;
+    }
+
+    public bool TryGatherTimber(out string reason)
+    {
+        reason = string.Empty;
+        bool success = _adapter != null &&
+                       _adapter.TryGatherNext(WorldResourceKind.Timber, out _, out reason);
+        HasGathered |= success;
+        _lastAction = success ? "Timber entered the existing Inventory." : reason;
+        return success;
+    }
+
+    public bool TryCraftProduct(out string reason)
+    {
+        reason = string.Empty;
+        bool success = _adapter != null && _adapter.TryCraftPlank(out reason);
+        HasCrafted |= success;
+        _lastAction = success ? "The existing B05 workbench crafted a Plank." : reason;
+        return success;
+    }
+
+    public bool TryStockProduct(out ShopSlot slot, out string reason)
+    {
+        slot = null;
+        reason = string.Empty;
+        bool success = _adapter != null &&
+                       _adapter.TryStockCraftedProduct(out slot, out reason);
+        HasStockedProduct |= success;
+        _lastAction = success ? "The crafted Plank is visible in a functional ShopSlot." : reason;
+        return success;
+    }
+
+    public bool TryOpenShop(out string reason)
+    {
+        reason = string.Empty;
+        int day = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 2;
+        bool success = _adapter != null && _adapter.TryOpenShopForNight(day, out reason);
+        HasOpenedShop |= success;
+        _lastAction = success ? "The existing Day/Night authority opened the night shop." : reason;
+        return success;
+    }
+
+    public bool TrySendCustomer(out string reason)
+    {
+        reason = string.Empty;
+        ShopSlot target = _adapter?.RuntimeShopSlots.FirstOrDefault(slot =>
+            slot != null && !slot.IsEmpty);
+        bool success = _adapter != null && _adapter.TryBeginCustomerVisit(target, out reason);
+        _lastAction = success ? "A customer is walking to the moved functional display." : reason;
+        return success;
+    }
+
+    public WorldTerraformEditResult RaiseCell(Vector2Int coordinate)
+    {
+        WorldTerraformEditResult result = _grid.Terraform.Raise(coordinate);
+        _lastAction = result.Succeeded
+            ? $"Raised cell {coordinate} and refreshed its chunk projection."
+            : $"Terraform blocked safely: {result.Failure}.";
+        return result;
+    }
+
+    public WorldBuildingPlacementResult PlaceOrMoveShed(
+        Vector2Int coordinate,
+        int quarterTurns)
+    {
+        WorldBuildingPlacementResult result;
+        if (_buildings.TryGetPlacement(WorldBuildingPlacementService.PrototypeInstanceId,
+                out _))
+        {
+            result = _buildings.TryMove(
+                WorldBuildingPlacementService.PrototypeInstanceId, coordinate, quarterTurns);
+            HasMovedBuilding |= result.Succeeded;
+        }
+        else
+        {
+            result = _buildings.TryPlace(
+                WorldBuildingPlacementService.PrototypeInstanceId, coordinate, quarterTurns);
+            HasPlacedBuilding |= result.Succeeded;
+        }
+        _lastAction = result.Succeeded
+            ? $"Storage shed transaction committed at {coordinate}."
+            : $"Storage shed transaction rolled back safely: {result.Failure}.";
+        return result;
+    }
+
+    public bool TryMoveSalesDisplay(
+        int gridX,
+        int gridY,
+        int quarterTurns,
+        out string reason)
+    {
+        reason = string.Empty;
+        bool success = _adapter != null &&
+                       _adapter.TryMoveSalesDisplay(gridX, gridY, quarterTurns, out reason);
+        HasMovedSalesDisplay |= success;
+        _lastAction = success ? "Moved the same functional B01 ShopSlots; stock authority was preserved." : reason;
+        return success;
+    }
+
+    public bool MovePlayerToCellForValidation(Vector2Int coordinate)
+    {
+        if (_traversalGuard == null || !_grid.CellToWorld(coordinate, out Vector3 world))
+            return false;
+        return _traversalGuard.TryTeleportTo(world + Vector3.up * 0.05f);
+    }
+
+    public bool BeginNewGame()
+    {
+        if (!IsReady || _adapter?.PlayerRoot == null) return false;
+        if (HasStartedBeta) return true;
+        if (DemoRoute != null)
+        {
+            if (!_adapter.BeginPlayableWeek(out _lastAction)) return false;
+            HasStartedBeta = true;
+            _startPromptVisible = false;
+            _movementOrigin = _adapter.PlayerRoot.transform.position;
+            _lastAction = "도구와 건설 키트를 챙겼습니다. 직접 모은 물건으로 첫 영업을 준비하세요.";
+            return true;
+        }
+        CampaignOpeningController opening = Opening ?? gameObject.AddComponent<CampaignOpeningController>();
+        if (!opening.Begin(this))
+        {
+            _lastAction = "이웃 보리를 준비하지 못했습니다. 주민 데이터와 길 연결을 확인해 주세요.";
+            return false;
+        }
+        if (!_adapter.BeginPlayableWeek(out string reason))
+        {
+            _lastAction = reason;
+            return false;
+        }
+        HasStartedBeta = true;
+        _startPromptVisible = false;
+        _movementOrigin = _adapter.PlayerRoot.transform.position;
+        HasMoved = false;
+        HasReachedShop = false;
+        HasReachedWorkbench = false;
+        _lastAction = "오늘부터 마을의 잡화점을 맡습니다. 가게 옆에서 기다리는 이웃 보리에게 인사해 보세요.";
+        return GameClock.Instance != null && GameClock.Instance.CurrentDay == 1;
+    }
+
+    public void WriteSaveFields(SaveData data)
+    {
+        if (data == null) return;
+        data.worldAlphaStarted = HasStartedBeta;
+        data.worldAlphaMoved = HasMoved;
+        data.worldAlphaReachedShop = HasReachedShop;
+        data.worldAlphaReachedWorkbench = HasReachedWorkbench;
+        data.campaign = Opening != null ? Opening.Capture() : null;
+    }
+
+    public bool RestoreSavedSession(bool started, bool moved, bool reachedShop,
+        bool reachedWorkbench, CampaignProgressSaveData campaign = null)
+    {
+        if (!IsReady || _adapter?.PlayerRoot == null)
+            return false;
+
+        if (started && !_adapter.BeginPlayableWeek(out string reason))
+        {
+            _lastAction = $"저장된 플레이 시간을 재개하지 못했습니다 · {reason}";
+            return false;
+        }
+
+        HasStartedBeta = started;
+        _startPromptVisible = !started;
+        _movementOrigin = _adapter.PlayerRoot.transform.position;
+        HasMoved = started && moved;
+        HasReachedShop = started && reachedShop;
+        HasReachedWorkbench = started && reachedWorkbench;
+        CampaignOpeningController opening = Opening;
+        if (opening != null || campaign != null)
+        {
+            opening = opening ?? gameObject.AddComponent<CampaignOpeningController>();
+            if (!opening.Restore(this, campaign)) return false;
+        }
+
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        HasGathered = started && loop != null &&
+                      (loop.IsDailyActivityCompleted("forest-forage") ||
+                       loop.IsDailyActivityCompleted(FarmPlotInteraction.DailyHarvestActivityId) ||
+                       loop.IsDailyActivityCompleted("quarry-mining") ||
+                       loop.IsDailyActivityCompleted("shore-forage"));
+        HasCrafted = started && ProcessedItemCount() > 0;
+        HasStockedProduct = started && _adapter.RuntimeShopSlots.Any(
+            slot => slot != null && !slot.IsEmpty);
+        HasOpenedShop = started && loop != null && loop.PlayerHasOpenedShopToday;
+        HasCustomerPurchase = started && SalesLogManager.Instance != null &&
+                              SalesLogManager.Instance.GetRecent(1).Count > 0;
+        HasRevenue = started && EconomyService.Instance != null &&
+                     EconomyService.Instance.CumulativeRevenue > 0;
+
+        WorldPersistenceService persistence = GetComponent<WorldPersistenceService>();
+        HasTerraformed = started && persistence != null &&
+                         persistence.CurrentSparseDeltaCount > 0;
+        HasPlacedBuilding = started && _buildings != null &&
+                            _buildings.TryGetPlacement(
+                                WorldBuildingPlacementService.PrototypeInstanceId, out _);
+        HasMovedSalesDisplay = started && _adapter.SalesDisplayGrid != Vector2Int.zero;
+        HasSaved = started;
+        HasRestored = started;
+        _lastAction = started
+            ? "저장한 섬 생활을 복원했습니다. 현재 일차의 목표부터 계속 진행하세요."
+            : "새 섬 생활 저장을 불러왔습니다. 시작할 준비가 되었습니다.";
+        return true;
+    }
+
+    public void SetDevelopmentOverlayVisible(bool visible)
+    {
+        _developmentOverlayVisible = visible;
+        ApplyDevelopmentMode(visible);
+    }
+
+    void ApplyDevelopmentMode(bool visible)
+    {
+        if (_gridDebug != null) _gridDebug.enabled = visible;
+        Transform gridLines = transform.Find("WorldGridDebugLines_Runtime");
+        if (gridLines != null) gridLines.gameObject.SetActive(visible);
+
+        WorldBuildingPlacementDebugController placementDebug =
+            GetComponent<WorldBuildingPlacementDebugController>();
+        if (placementDebug != null) placementDebug.enabled = visible;
+        if (_islandView != null) _islandView.enabled = visible;
+
+        WorldNavigationService navigation = GetComponent<WorldNavigationService>();
+        if (navigation != null) navigation.SetDebugOverlayVisible(visible);
+        if (CoreSlicePresentationMode.Instance != null)
+            CoreSlicePresentationMode.Instance.SetDevelopmentOverlaysVisible(visible);
+    }
+
+    bool WasDevelopmentTogglePressed()
+    {
+        try
+        {
+            return Input.GetKeyDown(KeyCode.F10);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    void RefreshPlayerFacingProgress()
+    {
+        if (!HasStartedBeta || _adapter?.PlayerRoot == null) return;
+        Vector3 player = _adapter.PlayerRoot.transform.position;
+        if (!HasReachedShop && _adapter.RuntimeShop != null &&
+            FlatDistance(player, _adapter.RuntimeShop.transform.position) <= LandmarkReachDistance)
+        {
+            HasReachedShop = true;
+            _lastAction = "잡화점 위치를 확인했습니다. 낮에 준비한 상품은 이곳에서 밤에 판매합니다.";
+        }
+        if (!HasReachedWorkbench)
+        {
+            // In the standard route the adapter owns the workbench; in the Demo route
+            // the player places their own via DemoSettlementController.PlacedWorkbench.
+            Transform wbTransform = _adapter.RuntimeWorkbench != null
+                ? _adapter.RuntimeWorkbench.transform
+                : DemoSettlementController.Instance?.PlacedWorkbench?.transform;
+            if (wbTransform != null && FlatDistance(player, wbTransform.position) <= LandmarkReachDistance)
+            {
+                HasReachedWorkbench = true;
+                _lastAction = "제작 작업대 위치를 확인했습니다. 자원을 가공해 더 가치 있는 상품을 만드세요.";
+            }
+        }
+    }
+
+    string ResolvePlayerObjective()
+    {
+        if (!IsReady) return "섬 생활을 준비하고 있습니다.";
+        if (!HasStartedBeta) return "새 섬 생활을 시작하세요.";
+        if (DemoRoute != null)
+            return DemoRoute.FirstDemoSaleCompleted ? "첫 판매 완료! 섬 생활을 계속하세요." :
+                "숲 목재 · 고지대 광석 · 해안 물고기 · 초원 곤충을 모으고 거점과 잡화점을 설치하세요.";
+        if (!HasMoved && (Opening == null || !Opening.HasGreetedBori))
+            return "WASD로 움직여 이동 방법을 익히세요.";
+        if (Opening != null && Opening.HasStarted && !Opening.OpeningComplete)
+        {
+            Transform target = !Opening.HasGreetedBori ? Opening.Bori?.transform :
+                _adapter.FindDaytimeActivity("forest-forage")?.transform;
+            return Opening.Objective + " · " + TargetHint(target);
+        }
+        if (FirstNight?.NeedsGuidance == true) return FirstNight.Objective;
+        if (!HasReachedShop)
+            return $"노란 표지의 P.A. 잡화점을 찾으세요 · {TargetHint(_adapter?.RuntimeShop?.transform)}";
+        if (!HasReachedWorkbench)
+            return $"초록 표지의 제작 작업대를 찾으세요 · {TargetHint(_adapter?.RuntimeWorkbench?.transform)}";
+
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (loop == null) return ResolveDaytimeObjective();
+        if (loop.CurrentPhase == PADayNightPhase.ShopOpen)
+        {
+            if (!loop.PlayerHasOpenedShopToday)
+                return $"저녁 영업 시간입니다. 상점 간판에서 개점하세요 · {TargetHint(_adapter.ShopSignTarget)}";
+            if (_adapter.RuntimeShopSlots.All(slot => slot == null || slot.IsEmpty))
+                return $"영업 중이지만 판매대가 비었습니다. 상품을 진열하세요 · {TargetHint(_adapter.SalesDisplayTarget)}";
+            return "영업 중 · 손님의 가격·상품 반응을 확인하고 판매 기록을 휴대폰 Feed에서 검토하세요.";
+        }
+        if (loop.CurrentPhase == PADayNightPhase.Settlement)
+        {
+            LongPlayProgressionController progression = LongPlayProgressionController.Instance;
+            if (progression != null && GameClock.Instance != null &&
+                GameClock.Instance.CurrentDay >= 7 && !progression.WeekOneCompletionRequirementsMet)
+                return "주간 목표가 남았습니다. 다음 날에도 매출·고용·마을 반응을 보완한 뒤 정산하세요.";
+            return $"오늘 정산 시간입니다. 상점 간판에서 다음 날을 시작하세요 · {TargetHint(_adapter.ShopSignTarget)}";
+        }
+        return $"낮 준비 시간 · {ResolveDaytimeObjective()}";
+    }
+
+    string ResolveDaytimeObjective()
+    {
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (_adapter == null || loop == null || !_adapter.DaytimeActivitiesBound)
+            return "활동 구역을 확인하고 있습니다.";
+
+        if (!loop.IsDailyActivityCompleted("forest-forage"))
+            return "숲 채집터에서 당근을 모으세요 · " +
+                   TargetHint(_adapter.FindDaytimeActivity("forest-forage")?.transform);
+
+        bool farmDone = loop.IsDailyActivityCompleted(FarmPlotInteraction.DailyHarvestActivityId);
+        FarmPlotInteraction availablePlot = _adapter.FarmPlots.FirstOrDefault(plot =>
+            plot != null && (plot.CurrentCrop == null || plot.CurrentCrop.isFullyGrown));
+        bool cropGrowing = _adapter.FarmPlots.Any(plot => plot?.CurrentCrop != null &&
+            !plot.CurrentCrop.isFullyGrown);
+        if (!farmDone && availablePlot != null)
+        {
+            Item seed = Resources.Load<Item>("Items/Item_15_Seed");
+            int seedCount = Inventory.instance != null && seed != null
+                ? Inventory.instance.CountItems(seed)
+                : 0;
+            if (availablePlot.CurrentCrop != null && availablePlot.CurrentCrop.isFullyGrown)
+                return $"마을 밭의 Wheat를 수확하세요 · {TargetHint(availablePlot.transform)}";
+            if (seedCount <= 0 && !cropGrowing)
+                return "농장 씨앗 주머니를 챙기세요 · " +
+                       TargetHint(_adapter.FindDaytimeActivity("farm-seed-pouch")?.transform);
+            if (!cropGrowing)
+                return $"씨앗을 마을 밭에 심으세요 · {TargetHint(availablePlot.transform)}";
+        }
+
+        if (!loop.IsDailyActivityCompleted("quarry-mining"))
+            return "작물이 자라는 동안 고지대 광맥에서 광석을 캐세요 · " +
+                   TargetHint(_adapter.FindDaytimeActivity("quarry-mining")?.transform);
+        if (!loop.IsDailyActivityCompleted("shore-forage"))
+            return "연못 낚시터에서 물고기를 낚으세요 · " +
+                   TargetHint(_adapter.FindDaytimeActivity("shore-forage")?.transform);
+        if (!farmDone)
+            return "Wheat가 다 자라면 마을 밭으로 돌아가 수확하세요.";
+        return ResolveProductionObjective();
+    }
+
+    string ResolveProductionObjective()
+    {
+        if (_adapter == null || !_adapter.ProductionFacilitiesBound)
+            return "오늘 낮 활동 완료 · 가공 시설을 확인하고 있습니다.";
+
+        if (CountItem("Items/Item_Carrot") >= 2 ||
+            CountItem("Items/Item_Wheat") >= 3 ||
+            CountItem("Items/Item_Fish") >= 1)
+        {
+            return "오늘 낮 활동 완료 · 주방 가공대에서 식재료를 상품으로 만드세요 · " +
+                   TargetHint(_adapter.RuntimeKitchen?.transform);
+        }
+        if (CountItem("Items/Item_Ore") >= 2)
+        {
+            return "오늘 낮 활동 완료 · 대장간 용광로에서 광석을 철괴로 만드세요 · " +
+                   TargetHint(_adapter.RuntimeForge?.transform);
+        }
+        if (CountItem("Items/Item_Wood") >= 2)
+        {
+            return "오늘 낮 활동 완료 · 제작 작업대에서 목재를 판자로 만드세요 · " +
+                   TargetHint(_adapter.RuntimeWorkbench?.transform);
+        }
+
+        int processed = CountItem("Items/Item_09_BakedPotato") +
+                        CountItem("Items/Item_BreadLoaf") +
+                        CountItem("Items/Item_10_GrilledFish") +
+                        CountItem("Items/Item_IronBar") +
+                        CountItem("Items/Item_Plank");
+        return processed > 0
+            ? "오늘 낮 활동 완료 · 가공 상품을 노란 상품 판매대에 진열하세요 · " +
+              TargetHint(_adapter.SalesDisplayTarget)
+            : "오늘 낮 활동 완료 · 상품을 제작하거나 잡화점 판매대에 진열하세요.";
+    }
+
+    string DaytimeActivitySummary()
+    {
+        DayNightShopLoopController loop = DayNightShopLoopController.Instance;
+        if (loop == null) return "낮 활동 준비 중";
+        return $"낮 활동  {Done(loop.IsDailyActivityCompleted("forest-forage"))} 채집  " +
+               $"{Done(loop.IsDailyActivityCompleted(FarmPlotInteraction.DailyHarvestActivityId))} 농사  " +
+               $"{Done(loop.IsDailyActivityCompleted("quarry-mining"))} 채광  " +
+               $"{Done(loop.IsDailyActivityCompleted("shore-forage"))} 낚시  |  " +
+               $"가방 당근 {CountItem("Items/Item_Carrot")} · 밀 {CountItem("Items/Item_Wheat")} · " +
+               $"광석 {CountItem("Items/Item_Ore")} · 물고기 {CountItem("Items/Item_Fish")}  |  " +
+               $"가공품 {ProcessedItemCount()}";
+    }
+
+    int ProcessedItemCount()
+    {
+        return CountItem("Items/Item_09_BakedPotato") +
+               CountItem("Items/Item_BreadLoaf") +
+               CountItem("Items/Item_10_GrilledFish") +
+               CountItem("Items/Item_IronBar") +
+               CountItem("Items/Item_Plank");
+    }
+
+    static string Done(bool value) => value ? "[완료]" : "[ ]";
+
+    static int CountItem(string resourcePath)
+    {
+        Item item = Resources.Load<Item>(resourcePath);
+        return item != null && Inventory.instance != null
+            ? Inventory.instance.CountItems(item)
+            : 0;
+    }
+
+    string TargetHint(Transform target)
+    {
+        if (target == null || _adapter?.PlayerRoot == null) return "위치 확인 중";
+        Vector3 delta = target.position - _adapter.PlayerRoot.transform.position;
+        delta.y = 0f;
+        float distance = delta.magnitude;
+        if (distance < 0.1f) return "도착";
+        float x = delta.x / distance;
+        float z = delta.z / distance;
+        string direction;
+        if (Mathf.Abs(x) > 0.72f) direction = x > 0f ? "동쪽" : "서쪽";
+        else if (Mathf.Abs(z) > 0.72f) direction = z > 0f ? "북쪽" : "남쪽";
+        else if (x > 0f) direction = z > 0f ? "북동쪽" : "남동쪽";
+        else direction = z > 0f ? "북서쪽" : "남서쪽";
+        return $"{direction} {distance:0}m";
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    async void SaveFromUi()
+    {
+        try
+        {
+            await _adapter.RuntimeSaveManager.SaveGameAsync();
+            HasSaved = true;
+            _lastAction = "Saved seed, sparse deltas, building, display, player and gameplay state.";
+        }
+        catch (Exception ex)
+        {
+            _lastAction = $"Save failed: {ex.Message}";
+            Debug.LogException(ex);
+        }
+    }
+
+    async void LoadFromUi()
+    {
+        try
+        {
+            await _adapter.RuntimeSaveManager.LoadGameAsync();
+            HasRestored = true;
+            _lastAction = "Restored the playable World Alpha through the existing SaveManager.";
+        }
+        catch (Exception ex)
+        {
+            _lastAction = $"Load failed: {ex.Message}";
+            Debug.LogException(ex);
+        }
+    }
+
+    void OnGUI()
+    {
+        if (DemoRoute != null) return;
+        if (!Application.isPlaying || !IsReady) return;
+        if (!HasStartedBeta)
+        {
+            DrawStartPrompt();
+            return;
+        }
+        if (!_developmentOverlayVisible)
+        {
+            DrawPlayerFacingHud();
+            return;
+        }
+        float left = Mathf.Max(740f, Screen.width - 474f);
+        GUILayout.BeginArea(new Rect(left, 18f, 456f, 525f), GUI.skin.box);
+        GUILayout.Label("M70 PLAYABLE WORLD ALPHA");
+        GUILayout.Label($"Seed {_adapter.BoundSeed}  |  {_grid.Definition.Width}x{_grid.Definition.Height} cells  |  {_islandView.GeneratedChunkCount} chunks");
+        GUILayout.Label("WASD move · click a cell · R/F terraform · B/M shed · Q/E rotate · Enter commit");
+        GUILayout.Space(4f);
+        GUILayout.Label(ChecklistSummary());
+        GUILayout.Space(4f);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Gather Timber")) TryGatherTimber(out _);
+        if (GUILayout.Button("Craft Plank")) TryCraftProduct(out _);
+        if (GUILayout.Button("Stock B01")) TryStockProduct(out _, out _);
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Move Display"))
+        {
+            int nextX = _adapter.SalesDisplayGrid.x >= 1
+                ? -1
+                : _adapter.SalesDisplayGrid.x + 1;
+            TryMoveSalesDisplay(nextX, 0,
+                (_adapter.SalesDisplayQuarterTurns + 1) % 4, out _);
+        }
+        if (GUILayout.Button("Open Night")) TryOpenShop(out _);
+        if (GUILayout.Button("Send Customer")) TrySendCustomer(out _);
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Save (F5)")) SaveFromUi();
+        if (GUILayout.Button("Restore (F9)")) LoadFromUi();
+        GUILayout.EndHorizontal();
+        GUILayout.Space(4f);
+        GUILayout.Label(_lastAction);
+        GUILayout.EndArea();
+    }
+
+    void DrawStartPrompt()
+    {
+        float width = Mathf.Min(620f, Screen.width - 40f);
+        float height = 320f;
+        float left = (Screen.width - width) * 0.5f;
+        float top = (Screen.height - height) * 0.5f;
+        GUILayout.BeginArea(new Rect(left, top, width, height), GUI.skin.box);
+        var openingText = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
+        GUILayout.Space(12f);
+        GUILayout.Label("PROJECT P.A. · 새로운 섬 생활", openingText);
+        GUILayout.Space(12f);
+        GUILayout.Label("낮에는 섬을 돌아다니며 자원과 상품을 준비하고,\n밤에는 마을의 잡화점을 열어 주민을 맞이합니다.", openingText);
+        GUILayout.Space(12f);
+        GUILayout.Label("오늘부터 이 마을의 잡화점을 맡습니다.\n이웃 보리에게 인사하고, 오늘 밤 팔 물건을 찾아보세요.", openingText);
+        GUILayout.Space(12f);
+        if (GUILayout.Button("새 섬 생활 시작  [Enter / Space]", GUILayout.Height(44f)))
+            BeginNewGame();
+        GUILayout.Space(8f);
+        GUILayout.Label("저장: F5 또는 Esc 메뉴 · 불러오기: F9 · 개발 정보: F10");
+        GUILayout.EndArea();
+    }
+
+    void DrawPlayerFacingHud()
+    {
+        GUILayout.BeginArea(PlayerFacingHudScreenRect, GUI.skin.box);
+        int currentDay = GameClock.Instance != null ? GameClock.Instance.CurrentDay : 1;
+        if (DemoRoute != null)
+        {
+            GUILayout.Label($"Day {currentDay} · {CurrentPlayerObjective}");
+            GUILayout.Label("WASD 이동 · 숫자 키 도구/키트 선택 · Space 채집/낚시/포획/설치");
+            GUILayout.Label("설치: WASD 위치 · R 회전 · Space 확정 · Esc 취소");
+            GUILayout.Label("모은 물건 선택 → 진열대 Space → Space 가격 설정 → 밤에 간판 Space OPEN");
+            GUILayout.Label(ShopMerchandisingSummary);
+            GUILayout.Label(VillageResponseSummary);
+            GUILayout.EndArea();
+            return;
+        }
+        if (Opening != null && Opening.HasStarted && !Opening.OpeningComplete)
+        {
+            var openingText = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
+            GUILayout.Label($"Day {currentDay} · {CurrentPlayerObjective}", openingText);
+            GUILayout.Space(6f);
+            GUILayout.Label("낮에 준비한 물건을 밤에 이웃에게 팝니다. 무엇이 필요한지는 만나며 알아가세요.", openingText);
+            GUILayout.Space(8f);
+            GUILayout.Label(Opening.HasGreetedBori ? "보리와 인사했어요." : "보리가 가게 옆에서 기다리고 있어요.", openingText);
+            GUILayout.Label(Opening.HasSecuredStock ? "가방에 첫 판매 재고를 마련했어요." : "채집한 재료도 첫 상품이 될 수 있어요.", openingText);
+            GUILayout.Space(8f);
+            GUILayout.Label(PlayerControlHint, openingText);
+            GUILayout.EndArea();
+            return;
+        }
+        if (FirstNight?.NeedsGuidance == true)
+        {
+            var nightText = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
+            GUILayout.Label($"Day {currentDay} · {FirstNight.Objective}", nightText);
+            GUILayout.Space(8f);
+            GUILayout.Label(FirstNight.Summary, nightText);
+            GUILayout.Space(8f);
+            GUILayout.Label(PlayerControlHint, nightText);
+            GUILayout.EndArea();
+            return;
+        }
+        GUILayout.Label($"Day {currentDay} · 섬 생활 동선   |   {CurrentPlayerObjective}");
+        GUILayout.Space(4f);
+        GUILayout.Label(LongPlayProgressionController.Instance != null
+            ? LongPlayProgressionController.Instance.CurrentWeekOnePlayerSummary
+            : "Week 1 진행 목표를 준비 중입니다.");
+        GUILayout.Space(4f);
+        GUILayout.Label(_lastAction);
+        GUILayout.Space(4f);
+        GUILayout.Label(DaytimeActivitySummary());
+        GUILayout.Space(4f);
+        GUILayout.Label(ShopMerchandisingSummary);
+        GUILayout.Space(4f);
+        GUILayout.Label(CustomerStrategySummary);
+        GUILayout.Space(4f);
+        GUILayout.Label(VillageResponseSummary);
+        GUILayout.Space(4f);
+        GUILayout.Label(PlayerControlHint);
+        GUILayout.EndArea();
+    }
+
+    string ChecklistSummary()
+    {
+        return $"{Mark(HasMoved)} move   {Mark(HasGathered)} gather   {Mark(HasCrafted)} craft   " +
+               $"{Mark(HasTerraformed)} terraform\n" +
+               $"{Mark(HasPlacedBuilding)} place shed   {Mark(HasMovedBuilding)} move shed   " +
+               $"{Mark(HasMovedSalesDisplay)} move display\n" +
+               $"{Mark(HasStockedProduct)} stock   {Mark(HasOpenedShop)} open   " +
+               $"{Mark(HasCustomerPurchase)} purchase   {Mark(HasRevenue)} revenue\n" +
+               $"{Mark(HasSaved)} save   {Mark(HasRestored)} restore";
+    }
+
+    static string Mark(bool value) => value ? "[x]" : "[ ]";
+}
+
+[DisallowMultipleComponent]
+public sealed class WorldPlayerTraversalGuard : MonoBehaviour
+{
+    WorldGridService _grid;
+    CharacterController _controller;
+    Vector3 _lastSafePosition;
+    bool _configured;
+
+    public Vector3 LastSafePosition => _lastSafePosition;
+
+    public void Configure(WorldGridService grid)
+    {
+        _grid = grid;
+        _controller = GetComponent<CharacterController>();
+        _configured = TryResolveSafe(transform.position, out _lastSafePosition);
+    }
+
+    void LateUpdate()
+    {
+        if (!_configured || _grid == null) return;
+        if (TryResolveSafe(transform.position, out Vector3 safe))
+        {
+            _lastSafePosition = safe;
+            return;
+        }
+        Teleport(_lastSafePosition);
+    }
+
+    public bool TryTeleportTo(Vector3 requested)
+    {
+        if (!TryResolveSafe(requested, out Vector3 safe)) return false;
+        _lastSafePosition = safe;
+        _configured = true;
+        Teleport(safe);
+        return true;
+    }
+
+    bool TryResolveSafe(Vector3 position, out Vector3 safe)
+    {
+        safe = position;
+        if (_grid == null || !_grid.WorldToCell(position, out Vector2Int coordinate) ||
+            !_grid.TryGetCell(coordinate, out WorldCellData cell) ||
+            !cell.IsWalkable || cell.HasWater ||
+            !_grid.CellToWorld(coordinate, out Vector3 ground))
+        {
+            return false;
+        }
+        float highestSafeY=ground.y+4f;
+        if (_grid.GetComponent<DemoRouteController>() != null)
+            highestSafeY=Mathf.Max(highestSafeY,_grid.Definition.WorldOrigin.y+
+                _grid.Definition.MaxElevationLevel*_grid.Definition.ElevationStep+2f);
+        if (position.y < ground.y - 1.25f || position.y > highestSafeY)
+            return false;
+        safe = new Vector3(position.x, ground.y + 0.05f, position.z);
+        return true;
+    }
+
+    void Teleport(Vector3 position)
+    {
+        if (_controller == null) _controller = GetComponent<CharacterController>();
+        bool wasEnabled = _controller != null && _controller.enabled;
+        if (wasEnabled) _controller.enabled = false;
+        transform.position = position;
+        if (wasEnabled) _controller.enabled = true;
+    }
+}
+
+#if UNITY_EDITOR
+public static class PA_WorldAlphaIntegrationTools
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.WORLD010.Active";
+    const string FailedKey = "PA.WORLD010.Failed";
+    const string ConsoleErrorKey = "PA.WORLD010.ConsoleErrors";
+    const string WaitFramesKey = "PA.WORLD010.WaitFrames";
+    const string StageKey = "PA.WORLD010.Stage";
+    const string SaveDirectoryKey = "PA.WORLD010.SaveDirectory";
+    const string ExpectedChecksumKey = "PA.WORLD010.ExpectedChecksum";
+    const string ExpectedBuildingXKey = "PA.WORLD010.BuildingX";
+    const string ExpectedBuildingZKey = "PA.WORLD010.BuildingZ";
+    const string ExpectedBuildingRotationKey = "PA.WORLD010.BuildingRotation";
+    const string ExpectedPlayerXKey = "PA.WORLD010.PlayerX";
+    const string ExpectedPlayerZKey = "PA.WORLD010.PlayerZ";
+    const string ExpectedMoneyKey = "PA.WORLD010.Money";
+    const string ExpectedRevenueKey = "PA.WORLD010.Revenue";
+    const string ExpectedResourcesKey = "PA.WORLD010.Resources";
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+    static WorldPersistenceService _persistence;
+    static ShopSlot _saleSlot;
+    static Task _ioTask;
+    static float _stageStarted;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        SubscribeCallbacks();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/World/WORLD-010/Validate M70 Playable World Alpha")]
+    public static void RunWorld010Validation()
+    {
+        RunWorld010ValidationInternal();
+    }
+
+    public static void RunWorld010ValidationBatch()
+    {
+        RunWorld010ValidationInternal();
+    }
+
+    static void RunWorld010ValidationInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(WaitFramesKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            string saveDirectory = Path.Combine(Application.dataPath, "..", "Logs",
+                "WorldAlpha", DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            Directory.CreateDirectory(saveDirectory);
+            SessionState.SetString(SaveDirectoryKey, saveDirectory);
+            SubscribeCallbacks();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            Require(UnityEngine.Object.FindObjectsByType<WorldAlphaPlayableController>(
+                    FindObjectsSortMode.None).Length == 0,
+                "M70 controller remains runtime-only and scene YAML stays untouched");
+            Require(Resources.Load<BuildingData>("Buildings/Building_B09_StorageShed")?.prefab != null &&
+                    Resources.Load<BuildingData>("Buildings/Building_B01_MarketStall")?.prefab != null &&
+                    Resources.Load<RecipeData>("Recipes/Recipe_Plank") != null,
+                "integration assets resolve through their existing Resources identities");
+            Debug.Log("[WORLD-010] EDIT_MODE_PASS sceneUntouched=true assets=true");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void SubscribeCallbacks()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SessionState.SetInt(WaitFramesKey, 0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            if (SessionState.GetInt(StageKey, 0) == 3 &&
+                !SessionState.GetBool(FailedKey, false))
+            {
+                EditorApplication.delayCall += RestartPlayMode;
+            }
+            else
+            {
+                FinishValidation();
+            }
+        }
+    }
+
+    static void RestartPlayMode()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) ||
+            SessionState.GetBool(FailedKey, false))
+        {
+            FinishValidation();
+            return;
+        }
+        try
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "restart reopens the saved WorldSandbox scene cleanly");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(WaitFramesKey, 0) + 1;
+        SessionState.SetInt(WaitFramesKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+
+        try
+        {
+            if (stage == 0)
+            {
+                ResolveRuntime();
+                if ((_alpha == null || !_alpha.IsReady) && frames < 900) return;
+                Require(_alpha != null && _alpha.IsReady,
+                    "playable alpha reaches Ready after the existing gameplay adapter");
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(_alpha.Grid.Definition.Width == 128 &&
+                        _alpha.Grid.Definition.Height == 128 &&
+                        _alpha.Grid.Definition.ChunkSize == 16 &&
+                        _alpha.Grid.Definition.CellSize == 2f &&
+                        _alpha.IslandView.GeneratedChunkCount == 64,
+                    "seed 9009 projects a visible 128x128 world as 8x8 bounded chunks");
+                Require(_adapter.PlayerRoot.GetComponent<CharacterController>() != null &&
+                        _adapter.PlayerRoot.GetComponent<PlayerController>() != null &&
+                        _adapter.PlayerRoot.GetComponent<WorldPlayerTraversalGuard>() != null &&
+                        Camera.main != null && Camera.main.GetComponent<CameraController>()?.target ==
+                        _adapter.PlayerRoot.transform,
+                    "existing input drives a guarded CharacterController with camera follow");
+                ValidateSingleAuthorities();
+
+                _adapter.RuntimeSaveManager.SetRepositoryForValidation(
+                    new LocalJsonSaveRepository(SessionState.GetString(SaveDirectoryKey, string.Empty)));
+
+                Vector2Int movementCell = FindWalkableMovementCell();
+                Require(_alpha.MovePlayerToCellForValidation(movementCell) &&
+                        _alpha.Grid.WorldToCell(_adapter.PlayerRoot.transform.position,
+                            out Vector2Int movedCell) && movedCell == movementCell,
+                    "player traverses to another safe generated cell");
+
+                Vector2Int terraformCell = FindTerraformCell();
+                WorldTerraformEditResult terraform = _alpha.RaiseCell(terraformCell);
+                Require(terraform.Succeeded && _persistence.CurrentSparseDeltaCount == 1,
+                    "runtime terraform commits one sparse cell delta");
+
+                Vector2Int placeCell = FindBuildingCell(false, default);
+                WorldBuildingPlacementResult placed = _alpha.PlaceOrMoveShed(placeCell, 0);
+                Require(placed.Succeeded &&
+                        _alpha.Buildings.TryGetPlacement(
+                            WorldBuildingPlacementService.PrototypeInstanceId, out _),
+                    "B09 storage shed placement commits through occupancy and reachability gates");
+                Vector2Int moveCell = FindBuildingCell(true, placeCell);
+                WorldBuildingPlacementResult moved = _alpha.PlaceOrMoveShed(moveCell, 1);
+                Require(moved.Succeeded && moved.Anchor != placeCell,
+                    "the same B09 instance moves transactionally without duplication");
+
+                Require(_alpha.TryMoveSalesDisplay(1, 0, 1, out string displayReason) &&
+                        _adapter.SalesDisplayGrid == new Vector2Int(1, 0) &&
+                        _adapter.SalesDisplayQuarterTurns == 1,
+                    $"the functional B01 ShopSlot group moves and rotates ({displayReason})");
+
+                Require(_adapter.BeginDayForValidation(9f, 2),
+                    "day preparation opens through the existing clock and loop authority");
+                bool gatheredA = _alpha.TryGatherTimber(out string gatherA);
+                bool gatheredB = _alpha.TryGatherTimber(out string gatherB);
+                Require(gatheredA && gatheredB &&
+                        _adapter.PlayerInventory.CountItems(
+                            Resources.Load<Item>("Items/Item_Wood")) == 2,
+                    $"two generated Timber spawns enter Inventory ({gatherA}; {gatherB})");
+                Require(_alpha.TryCraftProduct(out string craftReason) &&
+                        _adapter.PlayerInventory.CountItems(
+                            Resources.Load<Item>("Items/Item_Plank")) == 1,
+                    $"B05 CraftingService produces the sale item ({craftReason})");
+                Require(_alpha.TryStockProduct(out _saleSlot, out string stockReason) &&
+                        _saleSlot != null && !_saleSlot.IsEmpty,
+                    $"the crafted product enters the moved ShopSlot ({stockReason})");
+                _saleSlot.displayPrice = 1;
+                _saleSlot.RefreshDisplay();
+                Require(_alpha.TryOpenShop(out string openReason),
+                    $"the player opens the night shop ({openReason})");
+                Require(_alpha.TrySendCustomer(out string customerReason),
+                    $"one existing customer starts a path to the moved display ({customerReason})");
+                _stageStarted = Time.realtimeSinceStartup;
+                SetStage(1);
+                return;
+            }
+
+            if (stage == 1)
+            {
+                ResolveRuntime();
+                if (!_adapter.CustomerPurchaseCompleted)
+                {
+                    if (_adapter.State == WorldGameplayAdapterState.Failed ||
+                        Time.realtimeSinceStartup - _stageStarted > 28f)
+                    {
+                        throw new InvalidOperationException(
+                            $"customer purchase did not complete: {_adapter.LastFailure}");
+                    }
+                    return;
+                }
+
+                Require(_saleSlot.IsEmpty && EconomyService.Instance.Money == 1 &&
+                        EconomyService.Instance.CumulativeRevenue == 1,
+                    "customer purchase clears stock and deposits revenue through EconomyService");
+                bool beganDayThree = _adapter.BeginDayForValidation(9f, 3);
+                bool gatheredFish = _adapter.TryGatherNext(
+                    WorldResourceKind.Fish, out _, out string fishReason);
+                Require(beganDayThree && gatheredFish &&
+                        _adapter.PlayerInventory.CountItems(
+                            Resources.Load<Item>("Items/Item_Fish")) == 1,
+                    $"post-sale inventory state remains meaningful for restart proof ({fishReason})");
+
+                WorldStateSaveData expected = _adapter.CaptureWorldState();
+                Require(expected != null && expected.modifiedCells.Count == 1 &&
+                        expected.placedBuildings.Count == 1 && expected.shopFurniture.Count == 1 &&
+                        expected.resourceStates.Count == 3,
+                    "one save payload contains terrain, shed, display and gathered resource state");
+                Require(_alpha.Grid.WorldToCell(_adapter.PlayerRoot.transform.position,
+                        out Vector2Int playerCell),
+                    "player position resolves to a stable save cell");
+                WorldPlacedBuildingRuntime building = GetPlacedBuilding();
+                SessionState.SetString(ExpectedChecksumKey,
+                    WorldPersistenceService.ComputePayloadChecksum(expected).ToString());
+                SessionState.SetInt(ExpectedBuildingXKey, building.Anchor.x);
+                SessionState.SetInt(ExpectedBuildingZKey, building.Anchor.y);
+                SessionState.SetInt(ExpectedBuildingRotationKey, building.QuarterTurns);
+                SessionState.SetInt(ExpectedPlayerXKey, playerCell.x);
+                SessionState.SetInt(ExpectedPlayerZKey, playerCell.y);
+                SessionState.SetInt(ExpectedMoneyKey, EconomyService.Instance.Money);
+                SessionState.SetString(ExpectedRevenueKey,
+                    EconomyService.Instance.CumulativeRevenue.ToString());
+                SessionState.SetInt(ExpectedResourcesKey, _adapter.ConsumedResourceCount);
+                _ioTask = _adapter.RuntimeSaveManager.SaveGameAsync();
+                _stageStarted = Time.realtimeSinceStartup;
+                SetStage(2);
+                return;
+            }
+
+            if (stage == 2)
+            {
+                if (_ioTask != null && !_ioTask.IsCompleted)
+                {
+                    if (Time.realtimeSinceStartup - _stageStarted > 8f)
+                        throw new TimeoutException("M70 isolated save exceeded eight seconds");
+                    return;
+                }
+                if (_ioTask != null && _ioTask.IsFaulted) throw _ioTask.Exception;
+                string saveFile = Path.Combine(
+                    SessionState.GetString(SaveDirectoryKey, string.Empty), "savegame.json");
+                Require(File.Exists(saveFile),
+                    "SaveManager writes the integrated alpha to an isolated repository");
+
+                _adapter.StopCustomer();
+                foreach (InventorySlot slot in _adapter.PlayerInventory.slots) slot?.Clear();
+                _adapter.PlayerInventory.RefreshAllUI();
+                EconomyService.Instance.ForceSet(777, "WORLD-010 restart mutation");
+                EconomyService.Instance.ForceSetCumulativeRevenue(777,
+                    "WORLD-010 restart mutation");
+                Require(_persistence.StartProceduralWorld(
+                        WorldGameplayAdapterService.DefaultWorldSeed + 55, out string mutateReason),
+                    $"live world is replaced before restart ({mutateReason})");
+
+                SetStage(3);
+                EditorApplication.update -= ValidateRuntime;
+                EditorApplication.ExitPlaymode();
+                return;
+            }
+
+            if (stage == 3)
+            {
+                ResolveRuntime();
+                if ((_alpha == null || !_alpha.IsReady) && frames < 900) return;
+                Require(_alpha != null && _alpha.IsReady,
+                    "WorldSandbox restarts into a fresh runtime composition");
+                _adapter.RuntimeSaveManager.SetRepositoryForValidation(
+                    new LocalJsonSaveRepository(SessionState.GetString(SaveDirectoryKey, string.Empty)));
+                _ioTask = _adapter.RuntimeSaveManager.LoadGameAsync();
+                _stageStarted = Time.realtimeSinceStartup;
+                SetStage(4);
+                return;
+            }
+
+            if (stage == 4)
+            {
+                if (_ioTask != null && !_ioTask.IsCompleted)
+                {
+                    if (Time.realtimeSinceStartup - _stageStarted > 12f)
+                        throw new TimeoutException("M70 restart restore exceeded twelve seconds");
+                    return;
+                }
+                if (_ioTask != null && _ioTask.IsFaulted) throw _ioTask.Exception;
+                ResolveRuntime();
+                if ((_adapter.BoundSeed != WorldGameplayAdapterService.DefaultWorldSeed ||
+                     _alpha.IslandView.GeneratedChunkCount != 64) &&
+                    Time.realtimeSinceStartup - _stageStarted < 15f)
+                {
+                    return;
+                }
+
+                Require(_persistence.ActiveSeed == WorldGameplayAdapterService.DefaultWorldSeed &&
+                        _adapter.BoundSeed == WorldGameplayAdapterService.DefaultWorldSeed,
+                    "restart restore reinstates deterministic seed 9009 and gameplay anchors");
+                Require(_persistence.CurrentSparseDeltaCount == 1 &&
+                        _alpha.IslandView.GeneratedChunkCount == 64,
+                    "sparse terraform state restores into the visible 64-chunk projection");
+                WorldPlacedBuildingRuntime restoredBuilding = GetPlacedBuilding();
+                Require(restoredBuilding.Anchor == new Vector2Int(
+                            SessionState.GetInt(ExpectedBuildingXKey, -1),
+                            SessionState.GetInt(ExpectedBuildingZKey, -1)) &&
+                        restoredBuilding.QuarterTurns ==
+                            SessionState.GetInt(ExpectedBuildingRotationKey, -1),
+                    "the moved B09 instance restores once at its committed rotation");
+                Require(_adapter.SalesDisplayGrid == new Vector2Int(1, 0) &&
+                        _adapter.SalesDisplayQuarterTurns == 1,
+                    "the moved functional sales display restores with ShopSlot identity intact");
+                Require(_alpha.Grid.WorldToCell(_adapter.PlayerRoot.transform.position,
+                            out Vector2Int restoredPlayerCell) &&
+                        restoredPlayerCell == new Vector2Int(
+                            SessionState.GetInt(ExpectedPlayerXKey, -1),
+                            SessionState.GetInt(ExpectedPlayerZKey, -1)),
+                    "player restarts at the saved safe world cell");
+                Require(EconomyService.Instance.Money ==
+                            SessionState.GetInt(ExpectedMoneyKey, -1) &&
+                        EconomyService.Instance.CumulativeRevenue.ToString() ==
+                            SessionState.GetString(ExpectedRevenueKey, string.Empty) &&
+                        _adapter.PlayerInventory.CountItems(
+                            Resources.Load<Item>("Items/Item_Fish")) == 1,
+                    "revenue and existing Inventory restore after the runtime scene restart");
+                Require(_adapter.ConsumedResourceCount ==
+                            SessionState.GetInt(ExpectedResourcesKey, -1) &&
+                        _adapter.RuntimeShopSlots.All(slot => slot == null || slot.IsEmpty),
+                    "resource consumption and post-sale empty stock restore without duplication");
+                string restoredChecksum = WorldPersistenceService.ComputePayloadChecksum(
+                    _adapter.CaptureWorldState()).ToString();
+                Require(restoredChecksum ==
+                        SessionState.GetString(ExpectedChecksumKey, string.Empty),
+                    "the complete World v11 payload round-trips exactly after restart");
+                Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                    "blocking runtime Console Error/Exception/Assert count is 0");
+                Require(!SceneManager.GetActiveScene().isDirty,
+                    "runtime integration leaves WorldSandbox scene clean");
+                Debug.Log("[WORLD-010] PLAY_MODE_PASS seed=true movement=true gather=true " +
+                          "craft=true terraform=true buildingMove=true displayMove=true " +
+                          "stock=true shopOpen=true customerPurchase=true revenue=true " +
+                          "saveRestartRestore=true projection=64chunks schema=11 console=0");
+                EditorApplication.update -= ValidateRuntime;
+                EditorApplication.ExitPlaymode();
+            }
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+        _persistence = WorldPersistenceService.Instance ??
+                       UnityEngine.Object.FindFirstObjectByType<WorldPersistenceService>();
+    }
+
+    static void ValidateSingleAuthorities()
+    {
+        int inventoryCount = Resources.FindObjectsOfTypeAll<Inventory>().Count(inventory =>
+            inventory != null && inventory.gameObject.scene.IsValid() &&
+            inventory.gameObject.scene.isLoaded);
+        Require(UnityEngine.Object.FindObjectsByType<WorldAlphaPlayableController>(
+                    FindObjectsSortMode.None).Length == 1 &&
+                UnityEngine.Object.FindObjectsByType<WorldGameplayAdapterService>(
+                    FindObjectsSortMode.None).Length == 1 && inventoryCount == 1 &&
+                UnityEngine.Object.FindObjectsByType<EconomyService>(
+                    FindObjectsSortMode.None).Length == 1 &&
+                UnityEngine.Object.FindObjectsByType<SaveManager>(
+                    FindObjectsSortMode.None).Length == 1,
+            "M70 composes one alpha, adapter, Inventory, Economy and Save authority");
+    }
+
+    static Vector2Int FindWalkableMovementCell()
+    {
+        Require(_alpha.Grid.WorldToCell(_adapter.PlayerRoot.transform.position,
+                out Vector2Int origin), "player start resolves to the generated grid");
+        Require(_alpha.Grid.TryGetCell(origin, out WorldCellData originData),
+            "player start cell remains readable");
+        foreach (WorldCellData cell in _alpha.Grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater &&
+                                    cell.ElevationLevel == originData.ElevationLevel &&
+                                    cell.Coordinate != origin)
+                     .OrderBy(cell => Mathf.Abs(cell.Coordinate.x - origin.x) +
+                                      Mathf.Abs(cell.Coordinate.y - origin.y)))
+        {
+            if (Mathf.Abs(cell.Coordinate.x - origin.x) +
+                Mathf.Abs(cell.Coordinate.y - origin.y) <= 8)
+                return cell.Coordinate;
+        }
+        throw new InvalidOperationException("No nearby safe movement cell was generated.");
+    }
+
+    static Vector2Int FindTerraformCell()
+    {
+        foreach (WorldCellData cell in _alpha.Grid.Cells.OrderBy(cell => cell.Coordinate.y)
+                     .ThenBy(cell => cell.Coordinate.x))
+        {
+            if (!_alpha.Grid.IsTerraformProtected(cell.Coordinate) &&
+                cell.Occupancy == WorldCellOccupancy.Empty && !cell.HasWater && !cell.HasPath &&
+                cell.ElevationLevel < _alpha.Grid.Definition.MaxElevationLevel)
+                return cell.Coordinate;
+        }
+        throw new InvalidOperationException("No legal terraform cell exists.");
+    }
+
+    static Vector2Int FindBuildingCell(bool moving, Vector2Int excluded)
+    {
+        string instanceId = WorldBuildingPlacementService.PrototypeInstanceId;
+        for (int z = 0; z < _alpha.Grid.Definition.Height; z++)
+        {
+            for (int x = 0; x < _alpha.Grid.Definition.Width; x++)
+            {
+                var coordinate = new Vector2Int(x, z);
+                if (coordinate == excluded) continue;
+                WorldBuildingPlacementResult result = _alpha.Buildings.Evaluate(
+                    instanceId, coordinate, moving ? 1 : 0, moving ? instanceId : null);
+                if (result.Succeeded) return coordinate;
+            }
+        }
+        throw new InvalidOperationException(moving
+            ? "No legal moved building anchor exists."
+            : "No legal building anchor exists.");
+    }
+
+    static WorldPlacedBuildingRuntime GetPlacedBuilding()
+    {
+        if (_alpha.Buildings.TryGetPlacement(
+                WorldBuildingPlacementService.PrototypeInstanceId,
+                out WorldPlacedBuildingRuntime building))
+            return building;
+        throw new InvalidOperationException("The integrated B09 instance is missing.");
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(WaitFramesKey, 0);
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+        SessionState.SetInt(ConsoleErrorKey,
+            SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[WORLD-010] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else FinishValidation();
+    }
+
+    static void FinishValidation()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int consoleErrors = SessionState.GetInt(ConsoleErrorKey, 0);
+        EraseSession();
+        Debug.Log(failed
+            ? $"[WORLD-010] FINISHED_WITH_ERRORS consoleErrors={consoleErrors}"
+            : "[WORLD-010] FINISHED_PASS M70_PLAYABLE_WORLD_ALPHA_COMPLETE " +
+              "movement=true worldLoop=true restartRestore=true goldenReady=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void EraseSession()
+    {
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(WaitFramesKey);
+        SessionState.EraseInt(StageKey);
+        SessionState.EraseString(SaveDirectoryKey);
+        SessionState.EraseString(ExpectedChecksumKey);
+        SessionState.EraseInt(ExpectedBuildingXKey);
+        SessionState.EraseInt(ExpectedBuildingZKey);
+        SessionState.EraseInt(ExpectedBuildingRotationKey);
+        SessionState.EraseInt(ExpectedPlayerXKey);
+        SessionState.EraseInt(ExpectedPlayerZKey);
+        SessionState.EraseInt(ExpectedMoneyKey);
+        SessionState.EraseString(ExpectedRevenueKey);
+        SessionState.EraseInt(ExpectedResourcesKey);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[WORLD-010] PASS {message}");
+    }
+}
+
+public static class PA_Beta001OnboardingValidator
+{
+    const string ScenePath = "Assets/Scenes/WorldSandbox.unity";
+    const string ActiveKey = "PA.BETA001.Active";
+    const string FailedKey = "PA.BETA001.Failed";
+    const string ConsoleErrorKey = "PA.BETA001.ConsoleErrors";
+    const string FrameKey = "PA.BETA001.Frames";
+    const string StageKey = "PA.BETA001.Stage";
+
+    static WorldAlphaPlayableController _alpha;
+    static WorldGameplayAdapterService _adapter;
+
+    [InitializeOnLoadMethod]
+    static void ResumeAfterReload()
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        Subscribe();
+        if (EditorApplication.isPlaying)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+    }
+
+    [MenuItem("Project PA/Beta/BETA-001/Validate Player Onboarding and World Readability")]
+    public static void RunBeta001Validation()
+    {
+        RunInternal();
+    }
+
+    public static void RunBeta001ValidationBatch()
+    {
+        RunInternal();
+    }
+
+    static void RunInternal()
+    {
+        try
+        {
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetBool(FailedKey, false);
+            SessionState.SetInt(ConsoleErrorKey, 0);
+            SessionState.SetInt(FrameKey, 0);
+            SessionState.SetInt(StageKey, 0);
+            Subscribe();
+
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Require(scene.IsValid() && scene.isLoaded && !scene.isDirty,
+                "WorldSandbox opens saved and clean");
+            Require(UnityEngine.Object.FindObjectsByType<WorldAlphaPlayableController>(
+                    FindObjectsSortMode.None).Length == 0,
+                "BETA onboarding remains runtime-only without scene serialization");
+            EditorApplication.EnterPlaymode();
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
+    }
+
+    static void Subscribe()
+    {
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        Application.logMessageReceived += OnLogMessage;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (state == PlayModeStateChange.EnteredPlayMode)
+        {
+            SessionState.SetInt(FrameKey, 0);
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.update += ValidateRuntime;
+        }
+        else if (state == PlayModeStateChange.EnteredEditMode)
+        {
+            Finish();
+        }
+    }
+
+    static void ValidateRuntime()
+    {
+        if (!SessionState.GetBool(ActiveKey, false) || !EditorApplication.isPlaying) return;
+        int frames = SessionState.GetInt(FrameKey, 0) + 1;
+        SessionState.SetInt(FrameKey, frames);
+        int stage = SessionState.GetInt(StageKey, 0);
+
+        try
+        {
+            ResolveRuntime();
+            if ((_alpha == null || !_alpha.IsReady) && frames < 900) return;
+            Require(_alpha != null && _alpha.IsReady,
+                "WorldSandbox reaches the connected playable runtime");
+
+            if (stage == 0)
+            {
+                Require(SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11,
+                    $"D3D11 is active ({SystemInfo.graphicsDeviceType})");
+                Require(GameClock.Instance != null && GameClock.Instance.CurrentDay == 1 &&
+                        Mathf.Abs(GameClock.Instance.CurrentHour - 9f) < 0.1f,
+                    "a fresh WorldSandbox session starts safely on Day 1 at 09:00");
+                Require(_alpha.StartPromptVisible && !_alpha.HasStartedBeta &&
+                        !_alpha.DevelopmentOverlayVisible,
+                    "the player sees a new-game prompt while development panels default hidden");
+                Require(!_alpha.GetComponent<WorldGridDebugView>().enabled &&
+                        !_alpha.GetComponent<WorldBuildingPlacementDebugController>().enabled &&
+                        !_alpha.IslandView.enabled &&
+                        !_alpha.GetComponent<WorldNavigationService>().DebugOverlayVisible,
+                    "WORLD grid, placement, generator and navigation debug views are hidden");
+                Require(_adapter.PlayerRoot.GetComponent<CharacterController>() != null &&
+                        _adapter.PlayerRoot.GetComponent<WorldPlayerTraversalGuard>() != null &&
+                        Camera.main != null && Camera.main.GetComponent<CameraController>()?.target ==
+                        _adapter.PlayerRoot.transform,
+                    "safe player start, existing movement and camera follow remain connected");
+
+                PrototypeWorldLabel[] shopLabels = _adapter.RuntimeShop.transform.root
+                    .GetComponentsInChildren<PrototypeWorldLabel>(true);
+                PrototypeWorldLabel[] workbenchLabels = _adapter.RuntimeWorkbench.transform.root
+                    .GetComponentsInChildren<PrototypeWorldLabel>(true);
+                Require(shopLabels.Any(label => label.label.Contains("P.A. 잡화점")) &&
+                        workbenchLabels.Any(label => label.label.Contains("제작 작업대")),
+                    "player-facing shop and workbench landmarks identify their roles");
+                Require(_alpha.BeginNewGame() && _alpha.PlayerFacingHudVisible &&
+                        _alpha.CurrentPlayerObjective.Contains("WASD"),
+                    "new game begins with a concrete first movement objective");
+
+                Require(MoveToNearbyWalkable(_adapter.PlayerRoot.transform.position, 3f),
+                    "validator moves the player through a nearby safe cell");
+                SetStage(1);
+                return;
+            }
+
+            if (frames < 3) return;
+            if (stage == 1)
+            {
+                Require(_alpha.HasMoved && _alpha.Opening.HasStarted &&
+                        _alpha.CurrentPlayerObjective.Contains("보리"),
+                    "movement advances toward the authored neighbour greeting");
+                Require(MoveNear(_adapter.RuntimeShop.transform.position, 10f),
+                    "a walkable cell exists near the shop");
+                SetStage(2);
+                return;
+            }
+
+            if (stage == 2)
+            {
+                Require(_alpha.HasReachedShop && !_alpha.Opening.HasGreetedBori &&
+                        _alpha.CurrentPlayerObjective.Contains("보리"),
+                    "shop discovery preserves the pending real neighbour greeting");
+                Require(MoveNear(_adapter.RuntimeWorkbench.transform.position, 10f),
+                    "a walkable cell exists near the workbench");
+                SetStage(3);
+                return;
+            }
+
+            Require(_alpha.HasReachedShop && _alpha.HasReachedWorkbench,
+                "the player can finish the first shop/workbench orientation route");
+            Require(!_alpha.Opening.OpeningComplete && _alpha.CurrentPlayerObjective.Contains("보리"),
+                "landmark visits alone do not fabricate the authored greeting or stock");
+
+            _alpha.SetDevelopmentOverlayVisible(true);
+            Require(_alpha.DevelopmentOverlayVisible &&
+                    _alpha.GetComponent<WorldGridDebugView>().enabled &&
+                    _alpha.GetComponent<WorldBuildingPlacementDebugController>().enabled &&
+                    _alpha.IslandView.enabled &&
+                    _alpha.GetComponent<WorldNavigationService>().DebugOverlayVisible,
+                "F10 development mode can restore every WORLD diagnostic surface");
+            _alpha.SetDevelopmentOverlayVisible(false);
+            Require(_alpha.PlayerFacingHudVisible &&
+                    !_alpha.GetComponent<WorldGridDebugView>().enabled &&
+                    !_alpha.GetComponent<WorldBuildingPlacementDebugController>().enabled &&
+                    !_alpha.IslandView.enabled &&
+                    !_alpha.GetComponent<WorldNavigationService>().DebugOverlayVisible,
+                "returning to player view removes debug panels and inputs again");
+            Require(SessionState.GetInt(ConsoleErrorKey, 0) == 0,
+                "blocking runtime Console Error/Exception/Assert count is 0");
+            Require(!SceneManager.GetActiveScene().isDirty,
+                "BETA-001 runtime presentation leaves WorldSandbox scene clean");
+            Debug.Log("[BETA-001] PLAY_MODE_PASS day1=true safeStart=true objective=true " +
+                      "shopLandmark=true workbenchLandmark=true devOverlayDefaultHidden=true " +
+                      "f10Recovery=true console=0");
+            EditorApplication.update -= ValidateRuntime;
+            EditorApplication.ExitPlaymode();
+        }
+        catch (Exception ex)
+        {
+            EditorApplication.update -= ValidateRuntime;
+            Fail(ex);
+        }
+    }
+
+    static bool MoveToNearbyWalkable(Vector3 originWorld, float minimumDistance)
+    {
+        foreach (WorldCellData cell in _alpha.Grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater)
+                     .OrderBy(cell => FlatDistance(originWorld,
+                         CellWorld(cell.Coordinate))))
+        {
+            Vector3 world = CellWorld(cell.Coordinate);
+            float distance = FlatDistance(originWorld, world);
+            if (distance >= minimumDistance && distance <= 16f)
+                return _alpha.MovePlayerToCellForValidation(cell.Coordinate);
+        }
+        return false;
+    }
+
+    static bool MoveNear(Vector3 targetWorld, float maximumDistance)
+    {
+        foreach (WorldCellData cell in _alpha.Grid.Cells
+                     .Where(cell => cell.IsWalkable && !cell.HasWater)
+                     .OrderBy(cell => FlatDistance(targetWorld,
+                         CellWorld(cell.Coordinate))))
+        {
+            Vector3 world = CellWorld(cell.Coordinate);
+            if (FlatDistance(targetWorld, world) <= maximumDistance)
+                return _alpha.MovePlayerToCellForValidation(cell.Coordinate);
+            break;
+        }
+        return false;
+    }
+
+    static Vector3 CellWorld(Vector2Int coordinate)
+    {
+        return _alpha.Grid.CellToWorld(coordinate, out Vector3 world)
+            ? world
+            : new Vector3(float.MaxValue, 0f, float.MaxValue);
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    static void ResolveRuntime()
+    {
+        _alpha = WorldAlphaPlayableController.Instance ??
+                 UnityEngine.Object.FindFirstObjectByType<WorldAlphaPlayableController>();
+        _adapter = WorldGameplayAdapterService.Instance ??
+                   UnityEngine.Object.FindFirstObjectByType<WorldGameplayAdapterService>();
+    }
+
+    static void SetStage(int stage)
+    {
+        SessionState.SetInt(StageKey, stage);
+        SessionState.SetInt(FrameKey, 0);
+    }
+
+    static void OnLogMessage(string condition, string stackTrace, LogType type)
+    {
+        if (!SessionState.GetBool(ActiveKey, false)) return;
+        if (type != LogType.Error && type != LogType.Exception && type != LogType.Assert) return;
+        SessionState.SetInt(ConsoleErrorKey,
+            SessionState.GetInt(ConsoleErrorKey, 0) + 1);
+    }
+
+    static void Fail(Exception ex)
+    {
+        SessionState.SetBool(FailedKey, true);
+        Debug.LogError($"[BETA-001] FAIL {ex.Message}\n{ex}");
+        if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
+        else Finish();
+    }
+
+    static void Finish()
+    {
+        EditorApplication.update -= ValidateRuntime;
+        EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        Application.logMessageReceived -= OnLogMessage;
+        bool failed = SessionState.GetBool(FailedKey, false) ||
+                      SessionState.GetInt(ConsoleErrorKey, 0) != 0;
+        int errors = SessionState.GetInt(ConsoleErrorKey, 0);
+        SessionState.EraseBool(ActiveKey);
+        SessionState.EraseBool(FailedKey);
+        SessionState.EraseInt(ConsoleErrorKey);
+        SessionState.EraseInt(FrameKey);
+        SessionState.EraseInt(StageKey);
+        Debug.Log(failed
+            ? $"[BETA-001] FINISHED_WITH_ERRORS consoleErrors={errors}"
+            : "[BETA-001] FINISHED_PASS playerOnboarding=true worldReadability=true " +
+              "devOverlayHidden=true console=0");
+        if (Application.isBatchMode) EditorApplication.Exit(failed ? 1 : 0);
+    }
+
+    static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+        Debug.Log($"[BETA-001] PASS {message}");
+    }
+}
+#endif

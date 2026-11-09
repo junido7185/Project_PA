@@ -19,29 +19,113 @@ public class SaveManager : MonoBehaviour
     // 멀티 전환 시 이 필드 하나만 UGSCloudSaveRepository 로 교체된다.
     private ISaveRepository _repository;
 
-    private const string SaveKey = "savegame";
+    private string SaveKey => gameObject.scene.name == DepartureTutorialController.SceneName ? "departure_settlement" : "savegame-v17";
+    private const string LegacySaveKey = "savegame";
 
     // 현재 스키마 버전. 새 필드 추가 시 올리고 MigrateSaveData() 에 마이그레이션 추가.
-    private const int CurrentSaveVersion = 10;
+    public const int CurrentSaveVersion = 17;
+    public string LastLoadError { get; private set; }
+
+    public sealed class ContinueInspection
+    {
+        public bool HasSave;
+        public string Issue;
+        public string[] CompanionIds;
+        // 이전 형식(v16 이하) 저장: 이어하기는 막고 원본 파일은 읽기만 한다. 새 진행은 별도 키에 저장된다.
+        public bool LegacyFormat;
+        public bool CanContinue => HasSave && string.IsNullOrEmpty(Issue);
+    }
+
+    // FirstDay 영업(20:00 OPEN → 22:00 자동 마감)은 고객·영업 시계·매출 집계가 세션 상태라 중간 저장을 받지 않는다.
+    public const string BusinessSaveBlockedMessage = "영업 중에는 저장할 수 없어요. 22:00 마감 뒤 저장해 주세요.";
+
+    static string LegacyFormatIssue(int version) =>
+        $"이전 버전(v{version}) 저장은 현재 섬의 배치 형식과 달라 이어할 수 없습니다.";
+
+    bool _loadInProgress;
+    PlayerInputHandler _input;
 
     void Awake()
     {
         instance = this;
-        _repository = new LocalJsonSaveRepository();
+#if UNITY_EDITOR
+        string validationRoot = UnityEditor.SessionState.GetString(ValidationRootSessionKey, string.Empty);
+        _repository = string.IsNullOrEmpty(validationRoot)
+            ? new LocalJsonSaveRepository() : new LocalJsonSaveRepository(validationRoot);
+#else
+        string isolatedRoot = CommandLineSaveRoot();
+        _repository = string.IsNullOrEmpty(isolatedRoot)
+            ? new LocalJsonSaveRepository() : new LocalJsonSaveRepository(isolatedRoot);
+#endif
     }
+
+    // 배포 후보 검수용: `-pa-save-root <폴더>`로 실행하면 사용자 save 대신 그 폴더에 저장·이어하기 한다.
+    // 인자가 없으면 기존 persistentDataPath 그대로(스키마·저장 권위 불변).
+    static string CommandLineSaveRoot()
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i + 1 < args.Length; i++)
+        {
+            if (args[i] != "-pa-save-root") continue;
+            string root = args[i + 1];
+            System.IO.Directory.CreateDirectory(root);
+            Debug.Log($"💾 [SaveManager] 격리 저장 경로 사용: {root}");
+            return root;
+        }
+        return null;
+    }
+
+#if UNITY_EDITOR
+    public const string ValidationRootSessionKey = "PA.Continue.ValidationSaveRoot";
+    // WORLD-009 validator must exercise the real SaveManager without touching a player's
+    // persistent save. Kept editor-only so production save authority and schema stay unchanged.
+    internal void SetRepositoryForValidation(ISaveRepository repository)
+    {
+        _repository = repository ?? new LocalJsonSaveRepository();
+    }
+#endif
 
     void Start()
     {
-        if (PlayerInputHandler.Instance != null)
+        _input = PlayerInputHandler.Instance;
+        if (_input != null)
         {
-            PlayerInputHandler.Instance.OnSave += () => _ = SaveGameAsync();
-            PlayerInputHandler.Instance.OnLoad += () => _ = LoadGameAsync();
+            _input.OnSave += HandleSaveInput;
+            _input.OnLoad += HandleLoadInput;
         }
     }
 
+    void OnDestroy()
+    {
+        if (_input != null)
+        {
+            _input.OnSave -= HandleSaveInput;
+            _input.OnLoad -= HandleLoadInput;
+        }
+        if (instance == this) instance = null;
+    }
+
+    void HandleSaveInput() => _ = SaveGameAsync();
+    void HandleLoadInput() => _ = LoadGameAsync();
+
     public async System.Threading.Tasks.Task SaveGameAsync()
     {
+        var openingDemo = DemoSettlementController.Instance;
+        if (openingDemo != null && gameObject.scene.name == DemoRouteController.WorldScene &&
+            openingDemo.BusinessInProgress)
+            throw new System.InvalidOperationException(BusinessSaveBlockedMessage);
+
+        var settlement = FindFirstObjectByType<FirstIslandSettlementController>();
+        if (gameObject.scene.name == DepartureTutorialController.SceneName && (settlement == null || !settlement.IsReady))
+        {
+            Debug.LogWarning("[SaveManager] Settlement is not ready; existing save preserved.");
+            return;
+        }
         SaveData data = new SaveData();
+        data.firstSettlement = settlement != null && settlement.IsReady ? settlement.CaptureState() : null;
+        var production = FindFirstObjectByType<FirstProductionController>();
+        data.firstProduction = production != null ? production.CaptureState() : new FirstProductionSaveData();
+        data.m85RecoveryRevision = 1;
 
         // 1. 플레이어 정보
         data.money = EconomyService.Instance != null ? EconomyService.Instance.Money : 0;
@@ -62,7 +146,12 @@ public class SaveManager : MonoBehaviour
         }
 
         var playerGo = GameObject.FindGameObjectWithTag("Player");
-        if (playerGo != null) data.playerPosition = playerGo.transform.position;
+        if (playerGo != null)
+        {
+            data.playerPosition = playerGo.transform.position;
+            data.playerRotation = playerGo.transform.rotation;
+            data.hasPlayerRotation = true;
+        }
 
         var firstDay = FindFirstObjectByType<PlayableDayScenarioController>();
         if (firstDay != null)
@@ -71,6 +160,13 @@ public class SaveManager : MonoBehaviour
             data.selectedMapId = firstDay.SelectedMapId;
             data.firstDayPrototypeStage = firstDay.CurrentStageIndex;
         }
+
+        var worldAlpha = FindFirstObjectByType<WorldAlphaPlayableController>();
+        if (worldAlpha != null)
+            worldAlpha.WriteSaveFields(data);
+        var demo = DemoSettlementController.Instance;
+        if (demo != null && gameObject.scene.name == DemoRouteController.WorldScene)
+            data.demoSession = demo.CaptureSaveState();
 
         var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
         if (longPlay != null)
@@ -86,6 +182,11 @@ public class SaveManager : MonoBehaviour
             ?? FindFirstObjectByType<VillageCultureVisualController>();
         if (villageCulture != null)
             villageCulture.WriteSaveFields(data);
+
+        if (SalesLogManager.Instance != null)
+            SalesLogManager.Instance.WriteSaveFields(data);
+
+        FarmPlotInteraction.WriteAllSaveFields(data);
 
         // 3. 건물 정보 — 레지스트리가 가진 명시 목록을 직렬화한다.
         if (BuildingRegistry.Instance != null)
@@ -106,7 +207,11 @@ public class SaveManager : MonoBehaviour
             data.inventorySlots = SerializeSlots(Inventory.instance.slots);
 
             if (Inventory.instance.hotbar != null)
+            {
                 data.hotbarSlots = SerializeSlots(Inventory.instance.hotbar.slots);
+                data.selectedHotbarIndex = Mathf.Clamp(Inventory.instance.selectedHotbarIndex,
+                    0, Mathf.Max(0, Inventory.instance.hotbar.slots.Count - 1));
+            }
         }
 
         // 4-a. ShopSlot 진열 상태 — v5
@@ -121,6 +226,18 @@ public class SaveManager : MonoBehaviour
             ?? FindFirstObjectByType<OutdoorPlacementController>();
         if (outdoorPlacement != null && outdoorPlacement.IsReady)
             outdoorPlacement.WriteSaveFields(data);
+        var worldAdapter = WorldGameplayAdapterService.Instance
+            ?? FindFirstObjectByType<WorldGameplayAdapterService>();
+        if (worldAdapter != null && worldAdapter.IsReady)
+            worldAdapter.WriteSaveFields(data);
+
+        // WORLD-007 — procedural world state is additive. Legacy scenes emit an
+        // explicit LegacyFixed marker and retain their existing absolute records.
+        var worldPersistence = WorldPersistenceService.Instance
+            ?? FindFirstObjectByType<WorldPersistenceService>();
+        data.worldState = worldPersistence != null && worldPersistence.IsProceduralActive
+            ? worldPersistence.CaptureState(data.playerPosition, data.placeables)
+            : WorldPersistenceMigration.CreateLegacyFixed();
 
         // 5. 감사 시스템
         data.lastAuditDay = AuditService.Instance != null ? AuditService.Instance.LastAuditDay : 0;
@@ -129,6 +246,25 @@ public class SaveManager : MonoBehaviour
         if (FriendshipService.Instance != null)
         {
             data.friendshipData = SerializeFriendship();
+            if (BeachFinds.Instance != null && BeachFinds.Instance.Day > 0)
+            {
+                data.beachFindsDay = BeachFinds.Instance.Day;
+                data.beachFindsCollected = BeachFinds.Instance.CollectedSlots();
+            }
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.discoveredItemIds = DiscoveryLog.Snapshot();
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.shopRugStyle = ShopRugSwap.Current;
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.shopWallHang = ShopWallHang.Current;
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.shopDeskItem = ShopDeskShelf.Current;
+            if (gameObject.scene.name == DemoRouteController.WorldScene && BugCritter.CaughtDay > 0)
+            {
+                data.crittersCaughtDay = BugCritter.CaughtDay;
+                data.crittersCaught = BugCritter.CaughtSnapshot();
+            }
+            if (DigSpots.Instance != null && DigSpots.Instance.Day > 0)
+            {
+                data.digSpotsDay = DigSpots.Instance.Day;
+                data.digSpotsDug = DigSpots.Instance.DugSlots();
+            }
         }
 
         // 7. 채용 NPC — v4 (id, transform, FSM state)
@@ -145,8 +281,6 @@ public class SaveManager : MonoBehaviour
         // 버전 스탬프
         data.version = CurrentSaveVersion;
 
-        data.version = CurrentSaveVersion;
-
         string json = JsonUtility.ToJson(data, true);
         await _repository.SaveAsync(SaveKey, json);
         Debug.Log($"💾 저장 완료 (건물 {data.buildings.Count}개, 인벤토리 {data.inventorySlots.Count}칸, 핫바 {data.hotbarSlots.Count}칸, 진열대 {data.shopSlots.Count}칸)");
@@ -154,20 +288,175 @@ public class SaveManager : MonoBehaviour
 
     public async System.Threading.Tasks.Task LoadGameAsync()
     {
-        string json = await _repository.LoadAsync(SaveKey);
-        if (string.IsNullOrEmpty(json))
+        await TryLoadGameAsync();
+    }
+
+    public async System.Threading.Tasks.Task<bool> TryLoadGameAsync()
+    {
+        if (_loadInProgress)
         {
-            Debug.Log("📂 저장된 파일이 없습니다.");
-            return;
+            LastLoadError = "이미 다른 불러오기가 진행 중입니다.";
+            Debug.LogWarning("[SaveManager] " + LastLoadError);
+            return false;
         }
 
-        SaveData data = JsonUtility.FromJson<SaveData>(json);
+        _loadInProgress = true;
+        LastLoadError = null;
+        try
+        {
+            return await LoadGameInternalAsync();
+        }
+        finally
+        {
+            _loadInProgress = false;
+        }
+    }
+
+    bool RejectLoad(string reason)
+    {
+        LastLoadError = reason;
+        Debug.LogWarning("[SaveManager] " + reason);
+        return false;
+    }
+
+    async System.Threading.Tasks.Task<string> ReadCurrentSaveJsonAsync()
+    {
+        if (gameObject.scene.name == DepartureTutorialController.SceneName)
+            return await _repository.LoadAsync(SaveKey);
+        if (await _repository.ExistsAsync(SaveKey))
+            return await _repository.LoadAsync(SaveKey);
+        return await _repository.LoadAsync(LegacySaveKey);
+    }
+
+    public async System.Threading.Tasks.Task<ContinueInspection> InspectContinueAsync()
+    {
+        var result = new ContinueInspection();
+        string json = await ReadCurrentSaveJsonAsync();
+        result.HasSave = !string.IsNullOrEmpty(json);
+        if (!result.HasSave) return result;
+        SaveData data;
+        try { data = JsonUtility.FromJson<SaveData>(json); }
+        catch (System.Exception) { result.Issue = "저장 JSON을 읽을 수 없습니다."; return result; }
+        if (data == null) { result.Issue = "저장 JSON을 읽을 수 없습니다."; return result; }
+        if (data.version > CurrentSaveVersion)
+        { result.Issue = "더 새로운 버전에서 만든 저장이라 열 수 없습니다."; return result; }
+        // 2026-09-30 사용자 결정: v16 이하는 재배치/변환하지 않는다. 사유만 보이고 원본은 그대로 둔다.
+        if (data.version < CurrentSaveVersion)
+        { result.LegacyFormat = true; result.Issue = LegacyFormatIssue(data.version); return result; }
+        if (data.worldState == null || data.worldState.worldMode != WorldPersistenceMigration.ProceduralMode)
+        { result.Issue = "현재 FirstDay 섬에서 지원하지 않는 저장 형식입니다."; return result; }
+        if (data.firstSettlement != null && !IsEmptyUnstartedSettlement(data.firstSettlement))
+        { result.Issue = "출항 정착 저장은 현재 섬 이어하기와 연결되지 않습니다."; return result; }
+        if (!FirstProductionController.IsValidSave(data.firstProduction, data.firstSettlement))
+        { result.Issue = "첫 생산 진행 기록이 유효하지 않습니다."; return result; }
+        if (data.demoSession == null || data.demoSession.version != 1)
+        { result.Issue = "FirstDay 배치 기록이 없습니다."; return result; }
+        result.CompanionIds = data.demoSession.companionIds ?? System.Array.Empty<string>();
+        return result;
+    }
+
+    static bool IsEmptyUnstartedSettlement(FirstSettlementSaveData state) =>
+        state != null && state.version == 1 && !state.settlementCompleted &&
+        (state.companionIds == null || state.companionIds.Length == 0) &&
+        (state.buildings == null || state.buildings.Count == 0);
+
+    async System.Threading.Tasks.Task<bool> LoadGameInternalAsync()
+    {
+        string json = await ReadCurrentSaveJsonAsync();
+        if (string.IsNullOrEmpty(json))
+            return RejectLoad("저장된 파일이 없습니다.");
+
+        SaveData data;
+        try
+        {
+            data = JsonUtility.FromJson<SaveData>(json);
+        }
+        catch (System.Exception ex)
+        {
+            return RejectLoad($"손상된 JSON을 적용하지 않았습니다: {ex.Message}");
+        }
+        if (data == null || data.version > CurrentSaveVersion)
+        {
+            return RejectLoad("지원하지 않거나 비어 있는 저장 데이터입니다.");
+        }
+        bool firstDayWorld = gameObject.scene.name == DemoRouteController.WorldScene &&
+            FindFirstObjectByType<DemoRouteController>() != null;
+        if (firstDayWorld)
+        {
+            // 어떤 런타임 상태도 바꾸기 전에 거절한다(부분 적용 방지). v16 이하는 변환하지 않는다.
+            if (data.version < CurrentSaveVersion)
+                return RejectLoad(LegacyFormatIssue(data.version));
+            var freshDemo = DemoSettlementController.Instance;
+            if (freshDemo == null)
+                return RejectLoad("FirstDay 섬이 준비되지 않았습니다.");
+            if (!freshDemo.CanRestoreSession(out string freshReason))
+                return RejectLoad(freshReason);
+        }
 
         // 버전 마이그레이션
         if (data.version < CurrentSaveVersion)
         {
             data = MigrateSaveData(data);
             Debug.Log($"💾 세이브 마이그레이션 완료: v{data.version}");
+        }
+
+        NormalizeSaveData(data);
+        if (!FirstProductionController.IsValidSave(data.firstProduction, data.firstSettlement))
+        {
+            return RejectLoad("첫 생산 진행 기록이 유효하지 않습니다.");
+        }
+        var settlement = FindFirstObjectByType<FirstIslandSettlementController>();
+        if (gameObject.scene.name == DepartureTutorialController.SceneName)
+        {
+            if (settlement == null || !await settlement.PrepareRestoreAsync(data.firstSettlement))
+            {
+                return RejectLoad("출항 정착 저장이 유효하지 않습니다.");
+            }
+        }
+        else if (data.firstSettlement != null &&
+                 !(data.worldState?.worldMode == WorldPersistenceMigration.ProceduralMode &&
+                   IsEmptyUnstartedSettlement(data.firstSettlement)))
+        {
+            return RejectLoad("출항 정착 저장은 출항 씬에서만 복원할 수 있습니다.");
+        }
+        PrepareRuntimeForStateRestore();
+
+        Vector3 restoredPlayerPosition = data.playerPosition;
+        if (data.worldState != null &&
+            data.worldState.worldMode == WorldPersistenceMigration.ProceduralMode)
+        {
+            var worldPersistence = WorldPersistenceService.Instance
+                ?? FindFirstObjectByType<WorldPersistenceService>();
+            string worldReason = "WorldPersistenceService unavailable.";
+            List<PlaceableSaveData> restoredFurniture = null;
+            if (worldPersistence == null ||
+                !worldPersistence.TryRestore(data.worldState, out restoredPlayerPosition,
+                    out restoredFurniture, out worldReason))
+            {
+                return RejectLoad("절차 월드 저장을 적용하지 않았습니다: " + worldReason);
+            }
+            data.placeables = MergeProceduralFurnitureWithPlaceables(
+                data.placeables, restoredFurniture);
+            if (firstDayWorld)
+            {
+                var grid = FindFirstObjectByType<WorldGridService>();
+                if (grid == null || !grid.WorldToCell(data.playerPosition, out Vector2Int savedCell) ||
+                    !grid.TryGetCell(savedCell, out WorldCellData savedCellData) || !savedCellData.IsWalkable ||
+                    savedCell.x != data.worldState.safePlayerCellX ||
+                    savedCell.y != data.worldState.safePlayerCellZ)
+                    return RejectLoad("저장된 플레이어 위치가 안전 위치 기록과 일치하지 않습니다.");
+                restoredPlayerPosition = data.playerPosition;
+            }
+        }
+
+        // FirstDay 순서: 월드 → 기존 placement로 상점/텐트/가구 → 가판대 슬롯 대상 확인 → 아래의 슬롯·진행 바인딩.
+        var demo = DemoSettlementController.Instance;
+        if (demo != null && gameObject.scene.name == DemoRouteController.WorldScene)
+        {
+            if (!demo.RestoreSaveState(data.demoSession, out string demoReason))
+                return RejectLoad("FirstDay 배치 복원 실패: " + demoReason);
+            if (!ValidateShopSlotTargets(data.shopSlots, out string slotReason))
+                return RejectLoad("진열 슬롯 복원 실패: " + slotReason);
         }
 
         // 1. 플레이어 복구 — 돈은 EconomyService 의 단일 경로로만 세팅한다.
@@ -196,14 +485,15 @@ public class SaveManager : MonoBehaviour
         if (firstDay != null)
             firstDay.RestoreSavedSession(data.playerName, data.selectedMapId, data.firstDayPrototypeStage);
 
-        var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
-        if (longPlay != null)
-            longPlay.RestoreSavedSession(data.longPlayLastSupplyDay, data.longPlayDayStartRevenue, data.longPlayDayStartMoney);
-
         // CDN/IL — 당일 채집 완료 상태 복원(저장된 날과 현재 날이 같을 때만 유지).
+        if (SalesLogManager.Instance != null)
+            SalesLogManager.Instance.RestoreSavedState(
+                data.salesLogRecords, data.salesDecisionDays);
+
         var dayLoop = DayNightShopLoopController.Instance ?? FindFirstObjectByType<DayNightShopLoopController>();
         if (dayLoop != null)
-            dayLoop.RestoreSavedState(data.dayPrepCollectedDay, data.dayPrepCollectedActivities);
+            dayLoop.RestoreSavedState(data.dayPrepCollectedDay,
+                data.dayPrepCollectedActivities, data.shopOpenedDay);
 
         // Task 057 — 마을 변화(대기/활성) 상태 복원. 핵심 차별점의 다음날 지속성.
         var villageCulture = VillageCultureVisualController.Instance
@@ -215,20 +505,28 @@ public class SaveManager : MonoBehaviour
                 data.villageCulturePendingCategory,
                 data.villageCultureHasActiveChange,
                 data.villageCultureActiveCategory,
-                data.villageCultureHintShown);
+                data.villageCultureHintShown,
+                data.villageCulturePendingItemName,
+                data.villageCulturePendingBuyerName,
+                data.villageCultureActiveSaleDay,
+                data.villageCultureActiveResponseDay,
+                data.villageCultureActiveItemName,
+                data.villageCultureActiveBuyerName);
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            CharacterController cc = player.GetComponent<CharacterController>();
-            if (cc != null) cc.enabled = false;
-            player.transform.position = data.playerPosition;
-            if (cc != null) cc.enabled = true;
-        }
+        ApplyPlayerPose(restoredPlayerPosition, data);
 
         // 3-a. 감사 시스템 복구
         if (AuditService.Instance != null)
             AuditService.Instance.ForceSetLastAuditDay(data.lastAuditDay);
+
+        // 3-a2. 해변 발견물: 같은 날 이미 주운 자리는 다시 놓지 않는다(날짜가 다르면 새 날의 것을 놓는다).
+        BeachFinds.Instance?.RestoreCollected(data.beachFindsDay, data.beachFindsCollected);
+        DigSpots.Instance?.RestoreDug(data.digSpotsDay, data.digSpotsDug);
+        if (gameObject.scene.name == DemoRouteController.WorldScene) DiscoveryLog.Restore(data.discoveredItemIds);
+        if (gameObject.scene.name == DemoRouteController.WorldScene) BugCritter.RestoreCaught(data.crittersCaughtDay, data.crittersCaught);
+        if (gameObject.scene.name == DemoRouteController.WorldScene) ShopRugSwap.Pending = data.shopRugStyle ?? "";
+        if (gameObject.scene.name == DemoRouteController.WorldScene) ShopWallHang.Pending = data.shopWallHang ?? "";
+        if (gameObject.scene.name == DemoRouteController.WorldScene) ShopDeskShelf.Pending = data.shopDeskItem;
 
         // 3-b. 친밀도 복구 — v4
         if (FriendshipService.Instance != null && data.friendshipData != null)
@@ -277,12 +575,14 @@ public class SaveManager : MonoBehaviour
         // 5. 인벤토리 복구
         if (Inventory.instance != null)
         {
-            if (data.inventorySlots != null && data.inventorySlots.Count > 0)
-                DeserializeSlots(data.inventorySlots, Inventory.instance.slots);
+            DeserializeSlots(data.inventorySlots, Inventory.instance.slots);
 
-            if (Inventory.instance.hotbar != null
-                && data.hotbarSlots != null && data.hotbarSlots.Count > 0)
+            if (Inventory.instance.hotbar != null)
+            {
                 DeserializeSlots(data.hotbarSlots, Inventory.instance.hotbar.slots);
+                Inventory.instance.selectedHotbarIndex = Mathf.Clamp(data.selectedHotbarIndex,
+                    0, Mathf.Max(0, Inventory.instance.hotbar.slots.Count - 1));
+            }
 
             Inventory.instance.RefreshAllUI();
         }
@@ -299,21 +599,128 @@ public class SaveManager : MonoBehaviour
         if (outdoorPlacement != null && outdoorPlacement.IsReady)
             outdoorPlacement.RestoreSavedState(data.placeables);
 
+        var worldAdapter = WorldGameplayAdapterService.Instance
+            ?? FindFirstObjectByType<WorldGameplayAdapterService>();
+        if (worldAdapter != null && worldAdapter.IsReady)
+            worldAdapter.RestoreRuntimeWorldState(restoredPlayerPosition, data.placeables);
+
         DeserializeShopSlots(data.shopSlots);
 
         RestoreHiredNpcs(data.hiredNpcs);
+        FarmPlotInteraction.RestoreAllSavedState(data.farmPlots);
+
+        // Completion and player-facing recovery depend on restored hiring,
+        // village and world state, so restore these presentation sidecars last.
+        var longPlay = FindFirstObjectByType<LongPlayProgressionController>();
+        if (longPlay != null)
+            longPlay.RestoreSavedSession(data.longPlayLastSupplyDay,
+                data.longPlayDayStartRevenue, data.longPlayDayStartMoney);
+
+        var worldAlpha = FindFirstObjectByType<WorldAlphaPlayableController>();
+        if (worldAlpha != null)
+        {
+            bool legacyWorldAlpha = data.m85RecoveryRevision <= 0 &&
+                                    HasLegacyWorldAlphaProgress(data);
+            bool started = data.worldAlphaStarted || legacyWorldAlpha;
+            if (!worldAlpha.RestoreSavedSession(started,
+                    data.worldAlphaMoved || legacyWorldAlpha,
+                    data.worldAlphaReachedShop || legacyWorldAlpha,
+                    data.worldAlphaReachedWorkbench || legacyWorldAlpha, data.campaign))
+            {
+                if (demo != null)
+                    return RejectLoad("FirstDay 플레이 상태를 복원하지 못했습니다.");
+                Debug.LogWarning("[SaveManager] WorldSandbox player-facing session state could not be restored.");
+            }
+        }
+
+        if (data.firstSettlement != null && settlement != null &&
+            gameObject.scene.name == DepartureTutorialController.SceneName)
+        {
+            var production = FindFirstObjectByType<FirstProductionController>();
+            if (production != null) production.ClearWorksitesForRestore();
+            settlement.RestoreState(data.firstSettlement);
+            if (production != null ? !production.RestoreState(data.firstProduction) : data.firstProduction.started)
+            {
+                // Global rollback is separate SaveManager hardening debt. Never report this load as successful.
+                return RejectLoad("첫 생산 복원 실패: 이전 상태가 일부 적용됐을 수 있습니다.");
+            }
+        }
+
+        // World/furniture/hiring/presentation restore can synchronously rebind runtime roots.
+        // The saved player pose is the final authority, so apply it after every restore consumer.
+        ApplyPlayerPose(restoredPlayerPosition, data);
+        if (GameClock.Instance != null)
+        {
+            GameClock.Instance.ForceSet(data.gameHour, data.gameDay, "SaveManager.LoadGame.FinalClock");
+            if (demo != null && demo.NightReady) GameClock.Instance.enabled = false;
+        }
+        // 보급 상자 수령·상점 실내 표시는 저장된 배치/가방/플레이어 위치에서 결정한다(별도 필드 없음).
+        if (demo != null) demo.CompleteRestore(data);
+
+        if (demo != null && !ValidateRestoredFirstDay(data, out string restoredReason))
+            return RejectLoad("FirstDay 진행 복원 불일치: " + restoredReason);
+
+        VillageChangeSignalController.Instance?.RefreshNow();
+        villageCulture?.RefreshNow();
 
         Debug.Log($"📂 로드 완료! (건물 {count}개, 인벤토리/핫바 복구)");
+        return true;
+    }
+
+    static void ApplyPlayerPose(Vector3 restoredPlayerPosition, SaveData data)
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null) return;
+
+        CharacterController controller = player.GetComponent<CharacterController>();
+        if (controller != null) controller.enabled = false;
+        player.transform.position = restoredPlayerPosition;
+        if (data != null && data.hasPlayerRotation)
+            player.transform.rotation = data.playerRotation;
+        if (controller != null) controller.enabled = true;
+        Physics.SyncTransforms();
+    }
+
+    static bool HasLegacyWorldAlphaProgress(SaveData data)
+    {
+        if (data?.worldState == null ||
+            data.worldState.worldMode != WorldPersistenceMigration.ProceduralMode)
+            return false;
+
+        return data.gameDay > 1 || data.cumulativeRevenue > 0 ||
+               (data.inventorySlots != null && data.inventorySlots.Any(slot =>
+                   slot != null && slot.count > 0)) ||
+               (data.hotbarSlots != null && data.hotbarSlots.Any(slot =>
+                   slot != null && slot.count > 0)) ||
+               (data.shopSlots != null && data.shopSlots.Any(slot =>
+                   slot != null && slot.occupied)) ||
+               (data.hiredNpcs != null && data.hiredNpcs.Count > 0);
+    }
+
+    static void PrepareRuntimeForStateRestore()
+    {
+        (WorldGameplayAdapterService.Instance ??
+            FindFirstObjectByType<WorldGameplayAdapterService>())?.PrepareForStateRestore();
+        CustomerArrivalController.Instance?.PrepareForStateRestore();
+        foreach (FishingSpot spot in FindObjectsByType<FishingSpot>(FindObjectsSortMode.None))
+            spot?.PrepareForStateRestore();
+        foreach (MiningSpot spot in FindObjectsByType<MiningSpot>(FindObjectsSortMode.None))
+            spot?.PrepareForStateRestore();
+        FindFirstObjectByType<LongPlayProgressionController>()?.PrepareForStateRestore();
+        FindFirstObjectByType<SmartphoneUI>()?.Close();
     }
 
     // Product-entry UI reads only save presence before offering Continue.
     // Loading and migration still go through LoadGameAsync as the single authority.
     public System.Threading.Tasks.Task<bool> HasSaveAsync()
     {
-        return _repository != null
-            ? _repository.ExistsAsync(SaveKey)
-            : System.Threading.Tasks.Task.FromResult(false);
+        return HasAnySaveAsync();
     }
+
+    async System.Threading.Tasks.Task<bool> HasAnySaveAsync() => _repository != null &&
+        (await _repository.ExistsAsync(SaveKey) ||
+         gameObject.scene.name != DepartureTutorialController.SceneName &&
+         await _repository.ExistsAsync(LegacySaveKey));
 
     // 기존 동기 API 호환 — 핫키(F5/F9) 외에 외부에서 호출하는 코드가 있을 수 있어 유지.
     public void SaveGame() => _ = SaveGameAsync();
@@ -438,7 +845,124 @@ public class SaveManager : MonoBehaviour
             Debug.Log("[SaveManager] Migration v9->v10: shop customization placement fields added.");
         }
 
+        // v10 -> v11: additive procedural world payload. Existing absolute
+        // buildings/placeables remain untouched and are explicitly LegacyFixed.
+        if (data.version < WorldPersistenceMigration.AdditiveWorldSaveVersion)
+        {
+            WorldPersistenceMigration.UpgradeV10ToV11(data);
+            Debug.Log("[SaveManager] Migration v10->v11: additive world state added as LegacyFixed.");
+        }
+
+        // v11 -> v12: additive gameplay recovery envelope. The embedded
+        // procedural-world payload remains v11 and no existing field changes meaning.
+        if (data.version < 12)
+        {
+            data.m85RecoveryRevision = 0;
+            data.hasPlayerRotation = false;
+            data.selectedHotbarIndex = 0;
+            data.shopOpenedDay = -1;
+            data.salesLogRecords ??= new List<SaleRecord>();
+            data.salesDecisionDays ??= new List<SalesDecisionDaySaveData>();
+            data.farmPlots ??= new List<FarmPlotSaveData>();
+            data.version = 12;
+            Debug.Log("[SaveManager] Migration v11->v12: additive gameplay recovery fields added.");
+        }
+
+        if (data.version < 13)
+        {
+            data.campaign = null;
+            data.version = 13;
+            Debug.Log("[SaveManager] Migration v12->v13: optional authored campaign; legacy progress preserved.");
+        }
+
+        if (data.version < 14)
+        {
+            if (data.campaign != null) data.campaign.firstNight = null;
+            data.version = 14;
+            Debug.Log("[SaveManager] Migration v13->v14: optional first-shop-night evidence; opening preserved.");
+        }
+
+        if (data.version < 15)
+        {
+            data.firstSettlement = null;
+            data.version = 15;
+        }
+        if (data.version < 16)
+        {
+            data.firstProduction = new FirstProductionSaveData();
+            data.version = 16;
+        }
+        if (data.version < 17)
+        {
+            data.version = 17; // Demo placements are reconstructed only for the exact approved v16 shape.
+        }
         return data;
+    }
+
+    static void NormalizeSaveData(SaveData data)
+    {
+        if (data == null) return;
+
+        data.playerName ??= string.Empty;
+        data.selectedMapId ??= string.Empty;
+        data.friendshipData ??= new List<FriendshipRecord>();
+        data.hiredNpcs ??= new List<HiredNpcRecord>();
+        data.buildings ??= new List<BuildingSaveData>();
+        data.inventorySlots ??= new List<SlotSaveData>();
+        data.hotbarSlots ??= new List<SlotSaveData>();
+        data.shopSlots ??= new List<ShopSlotSaveData>();
+        data.dayPrepCollectedActivities ??= new List<string>();
+        data.salesLogRecords ??= new List<SaleRecord>();
+        data.salesDecisionDays ??= new List<SalesDecisionDaySaveData>();
+        data.farmPlots ??= new List<FarmPlotSaveData>();
+        data.placeables ??= new List<PlaceableSaveData>();
+        if (data.demoSession != null)
+        {
+            data.demoSession.placedBuildings ??= new List<WorldPlacedBuildingSaveData>();
+            data.demoSession.companionIds ??= System.Array.Empty<string>();
+        }
+
+        data.villageCulturePendingCategory ??= string.Empty;
+        data.villageCultureActiveCategory ??= string.Empty;
+        data.villageCulturePendingItemName ??= string.Empty;
+        data.villageCulturePendingBuyerName ??= string.Empty;
+        data.villageCultureActiveItemName ??= string.Empty;
+        data.villageCultureActiveBuyerName ??= string.Empty;
+
+        data.worldState ??= WorldPersistenceMigration.CreateLegacyFixed();
+        data.worldState.worldMode ??= WorldPersistenceMigration.LegacyFixedMode;
+        data.worldState.modifiedCells ??= new List<WorldModifiedCellSaveData>();
+        data.worldState.placedBuildings ??= new List<WorldPlacedBuildingSaveData>();
+        data.worldState.shopFurniture ??= new List<WorldShopFurnitureSaveData>();
+        data.worldState.resourceStates ??= new List<WorldResourceStateSaveData>();
+
+        foreach (WorldPlacedBuildingSaveData building in data.worldState.placedBuildings)
+            if (building != null) building.storedItems ??= new List<PlaceableStoredItemSaveData>();
+        foreach (WorldShopFurnitureSaveData furniture in data.worldState.shopFurniture)
+            if (furniture != null) furniture.storedItems ??= new List<PlaceableStoredItemSaveData>();
+        foreach (PlaceableSaveData placeable in data.placeables)
+            if (placeable != null) placeable.storedItems ??= new List<PlaceableStoredItemSaveData>();
+    }
+
+    static List<PlaceableSaveData> MergeProceduralFurnitureWithPlaceables(
+        IReadOnlyList<PlaceableSaveData> original,
+        IReadOnlyList<PlaceableSaveData> restoredFurniture)
+    {
+        var merged = new List<PlaceableSaveData>();
+        if (original != null)
+        {
+            foreach (PlaceableSaveData record in original)
+            {
+                if (record == null ||
+                    record.zoneId == ShopCustomizationController.ShopInteriorZoneId)
+                    continue;
+                merged.Add(record);
+            }
+        }
+
+        if (restoredFurniture != null)
+            merged.AddRange(restoredFurniture.Where(record => record != null));
+        return merged;
     }
 
     void RestoreHiredNpcs(List<HiredNpcRecord> hiredNpcs)
@@ -671,11 +1195,96 @@ public class SaveManager : MonoBehaviour
         return result;
     }
 
+    static bool ValidateSavedShopItems(List<ShopSlotSaveData> saved, out string reason)
+    {
+        reason = string.Empty;
+        if (saved == null) { reason = "진열 기록이 없습니다."; return false; }
+        foreach (var record in saved)
+        {
+            if (record == null || record.displayPrice < 0 || record.count < 0 ||
+                record.occupied && (record.count <= 0 ||
+                    ItemRegistry.Instance?.Find(record.itemId, record.itemName) == null))
+            { reason = "진열 상품 ID, 재고 또는 가격을 복원할 수 없습니다."; return false; }
+        }
+        return true;
+    }
+
+    bool ValidateShopSlotTargets(List<ShopSlotSaveData> saved, out string reason)
+    {
+        if (!ValidateSavedShopItems(saved, out reason)) return false;
+        var keys = GetOrderedShopSlots().Select(slot => BuildShopSlotKey(slot.transform)).ToList();
+        if (keys.Count != saved.Count || keys.Distinct(System.StringComparer.Ordinal).Count() != keys.Count ||
+            saved.Select(record => record.slotKey).Distinct(System.StringComparer.Ordinal).Count() != saved.Count ||
+            saved.Any(record => string.IsNullOrEmpty(record.slotKey) || !keys.Contains(record.slotKey)))
+        { reason = "저장된 가판대 ID와 현재 씬의 가판대가 일치하지 않습니다."; return false; }
+        return true;
+    }
+
+    bool ValidateRestoredFirstDay(SaveData data, out string reason)
+    {
+        reason = string.Empty;
+        if (EconomyService.Instance == null || EconomyService.Instance.Money != data.money ||
+            EconomyService.Instance.CumulativeRevenue != data.cumulativeRevenue)
+        { reason = "화폐/누적 매출"; return false; }
+        if (GameClock.Instance == null || GameClock.Instance.CurrentDay != data.gameDay ||
+            Mathf.Abs(GameClock.Instance.CurrentHour - data.gameHour) > 0.02f)
+        { reason = "날짜/시간"; return false; }
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null || Vector3.Distance(player.transform.position, data.playerPosition) > 0.05f)
+        { reason = "플레이어 위치"; return false; }
+        var demo = DemoSettlementController.Instance;
+        if (demo == null || data.demoSession == null ||
+            !string.IsNullOrEmpty(data.demoSession.shopId) && demo.OperatingShop == null)
+        { reason = "FirstDay 상점"; return false; }
+        var captured = demo.CaptureSaveState();
+        // P11: 상점을 놓기 전 저장은 shopId가 ""(JsonUtility)이고 실행 중 값은 null이다. 같은 '상점 없음'으로 비교한다.
+        if ((captured.shopId ?? string.Empty) != (data.demoSession.shopId ?? string.Empty) ||
+            captured.placedBuildings.Count != data.demoSession.placedBuildings.Count ||
+            data.demoSession.placedBuildings.Any(record => !captured.placedBuildings.Any(current =>
+                current.instanceId == record.instanceId && current.buildingId == record.buildingId &&
+                current.anchorX == record.anchorX && current.anchorZ == record.anchorZ &&
+                current.rotationQuarterTurns == record.rotationQuarterTurns)))
+        { reason = "상점/가판대 배치"; return false; }
+        var actual = SerializeShopSlots();
+        if (actual.Count != data.shopSlots.Count || data.shopSlots.Any(record =>
+            !actual.Any(current => current.slotKey == record.slotKey &&
+                current.occupied == record.occupied && current.displayPrice == record.displayPrice &&
+                current.itemId == record.itemId && current.count == record.count &&
+                Mathf.Abs(current.quality - record.quality) < 0.001f &&
+                current.currentPrice == record.currentPrice)))
+        { reason = "진열 상품/가격/재고"; return false; }
+        if (Inventory.instance == null || !SameInventorySlots(data.inventorySlots, SerializeSlots(Inventory.instance.slots)) ||
+            Inventory.instance.hotbar == null ||
+            !SameInventorySlots(data.hotbarSlots, SerializeSlots(Inventory.instance.hotbar.slots)))
+        { reason = "인벤토리/핫바"; return false; }
+        return true;
+    }
+
+    static bool SameInventorySlots(List<SlotSaveData> saved, List<SlotSaveData> actual)
+    {
+        if (saved == null || actual == null || saved.Count != actual.Count) return false;
+        for (int i = 0; i < saved.Count; i++)
+        {
+            var a = saved[i]; var b = actual[i];
+            if (a == null || b == null || a.itemId != b.itemId || a.count != b.count ||
+                a.currentPrice != b.currentPrice || Mathf.Abs(a.quality - b.quality) > 0.001f)
+                return false;
+        }
+        return true;
+    }
+
     void DeserializeShopSlots(List<ShopSlotSaveData> saved)
     {
+        var slots = GetOrderedShopSlots();
+        foreach (ShopSlot slot in slots)
+        {
+            if (slot == null) continue;
+            slot.currentItem = null;
+            slot.displayPrice = 0;
+            slot.RefreshDisplay();
+        }
         if (saved == null || saved.Count == 0) return;
 
-        var slots = GetOrderedShopSlots();
         var byKey = new Dictionary<string, ShopSlot>();
         foreach (var slot in slots)
         {

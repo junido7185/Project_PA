@@ -1,0 +1,7 @@
+PASS save fixture ready
+PASS save fixture companions settled
+PASS walk (114.00, 0.00, 108.00)
+PASS load actually restores changed money
+PASS P3 save restore exact
+PASS forced fall recovery
+PASS post recovery stop

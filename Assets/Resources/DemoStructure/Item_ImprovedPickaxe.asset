@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_ImprovedPickaxe
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2022
+  itemName: "\uAD6C\uB9AC \uACE1\uAD2D\uC774"
+  description: "\uAD6C\uB9AC \uB0A0\uC744 \uB367\uB304 \uACE1\uAD2D\uC774(\uD798
+    2). \uACE0\uC9C0\uB300 \uCCA0 \uAD11\uB9E5\uB3C4 \uCE98 \uC218 \uC788\uACE0,
+    \uAD11\uBD80 \uB3D9\uB8CC\uC5D0\uAC8C \uC8FC\uBA74 \uC77C\uC774 \uBE68\uB77C\uC838\uC694."
+  icon: {fileID: 21300000, guid: ff07b4fef9481db4ba5d25638b626077, type: 3}
+  maxStack: 1
+  model: {fileID: 3577108074868921814, guid: 79d7ac85c99572540b4a4a5e4cbb825a, type: 3}
+  basePrice: 10
+  toolType: 2
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

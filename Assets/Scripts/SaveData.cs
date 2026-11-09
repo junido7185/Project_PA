@@ -7,13 +7,46 @@ public class SaveData
     // 스키마 버전 — SaveManager 가 로드 시 마이그레이션에 사용한다.
     // 새 필드가 추가되면 CurrentSaveVersion(SaveManager) 을 올리고 마이그레이션 함수를 추가한다.
     public int version = 0;
+    public FirstProductionSaveData firstProduction = new FirstProductionSaveData(); // v16 explicit opening state
+    public FirstSettlementSaveData firstSettlement; // v15: optional opening settlement only
+    public DemoSessionSaveData demoSession; // v17: FirstDay dynamic placements and session progress
+    // 2026-11-03 해변 줍기(BEACHCOMBING.md): v17 안의 추가 필드. 과거 저장은 0/null이라 그날 것을 모두 다시 놓는다.
+    public int beachFindsDay;
+    public List<int> beachFindsCollected;
+    // 2026-11-03 파기 자국(DIGGING.md): 같은 방식의 v17 추가 필드.
+    public int digSpotsDay;
+    public List<int> digSpotsDug;
+    // 2026-11-03 발견 도감(COLLECTION.md): 처음 손에 넣은 대상 아이템 id. 과거 저장은 null → 가방에서 조용히 다시 찾는다.
+    public List<int> discoveredItemIds;
+    // 2026-11-04 곤충(FOREST_BEETLE.md): 그날 잡은 곤충 개체 이름. 저장→이어하기로 같은 개체를 다시 잡는 반복을 막는다(v17 추가 필드).
+    public int crittersCaughtDay;
+    public List<string> crittersCaught;
+    // 2026-11-09 가게 실내 러그(ShopRugSwap, 너굴 리스트 연구 H5 러그 교체): 깔린 러그 키. 옛 저장은 null → 기본 러그(추가 필드).
+    public string shopRugStyle;
+    // 2026-11-09 가게 뒷벽 걸이(ShopWallHang, 연구 H5 벽걸이): "" 빈 벽 / "plaque" 도감 기념패. 옛 저장은 null → 빈 벽(추가 필드).
+    public string shopWallHang;
+    // 2026-11-09 가게 책상 위(ShopDeskShelf, 연구 H5 탁상 위): 올려 둔 해변·땅속 발견물 id. 0/옛 저장 = 빈 책상(추가 필드).
+    public int shopDeskItem;
 
     // 플레이어 정보
     public int money;
     public Vector3 playerPosition;
+    public Quaternion playerRotation = Quaternion.identity;
+    public bool hasPlayerRotation = false;
     public string playerName = "하늘";
     public string selectedMapId = "green_bay";
     public int firstDayPrototypeStage = 0;
+
+    // BETA-009 recovery fields are additive in the v12 gameplay envelope. The
+    // procedural-world payload remains v11 and retains its established meaning.
+    public int m85RecoveryRevision = 0;
+    public bool worldAlphaStarted = false;
+    public bool worldAlphaMoved = false;
+    public bool worldAlphaReachedShop = false;
+    public bool worldAlphaReachedWorkbench = false;
+
+    // CONTENT-001: v13 추가 필드. null인 과거 저장에는 캠페인을 강제로 시작하지 않는다.
+    public CampaignProgressSaveData campaign;
 
     // 티어 시스템
     public int currentTier = 0;
@@ -43,6 +76,7 @@ public class SaveData
     // 인벤토리 · 핫바 (SlotSaveData.count == 0 이면 빈 칸)
     public List<SlotSaveData> inventorySlots = new List<SlotSaveData>();
     public List<SlotSaveData> hotbarSlots    = new List<SlotSaveData>();
+    public int selectedHotbarIndex = 0;
 
     // ShopSlot display state. Added in v5 so a saved playable-day demo restores stocked shelves.
     public List<ShopSlotSaveData> shopSlots = new List<ShopSlotSaveData>();
@@ -51,6 +85,13 @@ public class SaveData
     // reset on save/load (DayNightShopLoopController._prepCollectionDays).
     public int dayPrepCollectedDay = 0;
     public List<string> dayPrepCollectedActivities = new List<string>();
+    public int shopOpenedDay = -1;
+
+    // Feed and daily purchase/rejection summaries. Restoring this history never
+    // replays a transaction or sale event; it only restores the read model.
+    public List<SaleRecord> salesLogRecords = new List<SaleRecord>();
+    public List<SalesDecisionDaySaveData> salesDecisionDays = new List<SalesDecisionDaySaveData>();
+    public List<FarmPlotSaveData> farmPlots = new List<FarmPlotSaveData>();
 
     // Village culture visual state. Added in v9 (Task 057) so the core differentiator —
     // "오늘 판 물건이 다음날 마을을 바꾼다" — survives save/load.
@@ -61,10 +102,118 @@ public class SaveData
     public bool villageCultureHasActiveChange = false;
     public string villageCultureActiveCategory = "";
     public bool villageCultureHintShown = false;
+    public string villageCulturePendingItemName = "";
+    public string villageCulturePendingBuyerName = "";
+    public int villageCultureActiveSaleDay = 0;
+    public int villageCultureActiveResponseDay = 0;
+    public string villageCultureActiveItemName = "";
+    public string villageCultureActiveBuyerName = "";
 
     // Zone-aware shop furniture customization. Added in v10.
     public bool placementStarterGranted = false;
     public List<PlaceableSaveData> placeables = new List<PlaceableSaveData>();
+
+    // Procedural world state. Added additively in v11; v10 and older saves migrate
+    // to LegacyFixed and keep their absolute buildings/placeables unchanged.
+    public WorldStateSaveData worldState = new WorldStateSaveData();
+}
+
+[System.Serializable]
+public class CampaignProgressSaveData
+{
+    public bool started;
+    public bool boriGreeted;
+    public int firstStockItemId = -1;
+    public int firstStockDay;
+    public CampaignFirstNightSaveData firstNight;
+}
+
+[System.Serializable]
+public class CampaignFirstNightSaveData
+{
+    public int priceConfirmedDay;
+    public int confirmedItemId = -1;
+    public int confirmedUnitPrice;
+    public int firstOpenedDay;
+    public int firstDecisionDay;
+    public string firstDecisionResidentId = "";
+    public string firstDecisionName = "";
+    public string firstDecisionReason = "";
+    public int firstDecisionItemId = -1;
+    public bool firstDecisionWantedToBuy;
+    public int firstSaleDay;
+    public int firstSaleAmount;
+    public int firstSettlementDay;
+    public int firstSettlementRevenue;
+
+    // 저장 내용은 숫자·bool·불변 문자열뿐이다. 캡처가 진행 중 상태를 공유하지 않는다.
+    public CampaignFirstNightSaveData Copy() => (CampaignFirstNightSaveData)MemberwiseClone();
+}
+
+[System.Serializable]
+public class WorldStateSaveData
+{
+    public string worldMode = "LegacyFixed";
+    public long worldSeed = 0L;
+    public int generationVersion = 0;
+    public int widthCells = 0;
+    public int heightCells = 0;
+    public float cellSizeMeters = 0f;
+    public int chunkSizeCells = 0;
+    public List<WorldModifiedCellSaveData> modifiedCells = new List<WorldModifiedCellSaveData>();
+    public List<WorldPlacedBuildingSaveData> placedBuildings = new List<WorldPlacedBuildingSaveData>();
+    public List<WorldShopFurnitureSaveData> shopFurniture = new List<WorldShopFurnitureSaveData>();
+    public List<WorldResourceStateSaveData> resourceStates = new List<WorldResourceStateSaveData>();
+    public bool hasSafePlayerPosition = false;
+    public Vector3 safePlayerPosition;
+    public int safePlayerCellX = 0;
+    public int safePlayerCellZ = 0;
+}
+
+[System.Serializable]
+public class WorldModifiedCellSaveData
+{
+    public int x;
+    public int z;
+    public int elevationLevel;
+    public int groundType;
+    public int pathType;
+    public int waterSurfaceLevel;
+    public int waterDepthLevels;
+}
+
+[System.Serializable]
+public class WorldPlacedBuildingSaveData
+{
+    public string instanceId;
+    public string buildingId;
+    public int anchorX;
+    public int anchorZ;
+    public int rotationQuarterTurns;
+    public List<PlaceableStoredItemSaveData> storedItems = new List<PlaceableStoredItemSaveData>();
+}
+
+[System.Serializable]
+public class WorldShopFurnitureSaveData
+{
+    public string zoneId;
+    public string definitionId;
+    public string instanceId;
+    public int gridX;
+    public int gridY;
+    public int rotationQuarterTurns;
+    public bool isFixed;
+    public bool recovered;
+    public string functionalState;
+    public List<PlaceableStoredItemSaveData> storedItems = new List<PlaceableStoredItemSaveData>();
+}
+
+[System.Serializable]
+public class WorldResourceStateSaveData
+{
+    public string spawnKey;
+    public bool consumed;
+    public int respawnDay;
 }
 
 // §4 FriendshipService 저장 DTO — FriendshipService.ForceSetPoints 로 복원한다.
@@ -96,6 +245,23 @@ public class HiredNpcRecord
     public string consumerFsmState;
     public string producerFsmState;
     public string specialistFsmState;
+}
+
+[System.Serializable]
+public class SalesDecisionDaySaveData
+{
+    public int gameDay;
+    public int purchases;
+    public int rejections;
+}
+
+[System.Serializable]
+public class FarmPlotSaveData
+{
+    public string plotId;
+    public bool planted;
+    public int currentStageIndex;
+    public float secondsUntilNextStage;
 }
 
 // 인벤토리/핫바 한 칸을 직렬화한 DTO.
@@ -162,4 +328,56 @@ public class BuildingSaveData
         position = pos;
         rotation = rot;
     }
+}
+
+[System.Serializable]
+public class FirstSettlementSaveData
+{
+    public int version = 1;
+    public string[] companionIds;
+    public bool settlementCompleted;
+    public List<WorldPlacedBuildingSaveData> buildings = new List<WorldPlacedBuildingSaveData>();
+}
+
+[System.Serializable]
+public class FirstProductionSaveData
+{
+    public int version = 1;
+    public bool started;
+    public bool completed;
+    public List<StarterWorksiteSaveData> worksites = new List<StarterWorksiteSaveData>();
+}
+
+[System.Serializable]
+public class DemoSessionSaveData
+{
+    public int version = 1;
+    public List<WorldPlacedBuildingSaveData> placedBuildings = new List<WorldPlacedBuildingSaveData>();
+    public string shopId;
+    public string[] companionIds = new string[0];
+    public int selectedRoot;
+    public int grantedStands;
+    public bool established;
+    public bool nightReady;
+    public bool sunsetStarted;
+    public DemoPioneerReportData pioneerReport;
+    public bool relocatedFromV16;
+}
+
+[System.Serializable]
+public class StarterWorksiteSaveData
+{
+    public string companionId, role;
+    public WorldPlacedBuildingSaveData placement;
+    public bool playerActivityCompleted, seedIssued;
+    public FarmPlotSaveData farm;
+    public StarterProducerSaveData producer;
+}
+
+[System.Serializable]
+public class StarterProducerSaveData
+{
+    public bool active, ready, claimed;
+    public float elapsed;
+    public int pendingAmount, stockCount;
 }

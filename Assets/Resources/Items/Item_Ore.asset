@@ -14,10 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 4
   itemName: Ore
-  description: Raw mineral used at the forge.
-  icon: {fileID: 21300000, guid: d0ea2ec653dd331458a02626c7a02955, type: 3}
+  description: "\uC77C\uBC18 \uBC14\uC704\uC5D0\uC11C \uCE94 \uAD6C\uB9AC\uBE5B \uAD11\uC11D.
+    \uD654\uB85C\uC5D0\uC11C \uB098\uBB34 1\uACFC \uD568\uAED8 \uB179\uC774\uBA74
+    \uAD6C\uB9AC \uC8FC\uAD34\uAC00 \uB3FC\uC694."
+  icon: {fileID: 21300000, guid: 1980666d464be0f4ba2d0cabe41e19d2, type: 3}
   maxStack: 99
-  model: {fileID: 0}
+  model: {fileID: 919132149155446097, guid: 1cf27bd7b16285c46a22a5e262872024, type: 3}
   basePrice: 15
   toolType: 0
   category: 0

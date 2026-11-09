@@ -281,6 +281,8 @@ public class HiringService : MonoBehaviour
             foreach (var go in spawned)
             {
                 if (go == null) continue;
+                _runtimeSpawnInstanceIds.Remove(go.GetInstanceID());
+                go.SetActive(false);
                 if (Application.isPlaying) Destroy(go);
                 else DestroyImmediate(go);
             }
@@ -289,6 +291,7 @@ public class HiringService : MonoBehaviour
         _hired.Clear();
         _spawnedByCandidate.Clear();
         _hiredIds.Clear();
+        _runtimeSpawnInstanceIds.Clear();
     }
 
     // -------- 내부: 프리팹 profile 주입 --------

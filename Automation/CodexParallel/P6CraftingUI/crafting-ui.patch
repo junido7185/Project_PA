@@ -1,0 +1,183 @@
+--- a/Assets/Scripts/CraftingUI.cs
++++ b/Assets/Scripts/CraftingUI.cs
+@@ -104,7 +104,7 @@
+         EnsureOpenState();
+         _activeWorkbench = null;
+         GenerateSlotsForContext();
+-        SetStatus("도감에서는 제작할 수 없습니다. 월드의 작업대 앞에서 [Space]를 누르세요.");
++        SetStatus("도감은 확인만 할 수 있어요. 작업대 앞에서 [E]를 눌러 제작하세요.");
+     }
+ 
+     public void ToggleUI()
+@@ -205,7 +205,7 @@
+ 
+             TMP_Text slotText = newSlot.GetComponentInChildren<TMP_Text>(true);
+             if (slotText != null)
+-                slotText.text = BuildSlotLabel(recipe, unlocked);
++                slotText.text = BuildSlotLabel(recipe, unlocked, hasIngredients, canCraftHere);
+ 
+             Transform iconTransform = newSlot.transform.Find("Icon");
+             if (iconTransform != null && iconTransform.TryGetComponent(out Image icon))
+@@ -222,7 +222,7 @@
+             Button btn = newSlot.GetComponent<Button>();
+             if (btn != null)
+             {
+-                btn.interactable = unlocked && canCraftHere;
++                btn.interactable = unlocked && hasIngredients && canCraftHere;
+                 RecipeData captured = recipe;
+                 Workbench wbCaptured = _activeWorkbench;
+                 btn.onClick.AddListener(() => TryCraftRecipe(captured, wbCaptured));
+@@ -233,7 +233,18 @@
+         // layout now so the first visible frame has non-zero content/card geometry.
+         Canvas.ForceUpdateCanvases();
+         if (slotParent is RectTransform contentRect)
++        {
++            // 긴 재료/잠금 설명도 카드 안에 들어가도록 실제 텍스트 폭으로 높이를 계산한다.
++            foreach (Transform child in slotParent)
++            {
++                TMP_Text label = child.GetComponentInChildren<TMP_Text>(true);
++                LayoutElement element = child.GetComponent<LayoutElement>();
++                if (label == null || element == null) continue;
++                float width = Mathf.Max(1f, label.rectTransform.rect.width);
++                element.preferredHeight = Mathf.Max(112f, label.GetPreferredValues(label.text, width, 0f).y + 24f);
++            }
+             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
++        }
+         Canvas.ForceUpdateCanvases();
+ 
+         if (_titleText != null)
+@@ -243,8 +254,8 @@
+ 
+         if (_modeText != null)
+             _modeText.text = _activeWorkbench == null
+-                ? $"전체 레시피 {visibleCount}개 · 작업대에서 [Space]로 제작"
+-                : $"{GetWorkbenchLabel(_activeWorkbench.workbenchType)} · 가능한 레시피 {visibleCount}개";
++                ? $"레시피 {visibleCount}개 · 확인 전용 · 작업대에서 [E]로 제작"
++                : $"{GetWorkbenchLabel(_activeWorkbench.workbenchType)} · 레시피 {visibleCount}개 · 재료 보유 / 필요";
+     }
+ 
+     // 컨텍스트(작업대 종류)에 맞는지 판정한다.
+@@ -257,17 +268,22 @@
+         return ContextMatches(recipe, _activeWorkbench);
+     }
+ 
+-    string BuildSlotLabel(RecipeData recipe, bool unlocked)
+-    {
+-        string recipeName = string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
+-        string outputName = recipe.outputItem != null ? recipe.outputItem.itemName : "결과 누락";
+-        string lockMark = unlocked ? "" : $"<color=#E9A59A>잠김 · Tier {recipe.requiredTier}</color>  ";
++    string BuildSlotLabel(RecipeData recipe, bool unlocked, bool hasIngredients, bool canCraftHere)
++    {
++        string outputName = recipe.outputItem != null ? ItemDisplayName.For(recipe.outputItem) : "결과 정보 없음";
++        string recipeName = recipe.outputItem != null ? outputName
++            : string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
+         string station = GetWorkbenchLabel(recipe.requiredWorkbench);
+         string ingredients = BuildIngredientText(recipe);
+-
+-        return $"{lockMark}<b>{recipeName}</b>  →  {outputName} ×{Mathf.Max(1, recipe.outputCount)}\n" +
+-               $"<size=78%><color=#C8D8CA>재료: {ingredients}</color></size>\n" +
+-               $"<size=72%><color=#91B69A>{station}</color></size>";
++        string state = !unlocked ? $"<color=#F0B39E>잠김 · {BuildLockReason(recipe)}</color>"
++            : !canCraftHere ? "<color=#C8D8CA>도감 · 작업대에서 제작하세요</color>"
++            : !hasIngredients ? "<color=#F0B39E>재료 부족</color>"
++            : "<color=#CDE7C9>제작 가능 · 카드를 눌러 만들기</color>";
++
++        return $"<b>{recipeName}</b>  <size=85%>완성 ×{recipe.outputCount}</size>\n" +
++               $"<size=85%>{state}</size>\n" +
++               $"<size=85%><color=#C8D8CA>재료 (보유/필요): {ingredients}</color></size>\n" +
++               $"<size=80%><color=#91B69A>{station}</color></size>";
+     }
+ 
+     string BuildIngredientText(RecipeData recipe)
+@@ -283,7 +299,7 @@
+ 
+             int owned = Inventory.instance != null ? Inventory.instance.CountItems(ingredient.item) : 0;
+             string color = owned >= ingredient.count ? "#CDE7C9" : "#F0B39E";
+-            result.Append($"<color={color}>{ingredient.item.itemName} {owned}/{ingredient.count}</color>");
++            result.Append($"<color={color}>{ItemDisplayName.For(ingredient.item)} {owned}/{ingredient.count}</color>");
+         }
+ 
+         return result.Length > 0 ? result.ToString() : "재료 정보 없음";
+@@ -300,16 +316,15 @@
+         bool success = CraftingService.TryCraft(recipe, workbench);
+         GenerateSlotsForContext();
+ 
+-        string recipeName = string.IsNullOrWhiteSpace(recipe.recipeName) ? recipe.name : recipe.recipeName;
+         SetStatus(success
+-            ? $"{recipeName} 제작 완료 · 가방과 핫바를 갱신했습니다."
++            ? $"{ItemDisplayName.For(recipe.outputItem)} ×{recipe.outputCount} 제작 완료 · 가방에서 확인하세요."
+             : BuildFailureMessage(recipe), !success);
+     }
+ 
+     string BuildFailureMessage(RecipeData recipe)
+     {
+         if (!IsUnlocked(recipe))
+-            return $"Tier {recipe.requiredTier} 또는 주민 교류 조건이 아직 잠겨 있습니다.";
++            return BuildLockReason(recipe);
+ 
+         if (Inventory.instance == null)
+             return "플레이어 인벤토리를 찾지 못했습니다.";
+@@ -317,7 +332,35 @@
+         if (!HasAllIngredients(recipe))
+             return "재료가 부족합니다. 카드의 보유량/필요량을 확인하세요.";
+ 
+-        return "제작하지 못했습니다. 결과물을 받을 가방 공간을 확인하세요.";
++        return "제작하지 못했습니다. 작업대와 레시피 정보, 가방 공간을 확인하세요.";
++    }
++
++    // 권위의 실제 실패 순서를 그대로 읽는다. 잠김 이유는 성장 규칙을 바꾸지 않는다.
++    string BuildLockReason(RecipeData recipe)
++    {
++        if (!DemoPlaceableCatalog.RecipeUnlocked(recipe))
++        {
++            var upgrade = DemoPlaceableCatalog.Load()?.upgrades?.FirstOrDefault(u => u.recipe == recipe);
++            string root = upgrade == null ? "해당" : GetRootLabel(upgrade.root);
++            return $"{root} 전문 분야를 선택해야 해요.";
++        }
++        if (TierService.Instance != null && !TierService.Instance.IsUnlocked(recipe.requiredTier))
++            return $"본사 승인 등급 {recipe.requiredTier} 필요 · 현재 {TierService.Instance.CurrentTier}";
++        if (FriendshipService.Instance != null && !FriendshipService.Instance.IsRecipeUnlocked(recipe))
++            return "주민과 교류해 비법을 전수받아야 해요.";
++        return "";
++    }
++
++    static string GetRootLabel(DemoSpecialization root)
++    {
++        switch (root)
++        {
++            case DemoSpecialization.Forestry: return "임업";
++            case DemoSpecialization.Mining: return "광업";
++            case DemoSpecialization.Fisheries: return "수산업";
++            case DemoSpecialization.Agriculture: return "농업";
++            default: return "해당";
++        }
+     }
+ 
+     bool IsUnlocked(RecipeData recipe)
+@@ -518,7 +561,7 @@
+         statusRT.anchoredPosition = new Vector2(0f, 12f);
+ 
+         _statusText = statusGO.GetComponent<TextMeshProUGUI>();
+-        _statusText.text = "작업대에서 [Space]를 누르면 제작할 수 있습니다.";
++        _statusText.text = "작업대에서 [E]를 누르면 제작할 수 있어요.";
+         _statusText.fontSize = 15f;
+         _statusText.alignment = TextAlignmentOptions.Center;
+         _statusText.color = new Color(0.77f, 0.88f, 0.79f, 1f);
+@@ -536,7 +579,7 @@
+         go.transform.SetParent(parent, false);
+         go.SetActive(false);
+         go.GetComponent<Image>().color = new Color(0.13f, 0.20f, 0.16f, 0.96f);
+-        go.GetComponent<LayoutElement>().preferredHeight = 96f;
++        go.GetComponent<LayoutElement>().preferredHeight = 112f;
+ 
+         var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+         var iconRT = (RectTransform)iconGO.transform;
+@@ -559,7 +602,7 @@
+         labelRT.offsetMax = new Vector2(-14f, -8f);
+ 
+         var label = labelGO.GetComponent<TextMeshProUGUI>();
+-        label.fontSize = 16.5f;
++        label.fontSize = 18f;
+         label.alignment = TextAlignmentOptions.MidlineLeft;
+         label.color = Color.white;
+         label.textWrappingMode = TextWrappingModes.Normal;

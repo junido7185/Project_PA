@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Fish_Puffer
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3007
+  itemName: "\uBCF5\uC5B4"
+  description: "\uBB3C\uAC00 \uBC14\uC704 \uACC1\uC744 \uB3D9\uAE00\uB3D9\uAE00 \uB290\uB9AC\uAC8C
+    \uB2E4\uB2C8\uB294 \uBB3C\uACE0\uAE30. \uBAB8\uC5D0 \uB3C5\uC774 \uC788\uC5B4
+    \uC694\uB9AC\uC5D0\uB294 \uC4F0\uC9C0 \uC54A\uC544\uC694 \u2014 \uD314\uAC70\uB098
+    \uB3C4\uAC10\uC5D0 \uB0A8\uACA8\uC694."
+  icon: {fileID: 21300000, guid: 94d85c0f16429cb4688445f7fc6bd5b3, type: 3}
+  maxStack: 99
+  model: {fileID: 5207416878888171944, guid: dc7f7962b78b4134b8f2fd0833e990e7, type: 3}
+  basePrice: 30
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

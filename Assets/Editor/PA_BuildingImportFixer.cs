@@ -13,7 +13,7 @@ using UnityEngine;
 //   1️⃣ Animation Type: Humanoid (오감지) → None (정적 건물)
 //   2️⃣ Keep Quads: ON  (self-intersecting 폴리곤 경고 완화)
 //   3️⃣ Weld Vertices: OFF (Tripo3D 원본 정점 보존)
-//   4️⃣ Read/Write Enabled: OFF (런타임 메모리 절약)
+//   4️⃣ Read/Write Enabled: OFF (런타임 메모리 절약), B11 런타임 충돌 메시만 ON
 //   5️⃣ Material Search: Local 폴더 (.fbm 텍스처 자동 재사용)
 [InitializeOnLoad]
 public static class PA_BuildingImportFixer
@@ -21,6 +21,11 @@ public static class PA_BuildingImportFixer
     const string MODELS_DIR = "Assets/Models/Buildings";
     const string AUTO_KEY   = "PA_BuildingImportFixer_AutoRunV2"; // V2: prefab 로직 제거
     static readonly Regex BUILDING_NAME = new Regex(@"^B\d{2}_", RegexOptions.Compiled);
+
+    // B11 is cooked by DemoVisualDressingController after spawning. Preserve
+    // CPU data for this one model; other buildings keep the memory-saving policy.
+    public static bool RequiresRuntimeMeshData(string path) =>
+        path == MODELS_DIR + "/B11_PlazaFountain.fbx";
 
     // 첫 어셈블리 로드 시 1회만 자동 실행 (EditorPrefs 마커로 중복 차단)
     static PA_BuildingImportFixer()
@@ -76,7 +81,8 @@ public static class PA_BuildingImportFixer
                 // 🔧 Mesh — Tripo3D 결함 완화
                 if (!importer.keepQuads)    { importer.keepQuads = true;    changed = true; }
                 if ( importer.weldVertices) { importer.weldVertices = false; changed = true; }
-                if ( importer.isReadable)   { importer.isReadable = false;   changed = true; }
+                bool readable = RequiresRuntimeMeshData(path);
+                if (importer.isReadable != readable) { importer.isReadable = readable; changed = true; }
 
                 // 🔧 Material — 로컬 폴더에서 텍스처 검색
                 if (importer.materialSearch != ModelImporterMaterialSearch.Local)
@@ -117,7 +123,7 @@ public class PA_BuildingPostprocessor : AssetPostprocessor
         importer.avatarSetup     = ModelImporterAvatarSetup.NoAvatar;
         importer.keepQuads       = true;
         importer.weldVertices    = false;
-        importer.isReadable      = false;
+        importer.isReadable      = PA_BuildingImportFixer.RequiresRuntimeMeshData(assetPath);
         importer.materialSearch  = ModelImporterMaterialSearch.Local;
     }
 }

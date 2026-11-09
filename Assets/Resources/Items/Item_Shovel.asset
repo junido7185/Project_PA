@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Shovel
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2038
+  itemName: "\uC0BD"
+  description: "\uD759\uC774 \uB4E4\uC369\uC774\uB294 \uC790\uB9AC\uB97C \uD30C\uB294
+    \uC0BD. \uC810\uD1A0\xB7\uC61B \uB3D9\uC804\xB7\uD654\uC11D \uC870\uAC01\uC774
+    \uBB3B\uD600 \uC788\uC5B4\uC694. \uD55C \uC790\uB9AC \uD314 \uB54C\uB9C8\uB2E4
+    \uC870\uAE08 \uB2F3\uC544\uC694."
+  icon: {fileID: 21300000, guid: 3315c24b68a2ba747bb736b2d981f101, type: 3}
+  maxStack: 1
+  model: {fileID: 6200165941269721978, guid: b7f80fc189102b344a890046afda0e86, type: 3}
+  basePrice: 0
+  toolType: 9
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

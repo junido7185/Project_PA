@@ -1,0 +1,579 @@
+{
+    "version": 12,
+    "money": 500,
+    "playerPosition": {
+        "x": -0.19369527697563172,
+        "y": -0.42000019550323489,
+        "z": -6.982335567474365
+    },
+    "playerRotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+    },
+    "hasPlayerRotation": true,
+    "playerName": "하늘",
+    "selectedMapId": "green_bay",
+    "firstDayPrototypeStage": 1,
+    "m85RecoveryRevision": 1,
+    "worldAlphaStarted": false,
+    "worldAlphaMoved": false,
+    "worldAlphaReachedShop": false,
+    "worldAlphaReachedWorkbench": false,
+    "currentTier": 0,
+    "cumulativeRevenue": 0,
+    "reputation": 0,
+    "gameHour": 7.494436264038086,
+    "longPlayLastSupplyDay": 0,
+    "longPlayDayStartRevenue": 0,
+    "longPlayDayStartMoney": 500,
+    "gameDay": 1,
+    "lastAuditDay": 0,
+    "friendshipData": [],
+    "hiredNpcs": [],
+    "buildings": [],
+    "inventorySlots": [
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        }
+    ],
+    "hotbarSlots": [
+        {
+            "itemId": 5,
+            "itemName": "BreadLoaf",
+            "count": 3,
+            "quality": 1.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 2,
+            "itemName": "Carrot",
+            "count": 5,
+            "quality": 1.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 7,
+            "itemName": "Plank",
+            "count": 6,
+            "quality": 1.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 3,
+            "itemName": "Wood",
+            "count": 10,
+            "quality": 1.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 4,
+            "itemName": "Ore",
+            "count": 8,
+            "quality": 1.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 1001,
+            "itemName": "설계도: 노점 상점",
+            "count": 1,
+            "quality": 1.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        }
+    ],
+    "selectedHotbarIndex": 0,
+    "shopSlots": [
+        {
+            "slotIndex": 0,
+            "slotKey": "PA_StoreInterior/SalesGrid/InteriorShopSlot_0_0",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 1,
+            "slotKey": "PA_StoreInterior/SalesGrid/InteriorShopSlot_0_1",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 2,
+            "slotKey": "PA_StoreInterior/SalesGrid/InteriorShopSlot_0_2",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 3,
+            "slotKey": "PA_StoreInterior/SalesGrid/InteriorShopSlot_1_0",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 4,
+            "slotKey": "PA_StoreInterior/SalesGrid/InteriorShopSlot_1_1",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 5,
+            "slotKey": "PA_StoreInterior/SalesGrid/InteriorShopSlot_1_2",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 6,
+            "slotKey": "[FirstDayPrototype]/Prototype_Shop_For_Demo/Demo_ShopSlot_01",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 7,
+            "slotKey": "[FirstDayPrototype]/Prototype_Shop_For_Demo/Demo_ShopSlot_02",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 8,
+            "slotKey": "[FirstDayPrototype]/Prototype_Shop_For_Demo/Demo_ShopSlot_03",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 9,
+            "slotKey": "[FirstDayPrototype]/Prototype_Shop_For_Demo/Demo_ShopSlot_04",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 10,
+            "slotKey": "[PA_MapRoot]/[MapBuildings]/Shop/SlotParent/Slot_0",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 11,
+            "slotKey": "[PA_MapRoot]/[MapBuildings]/Shop/SlotParent/Slot_1",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 12,
+            "slotKey": "[PA_MapRoot]/[MapBuildings]/Shop/SlotParent/Slot_2",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        },
+        {
+            "slotIndex": 13,
+            "slotKey": "[PA_MapRoot]/[MapBuildings]/Shop/SlotParent/Slot_3",
+            "occupied": false,
+            "displayPrice": 0,
+            "itemId": 0,
+            "itemName": "",
+            "count": 0,
+            "quality": 0.0,
+            "currentPrice": 0
+        }
+    ],
+    "dayPrepCollectedDay": 1,
+    "dayPrepCollectedActivities": [],
+    "shopOpenedDay": -1,
+    "salesLogRecords": [],
+    "salesDecisionDays": [],
+    "farmPlots": [
+        {
+            "plotId": "farm-plot-1",
+            "planted": false,
+            "currentStageIndex": 0,
+            "secondsUntilNextStage": 0.0
+        },
+        {
+            "plotId": "farm-plot-2",
+            "planted": false,
+            "currentStageIndex": 0,
+            "secondsUntilNextStage": 0.0
+        }
+    ],
+    "villageCultureHasPendingChange": false,
+    "villageCulturePendingSaleDay": 0,
+    "villageCulturePendingCategory": "",
+    "villageCultureHasActiveChange": false,
+    "villageCultureActiveCategory": "",
+    "villageCultureHintShown": false,
+    "villageCulturePendingItemName": "",
+    "villageCulturePendingBuyerName": "",
+    "villageCultureActiveSaleDay": 0,
+    "villageCultureActiveResponseDay": 0,
+    "villageCultureActiveItemName": "",
+    "villageCultureActiveBuyerName": "",
+    "placementStarterGranted": false,
+    "placeables": [
+        {
+            "zoneId": "shop.interior",
+            "definitionId": "shop.shelf",
+            "instanceId": "fixed.SalesGrid[7]/InteriorShopSlot_0_0[0]",
+            "gridX": 1,
+            "gridY": 2,
+            "rotationQuarterTurns": 0,
+            "isFixed": true,
+            "recovered": false,
+            "functionalState": "shop-slot:empty",
+            "storedItems": []
+        },
+        {
+            "zoneId": "shop.interior",
+            "definitionId": "shop.shelf",
+            "instanceId": "fixed.SalesGrid[7]/InteriorShopSlot_0_1[1]",
+            "gridX": 2,
+            "gridY": 2,
+            "rotationQuarterTurns": 0,
+            "isFixed": true,
+            "recovered": false,
+            "functionalState": "shop-slot:empty",
+            "storedItems": []
+        },
+        {
+            "zoneId": "shop.interior",
+            "definitionId": "shop.shelf",
+            "instanceId": "fixed.SalesGrid[7]/InteriorShopSlot_0_2[2]",
+            "gridX": 3,
+            "gridY": 2,
+            "rotationQuarterTurns": 0,
+            "isFixed": true,
+            "recovered": false,
+            "functionalState": "shop-slot:empty",
+            "storedItems": []
+        },
+        {
+            "zoneId": "shop.interior",
+            "definitionId": "shop.shelf",
+            "instanceId": "fixed.SalesGrid[7]/InteriorShopSlot_1_0[3]",
+            "gridX": 1,
+            "gridY": 1,
+            "rotationQuarterTurns": 0,
+            "isFixed": true,
+            "recovered": false,
+            "functionalState": "shop-slot:empty",
+            "storedItems": []
+        },
+        {
+            "zoneId": "shop.interior",
+            "definitionId": "shop.shelf",
+            "instanceId": "fixed.SalesGrid[7]/InteriorShopSlot_1_1[4]",
+            "gridX": 2,
+            "gridY": 1,
+            "rotationQuarterTurns": 0,
+            "isFixed": true,
+            "recovered": false,
+            "functionalState": "shop-slot:empty",
+            "storedItems": []
+        },
+        {
+            "zoneId": "shop.interior",
+            "definitionId": "shop.shelf",
+            "instanceId": "fixed.SalesGrid[7]/InteriorShopSlot_1_2[5]",
+            "gridX": 3,
+            "gridY": 1,
+            "rotationQuarterTurns": 0,
+            "isFixed": true,
+            "recovered": false,
+            "functionalState": "shop-slot:empty",
+            "storedItems": []
+        },
+        {
+            "zoneId": "shop.interior",
+            "definitionId": "shop.theme",
+            "instanceId": "fixed.shop.theme",
+            "gridX": 0,
+            "gridY": 0,
+            "rotationQuarterTurns": 0,
+            "isFixed": false,
+            "recovered": false,
+            "functionalState": "theme:default",
+            "storedItems": []
+        },
+        {
+            "zoneId": "village.outdoor",
+            "definitionId": "B09_StorageShed",
+            "instanceId": "fixed.outdoor.B09_StorageShed",
+            "gridX": 17,
+            "gridY": 28,
+            "rotationQuarterTurns": 3,
+            "isFixed": true,
+            "recovered": false,
+            "functionalState": "storage",
+            "storedItems": []
+        }
+    ],
+    "worldState": {
+        "worldMode": "LegacyFixed",
+        "worldSeed": 0,
+        "generationVersion": 0,
+        "widthCells": 0,
+        "heightCells": 0,
+        "cellSizeMeters": 0.0,
+        "chunkSizeCells": 0,
+        "modifiedCells": [],
+        "placedBuildings": [],
+        "shopFurniture": [],
+        "resourceStates": [],
+        "hasSafePlayerPosition": false,
+        "safePlayerPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "safePlayerCellX": 0,
+        "safePlayerCellZ": 0
+    }
+}

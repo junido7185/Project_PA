@@ -9,7 +9,10 @@ public enum ToolType
     Weapon,     // 무기
     Building,   // 건설
     Hoe,        // 괭이
-    Seed        // 씨앗
+    Seed,       // 씨앗
+    Net = 7,
+    FishingRod = 8,
+    Shovel = 9  // 2026-11-03 삽: 파기 자국(DigSpot)을 판다(DIGGING.md). 끝에 붙여 기존 직렬화 값은 그대로다.
 }
 
 // 경제 시스템용 카테고리. Docs/03의 MBTI 소비 패턴에 사용된다.

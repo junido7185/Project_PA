@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_PotteryShard
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2049
+  itemName: "\uD1A0\uAE30 \uC870\uAC01"
+  description: "\uB760 \uBB34\uB2AC\uAC00 \uB0A8\uC740 \uAE68\uC9C4 \uD1A0\uAE30
+    \uC870\uAC01. \uB204\uAD70\uAC00 \uC624\uB798\uC804 \uC774 \uC12C\uC5D0\uC11C
+    \uC4F0\uB358 \uADF8\uB987\uC774\uC5C8\uB098 \uBD10\uC694. \uD654\uB85C\uC5D0\uC11C
+    \uC810\uD1A0\uC640 \uBD99\uC774\uBA74 \uBAA8\uC790\uC774\uD06C \uC7A5\uC2DD\uC774
+    \uB3FC\uC694."
+  icon: {fileID: 21300000, guid: c969de612a8029d4480eb1eb414c61b0, type: 3}
+  maxStack: 99
+  model: {fileID: 2211675598462475578, guid: 38f314bf13f4a84409d449b0289d6626, type: 3}
+  basePrice: 14
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

@@ -1,0 +1,5 @@
+{
+  "name": "pa-production-console",
+  "version": "0.3.0",
+  "description": "P.A. production observations, explicit instructions and guarded existing-helper resume/safe-stop. Click AbovePrompt to open. Refresh never calls a model. Messages never grant approval."
+}

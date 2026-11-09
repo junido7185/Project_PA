@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Recipe_ToolSet
   m_EditorClassIdentifier: Assembly-CSharp::RecipeData
   recipeName: "\uCCA0\uC81C \uB3C4\uAD6C \uC81C\uC791"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: baedcfc2333040845851baebcb072c85, type: 3}
   description: Tier 1 utility craft.
   ingredients:
   - item: {fileID: 11400000, guid: a50e382b537ceb842a0ae1d1bbbbbfbd, type: 2}

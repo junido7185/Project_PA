@@ -1,0 +1,154 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+// Presentation only. FishingSpot owns casting, bite timing, cancellation and rewards.
+// Local art contains a rod and fish, but no float. This small authored profile replaces the fruit stand-in.
+public sealed class FirstDayFishingFloat : MonoBehaviour
+{
+    const int Sides = 16;
+    const int RippleSegments = 32;
+    FishingSpot _owner;
+    Mesh _mesh;
+    Material[] _materials;
+    readonly LineRenderer[] _ripples = new LineRenderer[2];
+    readonly Vector3[] _ringPoints = new Vector3[RippleSegments];
+    FishingSpot.DemoPhase _shownPhase;
+    float _phaseChangedAt;
+
+    public static GameObject Create(FishingSpot owner)
+    {
+        if (owner == null) return null;
+        // The same locally used shader chain as WorldChunkTerrain; no external shader dependency.
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ??
+                        Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Standard");
+        if (shader == null)
+        {
+            Debug.LogWarning("[FIRST-DAY] Fishing float shader is unavailable.", owner);
+            return null;
+        }
+        var root = new GameObject("FishingBobber");
+        root.SetActive(false);
+        root.transform.position = owner.WaterTarget;
+        root.transform.SetParent(owner.transform, true);
+        var visual = root.AddComponent<FirstDayFishingFloat>();
+        visual._owner = owner;
+        visual.Build(shader);
+        root.SetActive(true);
+        return root;
+    }
+
+    void Build(Shader shader)
+    {
+        _materials = new[] {
+            MakeMaterial(shader, "PA_Float_Cream", new Color(.98f, .95f, .84f)),
+            MakeMaterial(shader, "PA_Float_Coral", new Color(.89f, .24f, .19f)),
+            MakeMaterial(shader, "PA_Float_Stem", new Color(.13f, .23f, .25f))
+        };
+        // y / radius, in metres. The cream collar and coral cap straddle the water surface.
+        Vector2[] profile = {
+            new Vector2(-.12f, 0f), new Vector2(-.09f, .05f),
+            new Vector2(-.055f, .108f), new Vector2(0f, .12f),
+            new Vector2(.025f, .115f), new Vector2(.07f, .08f),
+            new Vector2(.095f, .018f), new Vector2(.16f, .015f),
+            new Vector2(.175f, 0f)
+        };
+        var vertices = new Vector3[profile.Length * Sides];
+        var indices = new[] { new List<int>(), new List<int>(), new List<int>() };
+        for (int row = 0; row < profile.Length; row++)
+            for (int side = 0; side < Sides; side++)
+            {
+                float angle = side * Mathf.PI * 2f / Sides;
+                vertices[row * Sides + side] = new Vector3(
+                    Mathf.Cos(angle) * profile[row].y, profile[row].x,
+                    Mathf.Sin(angle) * profile[row].y);
+                if (row == profile.Length - 1) continue;
+                int next = (side + 1) % Sides;
+                int a = row * Sides + side, b = row * Sides + next;
+                int c = (row + 1) * Sides + side, d = (row + 1) * Sides + next;
+                var band = indices[row < 3 ? 0 : row < 6 ? 1 : 2];
+                band.Add(a); band.Add(c); band.Add(b);
+                band.Add(b); band.Add(c); band.Add(d);
+            }
+        _mesh = new Mesh { name = "PA_FishingFloat_Runtime", hideFlags = HideFlags.DontSave };
+        _mesh.vertices = vertices;
+        _mesh.subMeshCount = indices.Length;
+        for (int band = 0; band < indices.Length; band++) _mesh.SetTriangles(indices[band], band);
+        _mesh.RecalculateNormals();
+        _mesh.RecalculateBounds();
+        gameObject.AddComponent<MeshFilter>().sharedMesh = _mesh;
+        var renderer = gameObject.AddComponent<MeshRenderer>();
+        renderer.sharedMaterials = _materials;
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+
+        for (int i = 0; i < _ripples.Length; i++)
+        {
+            var ring = new GameObject("Float_WaterRipple_" + i);
+            ring.transform.SetParent(transform, false);
+            var line = ring.AddComponent<LineRenderer>();
+            line.sharedMaterial = _materials[0];
+            line.positionCount = RippleSegments;
+            line.loop = true;
+            line.useWorldSpace = true;
+            line.alignment = LineAlignment.View;
+            line.generateLightingData = true;
+            line.numCornerVertices = 2;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            _ripples[i] = line;
+        }
+    }
+
+    static Material MakeMaterial(Shader shader, string name, Color color)
+    {
+        var material = new Material(shader) { name = name, hideFlags = HideFlags.DontSave };
+        if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+        if (material.HasProperty("_Color")) material.SetColor("_Color", color);
+        if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", .12f);
+        if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0f);
+        return material;
+    }
+
+    void OnEnable()
+    {
+        _shownPhase = FishingSpot.DemoPhase.Idle;
+        _phaseChangedAt = Time.time;
+    }
+
+    void LateUpdate()
+    {
+        if (_owner == null || _ripples[0] == null) return;
+        var phase = _owner.Phase;
+        if (phase != _shownPhase) { _shownPhase = phase; _phaseChangedAt = Time.time; }
+        float elapsed = Time.time - _phaseChangedAt;
+        for (int i = 0; i < _ripples.Length; i++)
+        {
+            var ring = _ripples[i];
+            bool biting = phase == FishingSpot.DemoPhase.Bite;
+            ring.enabled = phase != FishingSpot.DemoPhase.Idle && (i == 0 || biting);
+            if (!ring.enabled) continue;
+            // Waiting is restrained; the existing one-second bite window gets two expanding rings.
+            float progress = biting ? Mathf.Clamp01((elapsed - i * .12f) / .6f) :
+                phase == FishingSpot.DemoPhase.Hooked ? .2f : Mathf.Repeat(elapsed / 1.8f, 1f);
+            ring.widthMultiplier = biting ? Mathf.Lerp(.024f, .004f, progress) :
+                Mathf.Lerp(.012f, .004f, progress);
+            float radius = biting ? Mathf.Lerp(.15f, .52f, progress) : Mathf.Lerp(.16f, .27f, progress);
+            Vector3 centre = _owner.WaterTarget + Vector3.up * .008f;
+            // Anchor rings to water, independently of FishingSpot's existing bobber dip.
+            for (int point = 0; point < RippleSegments; point++)
+            {
+                float angle = point * Mathf.PI * 2f / RippleSegments;
+                _ringPoints[point] = centre + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+            }
+            ring.SetPositions(_ringPoints);
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Release only runtime objects created by this component; imported assets remain shared.
+        if (_mesh != null) Destroy(_mesh);
+        if (_materials != null) foreach (var material in _materials) if (material != null) Destroy(material);
+    }
+}

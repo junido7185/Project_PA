@@ -10,8 +10,8 @@ No player-facing change. This ticket exists so future automated work stays align
 
 ## Design References
 
-- `PROJECT_PA_CREATIVE_NORTH_STAR.md`
-- `PROJECT_PA_DESIGN_INTENT.md`
+- `Docs/01_GAME_DESIGN/Creative/PROJECT_PA_CREATIVE_NORTH_STAR.md`
+- `Docs/01_GAME_DESIGN/Creative/PROJECT_PA_DESIGN_INTENT.md`
 - `Docs/AgentWorkflow/CONTEXT_INDEX.md`
 - `AGENTS.md`
 - `CLAUDE.md`

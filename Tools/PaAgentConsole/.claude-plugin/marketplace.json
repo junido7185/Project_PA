@@ -1,0 +1,11 @@
+{
+  "name": "project-pa-local",
+  "owner": {"name": "Project P.A."},
+  "plugins": [
+    {
+      "name": "pa-production-console",
+      "source": "./pa-production-mod",
+      "description": "Local Project P.A. read-only production console."
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_ShellNecklace
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2037
+  itemName: "\uC870\uAC1C \uBAA9\uAC78\uC774"
+  description: "\uAC00\uB9AC\uBE44 \uB458\uACFC \uC18C\uB77C \uD558\uB098\uB97C \uB048\uC5D0
+    \uC5EE\uC740 \uBAA9\uAC78\uC774. \uAECD\uB370\uAE30\uB97C \uB530\uB85C \uD30C\uB294
+    \uAC83\uBCF4\uB2E4 \uBE44\uC2F8\uACE0, \uAD00\uAD11\uAC1D\uC774 \uAE30\uB150\uD488\uC73C\uB85C
+    \uC88B\uC544\uD574\uC694."
+  icon: {fileID: 21300000, guid: 09332e7cfcb566244b6a8b35b00a5148, type: 3}
+  maxStack: 8
+  model: {fileID: 5697474987816360063, guid: 93e03795cd435dc49ba5681672f069b5, type: 3}
+  basePrice: 72
+  toolType: 0
+  category: 3
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}
