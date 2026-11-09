@@ -49,7 +49,7 @@ MCP for Unity 10.3.0(`#v10.3.0`으로 고정), ffmpeg 9, pillow 13, Node 26 LTS,
 
 ## E. 게임 개발 — 진짜 개발 전에 정할 것
 - **플레이어 이동 애니메이션 라이선스:** `Assets/Art/Animation/PlayerLocomotionMocap/PA_MC_*` 18개는 반다이남코 연구 모캡(**CC BY-NC 4.0, 비상업 전용**)으로 만들었다. 전시는 비상업이라 괜찮지만, **상업 출시 전에는 반드시 교체**해야 한다. 원본은 `Assets/Art/External/BandaiNamcoResearch/`에 있다.
-- commit/push 허용 여부: 미커밋 변경이 많다.
+- ~~commit/push 허용 여부~~ **11-09 허용(개인정보·비밀번호 제외) → 날짜별 커밋 5개와 문서 커밋을 만들고 push함**(`Docs/04_DEVELOPMENT_LOG/2026-11.md` 해당 절). 남은 결정: 이미 저장소에 있는 동물의 숲 의자 팬 모델(`Assets/Art/animal-crossing-froggy-chair/` FBX·텍스처)을 공개 저장소에서 뺄지.
 - 미사용 메시 삭제 허용 여부
 - 영상 음성 분석(yt-dlp, faster-whisper 설치 거부): YouTube 다운로드 금지 약관과 부딪칠 수 있다. 쓴다면 사용자 소유 영상만 대상으로 한다.
 - 벌목 업그레이드(전시 뒤로 결정), 보류한 모션 작업 재개
