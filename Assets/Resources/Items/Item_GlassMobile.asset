@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_GlassMobile
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2048
+  itemName: "\uC720\uB9AC \uBAA8\uBE4C"
+  description: "\uD574\uBCC0 \uC720\uB9AC \uC870\uAC01\uC744 \uD310\uC7AC \uAC00\uB85C\uB300\uC5D0
+    \uB9E4\uB2E8 \uC138\uC6C0 \uBAA8\uBE4C. \uC9D1\uC774\uB098 \uAC00\uAC8C\uC5D0
+    \uB193\uC73C\uBA74 \uBC14\uB78C\uC5D0 \uD754\uB4E4\uB9AC\uB294 \uBC14\uB2E4\uC0C9\uC774
+    \uBCF4\uC5EC\uC694(\uAFB8\uBC08 \uC804\uC6A9)."
+  icon: {fileID: 21300000, guid: 4b1bb31a0912e9742ad78fe439a0ef98, type: 3}
+  maxStack: 3
+  model: {fileID: 4829904595006981192, guid: 513b6865d919c6d41bddbab7f0f64765, type: 3}
+  basePrice: 0
+  toolType: 0
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}
