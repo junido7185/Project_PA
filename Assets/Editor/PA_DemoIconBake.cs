@@ -241,7 +241,7 @@ public static class PA_DemoIconBake
             if (itemId == 8 || itemId == 3001 || itemId == 3002)
                 clone.transform.rotation = Quaternion.Euler(0,90,0) * clone.transform.rotation;
             // 바닥에 납작하게 놓이는 해변 발견물(가리비·불가사리·조개 목걸이)은 윗면이 보이게 카메라 쪽으로 세운다(아이콘 전용).
-            if (itemId == 2034 || itemId == 2036 || itemId == 2037 || itemId == 2040 || itemId == 2041)
+            if (itemId == 2034 || itemId == 2036 || itemId == 2037 || itemId == 2040 || itemId == 2041 || itemId == 2045 || itemId == 2047 || itemId == 2049 || itemId == 2050 || itemId == 2055 || itemId == 3102)
                 clone.transform.rotation = Quaternion.AngleAxis(-48f, Quaternion.Euler(0,35f,0) * Vector3.right) * clone.transform.rotation;
             if (itemId == 2011)
             {

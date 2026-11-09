@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_AmberPiece
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2055
+  itemName: "\uD638\uBC15 \uC870\uAC01"
+  description: "\uC232 \uD759\uC5D0\uC11C \uB098\uC628 \uAFC0\uBE5B \uB098\uBB34
+    \uC9C4 \uB369\uC5B4\uB9AC. \uC18D\uC5D0 \uC544\uC8FC \uC791\uC740 \uC810\uC774
+    \uAC07\uD600 \uC788\uC5B4\uC694. \uADC0\uD55C \uC790\uC5F0\uBB3C\uC774\uB77C
+    \uAC12\uC774 \uC88B\uC544\uC694."
+  icon: {fileID: 21300000, guid: 66b271050e8beeb40ad85ef5620f9094, type: 3}
+  maxStack: 99
+  model: {fileID: 5485523199010615656, guid: ecfe5fb4e01159349a7ab7774e2bb761, type: 3}
+  basePrice: 40
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

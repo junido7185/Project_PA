@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Fish_Flounder
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3005
+  itemName: "\uB119\uCE58"
+  description: "\uBAA8\uB798 \uBC14\uB2E5\uC5D0 \uB0A9\uC791\uD558\uAC8C \uBD99\uC5B4
+    \uC26C\uB294 \uBB3C\uACE0\uAE30. \uB113\uC801\uD55C \uADF8\uB9BC\uC790\uAC00
+    \uC7A0\uAE50 \uC6C0\uC9C1\uC600\uB2E4\uAC00 \uC624\uB798 \uBA48\uCDB0 \uC788\uC5B4\uC694.
+    \uC870\uB9AC\uB300\uC5D0\uC11C \uC0DD\uC120\uAD6C\uC774\uB85C \uAD6C\uC6B8 \uC218
+    \uC788\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: 0739a1315965f9c469dbf9e1dbe31c7c, type: 3}
+  maxStack: 99
+  model: {fileID: 3747692854940872635, guid: 08292fc5e6d1cf546969823412ad19d0, type: 3}
+  basePrice: 17
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

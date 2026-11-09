@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_CrystalStand
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2053
+  itemName: "\uC791\uC740 \uAD11\uBB3C \uBC1B\uCE68"
+  description: "\uC218\uC815 \uC6D0\uC11D\uC744 \uD310\uC7AC \uBC1B\uCE68\uC5D0 \uC138\uC6B4
+    \uC7A5\uC2DD. \uC9D1\uC774\uB098 \uAC00\uAC8C\uC5D0 \uB450\uBA74 \uBE5B\uC744
+    \uBC1B\uC544 \uBC18\uC9DD\uC5EC\uC694(\uAFB8\uBC08 \uC804\uC6A9)."
+  icon: {fileID: 21300000, guid: 6a4bd755cc140a4488e15181362b12e7, type: 3}
+  maxStack: 3
+  model: {fileID: 3444781549935011948, guid: a4939448a805aa743bf5ef4da92ef1ab, type: 3}
+  basePrice: 0
+  toolType: 0
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

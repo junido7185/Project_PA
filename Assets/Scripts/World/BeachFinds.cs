@@ -17,9 +17,15 @@ public sealed class BeachFinds : MonoBehaviour
     // 가리비 높이 .1 ≈ 폭 .43m, 소라 .28 ≈ 길이 .42m, 불가사리 .05 ≈ 폭 .5m(기본 카메라에서 읽히게 실물보다 조금 크게).
     static readonly (string resource, int weight, float size)[] Kinds =
     {
-        ("Items/Item_ScallopShell", 55, .1f),
-        ("Items/Item_ConchShell", 31, .28f),
-        ("Items/Item_Starfish", 14, .05f),
+        // 2026-11-03 해초(아이템 생태 연구 H04): 하루 9개는 그대로, 기존 셋의 몫을 조금씩 덜어 16%. 해초 높이 .05 ≈ 길이 .6m(첫 .028은 기본 카메라에서 풀 조각처럼 작았다).
+        // 2026-11-03 해변 유리(연구 H05): 기존 넷의 비율을 같이 줄여 10%(불가사리보다 조금 드묾). 유리 높이 .11 ≈ 폭 .45m(첫 .07은 기본 카메라에서 점처럼 작았다).
+        // 2026-11-04 산호 조각(연구 H06) 8%: 하루 9개 그대로, 기존 다섯의 몫을 같이 줄였다. 산호 높이 .5(첫 .3은 기본 카메라에서 점처럼 작았다, beach-r108).
+        ("Items/Item_ScallopShell", 37, .1f),
+        ("Items/Item_ConchShell", 23, .28f),
+        ("Items/Item_Starfish", 10, .05f),
+        ("Items/Item_Seaweed", 13, .05f),
+        ("Items/Item_BeachGlass", 9, .11f),
+        ("Items/Item_CoralPiece", 8, .5f),
     };
 
     public int Day { get; private set; } = -1;

@@ -269,13 +269,59 @@ public class DialogueUI : MonoBehaviour
     IEnumerator TypeLine(string line)
     {
         if (bodyText == null) yield break;
+        _typing = true; _fullLine = line;
         bodyText.text = "";
         foreach (char c in line)
         {
             bodyText.text += c;
             yield return new WaitForSeconds(typeSpeed);
         }
+        _typing = false;
         _hideCoroutine = StartCoroutine(AutoHide());
+    }
+
+    // 2026-11-04 레퍼런스 04·05: [E]로 대화 넘기기 — 글자가 나오는 중이면 한 번에 다 보이고, 다 보인 뒤면 닫는다.
+    // 다 나온 줄에는 아래 가운데에 '다음 ▼'를 띄운다(자동으로 닫히는 기존 동작은 그대로).
+    bool _typing;
+    string _fullLine;
+    TextMeshProUGUI _nextMark;
+    public static int Advances { get; private set; }
+
+    public static bool TryAdvance()
+    {
+        if (!IsOpen || !PAUiTheme.Active) return false;
+        var ui = instance;
+        Advances++;
+        if (ui._typing)
+        {
+            if (ui._typingCoroutine != null) ui.StopCoroutine(ui._typingCoroutine);
+            ui._typing = false;
+            if (ui.bodyText != null && ui._fullLine != null) ui.bodyText.text = ui._fullLine;
+            if (ui._hideCoroutine != null) ui.StopCoroutine(ui._hideCoroutine);
+            ui._hideCoroutine = ui.StartCoroutine(ui.AutoHide());
+            return true;
+        }
+        ui.Hide();
+        return true;
+    }
+
+    void Update()
+    {
+        if (_panel == null || !_panel.activeInHierarchy || !PAUiTheme.Active) return;
+        if (_nextMark == null)
+        {
+            _nextMark = new GameObject("NextMark", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+            _nextMark.transform.SetParent(_panel.transform, false);
+            var rt = _nextMark.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(.5f, 0f); rt.pivot = new Vector2(.5f, 0f);
+            rt.sizeDelta = new Vector2(120, 26);
+            _nextMark.text = "E ▼"; _nextMark.fontSize = 18; _nextMark.fontStyle = FontStyles.Bold;
+            _nextMark.alignment = TextAlignmentOptions.Center; _nextMark.color = PAUiTheme.Teal; _nextMark.raycastTarget = false;
+            if (bodyText != null) _nextMark.font = bodyText.font;
+        }
+        bool done = !_typing;
+        if (_nextMark.enabled != done) _nextMark.enabled = done;
+        if (done) _nextMark.rectTransform.anchoredPosition = new Vector2(0f, 8f + Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4f)) * 5f);
     }
 
     IEnumerator AutoHide()
@@ -290,6 +336,7 @@ public class DialogueUI : MonoBehaviour
     // Space 키 등으로 즉시 닫기
     public void Hide()
     {
+        _typing = false;
         if (_typingCoroutine != null) StopCoroutine(_typingCoroutine);
         if (_hideCoroutine   != null) StopCoroutine(_hideCoroutine);
         if (_panel != null) _panel.SetActive(false);

@@ -40,6 +40,10 @@ public class PlayerInputHandler : MonoBehaviour
     public bool FishingReelHeld { get; private set; }
     // 무인 촬영(ExhibitionCaptureDirector -pa-capture-plan motion) 전용 이동 주입. null이면 키보드만 쓴다(일반 플레이 영향 없음).
     public static Vector2? QaMove;
+    // QA 캡처 전용: 낚시 릴 감기 버튼을 누른 것처럼(null이면 실제 키보드·마우스).
+    public static bool? QaReel;
+    // QA 캡처 전용: 다음 프레임 한 번 Space(점프)를 누른 것처럼.
+    public static bool QaJumpOnce;
     public static bool QaRun;
     public event Action OnHolster;
     public static bool ModalOpen => Time.timeScale == 0 ||
@@ -117,7 +121,7 @@ public class PlayerInputHandler : MonoBehaviour
         var mouse = Mouse.current;
         if (kb == null) { InteractHeld = false; return; }
         FishingReelHeld = FirstDayFishingMinigame.IsOpen && Time.timeScale != 0 &&
-            (kb.spaceKey.isPressed || mouse != null && mouse.leftButton.isPressed);
+            (QaReel ?? (kb.spaceKey.isPressed || mouse != null && mouse.leftButton.isPressed));
         if (PlayableDayScenarioController.Instance?.TitleMenuOpen == true)
         {
             InteractHeld = false;
@@ -132,7 +136,8 @@ public class PlayerInputHandler : MonoBehaviour
         }
         InteractHeld = FirstDayControls && !ModalOpen && kb.eKey.isPressed;
         RunHeld = FirstDayControls && !ModalOpen && kb.leftShiftKey.isPressed;
-        JumpPressed = FirstDayControls && !ModalOpen && kb.spaceKey.wasPressedThisFrame;
+        JumpPressed = FirstDayControls && !ModalOpen && (kb.spaceKey.wasPressedThisFrame || QaJumpOnce);
+        QaJumpOnce = false;
 
         // -------- 이동 (WASD / 방향키 폴링) --------
         Vector2 move = Vector2.zero;

@@ -15,9 +15,14 @@ public sealed class DigSpots : MonoBehaviour
     const float MinSpacing = 9f, Reach = 70f;
     static readonly (string resource, int weight, int amount)[] Loot =
     {
-        ("Items/Item_Clay", 55, 2),
-        ("Items/Item_OldCoin", 27, 1),
-        ("Items/Item_FossilShard", 18, 1),
+        // 2026-11-03 토기 조각(연구 D04) 12%, 2026-11-04 수정 원석(D05) 8%: 하루 6곳은 그대로, 기존 몫을 같이 줄였다.
+        // 2026-11-04 호박 조각(연구 D06) 6%.
+        ("Items/Item_Clay", 41, 2),
+        ("Items/Item_OldCoin", 21, 1),
+        ("Items/Item_FossilShard", 14, 1),
+        ("Items/Item_PotteryShard", 10, 1),
+        ("Items/Item_Crystal", 8, 1),
+        ("Items/Item_AmberPiece", 6, 1),
     };
 
     public int Day { get; private set; } = -1;

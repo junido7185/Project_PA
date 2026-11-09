@@ -55,6 +55,17 @@ public sealed class FindSparkle : MonoBehaviour
     }
 
     // 네 갈래 별빛(가운데 밝은 점 + 가는 십자 빛줄기), 64px.
+    // 주민 감정 별(NpcEmote)도 같은 별 그림·재질을 쓴다.
+    internal static Sprite StarSprite => Sprite;
+    internal static Material StarMaterial
+    {
+        get
+        {
+            if (_material == null) { var shader = Shader.Find("Sprites/Default"); if (shader != null) _material = new Material(shader) { name = "PA_FindSparkle" }; }
+            return _material;
+        }
+    }
+
     static Sprite Sprite
     {
         get

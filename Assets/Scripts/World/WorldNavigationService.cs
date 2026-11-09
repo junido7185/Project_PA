@@ -722,8 +722,14 @@ public sealed class WorldNavigationService : MonoBehaviour
         QueueCells(affected);
     }
 
+    // 2026-11-04 영업 손님 순간이동(market-r165): 경계를 따라 이어진 칸 전체를 한 링크로 묶으면 폭이 수십 m가 되어
+    // 에이전트가 링크 한쪽 끝으로 들어가 10m 떨어진 곳으로 나온 뒤 목적지로 튀었다(SectorSeamLink_35, 가게 문 앞).
+    // 링크 하나가 덮는 줄을 칸 1개로 제한해 들고 나는 자리 차이를 한 칸 안으로 묶는다(경계 칸 수만큼 링크가 늘어난다).
+    const int MaxSeamRunCells = 1;
+
     void RefreshSeamLinks()
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
         if (_linkRoot != null)
         {
             _linkRoot.SetActive(false);
@@ -743,6 +749,7 @@ public sealed class WorldNavigationService : MonoBehaviour
         // Retain block terrain. Only an actual adjacent dry, one-level step can
         // connect terraces; agents cross it visibly instead of warping offscreen.
         if (GetComponent<DemoRouteController>() != null) CreateDemoTerraceStepLinks();
+        Debug.Log($"[WorldNavigation] seam+step links={_linkCount} maxSeamRun={MaxSeamRunCells} in {watch.ElapsedMilliseconds}ms");
     }
 
     void CreateDemoTerraceStepLinks()
@@ -806,7 +813,7 @@ public sealed class WorldNavigationService : MonoBehaviour
             bool valid = z < _grid.Definition.Height &&
                          TryGetLevelMatchedPair(new Vector2Int(leftX, z),
                              new Vector2Int(rightX, z), out level);
-            if (valid && runStart >= 0 && level == runLevel) continue;
+            if (valid && runStart >= 0 && level == runLevel && z - runStart < MaxSeamRunCells) continue;
             if (runStart >= 0) CreateSeamLink(true, leftX, rightX, runStart, z - 1, runLevel);
             runStart = valid ? z : -1;
             runLevel = valid ? level : -1;
@@ -823,7 +830,7 @@ public sealed class WorldNavigationService : MonoBehaviour
             bool valid = x < _grid.Definition.Width &&
                          TryGetLevelMatchedPair(new Vector2Int(x, southZ),
                              new Vector2Int(x, northZ), out level);
-            if (valid && runStart >= 0 && level == runLevel) continue;
+            if (valid && runStart >= 0 && level == runLevel && x - runStart < MaxSeamRunCells) continue;
             if (runStart >= 0) CreateSeamLink(false, southZ, northZ, runStart, x - 1, runLevel);
             runStart = valid ? x : -1;
             runLevel = valid ? level : -1;

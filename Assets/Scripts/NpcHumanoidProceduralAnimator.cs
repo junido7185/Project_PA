@@ -48,6 +48,7 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
     bool _clipMode;
     Vector3 _clipLastPosition;
     float _clipSpeed;
+    Transform _clipLastParent;
 
     Animator _animator;
     NavMeshAgent _agent;
@@ -158,7 +159,8 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         if (s_clipController == null) s_clipController = Resources.Load<RuntimeAnimatorController>(PlayerLocomotionAnimator.ControllerResource);
         _clipMode = UseClipLocomotion && s_clipController != null && GetComponent<PlayerController>() == null;
         _animator.runtimeAnimatorController = _clipMode ? s_clipController : null;
-        _clipLastPosition = transform.position;
+        _clipLastParent = transform.parent;
+        _clipLastPosition = transform.parent != null ? transform.parent.InverseTransformPoint(transform.position) : transform.position;
         _clipSpeed = 0f;
         if (!_animator.enabled)
             _animator.enabled = true;
@@ -226,8 +228,12 @@ public class NpcHumanoidProceduralAnimator : MonoBehaviour
         if (_animator == null || _animator.runtimeAnimatorController != s_clipController) { _ready = false; return; }
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
-        Vector3 delta = transform.position - _clipLastPosition;
-        _clipLastPosition = transform.position;
+        // 2026-11-04 사용자 제보(항해 컷신에서 동행이 배 위에서 계속 달림): 움직이는 배의 자식이면 배가 간 만큼이 달리기로 잡혔다.
+        // 부모 기준 상대 이동으로 잰다(부모가 바뀐 프레임은 0). 정지한 월드 부모에서는 기존과 같은 값.
+        Vector3 local = transform.parent != null ? transform.parent.InverseTransformPoint(transform.position) : transform.position;
+        Vector3 delta = transform.parent == _clipLastParent ? local - _clipLastPosition : Vector3.zero;
+        if (transform.parent != null) delta = transform.parent.TransformVector(delta);
+        _clipLastPosition = local; _clipLastParent = transform.parent;
         delta.y = 0f;
         float measured = delta.magnitude / dt;
         if (measured > 12f) measured = 0f; // 순간이동·배치 이동은 달리기로 보지 않는다

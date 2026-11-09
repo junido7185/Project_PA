@@ -150,7 +150,7 @@ public class HotbarUI : MonoBehaviour
                 ? (i == selectedIndex ? (_shownHolstered ? new Color(1f, .86f, .56f, .78f) : new Color(1f, .80f, .36f, .96f))
                     : empty ? new Color(.98f, .95f, .87f, .42f) : new Color(.98f, .95f, .87f, .90f))
                 : (i == selectedIndex && !empty) ? new Color(1,.8f,.36f) : new Color(.91f,.91f,.80f);
-            if (firstDayHud) PAUiTheme.Slot(slotUIs[i], slot, i == selectedIndex, _shownHolstered);
+            if (firstDayHud) PAUiTheme.Slot(slotUIs[i], slot, i == selectedIndex, _shownHolstered, hotbar: true);
         }
 
         UpdateCharacterModel();

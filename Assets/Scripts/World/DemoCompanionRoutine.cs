@@ -139,7 +139,8 @@ public sealed class DemoCompanionRoutine : MonoBehaviour
     int _talkPriority = 60;
     bool HoldForTalk()
     {
-        bool talking = DialogueUI.TalkingWith(transform) && !_shopperActive;
+        // 2026-11-04 사용자 제보: 상륙 연출(컷신) 동안 동행이 일과대로 계속 뛰어다녔다 → 연출 중에는 대화처럼 제자리에 서서 플레이어를 본다.
+        bool talking = (DialogueUI.TalkingWith(transform) || ArrivalIntroPresentation.IsPlaying) && !_shopperActive;
         if (!talking)
         {
             if (_talkPaused)
@@ -433,14 +434,14 @@ public sealed class DemoCompanionRoutine : MonoBehaviour
         return true;
     }
 
-    static Vector3 Outward(GameObject shop, Vector3 door)
+    static Vector3 Outward(Component shop, Vector3 door)
     {
         Vector3 outward = Vector3.ProjectOnPlane(door - shop.transform.position, Vector3.up);
         return outward.sqrMagnitude > .04f ? outward.normalized : Vector3.ProjectOnPlane(shop.transform.forward, Vector3.up).normalized;
     }
 
     // 문 바로 앞(손님 동선)은 비우고 옆으로 한 줄: 0번 오른쪽 1.8m, 1번 왼쪽 1.8m, 2번 오른쪽 3m …
-    Vector3 ComputeGatherSpot(GameObject shop)
+    Vector3 ComputeGatherSpot(Component shop)
     {
         var interior = shop.GetComponentInParent<DemoShopInterior>(true);
         Vector3 door = interior != null && interior.outsideSpawn != null ? interior.outsideSpawn.position : shop.transform.position;
@@ -535,7 +536,7 @@ public sealed class DemoCompanionRoutine : MonoBehaviour
     {
         Item tool = producer != null && producer.DemoEquippedTool != null ? producer.DemoEquippedTool.data : null;
         // 레퍼런스 연구 Q-NL06(잔류 도구로 쇼핑 = 실패): 가게에 손님으로 들른 동안은 도구를 넣어 두고, 나오면 다시 든다(장비 사실은 그대로).
-        bool stow = _shopperActive || Current == Activity.GoingToShop || InsideShop();
+        bool stow = _shopperActive || Current == Activity.GoingToShop || Current == Activity.Gathering && AtGatherSpot || InsideShop();
         if (_heldTool != null && _heldTool.activeSelf == stow)
         {
             _heldTool.SetActive(!stow);
