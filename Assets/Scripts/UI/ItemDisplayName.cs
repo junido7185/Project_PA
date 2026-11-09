@@ -18,7 +18,10 @@ public static class ItemDisplayName
             case 2001: return "도끼";
             case 2002: return "곡괭이";
             case 2003: return "잠자리채";
-            case 2004: return "나비";
+            // 2026-11-07 사용자 지시(곤충·동식물은 실제로 있는 종): 주황 날개 모델 = 네발나비, 크림 날개·불빛 = 흰불나방, 주황 다섯 팔 = 별불가사리.
+            case 2004: return "네발나비";
+            case 2036: return "별불가사리";
+            case 3102: return "흰불나방";
             case 2005: return "관리 허브 키트";
             case 2011: return "낚싯대";
             case 2020: return "가판대";
