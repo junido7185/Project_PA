@@ -34,7 +34,7 @@ public static class PA_DemoStructureSetup
         EditorUtility.SetDirty(standItem);
 
         var furniture = RootObject("SimpleFurniture");
-        var chair = Resources.Load<GameObject>("PA_DemoProps/Prop_FroggyChair");
+        var chair = PA_OwnedChairSetup.Model(); // 2026-11-09 Froggy Chair(라이선스 문서 없음, 07 큐 결정) 대신 소유 의자
         FirstDayStudioAssets.Place(chair, furniture.transform, Vector3.zero, 1.1f);
         AddBox(furniture, new Vector3(0, .5f, 0), new Vector3(1.4f, 1, 1.4f));
         var furniturePrefab = SaveBuilding(furniture, "SimpleFurniture");
@@ -74,7 +74,7 @@ public static class PA_DemoStructureSetup
             new DemoPlaceableEntry { item=standItem, key="display-stand", kind=DemoPlaceableKind.DisplayStand, buildingResource="DemoStructure/StarterDisplayStand", surfaces=WorldPlaceableSurface.ShopFloor },
             new DemoPlaceableEntry { item=furnitureItem, key="furniture-chair", kind=DemoPlaceableKind.Furniture, buildingResource="DemoStructure/SimpleFurniture", surfaces=WorldPlaceableSurface.Living | WorldPlaceableSurface.Utility | WorldPlaceableSurface.ShopFloor } // 2026-11-02 가게 꾸밈(손님 매력)
         // 용도별 작업대(조리대·화로)는 PA_CraftingStationsSetup이 만든다. 이 배열을 다시 써도 이미 만든 항목은 남긴다.
-        }.Concat(PA_CraftingStationsSetup.ExistingEntries()).Concat(PA_BeachFindsSetup.ExistingEntries()).ToArray();
+        }.Concat(PA_CraftingStationsSetup.ExistingEntries()).Concat(PA_BeachFindsSetup.ExistingEntries()).Concat(PA_BeachGlassSetup.ExistingEntries()).Concat(PA_PotterySetup.ExistingEntries()).Concat(PA_CollectionPlaqueSetup.ExistingEntries()).Concat(PA_CrystalSetup.ExistingEntries()).Concat(PA_InsectBoardSetup.ExistingEntries()).Concat(PA_ChairVariantsSetup.ExistingEntries()).ToArray();
         var improved = Asset<Item>("Item_ImprovedPickaxe");
         improved.id = 2022; improved.itemName = "구리 곡괭이"; improved.toolType = ToolType.Pickaxe;
         improved.category = ItemCategory.Tool; improved.maxStack = 1; improved.model = art.pickaxe;
@@ -108,6 +108,33 @@ public static class PA_DemoStructureSetup
             PrefabUtility.SaveAsPrefabAsset(shop, path);
         }
         finally { PrefabUtility.UnloadPrefabContents(shop); }
+    }
+
+    // 2026-11-04 ACNH 소품 연구 H1: 기존 가게 프리팹의 InteriorCutaway에 아기자기 소품만 더한다(있으면 지우고 다시).
+    // 배치: Unity -batchmode -executeMethod PA_DemoStructureSetup.FinishCozyInteriorBatch
+    public static void FinishCozyInterior()
+    {
+        const string path = Root + "/PioneerShopBase.prefab";
+        var shop = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var binding = shop.GetComponent<DemoShopInterior>() ?? throw new InvalidOperationException("Interior binding missing.");
+            var room = binding.interior.transform;
+            var old = room.Find("CozyDressing");
+            if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
+            DressInteriorCozy(room);
+            PrefabUtility.SaveAsPrefabAsset(shop, path);
+            Debug.Log("[DEMO-STRUCTURE] Cozy interior dressing: " + room.Find("CozyDressing").childCount + " parts");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(shop); }
+    }
+
+    public static void FinishCozyInteriorBatch()
+    {
+        int code = 0;
+        try { FinishCozyInterior(); AssetDatabase.SaveAssets(); }
+        catch (Exception e) { Debug.LogError("[DEMO-STRUCTURE] " + e); code = 1; }
+        EditorApplication.Exit(code);
     }
 
     public static void RepairShopDoorBoundary()
@@ -182,8 +209,8 @@ public static class PA_DemoStructureSetup
                 RoomBox(living, "TableLeg", new Vector3(-2+x*.45f, .34f, 1.45f+z*.28f), new Vector3(.1f, .68f, .1f), dark);
             RoomBox(living, "LampStem", new Vector3(-2, .95f, 1.45f), new Vector3(.07f, .45f, .07f), dark);
             RoomBox(living, "LampShade", new Vector3(-2, 1.18f, 1.45f), new Vector3(.45f, .3f, .45f), linen);
-            var chair = room.GetComponentsInChildren<Renderer>(true).FirstOrDefault(r => r.name.Contains("Froggy"));
-            if (chair != null) chair.transform.position += shop.transform.TransformVector(new Vector3(1, 0, -.3f));
+            var chair = room.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "CozyChair");
+            if (chair != null) chair.position += shop.transform.TransformVector(new Vector3(1, 0, -.3f));
             // 고정 가구가 차지하는 칸은 기존 placeable zone으로만 제외한다.
             Zone(shop, "StarterBedReserved", WorldPlaceableSurface.None, new Vector3(-4, 0, .2f), new Vector3(1.65f, 4, 2.5f), 30);
             Zone(shop, "LivingTableReserved", WorldPlaceableSurface.None, new Vector3(-2, 0, 1.45f), new Vector3(1.4f, 4, 1), 30);
@@ -226,6 +253,148 @@ public static class PA_DemoStructureSetup
             EditorUtility.SetDirty(item); AssetDatabase.SaveAssets();
         }
         finally { PrefabUtility.UnloadPrefabContents(stand); }
+    }
+
+    // 2026-11-04 ACNH 소품 연구 H1: 진열대(EmptyCounter)에 식탁보 치마·양옆 늘어진 천·청록 단·다리 받침. 윗면 높이(.97 진열 기준)는 그대로.
+    // 배치: Unity -batchmode -executeMethod PA_DemoStructureSetup.FinishCozyDisplayStandBatch
+    public static void FinishCozyDisplayStand()
+    {
+        const string path = Root + "/StarterDisplayStand.prefab";
+        var stand = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var counter = stand.transform.Find("EmptyCounter") ?? throw new InvalidOperationException("EmptyCounter missing.");
+            var old = counter.Find("CozyCounter");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var cozy = new GameObject("CozyCounter").transform; cozy.SetParent(counter, false);
+            var cloth = RoomMaterial("CounterClothCream", new Color(.97f, .93f, .82f));
+            var hem = RoomMaterial("CounterClothHem", new Color(.3f, .58f, .54f));
+            var dark = RoomMaterial("InteriorTrim", new Color(.42f, .26f, .14f));
+            // 윗면 천(매트 위 2mm) + 앞·뒤로 늘어진 치마(위 .93 → 아래 .74) + 청록 단.
+            RoomBox(cozy, "ClothTop", new Vector3(0, .955f, 0), new Vector3(1.2f, .006f, 1f), cloth);
+            foreach (int z in new[] { -1, 1 })
+            {
+                RoomBox(cozy, "ClothSkirt" + z, new Vector3(0, .845f, z * .585f), new Vector3(1.2f, .21f, .01f), cloth);
+                RoomBox(cozy, "ClothHem" + z, new Vector3(0, .745f, z * .59f), new Vector3(1.2f, .035f, .012f), hem);
+            }
+            foreach (int x in new[] { -1, 1 })
+            {
+                RoomBox(cozy, "ClothSide" + x, new Vector3(x * .685f, .87f, 0), new Vector3(.01f, .16f, 1.02f), cloth);
+                RoomBox(cozy, "ClothSideHem" + x, new Vector3(x * .69f, .79f, 0), new Vector3(.012f, .03f, 1.02f), hem);
+                foreach (int z in new[] { -1, 1 })
+                    RoomBox(cozy, "LegFoot", new Vector3(x * .5f, .025f, z * .4f), new Vector3(.17f, .05f, .17f), dark);
+            }
+            PrefabUtility.SaveAsPrefabAsset(stand, path);
+            Debug.Log("[DEMO-STRUCTURE] Cozy display stand: " + cozy.childCount + " parts");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(stand); }
+    }
+
+    public static void FinishCozyDisplayStandBatch()
+    {
+        int code = 0;
+        try { FinishCozyDisplayStand(); AssetDatabase.SaveAssets(); }
+        catch (Exception e) { Debug.LogError("[DEMO-STRUCTURE] " + e); code = 1; }
+        EditorApplication.Exit(code);
+    }
+
+    // 2026-11-04 ACNH 소품 연구 H1: 가게 앞(ShopArchitecture)에 창턱 꽃상자·모서리 화분·현관 매트. 표시 전용(충돌 없음, 문 통로·랜턴 자리 밖).
+    // 배치: Unity -batchmode -executeMethod PA_DemoStructureSetup.FinishCozyExteriorBatch
+    public static void FinishCozyExterior()
+    {
+        const string path = Root + "/PioneerShopBase.prefab";
+        var shop = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var binding = shop.GetComponent<DemoShopInterior>() ?? throw new InvalidOperationException("Interior binding missing.");
+            var facade = binding.exterior.transform.Find("ShopArchitecture") ?? throw new InvalidOperationException("ShopArchitecture missing.");
+            var old = facade.Find("CozyExterior");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var cozy = new GameObject("CozyExterior").transform; cozy.SetParent(facade, false);
+            var box = RoomMaterial("ExteriorPlanterWood", new Color(.48f, .3f, .16f));
+            var soil = RoomMaterial("ExteriorSoil", new Color(.33f, .22f, .14f));
+            var leaf = RoomMaterial("InteriorLeaf", new Color(.42f, .66f, .34f));
+            var pink = RoomMaterial("ExteriorFlowerPink", new Color(.98f, .62f, .72f));
+            var yellow = RoomMaterial("ExteriorFlowerYellow", new Color(1f, .86f, .4f));
+            var white = RoomMaterial("ExteriorFlowerWhite", new Color(.98f, .96f, .9f));
+            var pot = RoomMaterial("InteriorPot", new Color(.8f, .46f, .3f));
+            var mat = RoomMaterial("ExteriorDoormat", new Color(.72f, .52f, .3f));
+            var matEdge = RoomMaterial("InteriorTrim", new Color(.42f, .26f, .14f));
+            var flowers = new[] { pink, yellow, white };
+            foreach (int side in new[] { -1, 1 })
+            {
+                // 창턱(WindowSill y .83, z -7.48, 폭 2.5) 위 꽃상자 + 흙 + 잎 + 꽃 7송이.
+                var sill = new Vector3(side * 3, .97f, -7.56f);
+                RoomBox(cozy, "PlanterBox" + side, sill, new Vector3(2.2f, .2f, .26f), box);
+                RoomBox(cozy, "PlanterSoil" + side, sill + new Vector3(0, .1f, 0), new Vector3(2.1f, .02f, .2f), soil);
+                for (int k = 0; k < 7; k++)
+                {
+                    float x = -.9f + k * .3f;
+                    RoomBox(cozy, $"PlanterLeaf{side}_{k}", sill + new Vector3(x, .17f, 0), new Vector3(.22f, .12f, .18f), leaf);
+                    RoomBox(cozy, $"PlanterFlower{side}_{k}", sill + new Vector3(x + .03f, .26f, -.02f), new Vector3(.12f, .1f, .12f), flowers[(k + (side > 0 ? 1 : 0)) % 3]);
+                }
+                // 정면 모서리 화분(창 바깥 ±4.65). cozy-r158: 문 옆 ±1.35는 NightGlowPresentation의 문 옆 작은 랜턴 자리라 겹쳤다.
+                var potAt = new Vector3(side * 4.65f, 0, -7.75f);
+                RoomBox(cozy, "DoorPot" + side, potAt + new Vector3(0, .2f, 0), new Vector3(.42f, .4f, .42f), pot);
+                RoomBox(cozy, "DoorPotRim" + side, potAt + new Vector3(0, .41f, 0), new Vector3(.48f, .06f, .48f), pot);
+                RoomBox(cozy, "DoorShrubA" + side, potAt + new Vector3(0, .62f, 0), new Vector3(.5f, .38f, .5f), leaf);
+                RoomBox(cozy, "DoorShrubB" + side, potAt + new Vector3(.05f, .86f, -.03f), new Vector3(.32f, .24f, .32f), leaf);
+                RoomBox(cozy, "DoorBloom" + side, potAt + new Vector3(-.12f, .8f, -.2f), new Vector3(.13f, .11f, .1f), side < 0 ? pink : yellow);
+            }
+            // 현관 매트(테두리 + 안쪽).
+            RoomBox(cozy, "DoormatEdge", new Vector3(0, .012f, -8.25f), new Vector3(1.5f, .02f, .85f), matEdge);
+            RoomBox(cozy, "Doormat", new Vector3(0, .024f, -8.25f), new Vector3(1.32f, .01f, .68f), mat);
+            PrefabUtility.SaveAsPrefabAsset(shop, path);
+            Debug.Log("[DEMO-STRUCTURE] Cozy exterior: " + cozy.childCount + " parts");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(shop); }
+    }
+
+    public static void FinishCozyExteriorBatch()
+    {
+        int code = 0;
+        try { FinishCozyExterior(); AssetDatabase.SaveAssets(); }
+        catch (Exception e) { Debug.LogError("[DEMO-STRUCTURE] " + e); code = 1; }
+        EditorApplication.Exit(code);
+    }
+
+    // 2026-11-04 사용자 피드백(영업 중 손님이 문이 아닌 벽으로 드나듦): 손님 길(NavMesh)은 2m 칸으로 만들어지고 가게 앞줄 칸은
+    // 통째로 열려 있어 앞벽(z -7.3) 어디로든 지나갔다. 칸 점유·배치·저장은 그대로 두고, 앞벽을 따라 문 틈(|x|<.85)만 남긴
+    // 깎기 장애물(NavMeshObstacle carve, OutdoorPlacementController.EnsureCarvingObstacle와 같은 방식)을 둔다. 플레이어 이동·문 순간이동은 영향 없음.
+    // 배치: Unity -batchmode -executeMethod PA_DemoStructureSetup.FinishShopFrontNavBlockBatch
+    public static void FinishShopFrontNavBlock()
+    {
+        const string path = Root + "/PioneerShopBase.prefab";
+        var shop = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var old = shop.transform.Find("FrontWallNavBlock");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var root = new GameObject("FrontWallNavBlock").transform; root.SetParent(shop.transform, false);
+            foreach (int side in new[] { -1, 1 })
+            {
+                var go = new GameObject(side < 0 ? "LeftFront" : "RightFront");
+                go.transform.SetParent(root, false);
+                // 옆벽 칸 안쪽(-5.4)까지 겹쳐 틈이 없게, 문 쪽은 .85에서 끊는다.
+                go.transform.localPosition = new Vector3(side * 3.125f, 1f, -7.3f);
+                var obstacle = go.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+                obstacle.shape = UnityEngine.AI.NavMeshObstacleShape.Box;
+                obstacle.size = new Vector3(4.55f, 2f, .35f);
+                obstacle.carving = true;
+                obstacle.carveOnlyStationary = true;
+            }
+            PrefabUtility.SaveAsPrefabAsset(shop, path);
+            Debug.Log("[DEMO-STRUCTURE] Front wall nav block: 2 carving obstacles, door gap ±.85");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(shop); }
+    }
+
+    public static void FinishShopFrontNavBlockBatch()
+    {
+        int code = 0;
+        try { FinishShopFrontNavBlock(); AssetDatabase.SaveAssets(); }
+        catch (Exception e) { Debug.LogError("[DEMO-STRUCTURE] " + e); code = 1; }
+        EditorApplication.Exit(code);
     }
 
     public static void FinishNightLighting()
@@ -283,10 +452,11 @@ public static class PA_DemoStructureSetup
         RoomBox(room.transform, "LeftWall", new Vector3(-5, .6f, -2), new Vector3(.2f, 1.2f, 10), cream);
         RoomBox(room.transform, "RightWall", new Vector3(5, .6f, -2), new Vector3(.2f, 1.2f, 10), cream);
         RoomBox(room.transform, "LivingRug", new Vector3(-3, .04f, .3f), new Vector3(3, .02f, 3), rug);
+        DressInteriorCozy(room.transform);
         var art = FirstDayStudioAssets.Load();
         FirstDayStudioAssets.Place(art.chestClosed, room.transform, shop.transform.TransformPoint(new Vector3(-4, .04f, 1.7f)), .75f);
-        FirstDayStudioAssets.Place(Resources.Load<GameObject>("PA_DemoProps/Prop_FroggyChair"), room.transform,
-            shop.transform.TransformPoint(new Vector3(-3, .04f, .8f)), 1.1f, 180);
+        FirstDayStudioAssets.Place(PA_OwnedChairSetup.Model(), room.transform,
+            shop.transform.TransformPoint(new Vector3(-3, .04f, .8f)), 1.1f, 180).name = "CozyChair";
         var light = new GameObject("WarmInteriorLight").AddComponent<Light>();
         light.transform.SetParent(room.transform, false); light.transform.localPosition = new Vector3(0, 3, -2);
         light.type = LightType.Point; light.color = new Color(1, .81f, .58f); light.range = 12; light.intensity = 2;
@@ -301,6 +471,98 @@ public static class PA_DemoStructureSetup
         binding.outsideSpawn = Spawn(shop.transform, "OutsideSpawn", new Vector3(0, .08f, -8.5f), Vector3.back);
         FinishDoorBoundary(binding);
         room.SetActive(false); binding.exit.gameObject.SetActive(false);
+    }
+
+    // 2026-11-04 ACNH 소품 연구(너굴 리스트) H1: 빈 상자 방 → 아기자기한 방. 표시 전용 부품만 더한다(충돌·배치 구역·이름 불변).
+    // 바닥 널판 줄무늬, 벽 아래 나무 판벽·걸레받이, 뒷벽 창문(십자 창살·창턱 화분)·작은 액자, 러그 테두리·안쪽 무늬.
+    static void DressInteriorCozy(Transform room)
+    {
+        var plankLight = RoomMaterial("InteriorPlankLight", new Color(.64f, .44f, .25f));
+        var plankDark = RoomMaterial("InteriorPlankDark", new Color(.5f, .32f, .17f));
+        var trim = RoomMaterial("InteriorTrim", new Color(.42f, .26f, .14f));
+        var wainscot = RoomMaterial("InteriorWainscot", new Color(.74f, .55f, .34f));
+        var glass = RoomMaterial("InteriorWindowSky", new Color(.62f, .84f, .92f));
+        var frameCream = RoomMaterial("InteriorFrameCream", new Color(.96f, .92f, .82f));
+        var rugBorder = RoomMaterial("InteriorRugBorder", new Color(.88f, .78f, .52f));
+        var rugInner = RoomMaterial("InteriorRugInner", new Color(.36f, .58f, .5f));
+        var leaf = RoomMaterial("InteriorLeaf", new Color(.42f, .66f, .34f));
+        var pot = RoomMaterial("InteriorPot", new Color(.8f, .46f, .3f));
+        var picture = RoomMaterial("InteriorPictureSea", new Color(.34f, .62f, .74f));
+        var pictureSand = RoomMaterial("InteriorPictureSand", new Color(.95f, .82f, .55f));
+        var cozy = new GameObject("CozyDressing").transform; cozy.SetParent(room, false);
+        // 바닥 널판: 0.5m 폭 줄을 세 톤으로(cozy-r149: 1m 두 톤은 굵은 줄무늬로 읽혔다). 바닥 위 3mm.
+        var plankMid = RoomMaterial("InteriorPlankMid", new Color(.57f, .38f, .2f));
+        for (int i = 0; i < 20; i++)
+            RoomBox(cozy, "FloorPlank" + i, new Vector3(-4.75f + i * .5f, .033f, -2), new Vector3(.47f, .006f, 9.9f), i % 3 == 0 ? plankLight : i % 3 == 1 ? plankMid : plankDark);
+        // 뒷벽: 판벽(높이 .9) + 위 손잡이 띠 + 걸레받이. 옆벽은 걸레받이만(잘린 낮은 벽).
+        RoomBox(cozy, "BackWainscot", new Vector3(0, .45f, 2.53f), new Vector3(10f, .9f, .04f), wainscot);
+        RoomBox(cozy, "BackRail", new Vector3(0, .92f, 2.51f), new Vector3(10f, .06f, .07f), trim);
+        RoomBox(cozy, "BackBaseboard", new Vector3(0, .07f, 2.51f), new Vector3(10f, .14f, .07f), trim);
+        for (int k = 0; k < 9; k++) RoomBox(cozy, "BackPanelSeam" + k, new Vector3(-4f + k, .45f, 2.505f), new Vector3(.03f, .8f, .02f), trim);
+        RoomBox(cozy, "LeftBaseboard", new Vector3(-4.87f, .07f, -2), new Vector3(.06f, .14f, 9.9f), trim);
+        RoomBox(cozy, "RightBaseboard", new Vector3(4.87f, .07f, -2), new Vector3(.06f, .14f, 9.9f), trim);
+        // 뒷벽 창문: 크림 창틀 + 하늘빛 유리 + 십자 창살 + 창턱과 작은 화분.
+        var window = new Vector3(.8f, 1.85f, 2.52f);
+        RoomBox(cozy, "WindowFrame", window, new Vector3(1.5f, 1.1f, .05f), frameCream);
+        RoomBox(cozy, "WindowGlass", window + new Vector3(0, 0, -.03f), new Vector3(1.3f, .9f, .02f), glass);
+        RoomBox(cozy, "WindowBarV", window + new Vector3(0, 0, -.05f), new Vector3(.06f, .9f, .02f), frameCream);
+        RoomBox(cozy, "WindowBarH", window + new Vector3(0, 0, -.05f), new Vector3(1.3f, .06f, .02f), frameCream);
+        RoomBox(cozy, "WindowSill", window + new Vector3(0, -.6f, -.08f), new Vector3(1.7f, .07f, .2f), trim);
+        RoomBox(cozy, "SillPot", window + new Vector3(-.45f, -.5f, -.1f), new Vector3(.16f, .14f, .16f), pot);
+        RoomBox(cozy, "SillLeafA", window + new Vector3(-.45f, -.36f, -.1f), new Vector3(.22f, .14f, .2f), leaf);
+        RoomBox(cozy, "SillLeafB", window + new Vector3(-.41f, -.26f, -.12f), new Vector3(.12f, .1f, .12f), leaf);
+        // 작은 액자(바다와 모래 두 칸 그림).
+        var frame = new Vector3(2.7f, 1.95f, 2.52f);
+        RoomBox(cozy, "PictureFrame", frame, new Vector3(.8f, .6f, .05f), trim);
+        RoomBox(cozy, "PictureSea", frame + new Vector3(0, .08f, -.03f), new Vector3(.66f, .3f, .02f), picture);
+        RoomBox(cozy, "PictureSand", frame + new Vector3(0, -.15f, -.03f), new Vector3(.66f, .16f, .02f), pictureSand);
+        // 러그: 밝은 테두리 + 안쪽 진한 판 + 줄무늬 두 줄(정사각 러그를 '깐' 느낌으로).
+        var rugCenter = new Vector3(-3, .052f, .3f);
+        RoomBox(cozy, "RugBorder", rugCenter, new Vector3(3.1f, .004f, 3.1f), rugBorder);
+        RoomBox(cozy, "RugInner", rugCenter + new Vector3(0, .004f, 0), new Vector3(2.6f, .004f, 2.6f), rugInner);
+        RoomBox(cozy, "RugStripeA", rugCenter + new Vector3(0, .008f, .7f), new Vector3(2.3f, .004f, .12f), rugBorder);
+        RoomBox(cozy, "RugStripeB", rugCenter + new Vector3(0, .008f, -.7f), new Vector3(2.3f, .004f, .12f), rugBorder);
+        // 통로 러너(ShopRunner 1.65×5.5, 윗면 .055): 크림 테두리 + 안쪽 청록 + 가운데 작은 마름모 줄.
+        var runnerCenter = new Vector3(0, .059f, -3.8f);
+        var runnerInner = RoomMaterial("InteriorRunnerInner", new Color(.24f, .5f, .46f));
+        RoomBox(cozy, "RunnerBorder", runnerCenter, new Vector3(1.75f, .004f, 5.6f), rugBorder);
+        RoomBox(cozy, "RunnerInner", runnerCenter + new Vector3(0, .004f, 0), new Vector3(1.45f, .004f, 5.3f), runnerInner);
+        for (int k = 0; k < 5; k++)
+        {
+            RoomBox(cozy, "RunnerDiamond" + k, runnerCenter + new Vector3(0, .008f, -2f + k), new Vector3(.24f, .004f, .24f), rugBorder);
+            cozy.Find("RunnerDiamond" + k).localRotation = Quaternion.Euler(0, 45, 0);
+        }
+        // 침대(LivingFurnishings: 침대 -4,.,.15 / 이불 윗면 .625 / 머리판 1.3): 이불 접힌 띠·조각보 무늬·작은 쿠션·머리판 갓·다리.
+        var quiltLight = RoomMaterial("InteriorQuiltLight", new Color(.42f, .66f, .6f));
+        var quiltWarm = RoomMaterial("InteriorQuiltWarm", new Color(.95f, .72f, .52f));
+        RoomBox(cozy, "BlanketFold", new Vector3(-4, .632f, .36f), new Vector3(1.37f, .03f, .22f), frameCream);
+        RoomBox(cozy, "QuiltPatchA", new Vector3(-4.3f, .628f, -.05f), new Vector3(.38f, .01f, .38f), quiltLight);
+        RoomBox(cozy, "QuiltPatchB", new Vector3(-3.7f, .628f, -.45f), new Vector3(.38f, .01f, .38f), quiltWarm);
+        RoomBox(cozy, "QuiltPatchC", new Vector3(-3.7f, .628f, -.05f), new Vector3(.38f, .01f, .38f), quiltLight);
+        RoomBox(cozy, "QuiltPatchD", new Vector3(-4.3f, .628f, -.45f), new Vector3(.38f, .01f, .38f), quiltWarm);
+        RoomBox(cozy, "Cushion", new Vector3(-3.72f, .7f, .78f), new Vector3(.32f, .2f, .14f), quiltWarm);
+        cozy.Find("Cushion").localRotation = Quaternion.Euler(-18, 12, 0);
+        RoomBox(cozy, "HeadboardCap", new Vector3(-4, 1.18f, 1.3f), new Vector3(1.62f, .07f, .18f), plankLight);
+        foreach (int x in new[] { -1, 1 })
+        {
+            RoomBox(cozy, "HeadboardPost" + x, new Vector3(-4 + x * .77f, .62f, 1.3f), new Vector3(.1f, 1.2f, .16f), plankLight);
+            RoomBox(cozy, "BedFoot" + x, new Vector3(-4 + x * .64f, .03f, -.92f), new Vector3(.12f, .06f, .12f), trim);
+        }
+        // 책상(윗면 .75, -2,.,1.45)과 램프: 책 더미·머그·램프 받침과 갓 띠.
+        var bookRed = RoomMaterial("InteriorBookRed", new Color(.78f, .36f, .3f));
+        var bookBlue = RoomMaterial("InteriorBookBlue", new Color(.32f, .46f, .7f));
+        RoomBox(cozy, "BookA", new Vector3(-2.38f, .78f, 1.5f), new Vector3(.3f, .05f, .22f), bookRed);
+        RoomBox(cozy, "BookB", new Vector3(-2.36f, .83f, 1.5f), new Vector3(.27f, .05f, .2f), bookBlue);
+        RoomBox(cozy, "BookC", new Vector3(-2.39f, .875f, 1.49f), new Vector3(.24f, .04f, .19f), frameCream);
+        cozy.Find("BookB").localRotation = Quaternion.Euler(0, 12, 0);
+        RoomBox(cozy, "Mug", new Vector3(-1.62f, .81f, 1.3f), new Vector3(.11f, .12f, .11f), frameCream);
+        RoomBox(cozy, "MugHandle", new Vector3(-1.555f, .81f, 1.3f), new Vector3(.03f, .07f, .05f), frameCream);
+        RoomBox(cozy, "LampBase", new Vector3(-2, .765f, 1.45f), new Vector3(.22f, .03f, .22f), trim);
+        RoomBox(cozy, "LampShadeBand", new Vector3(-2, 1.05f, 1.45f), new Vector3(.47f, .04f, .47f), quiltWarm);
+        // 칸막이(LivingDivider 끝 -.65,.36,-1.65) 위 작은 화분.
+        RoomBox(cozy, "DividerPot", new Vector3(-.85f, .45f, -1.65f), new Vector3(.2f, .18f, .2f), pot);
+        RoomBox(cozy, "DividerLeafA", new Vector3(-.85f, .62f, -1.65f), new Vector3(.3f, .18f, .26f), leaf);
+        RoomBox(cozy, "DividerLeafB", new Vector3(-.82f, .75f, -1.62f), new Vector3(.16f, .14f, .16f), leaf);
     }
 
     static Material RoomMaterial(string name, Color color)

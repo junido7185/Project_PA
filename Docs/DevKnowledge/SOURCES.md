@@ -1,0 +1,26 @@
+# 출처 원장 (자동 생성 — `devk.py export`)
+
+| id | 플랫폼 | 상태 | 점수 | 제목 | 작성자 | 링크 | 메모 |
+|---|---|---|---|---|---|---|---|
+| yt:dHYcio6fRI4 | youtube | analyzed | 0.91 | NavMeshAgent Avoidance in Depth - 5 Key Takeaways for Optimal Avoidance  / AI Se | LlamAcademy | https://www.youtube.com/watch?v=dHYcio6fRI4 | 프레임(공식 자동 프레임 4)+공개 코드+oEmbed. 음성/자막 없음(설치 거절) |
+| web:557f43bede3a | web | collected | 0.8 | Unity Scripting API: NavMeshAgent.avoidancePriority |  | https://docs.unity.com/en-us/engine/current/script-reference/unityengine/ai/navmeshagent/avoidancepriority | 공식: 0 가장 중요~99, 기본 50, 회피할 때 우선순위 낮은 에이전트는 무시 |
+| web:96eea6f11bef | web | collected | 0.76 | llamacademy/ai-series-part-32 (MIT) - NavMeshAgent avoidance demo source |  | https://github.com/llamacademy/ai-series-part-32 | ScenarioManager.cs 전역 회피 예측 시간·우선순위 무작위 |
+| web:824534fa83d8 | web | collected | 0.75 | Unity Scripting API: NavMesh.avoidancePredictionTime |  | https://docs.unity.com/en-us/engine/current/script-reference/unityengine/ai/navmesh/avoidancepredictiontime | 공식: 기본 2.0초, 클수록 일찍 피함, 조정 범위 0.5~5.0 |
+| web:b9769bfe5c77 | web | collected | 0.7 | snape/RVO2 - Reciprocal Collision Avoidance (Apache-2.0) RVOSimulator.h |  | https://github.com/snape/RVO2 | timeHorizon: 클수록 일찍 반응하지만 속도 선택 자유가 줄어듦(원리 근거) |
+| web:89e1fe47441f | web | found | 0.68 | LlamAcademy AI Series Part 3 - Animated 3D model based on NavMeshAgent movement  |  | https://github.com/llamacademy/ai-series-part-3 | 에이전트 속도↔애니메이션 동기(P.A. 이미 NpcHumanoidProceduralAnimator로 처리, 미열람) |
+| yt:UGh4VSeKPNA | youtube | analyzed | 0.61 | AI Navigation 2.0 - Runtime NavMesh surfaces | Unity | https://www.youtube.com/watch?v=UGh4VSeKPNA | 프레임+oEmbed. 주제 관련 낮음(런타임 표면·도착 확인) |
+| web:55a5d1870cbd | web | collected | 0.6 | NavMeshAgents are pushing each other (Unity forum) |  | https://forum.unity.com/threads/navmeshagents-are-pushing-eachother.356405 | 같은 우선순위끼리 밀어냄 → avoidancePriority 다르게, stoppingDistance 확인 |
+| web:522e0a53e340 | web | collected | 0.6 | AI Navigation 2.0: About NavMesh Obstacles (carving) |  | https://docs.unity3d.com/Packages/com.unity.ai.navigation@2.0/manual/AboutObstacles.html | 공식: 정지하면 구멍을 깎아 경로가 돌아감, 움직이면 회피만, 깎기 결과는 다음 프레임 |
+| web:81b67672648c | web | found | 0.53 | LlamAcademy AI Series Part 11 - State Machine AI: idle, patrol, chase (source) |  | https://github.com/llamacademy/ai-series-part-11 | idle/patrol 상태 전환. 상점 손님 FSM 비교용(미열람) |
+| web:15c5f04aa039 | web | collected | 0.51 | How to fix Unity NavMesh agents stuttering under heavy load |  | https://bugnet.io/blog/how-to-fix-unity-navmesh-agents-stuttering-under-heavy-load | SetDestination 프레임 분산·먼 에이전트 회피 품질 낮춤·flow field(2차 출처) |
+| web:8e3311ccfd83 | web | collected | 0.46 | Multiple NavMeshAgents waiting each other to move to destination (Unity) |  | https://discussions.unity.com/t/multiple-navmeshagents-waiting-each-other-to-move-to-destination/246550 | 좁은 문에서 같은 우선순위끼리 멈춤 → 한쪽 우선순위 올리기 |
+| web:535592c103cf | web | collected | 0.41 | How to make a crowd of agents around an area (Unity forum) |  | https://forum.unity.com/threads/how-to-make-a-crowd-of-agents-around-an-area.502820 | 속도를 조금씩 다르게 + 미리 간격 두기 → 간단한 군중. 점유 검사 방식은 제자리 맴돌기 생김 |
+| web:052fc41832d3 | web | collected | 0.39 | GDC 2018: Bringing life to the NPCs of Final Fantasy XV using AI (Miyake) |  | https://gamegrin.com/news/gdc-2018-bringing-life-to-the-npcs-of-final-fantasy-xv-using-ai | Meta/Character/Animation AI 3층, 스마트 오브젝트(의자 앉는 방식이 NPC마다 다름). 고르는 방법은 기사에 없음 |
+| web:af69012a322d | web | collected | 0.39 | Photon Quantum 3 - Navigation Avoidance (official doc, other engine) |  | https://doc.photonengine.com/quantum/v3/manual/navigation/avoidance | 회피 계산 불안정→떨림 설명. 원리 비교용 |
+| web:ed7544699b2d | web | collected | 0.38 | Smart Areas - A Modular Approach to Simulation of Daily Life in an Open World Vi |  | https://scitepress.org/Papers/2014/49211 | 영역 기반 일상 행동(논문) |
+| web:d4ce9b66e688 | web | collected | 0.36 | Witchbrook Dev Blog: NPC schedules (article; YouTube embed lost) |  | https://rpgsite.net/news/17928-witchbrook-day-night-cycle-npc-schedule-buses-gameplay-dev-blog-chucklefish | 일과가 날씨·계절·행사로 바뀜. 영상 id는 기사 변환에서 사라짐 |
+| web:a6b974a9164f | web | collected | 0.31 | How to make NPC Line System (Roblox devforum, Luau) |  | https://devforum.roblox.com/t/how-to-make-npc-line-system/2673477 | 줄 서기: 줄 인덱스×간격으로 목적지 다시 계산(엔진 다름) |
+| ig:DVhQ3fGjtaR | instagram | analyzed | 0.27 | Devlog 005 - soldiers now return to patrol after a fight | deadinside_dev | https://www.instagram.com/reel/DVhQ3fGjtaR/ | 캡션+표지 프레임. 기술 정보 낮음(전투 뒤 순찰 복귀 상태 전환) |
+| web:3543675c59d3 | web | collected | 0.27 | Village Life prototype - Added AI schedule system (itch devlog) |  | https://mcshooterz.itch.io/village-life-prototype/devlog/381620/added-ai-schedule-system | 시간대별 일과 시스템 추가(짧은 글) |
+| ig:DLsD68BMImw | instagram | skipped | 0.24 | Anak merchant - not just a merchant, a whole personality (negotiate/persuade) | battlerise | https://www.instagram.com/reel/DLsD68BMImw/ | 관련도 .2 — 분석 생략(캡션만) |
+| ig:DVepP4njq9S | instagram | skipped | 0.18 | Devlog 004 - combat AI enemies and friendlies attack each other | deadinside_dev | https://www.instagram.com/reel/DVepP4njq9S/ | 관련도 .1 — 분석 생략(캡션만) |

@@ -68,7 +68,7 @@ public static class PA_CraftingStationsSetup
             Price = 175, MaxStack = 8, Category = ItemCategory.Luxury, Tool = ToolType.None, Bench = WorkbenchType.Kitchen, ModelKey = "skewer",
             Ingredients = new[] { ("Items/Item_Fish", 8, 1), ("Items/Item_Fish_RedSnapper", 3001, 1), ("Items/Item_Fish_YellowTang", 3002, 1), ("Items/Item_Wood", 3, 1) } },
         new Product { Asset = "Item_SmokedFish", Recipe = "Recipe_SmokedFish", Id = 2033, Name = "훈제 생선",
-            Description = "나무 연기로 천천히 훈제한 참치. 생선구이보다 조금 더 받고, 나무가 남을 때 좋아요.",
+            Description = "나무 연기로 천천히 훈제한 생선. 참치·고등어·송어 무엇으로든 만들어요. 생선구이보다 조금 더 받고, 나무가 남을 때 좋아요.", // 2026-11-09 고등어·송어 대체 레시피와 맞게(전에는 "훈제한 참치")
             Price = 68, MaxStack = 12, Category = ItemCategory.Processed, Tool = ToolType.None, Bench = WorkbenchType.Kitchen, ModelKey = "smoked",
             Ingredients = new[] { ("Items/Item_Fish", 8, 1), ("Items/Item_Wood", 3, 2) } },
     };

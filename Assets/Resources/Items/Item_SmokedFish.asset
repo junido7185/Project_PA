@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   id: 2033
   itemName: "\uD6C8\uC81C \uC0DD\uC120"
-  description: "\uB098\uBB34 \uC5F0\uAE30\uB85C \uCC9C\uCC9C\uD788 \uD6C8\uC81C\uD55C
-    \uCC38\uCE58. \uC0DD\uC120\uAD6C\uC774\uBCF4\uB2E4 \uC870\uAE08 \uB354 \uBC1B\uACE0,
-    \uB098\uBB34\uAC00 \uB0A8\uC744 \uB54C \uC88B\uC544\uC694."
+  description: "\uB098\uBB34 \uC5F0\uAE30\uB85C \uCC9C\uCC9C\uD788 \uD6C8\uC81C\uD55C \uC0DD\uC120. \uCC38\uCE58\u00B7\uACE0\uB4F1\uC5B4\u00B7\uC1A1\uC5B4 \uBB34\uC5C7\uC73C\uB85C\uB4E0 \uB9CC\uB4E4\uC5B4\uC694. \uC0DD\uC120\uAD6C\uC774\uBCF4\uB2E4 \uC870\uAE08 \uB354 \uBC1B\uACE0, \uB098\uBB34\uAC00 \uB0A8\uC744 \uB54C \uC88B\uC544\uC694."
   icon: {fileID: 21300000, guid: dcbb96854bbaa6e46a7a10b01b97abcd, type: 3}
   maxStack: 12
   model: {fileID: 6528644846078476879, guid: e1e2abf4a89267a4fb47d9f5b3c000ce, type: 3}

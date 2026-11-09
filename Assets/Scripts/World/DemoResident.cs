@@ -81,16 +81,27 @@ public sealed class DemoResident : MonoBehaviour, IInteractable
         item.basePrice > 0 && !WorldPlaceableKitCatalog.TryKit(item, out _, out _);
 
     // 역할별로 반기는 물건: 광부 = 동전·화석·주괴, 벌목꾼 = 판재·공예품·토기, 농부 = 조리한 음식·작물.
-    public bool Likes(Item item)
+    public bool Likes(Item item) => RoleLikes(ResidentNames.RoleFromKey(CompanionId), item);
+
+    public static bool RoleLikes(ResidentRole role, Item item)
     {
-        var role = ResidentNames.RoleFromKey(CompanionId);
+        if (item == null) return false;
         switch (role)
         {
             case ResidentRole.Miner: return item.id == 2040 || item.id == 2041 || item.id == 6 || item.id == 2029;
-            case ResidentRole.Lumberjack: return item.id == 7 || item.id == 2025 || item.id == 2037 || item.id == 2042;
-            case ResidentRole.Farmer: return item.id == 10 || item.id == 2032 || item.id == 2033 || item.id == 1 || item.id == 2 || item.id == 5;
+            case ResidentRole.Lumberjack: return item.id == 7 || item.id == 2025 || item.id == 2037 || item.id == 2042 || item.id == 2056;
+            case ResidentRole.Farmer: return item.id == 10 || item.id == 2032 || item.id == 2033 || item.id == 2044 || item.id == 2046 || item.id == 1 || item.id == 2 || item.id == 5;
         }
         return item.category == ItemCategory.Luxury;
+    }
+
+    // 도감 상세 '선물' 줄(연구 §8.1 쓰임): 이 물건을 특히 좋아하는 동행의 역할 이름. 없으면 null.
+    public static string LikedByLabel(Item item)
+    {
+        if (!CanGift(item)) return null;
+        foreach (var role in new[] { ResidentRole.Miner, ResidentRole.Lumberjack, ResidentRole.Farmer })
+            if (RoleLikes(role, item)) { string name = ResidentNames.CanonName(role); return $"{name}{ResidentNames.Josa(name, "이")} 좋아해요 · {ResidentNames.RoleTitle(role)}"; }
+        return null;
     }
 
     void Gift(GameObject player, Item held)
@@ -113,6 +124,8 @@ public sealed class DemoResident : MonoBehaviour, IInteractable
         }
         finally { _inGift = false; }
         GatherFeedback.Pickup();
+        // 레퍼런스 04: 기뻐하는 순간 머리 둘레로 별(좋아하는 선물은 분홍·금빛으로 더 많이).
+        NpcEmote.Burst(transform, liked ? 1 : 0);
         string line = liked ? $"{name}{ResidentNames.Josa(name, "이다").Replace("다", "라니")}! 제가 정말 좋아하는 거예요. 고마워요!"
             : held.category == ItemCategory.Luxury ? $"이렇게 좋은 걸요? {name}, 소중히 둘게요." : $"{name}, 고마워요. 잘 쓸게요.";
         talk?.SayToPlayer(_thanksLine != null ? line + " " + _thanksLine : line);
@@ -151,6 +164,7 @@ public sealed class DemoResident : MonoBehaviour, IInteractable
         if (!inventory.TryReceiveToHotbar(item, count) && !inventory.AddInstance(new ItemInstance(item, count)))
             GatherFeedback.SpawnDrop(item, transform.position, inventory.transform.position, null, count);
         ThanksGiven++;
+        NpcEmote.Burst(transform, 2);
         string name = ItemDisplayName.For(item);
         string thanks = $"우리 사이가 한 뼘 가까워졌네요. 이거 받아 줘요, {name} ×{count}.";
         if (_inGift) _thanksLine = thanks; else talk.SayToPlayer(thanks);

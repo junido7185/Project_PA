@@ -9,10 +9,10 @@ public sealed class DiscoveryLog : MonoBehaviour
 {
     public static readonly (string section, int[] ids)[] Sections =
     {
-        ("바다", new[] { 8, 3001, 3002 }),
-        ("곤충", new[] { 2004 }),
-        ("해변", new[] { 2034, 2035, 2036 }),
-        ("땅속", new[] { 2039, 2040, 2041 }),
+        ("물고기", new[] { 8, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010 }),
+        ("곤충", new[] { 2004, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3110, 3111 }),
+        ("해변", new[] { 2034, 2035, 2036, 2045, 2047, 2054 }),
+        ("땅속", new[] { 2039, 2040, 2041, 2049, 2052, 2055 }),
     };
 
     static readonly HashSet<int> Found = new HashSet<int>();
@@ -109,14 +109,30 @@ public sealed class DiscoveryLog : MonoBehaviour
             if (quiet) continue;
             // 섹션(바다·곤충·해변·땅속)이나 도감 전체를 채운 순간은 완성 알림으로 바꿔 보여 준다.
             string done = Found.Count == Tracked.Count ? "도감을 모두 채웠어요!" : SectionCompleted(id);
+            bool plaque = done != null && GrantPlaque();
             FirstDayWorldPresentation.Toast(done != null
-                ? $"{done}\n마지막 발견: {ItemDisplayName.For(slot.item)} · 도감 {Found.Count}/{Tracked.Count}"
+                ? (plaque ? $"{done} 기념패 +1\n마지막 발견: {ItemDisplayName.For(slot.item)} · 도감 {Found.Count}/{Tracked.Count}"
+                          : $"{done}\n마지막 발견: {ItemDisplayName.For(slot.item)} · 도감 {Found.Count}/{Tracked.Count}")
                 : $"새 발견! {ItemDisplayName.For(slot.item)}\n도감 {Found.Count}/{Tracked.Count}");
             if (done != null) Completions++;
         }
     }
 
     public static int Completions { get; private set; }
+    public static int PlaquesGiven { get; private set; }
+
+    // 2026-11-04 완성 보상(연구 §8.2: 현금·생산 배율 없는 표지): 섹션·전체를 처음 채운 순간 도감 기념패(2051, 배치 장식) 하나.
+    // 완성 순간은 '처음 기록'에서만 생기므로(이어하기는 조용히 되돌림) 같은 섹션으로 두 번 받지 않는다. 가방이 차면 발밑에 떨어뜨린다.
+    static bool GrantPlaque()
+    {
+        var item = Resources.Load<Item>("Items/Item_CollectionPlaque");
+        var inventory = Inventory.instance;
+        if (item == null || inventory == null) return false;
+        if (!inventory.TryReceiveToHotbar(item, 1) && !inventory.AddInstance(new ItemInstance(item, 1)))
+            GatherFeedback.SpawnDrop(item, inventory.transform.position, inventory.transform.position, null, 1);
+        PlaquesGiven++;
+        return true;
+    }
 
     static string SectionCompleted(int id)
     {

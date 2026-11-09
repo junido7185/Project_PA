@@ -17,11 +17,15 @@ public sealed class CoastalVegetationField : MonoBehaviour
     const int TintBase = 0, TintDry = 1, TintDeep = 2, TintSeaweed = 3, TintRock = 4, TintBeachRock = 5;
     const float TuftSpread = 1.3f; // x/z vs y: tufts read as wide fans (Dinkum ref 12·13·14)
     // Verifier v6: rocks read as narrow posts -> wide boulders, never taller than 0.9x their narrowest width.
-    const float RockSpreadMin = 1.6f, RockSpreadMax = 2.2f, RockMaxAspect = .9f;
+    // 2026-11-07 sardine-reg167(빌드에서 물속 바위가 처음 그려진 뒤): 1.6~2.2 펼침 + .6~1.4 크기는 폭 2~3m 유리판처럼 보였다 → 좁힌다.
+    const float RockSpreadMin = 1.3f, RockSpreadMax = 1.7f, RockMaxAspect = .9f;
     // Verifier v7 (Dinkum ref 03·05·14): sand stays sand, dressed with dune-grass clumps (sand cells within
     // 10 cells of grass/water, low-frequency patches) and sparse small beach rocks.
     const float DuneNoiseScale = .17f, SpawnClear = 5f, SupplyClear = 3.5f, ScatterShadowMin = .2f;
-    const int DuneReach = 10, DressDune = 1, DressScatter = 2;
+    const int DuneReach = 10, DressDune = 1, DressScatter = 2, DressWaterline = 3;
+    // 2026-11-04 (Dinkum ref 03): flat stones straddle the sand waterline, lit tops just above the surface. Pass 3 rocks
+    // stay 0.2m under water, so the first water cell (0.5m shelf) had none. Own random stream: passes 1-4 stay identical.
+    const float WaterlineChance = .32f, WaterlineTopMin = .08f, WaterlineTopMax = .24f, WaterlineAspect = .8f; // 2026-11-08 .6은 근접 시점에서 네모 판처럼 보였다
     // Verifier v8 (Dinkum ref 02·14): v7 grew one uniform carpet on one side of the arrival. Patches now cover ~30% of
     // reach cells, a higher-frequency lane mask skips ~35% of patch cells, each 4x4-cell block keeps at most 6 dressed
     // cells, and a dressed cell holds 3-6 tufts in 2-4 sub-clusters (0.4-0.7 m) with open sand between them.
@@ -40,7 +44,8 @@ public sealed class CoastalVegetationField : MonoBehaviour
     {
         Color.white, new Color(.95f,.88f,.55f), new Color(.62f,.80f,.45f),
         // Rocks: HDR warm grey so lit tops read warm grey through the water tint (Dinkum ref 03), not teal glass.
-        new Color(.30f,.55f,.42f), new Color(1.25f,1.18f,1.02f),
+        // 2026-11-07: HDR 1.25 들어올림은 빌드 화면에서 옅은 청록 유리처럼 보였다(레퍼런스 03의 회색 돌과 다름) → 회갈색 돌 쪽으로 낮춤.
+        new Color(.30f,.55f,.42f), new Color(.95f,.92f,.85f),
         // Beach rocks/shells on dry sand: pale warm stone, no water tint to compensate for.
         new Color(.95f,.90f,.82f)
     };
@@ -88,7 +93,13 @@ public sealed class CoastalVegetationField : MonoBehaviour
     readonly Dictionary<(int, bool), Material> _foliageVariants = new Dictionary<(int, bool), Material>();
     Material _foliage;
     int _seaweed, _rocks, _shoreChunks, _landCandidates, _underwaterCandidates;
-    int _duneCells, _duneCandidates, _duneKept, _scatterCandidates, _scatterKept;
+    int _duneCells, _duneCandidates, _duneKept, _scatterCandidates, _scatterKept, _waterlineCandidates, _waterlineKept;
+    // QA/캡처 전용: 예산 안에 남은 물가 바위와 그 옆 모래 칸 중심(촬영 위치). 표시 전용이라 게임 규칙은 읽지 않는다.
+    public static readonly List<(Vector3 Stone, Vector3 Shore)> WaterlineStones = new List<(Vector3, Vector3)>();
+    readonly Dictionary<int, Vector3> _waterlineShore = new Dictionary<int, Vector3>();
+    // 2026-11-09 칠성무당벌레(LadybugSpawner): 예산 안에 남은 꽃 송이 자리. 표시 전용 목록(게임 규칙은 읽지 않는다).
+    public static readonly List<Vector3> FlowerSpots = new List<Vector3>();
+    readonly HashSet<int> _flowerOrders = new HashSet<int>();
     int _duneSubclusters, _duneLaneSkipped, _duneBlockCapped, _duneArrivalLeft, _duneArrivalRight, _duneArrivalPromoted, _duneMaskCells;
     int _landCandidateChunks, _landKeptChunks, _duneCandidateChunks, _duneKeptChunks, _duneKeptCells;
     int _duneArrivalKeptLeft, _duneArrivalKeptRight;
@@ -122,11 +133,39 @@ public sealed class CoastalVegetationField : MonoBehaviour
                   $"beach=dune{_duneKept}/{_duneCandidates}(cells{_duneCells} sub{_duneSubclusters} laneSkipped{_duneLaneSkipped} " +
                   $"blockCapped{_duneBlockCapped} arrivalL{_duneArrivalLeft}/R{_duneArrivalRight} promoted{_duneArrivalPromoted} " +
                   $"mask{_duneMaskCells} selectedCells{_duneKeptCells} selectedArrivalL{_duneArrivalKeptLeft}/R{_duneArrivalKeptRight}) " +
-                  $"scatter{_scatterKept}/{_scatterCandidates} landChunks{_landKeptChunks}/{_landCandidateChunks} " +
+                  $"scatter{_scatterKept}/{_scatterCandidates} waterline{_waterlineKept}/{_waterlineCandidates} landChunks{_landKeptChunks}/{_landCandidateChunks} " +
                   $"duneChunks{_duneKeptChunks}/{_duneCandidateChunks} " +
                   $"caps=weed{SeaweedChunkCap}/rock{RockChunkCap} budget={InstanceBudget}/{UnderwaterBudget} " +
                   $"chunks={_chunks.Length} batches={batches} materials={_materials.Count} foliage={(_foliage != null ? _foliageVariants.Count.ToString() : "fallback")} " +
                   $"build={watch.ElapsedMilliseconds}ms");
+    }
+
+    // QA/캡처 전용: 한 점 주변 표시 인스턴스 상태(보임·덮임·실제 행렬 높이·재질). 게임 규칙은 읽지 않는다.
+    public string QaNear(Vector3 point, float radius)
+    {
+        var text = new System.Text.StringBuilder();
+        foreach (var chunk in _chunks)
+        for (int i = 0; i < chunk.Instances.Length; i++)
+        {
+            var instance = chunk.Instances[i];
+            if (Flat(instance.Position - point).magnitude > radius) continue;
+            var model = _models[instance.Model];
+            Vector3 origin = instance.Root.GetColumn(3);
+            float sy = instance.Root.lossyScale.y;
+            string material = "-";
+            if (instance.Batches.Length > 0)
+            {
+                var batch = chunk.Batches[instance.Batches[0]];
+                var m = batch.Material;
+                material = $"{m.name}/{m.shader.name} sup={m.shader.isSupported} inst={m.enableInstancing} q={m.renderQueue} " +
+                           $"col={(m.HasProperty(BaseColorId) ? m.GetColor(BaseColorId).ToString() : "-")} mesh={batch.Mesh.name}:{batch.Mesh.vertexCount} " +
+                           $"count={batch.Count} parts={model.Parts.Length} minY={model.MinY:F2} sizeY={model.SizeY:F2} w={model.Width:F2} " +
+                           $"m0={(instance.Root * model.Parts[0].Local).GetColumn(3)}";
+            }
+            text.Append($"[{(instance.Underwater ? "uw" : "land")} vis={instance.Visible} cov={instance.Covered} pos={instance.Position} " +
+                        $"top={origin.y + sy * (model.MinY + model.SizeY):F2} sy={sy:F2} mat={material}] ");
+        }
+        return text.ToString();
     }
 
     // Shop footprint etc.: permanently hide presentation instances inside the covered ground.
@@ -148,6 +187,7 @@ public sealed class CoastalVegetationField : MonoBehaviour
 
     void Build(WorldGenerationResult generated, Vector3 harbor, FirstDayStudioAssets assets)
     {
+        _flowerOrders.Clear();
         var definition = _grid.Definition;
         _width = definition.Width; _height = definition.Height;
         float cellSize = definition.CellSize;
@@ -256,6 +296,7 @@ public sealed class CoastalVegetationField : MonoBehaviour
                         random.NextDouble() < .15 ? TintBase : tint, false, priority, ref order, TuftSpread);
                 }
                 if (edge[i] && random.NextDouble() < .3)
+                    if (_flowerOrders.Add(order))
                     Add(land, assets.flowers, random, ground + ClampInCell(Jitter(random, cellSize * .4f), cellSize * .46f), c,
                         Lerp(random, .3f, .45f), TintBase, false, priority, ref order);
                 if (t > .7f && random.NextDouble() < .16)
@@ -325,10 +366,12 @@ public sealed class CoastalVegetationField : MonoBehaviour
                 float fit = (depth - .2f) / .9f;
                 for (int k = 0; k < rocks; k++)
                 {
-                    float size = Lerp(random, .6f, 1.4f) * (k == 0 ? 1 : .75f);
+                    float size = Lerp(random, .5f, 1.05f) * (k == 0 ? 1 : .75f);
                     float height = Mathf.Min(size, fit);
                     var offset = ClampInCell(cluster + Jitter(random, cellSize * .3f), cellSize * .4f);
-                    if (height < .3f) continue;
+                    // 2026-11-04 mackerel-r141(빌드에서 바위가 처음 그려진 뒤): 0.5m 단붕(첫 물 칸)에서 높이만 깎인 바위는
+                    // 폭 2~3m의 옅은 유리판처럼 보였다 → 0.5m 이상 들어갈 깊이에서만 둔다. 첫 칸 물가는 Pass 5가 맡는다.
+                    if (height < .5f) continue;
                     // Wide boulders; depth-limited rocks lose height but keep the full-size width (flat lit tops, Dinkum ref 03).
                     float spread = Lerp(random, RockSpreadMin, RockSpreadMax) * size / height;
                     Add(underwater, assets.rocks, random, new Vector3(centre.x + offset.x, seabed - .1f * height, centre.z + offset.z), c,
@@ -489,6 +532,54 @@ public sealed class CoastalVegetationField : MonoBehaviour
             }
         }
 
+        // Pass 5 (ref 03): waterline stones on first water cells that touch walkable sand. Drawn with land (no water
+        // tint lift): the part above the surface reads pale warm stone, the submerged part takes the water colour.
+        var waterlineRandom = new System.Random(7741);
+        // 이끼 바위는 물가에서 초록 뚜껑 상자처럼 읽혀(mackerel-r141) 맨돌만 쓴다.
+        var waterlineRocks = System.Array.FindAll(assets.rocks, r => r != null && !r.name.Contains("Moss"));
+        if (waterlineRocks.Length == 0) waterlineRocks = assets.rocks;
+        _waterlineShore.Clear();
+        for (int z = 0; z < _height; z++)
+        for (int x = 0; x < _width; x++)
+        {
+            int i = z * _width + x;
+            var c = new Vector2Int(x, z);
+            if (!valid[i] || !cells[i].HasWater || waterDistance[i] != 1 || !_grid.CellToWorld(c, out var centre)) continue;
+            if (InHarborLane(centre) || Flat(centre - boat).magnitude < 7f || !BeachClear(centre)) continue;
+            // Side toward the sand: the stone leans onto the shoreline instead of floating mid-cell.
+            Vector3 toSand = Vector3.zero;
+            for (int n = 0; n < 4; n++)
+            {
+                int nx = x + (n == 0 ? 1 : n == 1 ? -1 : 0), nz = z + (n == 2 ? 1 : n == 3 ? -1 : 0);
+                if (nx < 0 || nz < 0 || nx >= _width || nz >= _height) continue;
+                var near = cells[nz * _width + nx];
+                if (!valid[nz * _width + nx] || near.HasWater || near.GroundType != WorldGroundType.Sand || !near.IsWalkable) continue;
+                toSand += new Vector3(nx - x, 0, nz - z);
+            }
+            if (toSand == Vector3.zero || waterlineRandom.NextDouble() >= WaterlineChance) continue;
+            toSand.Normalize();
+            // Shooting spot: centre of the nearest sand neighbour at its own ground height (QA only).
+            Vector3 shore = centre + toSand * cellSize;
+            var sandCell = new Vector2Int(x + Mathf.RoundToInt(toSand.x), z + Mathf.RoundToInt(toSand.z));
+            if (_grid.CellToWorld(sandCell, out var sandCentre)) shore = sandCentre;
+            float surface = WorldChunkMeshBuilder.OpeningWaterHeight(definition, cells[i]);
+            float seabed = surface - definition.ElevationStep - WorldSurfaceArtProjection.CellSeabedOffset(1);
+            int stones = 1 + (waterlineRandom.NextDouble() < .4 ? 1 : 0);
+            Vector3 cluster = toSand * cellSize * .28f + Jitter(waterlineRandom, cellSize * .12f);
+            float priority = Flat(centre - harbor).magnitude - 60;
+            for (int k = 0; k < stones; k++)
+            {
+                var offset = ClampInCell(cluster + Jitter(waterlineRandom, cellSize * .2f), cellSize * .44f);
+                // Base sinks 10% into the bed; the top clears the surface by 8-24cm (smaller companion stays lower).
+                float top = Lerp(waterlineRandom, WaterlineTopMin, WaterlineTopMax) * (k == 0 ? 1f : .5f);
+                float height = (surface - seabed + top) / .9f;
+                var position = new Vector3(centre.x + offset.x, seabed - .1f * height, centre.z + offset.z);
+                _waterlineShore[order] = shore;
+                Add(land, waterlineRocks, waterlineRandom, position, c, height, TintBeachRock, false, priority, ref order,
+                    Lerp(waterlineRandom, 1.2f, 1.5f), maxAspect: WaterlineAspect, dressing: DressWaterline);
+            }
+        }
+
         // Underwater retains its existing capped selection. Land keeps whole dune-cell groups and a fair
         // per-chunk share before using harbor priority for the remaining budget. Coverage is budget-dependent.
         underwater.Sort(ByPriority); land.Sort(ByPriority);
@@ -520,7 +611,9 @@ public sealed class CoastalVegetationField : MonoBehaviour
         _shoreChunks = shoreChunks.Count;
         var landSelected = SelectLand(land, InstanceBudget - UnderwaterInstanceCount, out int landKept);
         LandInstanceCount = landKept;
-        _duneCandidates = _duneKept = _scatterCandidates = _scatterKept = 0;
+        _duneCandidates = _duneKept = _scatterCandidates = _scatterKept = _waterlineCandidates = _waterlineKept = 0;
+        WaterlineStones.Clear();
+        FlowerSpots.Clear();
         var duneShown = new bool[total];
         _duneKeptCells = _duneArrivalKeptLeft = _duneArrivalKeptRight = 0;
         for (int i = 0; i < land.Count; i++)
@@ -542,6 +635,14 @@ public sealed class CoastalVegetationField : MonoBehaviour
                 }
             }
             else if (land[i].Dressing == DressScatter) { _scatterCandidates++; if (inBudget) _scatterKept++; }
+            if (inBudget && _flowerOrders.Contains(land[i].Order)) FlowerSpots.Add(land[i].Position);
+            if (land[i].Dressing == DressWaterline)
+            {
+                _waterlineCandidates++;
+                if (!inBudget) continue;
+                _waterlineKept++;
+                if (_waterlineShore.TryGetValue(land[i].Order, out var shore)) WaterlineStones.Add((land[i].Position, shore));
+            }
         }
         // Dune ground mask: patch strength under dressed cells whose tufts survived the budget, 0.5 on dry neighbours.
         _duneMask = new float[total];

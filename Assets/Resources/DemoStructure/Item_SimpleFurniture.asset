@@ -18,7 +18,7 @@ MonoBehaviour:
     \uC815\uCC29\uC9C0\uC5D0 \uB193\uC544 \uAFB8\uBA70\uC694."
   icon: {fileID: 21300000, guid: fbc012a567c6d89419b6637b6d377366, type: 3}
   maxStack: 1
-  model: {fileID: 9174387294504619635, guid: f319dacf48d0e234a97f8d3aa84e1ebc, type: 3}
+  model: {fileID: 8686810145310871388, guid: 7da6b60065774704699ae18bc76c563e, type: 3}
   basePrice: 10
   toolType: 0
   category: 4

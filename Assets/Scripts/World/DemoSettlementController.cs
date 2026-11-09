@@ -632,10 +632,23 @@ public sealed class DemoSettlementController : MonoBehaviour
     // 2026-11-03 조개 장식(해변 발견물 → 가게 꾸밈): 의자와 같은 꾸밈 효과(합계 상한 ShopDecorCap). 손님이 앉는 자리는 의자만.
     public const string ShellDecorKey = "decor-shells";
 
-    public int CountShopDecor() => ShopDecorObjects(DecorKey, ShellDecorKey).Count;
+    // 2026-11-09 의자 색 변형(산호빛·바다빛, PA_ChairVariantsSetup)도 같은 의자로 센다(손님 쉼터·꾸밈 수).
+    public static readonly string[] ChairKeys = { DecorKey, "furniture-chair-coral", "furniture-chair-sea" };
+    public int CountShopDecor() => ShopDecorObjects(ChairKeys.Append(ShellDecorKey).ToArray()).Count;
 
     // 상점 건물 안(막힘 구역 제외)에 놓인 의자들. 손님이 앉아 쉬는 자리(CustomerArrivalController)이기도 하다.
-    public System.Collections.Generic.List<GameObject> ShopChairs() => ShopDecorObjects(DecorKey);
+    public System.Collections.Generic.List<GameObject> ShopChairs() => ShopDecorObjects(ChairKeys);
+
+    // 2026-11-04 꾸밈 테마 세트(DecorThemeSets): 키별 가게 안 배치물, 한 점이 가게 안(막힘 구역 제외)인지.
+    public System.Collections.Generic.List<GameObject> ShopDecorWith(params string[] keys) => ShopDecorObjects(keys);
+    public bool InsideShop(Vector3 point)
+    {
+        if (placement == null || string.IsNullOrEmpty(shopId)) return false;
+        var shopPlaced = placement.Placements.FirstOrDefault(p => p.InstanceId == shopId);
+        if (shopPlaced?.GameObject == null) return false;
+        return shopPlaced.GameObject.GetComponentsInChildren<WorldPlaceableZone>(true)
+            .Any(z => z.surface != WorldPlaceableSurface.None && z.Contains(point));
+    }
 
     System.Collections.Generic.List<GameObject> ShopDecorObjects(params string[] keys)
     {

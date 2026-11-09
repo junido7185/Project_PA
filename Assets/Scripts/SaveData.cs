@@ -18,6 +18,15 @@ public class SaveData
     public List<int> digSpotsDug;
     // 2026-11-03 발견 도감(COLLECTION.md): 처음 손에 넣은 대상 아이템 id. 과거 저장은 null → 가방에서 조용히 다시 찾는다.
     public List<int> discoveredItemIds;
+    // 2026-11-04 곤충(FOREST_BEETLE.md): 그날 잡은 곤충 개체 이름. 저장→이어하기로 같은 개체를 다시 잡는 반복을 막는다(v17 추가 필드).
+    public int crittersCaughtDay;
+    public List<string> crittersCaught;
+    // 2026-11-09 가게 실내 러그(ShopRugSwap, 너굴 리스트 연구 H5 러그 교체): 깔린 러그 키. 옛 저장은 null → 기본 러그(추가 필드).
+    public string shopRugStyle;
+    // 2026-11-09 가게 뒷벽 걸이(ShopWallHang, 연구 H5 벽걸이): "" 빈 벽 / "plaque" 도감 기념패. 옛 저장은 null → 빈 벽(추가 필드).
+    public string shopWallHang;
+    // 2026-11-09 가게 책상 위(ShopDeskShelf, 연구 H5 탁상 위): 올려 둔 해변·땅속 발견물 id. 0/옛 저장 = 빈 책상(추가 필드).
+    public int shopDeskItem;
 
     // 플레이어 정보
     public int money;

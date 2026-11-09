@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Fish_Trout
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3008
+  itemName: "\uC1A1\uC5B4"
+  description: "\uC12C\uC744 \uD750\uB974\uB294 \uAC15\uC5D0\uC11C \uB0AE\uC5D0 \uBB3C\uAE38\uC744
+    \uB530\uB77C \uC624\uB974\uB0B4\uB9AC\uB294 \uBB3C\uACE0\uAE30. \uC870\uB9AC\uB300\uC5D0\uC11C
+    \uB098\uBB34\uC640 \uD568\uAED8 \uD6C8\uC81C \uC0DD\uC120\uC73C\uB85C \uB9CC\uB4E4
+    \uC218 \uC788\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: d62e04295e3ec6244a3cc1450445ebb5, type: 3}
+  maxStack: 99
+  model: {fileID: 235866072325801475, guid: ec8ca4bb3391022419fe66450e598844, type: 3}
+  basePrice: 25
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

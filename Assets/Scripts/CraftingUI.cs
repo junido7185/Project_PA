@@ -44,6 +44,7 @@ public class CraftingUI : MonoBehaviour
     readonly Dictionary<RecipeData, Image> _rows = new Dictionary<RecipeData, Image>();
     Image _detailIcon;
     TextMeshProUGUI _detailName, _detailMeta, _detailDescription, _detailUses, _craftLabel;
+    public string DetailUsesText => _detailUses != null ? _detailUses.text : ""; // 캡처 확인용
     Transform _ingredientParent;
     Button _craftButton;
     float _popUntil = -1f;
@@ -685,17 +686,23 @@ public class CraftingUI : MonoBehaviour
             var station = StationIn(entry);
             lines.Add(UseLine("설치", station != null
                 ? $"정착지에 놓으면 {StationLabel(station.workbenchType)}에서 {StationRole(station.workbenchType)}을 할 수 있어요"
-                : entry.key == DemoSettlementController.DecorKey
+                // qa232: 산호빛·바다빛 의자도 ChairKeys로 손님 +1·쉼터인데 "손님 수는 그대로"로 나왔다.
+                : System.Array.IndexOf(DemoSettlementController.ChairKeys, entry.key) >= 0
                     ? $"가게 안에 놓으면 그날 밤 손님이 1명 더 오고, 손님이 앉아 쉬어 가요(꾸밈 최대 {DemoSettlementController.ShopDecorCap}개)"
                     : entry.key == DemoSettlementController.ShellDecorKey
                         ? $"가게 안에 놓으면 그날 밤 손님이 1명 더 와요(의자와 합쳐 꾸밈 최대 {DemoSettlementController.ShopDecorCap}개)"
-                        : "집이나 정착지에 놓아 꾸며요"));
+                        : "집이나 정착지·가게 바닥에 놓아 꾸며요(손님 수는 그대로)"));
         }
+        // qa232: 러그는 쓰임이 없다고 나왔다 → 가게 고정 자리(러그·벽·책상) 쓰임도 보인다.
+        var rug = ShopRugSwap.ForItem(item);
+        if (rug != null) lines.Add(UseLine("깔기", "들고 가게 안 생활 러그 위에서 [E] — 무늬가 바뀌고, 깔려 있던 러그는 돌려받아요"));
+        if (ShopWallHang.IsPlaque(item)) lines.Add(UseLine("걸기", "들고 가게 뒷벽(책상과 창문 사이) 앞에서 [E] — 벽에 걸면 손님이 알아봐요"));
+        if (ShopDeskShelf.Accepts(item)) lines.Add(UseLine("소장", "들고 가게 책상 앞에서 [E] — 램프 옆에 올려 두면 손님이 알아봐요"));
         if (item.toolType != ToolType.None)
         {
             string verb = item.toolType == ToolType.Axe ? "나무를 베요" : item.toolType == ToolType.Pickaxe ? "바위를 캐요"
                 : item.toolType == ToolType.FishingRod ? "물고기를 낚아요" : item.toolType == ToolType.Net ? "곤충을 잡아요"
-                : item.toolType == ToolType.Shovel ? "흙이 들썩이는 자리를 파요(점토·옛 동전·화석)" : "작업에 써요";
+                : item.toolType == ToolType.Shovel ? "흙이 들썩이는 자리를 파요(점토·옛 동전·화석·토기 조각)" : "작업에 써요";
             int uses = ToolDurability.MaxFor(item);
             int power = ToolPower.For(item);
             string tier = power >= 3 ? " · 힘 3(가장 단단한 바위도)" : power == 2 ? " · 힘 2(철 광맥도 캐요)" : "";

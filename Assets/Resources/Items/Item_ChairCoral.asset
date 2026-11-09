@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_ChairCoral
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 2058
+  itemName: "\uC0B0\uD638\uBE5B \uC758\uC790"
+  description: "\uB098\uBB34 \uC758\uC790 \uCFE0\uC158\uC744 \uC0B0\uD638 \uC870\uAC01
+    \uBE5B\uC73C\uB85C \uBB3C\uB4E4\uC600\uC5B4\uC694. \uAC00\uAC8C\uC5D0 \uB450\uBA74
+    \uC190\uB2D8\uC774 \uC549\uC544 \uC26C\uC5B4\uC694."
+  icon: {fileID: 21300000, guid: 5997b33b09353de4790e5a22f9671fd8, type: 3}
+  maxStack: 1
+  model: {fileID: 2845810006746299623, guid: 356c90aef607a77418ba430fbc4b91ab, type: 3}
+  basePrice: 10
+  toolType: 0
+  category: 4
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

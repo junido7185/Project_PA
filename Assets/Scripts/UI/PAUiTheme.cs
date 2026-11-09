@@ -46,7 +46,7 @@ public static class PAUiTheme
         button.colors = colors;
     }
 
-    public static void Slot(InventorySlotUI ui, InventorySlot slot, bool selected = false, bool holstered = false)
+    public static void Slot(InventorySlotUI ui, InventorySlot slot, bool selected = false, bool holstered = false, bool hotbar = false)
     {
         if (ui == null) return;
         bool empty = slot == null || slot.IsEmpty;
@@ -63,6 +63,10 @@ public static class PAUiTheme
         }
         CategoryTile(ui.transform, empty ? null : slot.item);
         Durability(ui.transform,empty ? null : slot.instance);
+        // 2026-11-04 레퍼런스 10·13: 고른 핫바 칸은 한 단계 크게(배치는 레이아웃 그룹 소유라 크기만, 가방 칸은 selected=false라 그대로).
+        // 형제 순서는 레이아웃 그룹의 칸 순서라 건드리지 않는다.
+        // 칸 자체의 새로 고침(InventorySlotUI, hotbar=false)은 핫바가 정한 크기를 건드리지 않는다.
+        if (hotbar) ui.transform.localScale = Vector3.one * (selected && !holstered ? 1.1f : selected ? 1.05f : 1f);
     }
 
     // 2026-11-03 레퍼런스 08(가방·핫바): 아이콘 뒤 둥근 받침을 종류 색으로 칠해 가방을 훑어볼 때 도구·바다 생물·귀중품·가공품·설비가
@@ -76,9 +80,9 @@ public static class PAUiTheme
         if (item.toolType == ToolType.Building || item.id == 1001 || item.id == 2005 || item.id == 2012 || item.id == 2013 || item.id == 2014 ||
             item.id == 2020 || item.id == 2023 || item.id == 2024 || item.id == 2021 || item.id == 11) return TileKit;
         if (item.toolType != ToolType.None || item.category == ItemCategory.Tool) return TileTool;
-        if (item.category == ItemCategory.Luxury || item.id == 2040 || item.id == 2041) return TileValuable;
+        if (item.category == ItemCategory.Luxury || item.id == 2040 || item.id == 2041 || item.id == 2052 || item.id == 2055) return TileValuable;
         if (item.category == ItemCategory.Processed || item.category == ItemCategory.Utility) return TileGoods;
-        bool sea = item.id == 8 || item.id >= 3000 && item.id < 3100 || item.id == 2004 || item.id >= 2034 && item.id <= 2036;
+        bool sea = item.id == 8 || item.id >= 3000 && item.id < 3100 || item.id == 2004 || item.id == 3101 || item.id == 3102 || item.id == 3103 || item.id == 3104 || item.id == 3105 || item.id == 3106 || item.id == 3107 || item.id == 3108 || item.id == 3109 || item.id == 3110 || item.id == 3111 || item.id >= 2034 && item.id <= 2036 || item.id == 2045 || item.id == 2047 || item.id == 2054;
         return sea ? TileSea : TileMaterial;
     }
 
@@ -160,6 +164,15 @@ public static class PAUiTheme
         tooltip.icon.preserveAspect = true;
         Position(tooltip.nameText,new Vector2(84,-16),new Vector2(230,40),BodySize,Teal);
         Position(tooltip.descriptionText,new Vector2(18,-78),new Vector2(294,76),CaptionSize,Ink);
+        // 2026-11-04 ui-r119: 설명 + 조작 줄이 길면(튼튼한 낚싯대) 고정 168px 상자 밖으로 넘쳐 핫바를 덮었다 → 설명 높이에 맞춰 상자를 늘린다(최소 그대로).
+        var description = tooltip.descriptionText;
+        description.enableAutoSizing = false; description.fontSize = CaptionSize;
+        float needed = description.GetPreferredValues(description.text, 294f, 0f).y + 4f;
+        if (needed > 76f)
+        {
+            description.rectTransform.sizeDelta = new Vector2(294f, needed);
+            rect.sizeDelta = new Vector2(330f, 78f + needed + 16f);
+        }
     }
 
     static void Position(TMP_Text text, Vector2 position, Vector2 size, float fontSize, Color color)

@@ -102,6 +102,69 @@ MonoBehaviour:
     entrance: {x: 0, y: -1}
     surfaces: 14
     canMove: 1
+  - item: {fileID: 11400000, guid: 5c455ceaa6b5f924eb5b43b3a666c74e, type: 2}
+    key: decor-glass
+    buildingResource: DemoStructure/GlassMobile
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
+    canMove: 1
+  - item: {fileID: 11400000, guid: e7e38b7c3d7d62e4f8f3930c669621cb, type: 2}
+    key: decor-mosaic
+    buildingResource: DemoStructure/PotteryMosaic
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
+    canMove: 1
+  - item: {fileID: 11400000, guid: 522c9eb1e7bb81b4c8fbabe559cc293d, type: 2}
+    key: decor-plaque
+    buildingResource: DemoStructure/CollectionPlaque
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
+    canMove: 1
+  - item: {fileID: 11400000, guid: a826c11244fe03743b191e16b8279e02, type: 2}
+    key: decor-crystal
+    buildingResource: DemoStructure/CrystalStand
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
+    canMove: 1
+  - item: {fileID: 11400000, guid: b27fb94502ac1834794894bd3f3dcc4a, type: 2}
+    key: decor-insectboard
+    buildingResource: DemoStructure/InsectBoard
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
+    canMove: 1
+  - item: {fileID: 11400000, guid: 4c0145300845089458e692cd53d78123, type: 2}
+    key: furniture-chair-coral
+    buildingResource: DemoStructure/SimpleFurniture_Coral
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
+    canMove: 1
+  - item: {fileID: 11400000, guid: 00972c87f1ee098438c7ec5448f85501, type: 2}
+    key: furniture-chair-sea
+    buildingResource: DemoStructure/SimpleFurniture_Sea
+    kind: 4
+    size: {x: 1, y: 1}
+    footprint: []
+    entrance: {x: 0, y: -1}
+    surfaces: 14
+    canMove: 1
   upgrades:
   - recipe: {fileID: 11400000, guid: b7c76881e781eae4bb65509e9ef5268f, type: 2}
     tool: {fileID: 11400000, guid: 1b9f8a9f909e80c4cbfaf1113a4c4258, type: 2}

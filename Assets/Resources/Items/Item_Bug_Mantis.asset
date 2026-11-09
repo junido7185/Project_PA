@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 868b0efb97aad9d49a32e9ba08050062, type: 3}
+  m_Name: Item_Bug_Mantis
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  id: 3110
+  itemName: "\uC655\uC0AC\uB9C8\uADC0"
+  description: "\uC55E\uB2E4\uB9AC\uB97C \uBAA8\uC73C\uACE0 \uAF43 \uC704\uC5D0\uC11C
+    \uBC14\uB78C\uCC98\uB7FC \uBAB8\uC744 \uC0B4\uB791 \uD754\uB4DC\uB294 \uC5F0\uB450\uC0C9
+    \uC0AC\uB9C8\uADC0. \uB0AE\uC5D0 \uAF43 \uC704\uB97C \uC798 \uC0B4\uD3B4\uBD10\uC694."
+  icon: {fileID: 21300000, guid: dad07311f3aca164aa3f2b63c3862841, type: 3}
+  maxStack: 20
+  model: {fileID: 968572864572737701, guid: 429ffca042228b94f9391bd9c5627c60, type: 3}
+  basePrice: 20
+  toolType: 0
+  category: 0
+  requiredTier: 0
+  buildingToBuild: {fileID: 0}
+  cropPrefab: {fileID: 0}

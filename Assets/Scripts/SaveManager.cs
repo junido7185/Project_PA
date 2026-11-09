@@ -252,6 +252,14 @@ public class SaveManager : MonoBehaviour
                 data.beachFindsCollected = BeachFinds.Instance.CollectedSlots();
             }
             if (gameObject.scene.name == DemoRouteController.WorldScene) data.discoveredItemIds = DiscoveryLog.Snapshot();
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.shopRugStyle = ShopRugSwap.Current;
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.shopWallHang = ShopWallHang.Current;
+            if (gameObject.scene.name == DemoRouteController.WorldScene) data.shopDeskItem = ShopDeskShelf.Current;
+            if (gameObject.scene.name == DemoRouteController.WorldScene && BugCritter.CaughtDay > 0)
+            {
+                data.crittersCaughtDay = BugCritter.CaughtDay;
+                data.crittersCaught = BugCritter.CaughtSnapshot();
+            }
             if (DigSpots.Instance != null && DigSpots.Instance.Day > 0)
             {
                 data.digSpotsDay = DigSpots.Instance.Day;
@@ -515,6 +523,10 @@ public class SaveManager : MonoBehaviour
         BeachFinds.Instance?.RestoreCollected(data.beachFindsDay, data.beachFindsCollected);
         DigSpots.Instance?.RestoreDug(data.digSpotsDay, data.digSpotsDug);
         if (gameObject.scene.name == DemoRouteController.WorldScene) DiscoveryLog.Restore(data.discoveredItemIds);
+        if (gameObject.scene.name == DemoRouteController.WorldScene) BugCritter.RestoreCaught(data.crittersCaughtDay, data.crittersCaught);
+        if (gameObject.scene.name == DemoRouteController.WorldScene) ShopRugSwap.Pending = data.shopRugStyle ?? "";
+        if (gameObject.scene.name == DemoRouteController.WorldScene) ShopWallHang.Pending = data.shopWallHang ?? "";
+        if (gameObject.scene.name == DemoRouteController.WorldScene) ShopDeskShelf.Pending = data.shopDeskItem;
 
         // 3-b. 친밀도 복구 — v4
         if (FriendshipService.Instance != null && data.friendshipData != null)
