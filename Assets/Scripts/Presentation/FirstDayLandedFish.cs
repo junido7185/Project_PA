@@ -40,7 +40,9 @@ public sealed class FirstDayLandedFish : MonoBehaviour, IInteractable
         if (renderers.Length == 0) { Destroy(root); return null; }
         Bounds bounds = renderers[0].bounds;
         foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
-        visual.transform.localScale *= .85f / Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z, .01f);
+        // 뭍에 올린 몸길이: 정어리(3003)는 작게, 고등어(3004)는 길게, 나머지는 기존 .85m.
+        float landedLength = item.id == 3003 ? .62f : item.id == 3004 ? .95f : item.id == 3005 ? .75f : item.id == 3006 ? 1f : item.id == 3007 ? .55f : item.id == 3008 ? .8f : item.id == 3009 ? 1.25f : item.id == 3010 ? .66f : .85f; // 전시 다듬기: 장어(가늘어 1.1은 작게 보임)·붕어(.55는 참치 옆에서 너무 작음)
+        visual.transform.localScale *= landedLength / Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z, .01f);
         bounds = renderers[0].bounds;
         foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
         visual.transform.position += root.transform.position - bounds.center + Vector3.up * (bounds.size.y / 2 + .05f);

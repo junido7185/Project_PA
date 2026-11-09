@@ -1,0 +1,30 @@
+{
+  "_설명": "도입하지 않았지만 계속 지켜볼 후보. 점검기가 새 릴리스·라이선스 변경·재검토 날짜 도래를 알려 준다. verdict: adopt(도입) / later(전시 뒤 검토) / no(비권장·불필요). 판정 근거는 Docs/00_CURRENT/TOOLING_DESIGN_2026-11-09.md",
+  "candidates": [
+    {"name": "Unity 공식 플러그인", "repo": "Unity-Technologies/unity-agent-plugin", "verdict": "adopt", "why": "Unity 공식 스킬(uGUI·URP·후처리·Shader Graph·오디오·현지화·물리). 스킬만 있고 MCP·훅 없음, 필요할 때만 로드. 베타 0.1.9, Unity Companion License — 설치 승인 대기"},
+    {"name": "session-report(공식)", "repo": "anthropics/claude-plugins-official", "verdict": "later", "why": "로컬 사용량 분석. 스크립트는 설치 없이 직접 실행 가능(2026-11-09 측정에 사용)"},
+    {"name": "claude-md-management(공식)", "repo": "anthropics/claude-plugins-official", "verdict": "later", "why": "CLAUDE.md 점검·정리. 지침 슬림화할 때 1회 사용"},
+    {"name": "odiff", "repo": "dmtrKovalenko/odiff", "npm": "odiff-bin", "verdict": "adopt", "why": "화면 픽셀 차이 맵(설치 승인됨, 사용자 직접 설치 대기)"},
+    {"name": "hanspell", "repo": "9beach/hanspell", "npm": "hanspell", "verdict": "adopt", "why": "대사 맞춤법(문장이 다음·네이버로 전송됨 — 게임 문자열만)"},
+    {"name": "jsfxr", "repo": "chr15m/jsfxr", "npm": "jsfxr", "verdict": "adopt", "why": "효과음 원형"},
+    {"name": "mermaid-cli", "repo": "mermaid-js/mermaid-cli", "npm": "@mermaid-js/mermaid-cli", "verdict": "adopt", "why": "흐름도 렌더"},
+    {"name": "gh CLI", "repo": "cli/cli", "verdict": "adopt", "why": "GitHub 플러그인 대체(로그인은 사용자)"},
+    {"name": "csharp-lsp(공식 플러그인)", "repo": "anthropics/claude-plugins-official", "verdict": "later", "why": "Serena와 겹침. 클라이언트 버그 해결 확인 뒤 비교"},
+    {"name": "MCP for Blender", "repo": "ahujasid/blender-mcp", "pypi": "blender-mcp", "verdict": "later", "why": "헤드리스 스크립트로 충분. 텔레메트리 끄고 필요 시"},
+    {"name": "Blender 공식 MCP", "url": "https://www.blender.org/lab/mcp-server/", "verdict": "later", "why": "공식판 안정화 확인"},
+    {"name": "ComfyUI", "repo": "comfyanonymous/ComfyUI", "verdict": "later", "why": "FLUX.1 schnell(Apache-2.0)로 컨셉 이미지, 전시 뒤"},
+    {"name": "ACE-Step", "repo": "ace-step/ACE-Step", "verdict": "later", "why": "로컬 음악 생성(MIT), 전시 뒤"},
+    {"name": "Yarn Spinner", "repo": "YarnSpinnerTool/YarnSpinner-Unity", "verdict": "later", "why": "현지화 필요 시 대사 엔진 1순위, 세이브 호환 검토 필요"},
+    {"name": "hyperframes", "repo": "heygen-com/hyperframes", "verdict": "later", "why": "트레일러 자막·타이틀 카드가 필요할 때 원본 밖에서 1회"},
+    {"name": "draw.io MCP", "repo": "jgraph/drawio-mcp", "verdict": "later", "why": "Mermaid로 부족할 때"},
+    {"name": "unslop", "repo": "heydamir/unslop", "verdict": "no", "why": "웹 프레임워크 전용, impeccable과 중복"},
+    {"name": "taste-skill", "repo": "Leonxlnx/taste-skill", "verdict": "no", "why": "웹사이트 전용"},
+    {"name": "Claude-Code-Game-Studios", "repo": "Donchitos/Claude-Code-Game-Studios", "verdict": "no", "why": "템플릿 통째 도입형, 기존 운영 체계와 충돌"},
+    {"name": "sprite-gen", "repo": "aldegad/sprite-gen", "verdict": "no", "why": "2D 스프라이트·유료 생성"},
+    {"name": "Game-Dev-Agentic-Skills", "repo": "thedivergentai/Game-Dev-Agentic-Skills", "verdict": "no", "why": "Godot/Bevy 전용"},
+    {"name": "Playwright MCP", "repo": "microsoft/playwright-mcp", "verdict": "no", "why": "웹 전용, 내장 브라우저와 중복"},
+    {"name": "VoiceStudio", "repo": "debpalash/VoiceStudio", "verdict": "no", "why": "AGPL·원격 스크립트 설치·음성 복제 동의 위험"},
+    {"name": "GhidraMCP", "repo": "LaurieWired/GhidraMCP", "verdict": "no", "why": "타 게임 바이너리 분석 금지 원칙과 충돌"},
+    {"name": "Hunyuan3D", "repo": "Tencent-Hunyuan/Hunyuan3D-2", "verdict": "no", "why": "라이선스 지역에서 한국 제외 — 라이선스 바뀌면 재검토"}
+  ]
+}

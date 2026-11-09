@@ -563,6 +563,46 @@ public sealed class WorldGameplayAdapterService : MonoBehaviour
             bug.AddComponent<SphereCollider>().isTrigger=true;
             bug.AddComponent<BugCritter>().Configure(Resources.Load<Item>("Items/Item_Butterfly"),i);
         }
+        // 2026-11-04 숲 가장자리 장수풍뎅이(Content-insects-plan §B): DemoPioneerReport가 곤충 목록을 읽기 전에 놓는다.
+        ForestBeetleSpawner.Spawn(_runtimeRoot.transform, world.Harbor, _generated.ResourceSpawns, _grid);
+        // 2026-11-09 넓적사슴벌레(연구 B08): 세 번째 나무 밑동, 14~24시에만.
+        ForestBeetleSpawner.SpawnStag(_runtimeRoot.transform, world.Harbor, _generated.ResourceSpawns, _grid);
+        // 2026-11-09 알락하늘소(연구 B09): 다음 나무 밑동, 8~20시, 더듬이 흔들림.
+        ForestBeetleSpawner.SpawnLonghorn(_runtimeRoot.transform, world.Harbor, _generated.ResourceSpawns, _grid);
+        // 2026-11-09 왕귀뚜라미(연구 B07): 다음 나무 그늘 풀숲, 16~24·6~8시, 울음 소리 + 풀 떨림.
+        ForestBeetleSpawner.SpawnCricket(_runtimeRoot.transform, world.Harbor, _generated.ResourceSpawns, _grid);
+        // 2026-11-04 저녁 등불 나방(§C.3): 가게가 생긴 뒤 문 옆 등불 가까이에 놓고 17~6시에만 보인다.
+        new GameObject("FirstDay_LampMoths").AddComponent<LampMothSpawner>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-04 꾸밈 테마 세트: 세트가 다 놓인 밤 손님이 알아보는 말풍선(표시 전용).
+        new GameObject("FirstDay_DecorSetAppreciation").AddComponent<DecorSetAppreciation>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-04 꾸밈 작은 움직임(H3): 놓인 유리 모빌이 바람에 흔들린다(표시 전용).
+        new GameObject("FirstDay_DecorAmbientMotion").AddComponent<DecorAmbientMotion>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-07 가게 문: 사람이 다가오면 열린다(표시 전용).
+        new GameObject("FirstDay_ShopDoorSwing").AddComponent<ShopDoorSwing>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 칠성무당벌레(연구 B03): 풀밭 가장자리 꽃 위, 낮에만.
+        new GameObject("FirstDay_Ladybugs").AddComponent<LadybugSpawner>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 고추잠자리(연구 B06): 물가 바위 위, 낮에만.
+        new GameObject("FirstDay_Dragonflies").AddComponent<DragonflySpawner>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 호박벌(연구 B05): 꽃 사이를 옮겨 다니고 앉았을 때 잡는다, 낮에만.
+        new GameObject("FirstDay_Bumblebees").AddComponent<BumblebeeSpawner>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 방아깨비(연구 B04): 풀밭·모래 가장자리 땅 위, 폴짝 뛴 뒤 멈췄을 때 잡는다, 낮에만.
+        new GameObject("FirstDay_Grasshoppers").AddComponent<GrasshopperSpawner>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 왕사마귀(연구 B10): 꽃 위 한 마리, 좌우로 살랑, 낮에만.
+        new GameObject("FirstDay_Mantis").AddComponent<MantisSpawner>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 가게 실내 러그 교체(너굴 리스트 연구 H5).
+        new GameObject("FirstDay_ShopRugSwap").AddComponent<ShopRugSwap>().transform.SetParent(_runtimeRoot.transform);
+        new GameObject("FirstDay_ShopWallHang").AddComponent<ShopWallHang>().transform.SetParent(_runtimeRoot.transform);
+        new GameObject("FirstDay_ShopDeskShelf").AddComponent<ShopDeskShelf>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 자리 물고기(연구 F07): 숭어는 항구 앞 물가에서만.
+        FishingSpot.HarborZone = world.Harbor;
+        // 2026-11-09 담수·하구(연구 F09·F12): 생성 섬에 이미 있는 강·연못·하구를 낚시 구역으로.
+        FishingSpot.SetFreshwater(_generated, _grid);
+        // qa232: 연못 구덩이 안 턱이 맨흙 판으로 보였다 → 표시 전용 풀·꽃(충돌·저장 없음).
+        PondShoreDressing.Build(_runtimeRoot.transform, assets, _grid, FishingSpot.PondCellSet);
+        // 전시용: 시간대가 맞아야 보이는 새 물고기·곤충을 그 시간에 한 번씩 알린다(표시 전용).
+        new GameObject("FirstDay_DiscoveryHints").AddComponent<DiscoveryHints>().transform.SetParent(_runtimeRoot.transform);
+        // 2026-11-09 애반딧불이(연구 B12): 강가 마른 땅 위, 17–24시.
+        new GameObject("FirstDay_Fireflies").AddComponent<FireflySpawner>().transform.SetParent(_runtimeRoot.transform);
         world.gameObject.AddComponent<DemoPioneerReport>().Configure(world.GetComponent<DemoSettlementController>(), _grid, _inventory);
         return true;
     }

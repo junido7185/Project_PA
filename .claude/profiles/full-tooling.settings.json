@@ -1,0 +1,9 @@
+{
+  "enabledPlugins": {
+    "ecc@ecc": true,
+    "claude-mem@thedotmack": true,
+    "figma@claude-plugins-official": true,
+    "humanize-korean@im-not-ai": true
+  },
+  "skillListingBudgetFraction": 0.04
+}

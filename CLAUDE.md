@@ -20,7 +20,7 @@
 
 Serena를 사용할 경우 이 작업 폴더를 가리켜야 한다. 없거나 실패하면 rg/Read로 계속한다. 결과는 목표·변경 파일·실행한 검증·미해결·다음 행동을 짧게 반환한다. 총괄의 diff 검토와 원본 Unity 검증 전 완료로 기록하지 않는다. Codex 검토는 독립 지원이며 제작의 필수 대기 조건이 아니다.
 
-제작 세션에서는 claude-mem/ECC/Figma/한국어 윤문/Task Observer 플러그인을 비활성화한다. /goal과 프로젝트 전용 production Mods만 제작 런처에서 사용하며 하위 작업자는 훅 비활성화를 유지한다. 기존 기억·관찰 기록은 보존한다. 문서 작성이나 관찰이 목적이면 별도 명시 호출로 사용한다. 사용량/계정 차단 시 현재 diff와 세션 ID/오류를 보존하며 계정 제한을 우회하지 않는다.
+2026-11-09 도구 재설계(`Docs/00_CURRENT/TOOLING_DESIGN_2026-11-09.md`): 이 프로젝트 세션은 pa-production-console·humanize-korean(대사·문서 한국어 윤문)만 켜고 claude-mem/ECC/Figma/github/claude-code-setup/Task Observer는 끈다. 전체 도구가 필요하면 CLI `claude --settings .claude/profiles/full-tooling.settings.json`으로 일시 사용한다. Unity MCP 진입점은 프로젝트 `.mcp.json`의 `unityMCP`(HTTP) 하나다. Python은 `C:/Users/sdjsd/AppData/Local/Programs/Python/Python312/python.exe`를 쓴다(PATH의 기본 python에는 PIL 없음). /goal과 프로젝트 전용 production Mods만 제작 런처에서 사용하며 하위 작업자는 훅 비활성화를 유지한다. 기존 기억·관찰 기록은 보존한다. 문서 작성이나 관찰이 목적이면 별도 명시 호출로 사용한다. 사용량/계정 차단 시 현재 diff와 세션 ID/오류를 보존하며 계정 제한을 우회하지 않는다.
 
 기본 진입은 `Tools/LoopEngineering/Start-ProjectPAClaudeDemo.ps1`이다. 시작 지시문은 `Tools/LoopEngineering/PRODUCTION_ENTRY.md`이며 별도 상태 문서가 아니다. 데모 제작 세부는 `.agents/skills/pa-demo-factory/SKILL.md`를 필요할 때 읽는다. 기존 중단 작업자를 재사용할 때는 성공 여부와 최신 원본 해시를 확인하고 미완료 결과를 PASS로 바꾸지 않는다.
 

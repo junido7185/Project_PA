@@ -18,6 +18,8 @@ public sealed class ShoreFishSchool : MonoBehaviour
     const float SurfaceDepth = .05f;               // 수면 바로 아래.
     const float NibblePulse = .32f;
     const float TailPivot = -.25f;                 // 단위 길이 메시에서 꼬리가 붙는 위치.
+    const int EelSegments = 5;
+    const float EelSpacing = .42f, EelSegmentScale = .36f;  // 장어: 마디 5개를 겹치게 이어(eel-r215 3마디·.6 간격은 끊긴 사슬로 보였다) 전체 약 L
 
     public enum Stage { Roam, Approach, Nibble, Bite, Hooked, Flee }
 
@@ -40,6 +42,11 @@ public sealed class ShoreFishSchool : MonoBehaviour
         internal int nibblesPlanned;
         internal bool gone, darting, nibbling;
         internal object owner;
+        internal ShoreFish leader;   // 정어리 무리: 우두머리를 따라 붙어 다닌다(우두머리가 잡히거나 사라지면 따로 헤엄침).
+        internal Vector3 slot;       // 우두머리 기준 자리(우두머리 몸 방향 좌표)
+        internal Transform[] segs;   // 장어 몸 마디(머리 뒤로 이어짐)
+        internal MeshRenderer[] segRenderers;
+        public float SegmentSway { get { if (segs == null) return 0f; float m = 0f; foreach (var s in segs) m = Mathf.Max(m, Mathf.Abs(s.localPosition.x)); return m; } }
     }
 
     static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -213,7 +220,11 @@ public sealed class ShoreFishSchool : MonoBehaviour
         int target = count == 0 ? 0 : Mathf.Clamp(count / 3, 2, MaxFish);
         int alive = 0;
         foreach (var f in _fish) if (f.fadeTarget > 0f) alive++;
-        if (alive >= target || now < _nextSpawnAt) return;
+        if (now < _nextSpawnAt) return;
+        // reg216: 자리 물고기(숭어·복어·장어)는 드물어서, 무리가 이미 차 있으면 그 구역 물가에 와도 한 마리도 없을 때가 있었다(복어·장어 못 찾음).
+        // 그 구역 물가 안에 있는데 그 종이 하나도 없으면(나올 시간일 때) 한 마리를 더(무리 한도 +1까지) 그 구역에 둔다.
+        if (count > 0 && alive < target + 1 && TrySpawnResident(player)) { _nextSpawnAt = now + Random.Range(1.5f, 3f); return; }
+        if (alive >= target) return;
         // 새 물가에 도착하면 빠르게 채우고, 그다음은 천천히 보충한다(잡은 물고기 자리는 Catch가 더 늦춘다).
         _nextSpawnAt = now + (alive < target / 2 ? .3f : Random.Range(1.5f, 3f));
         float half = _grid.Definition.CellSize * .5f;
@@ -224,18 +235,81 @@ public sealed class ShoreFishSchool : MonoBehaviour
             var p = centre + new Vector3(Random.Range(-half, half), 0f, Random.Range(-half, half));
             if (Flat(p - player) < 5f && attempt < 6) continue; // 플레이어 코앞에서 갑자기 나타나지 않게
             if (!Roamable(p)) continue;
-            Spawn(p, Random.Range(0f, 360f));
+            // 그 자리에 나올 종을 먼저 정하고, 나올 시간이 아니거나(송어 06–18·장어 14–24) 구역 밖이면 다른 자리를 본다.
+            int species = FishingSpot.PickSpecies(p);
+            if (!FishingSpot.ActiveNow(species) || !FishingSpot.InZone(species, p)) continue;
+            float yaw = Random.Range(0f, 360f);
+            var leader = Spawn(p, yaw, species);
+            if (leader.Species == FishingSpot.SardineSpecies) SpawnSchoolmates(leader, p, yaw);
             return;
         }
     }
 
-    // 종 → 크기 등급: 0 기본 물고기 작음, 2 노랑쥐치 중간, 1 붉은 도미 큼(드물고 어렵다).
+    // reg237: 하구 가까운 강가는 무리가 바다 물고기로 차 송어가 하나도 없을 때가 있었다 → 강·연못에만 사는 송어·붕어도 보장.
+    static readonly int[] Residents = { FishingSpot.MulletSpecies, FishingSpot.PufferSpecies, FishingSpot.EelSpecies, FishingSpot.TroutSpecies, FishingSpot.CrucianSpecies };
+    bool TrySpawnResident(Vector3 player)
+    {
+        foreach (int species in Residents)
+        {
+            if (!FishingSpot.ActiveNow(species)) continue;
+            bool present = false;
+            foreach (var f in _fish) if (f.Alive && f.fadeTarget > 0f && f.Species == species) { present = true; break; }
+            if (present) continue;
+            float half = _grid.Definition.CellSize * .5f;
+            for (int attempt = 0; attempt < 24; attempt++)
+            {
+                var cell = _candidates[Random.Range(0, _candidates.Count)];
+                if (!_grid.CellToWorld(cell, out var centre)) continue;
+                var p = centre + new Vector3(Random.Range(-half, half), 0f, Random.Range(-half, half));
+                if (Flat(p - player) < 5f || !FishingSpot.InZone(species, p) || !Roamable(p)) continue;
+                Spawn(p, Random.Range(0f, 360f), species);
+                ResidentSpawns++;
+                return true;
+            }
+        }
+        return false;
+    }
+    public int ResidentSpawns { get; private set; }
+    public bool IsCandidate(Vector2Int c) => _candidates.Contains(c);
+    public bool RoamableAt(Vector3 p) => _grid != null && Roamable(p);
+
+    // 정어리는 두 마리가 우두머리 뒤 좌우에 붙어 세 마리 무리가 된다(놓을 자리가 물이 아니면 그만큼 적게).
+    void SpawnSchoolmates(ShoreFish leader, Vector3 p, float yaw)
+    {
+        // reg255: 물가에 붙어 생긴 우두머리는 두 자리가 다 물 밖이라 혼자 다닐 때가 있었다(54회 중 1) →
+        // 기본 두 자리가 막히면 반대쪽·바로 뒤 자리를 차례로 보고 두 마리까지 붙인다.
+        var slots = new[] { new Vector3(.42f, 0f, -.4f), new Vector3(-.38f, 0f, -.55f),
+            new Vector3(-.42f, 0f, -.4f), new Vector3(.38f, 0f, -.55f), new Vector3(0f, 0f, -.6f), new Vector3(.3f, 0f, -.9f), new Vector3(-.3f, 0f, -.9f) };
+        int mates = 0;
+        foreach (var slot in slots)
+        {
+            if (mates >= 2 || _fish.Count >= MaxFish + 2) return;
+            Vector3 at = p + Quaternion.Euler(0f, yaw, 0f) * slot;
+            if (!Roamable(at)) continue;
+            var mate = Spawn(at, yaw, FishingSpot.SardineSpecies);
+            mate.leader = leader; mate.slot = slot;
+            mates++;
+        }
+    }
+
+    public int SchoolFollowers { get { int n = 0; foreach (var f in _fish) if (f.Alive && f.leader != null && f.leader.Alive) n++; return n; } }
+
+    // 종 → 크기 등급: 3 정어리 가장 작음, 0 기본 물고기 작음, 2 노랑쥐치 중간, 1 붉은 도미 큼(드물고 어렵다).
+    // 4 고등어: 참치보다 길고(.85~1.0) 폭은 좁게(Spawn에서 x .62) — 길쭉한 그림자로 구분된다.
     static float LengthFor(int species, float t) =>
+        species == FishingSpot.SardineSpecies ? Mathf.Lerp(.42f, .5f, t) :
+        species == FishingSpot.MackerelSpecies ? Mathf.Lerp(.85f, 1f, t) :
+        species == FishingSpot.FlounderSpecies ? Mathf.Lerp(.68f, .82f, t) :
+        species == FishingSpot.MulletSpecies ? Mathf.Lerp(.95f, 1.1f, t) :
+        species == FishingSpot.PufferSpecies ? Mathf.Lerp(.5f, .6f, t) :
+        species == FishingSpot.TroutSpecies ? Mathf.Lerp(.75f, .9f, t) :
+        species == FishingSpot.EelSpecies ? Mathf.Lerp(1.1f, 1.3f, t) :
+        species == FishingSpot.CrucianSpecies ? Mathf.Lerp(.48f, .58f, t) :
         species == 1 ? Mathf.Lerp(1.15f, 1.4f, t) : species == 2 ? Mathf.Lerp(.8f, 1.0f, t) : Mathf.Lerp(.6f, .76f, t); // 12.5m 고정 카메라에서 읽히게 약 1.3배(2026-10-31 화면 검토)
 
     ShoreFish Spawn(Vector3 p, float yaw, int species = -1)
     {
-        if (species < 0 || species >= FishingSpot.SpeciesCount) species = FishingSpot.PickSpecies();
+        if (species < 0 || species >= FishingSpot.SpeciesCount) species = FishingSpot.PickSpecies(p);
         float t = Random.value;
         var f = new ShoreFish
         {
@@ -247,12 +321,41 @@ public sealed class ShoreFishSchool : MonoBehaviour
         f.surface = SurfaceAt(p, p.y);
         var root = new GameObject("ShoreFish_" + (++_serial) + "_" + species).transform;
         root.SetParent(transform, false);
-        root.localScale = Vector3.one * f.Length;
+        // 넙치(5)는 넓고 짧은 원반형 그림자(폭 ×1.35, 길이 ×.8).
+        // 숭어(6)는 고등어보다 조금 굵은 길쭉한 그림자(폭 ×.7), 복어(7)는 동글동글(폭 ×1.15, 길이 ×.9).
+        root.localScale = species == FishingSpot.MackerelSpecies ? new Vector3(f.Length * .62f, f.Length, f.Length)
+            : species == FishingSpot.FlounderSpecies ? new Vector3(f.Length * 1.35f, f.Length, f.Length * .8f)
+            : species == FishingSpot.MulletSpecies ? new Vector3(f.Length * .7f, f.Length, f.Length)
+            : species == FishingSpot.PufferSpecies ? new Vector3(f.Length * 1.15f, f.Length, f.Length * .9f)
+            // 송어(8)는 날렵한 중간 그림자(폭 ×.6). 장어(9)는 아래에서 마디를 이어 길게 굽이친다(머리 마디는 짧고 가늘게).
+            : species == FishingSpot.TroutSpecies ? new Vector3(f.Length * .6f, f.Length, f.Length)
+            // 붕어(10)는 작고 몸높이가 있는 둥근 그림자(폭 ×.85), 잔잔하게(내달리지 않음).
+            : species == FishingSpot.CrucianSpecies ? new Vector3(f.Length * .85f, f.Length, f.Length * .95f)
+            : species == FishingSpot.EelSpecies ? new Vector3(f.Length * .34f, f.Length, f.Length * EelSegmentScale) : Vector3.one * f.Length;
+        if (species == FishingSpot.EelSpecies || species == FishingSpot.CrucianSpecies) f.nextDartAt = float.MaxValue; // 장어·붕어는 내달리지 않는다
+        // 복어는 내달리지 않고 느릿느릿(넙치처럼 다만 덜 쉼).
+        if (species == FishingSpot.PufferSpecies) f.nextDartAt = float.MaxValue;
+        // 넙치는 내달리지 않는다(잠깐 움직이고 오래 쉬기).
+        if (species == FishingSpot.FlounderSpecies) f.nextDartAt = float.MaxValue;
+        // 고등어는 짧게 달리고 쉬는 회유(연구 F05): 첫 달리기도 일찍.
+        if (species == FishingSpot.MackerelSpecies) f.nextDartAt = Time.time + Random.Range(1.5f, 4f);
         f.root = root;
         f.halo = MakeRenderer(root, "NightHalo", _haloMesh, _haloMat, Vector3.zero);
         f.body = MakeRenderer(root, "Silhouette", _bodyMesh, _bodyMat, Vector3.zero);
         f.tailRenderer = MakeRenderer(root, "Tail", _tailMesh, _bodyMat, new Vector3(0f, 0f, TailPivot));
         f.tail = f.tailRenderer.transform;
+        if (species == FishingSpot.EelSpecies)
+        {
+            // 연구 F09 "길고 굽이치는 몸 — 공통 몸 비율 조정만으로 완료 처리하지 않음": 몸 마디 3개를 뒤로 잇고 Pose에서 위상차로 좌우로 굽힌다.
+            f.segs = new Transform[EelSegments]; f.segRenderers = new MeshRenderer[EelSegments];
+            for (int i = 0; i < EelSegments; i++)
+            {
+                var seg = MakeRenderer(root, "EelSeg" + i, _bodyMesh, _bodyMat, new Vector3(0f, 0f, -EelSpacing * (i + 1)));
+                seg.transform.localScale = new Vector3(1f - .09f * i, 1f, 1f);
+                f.segs[i] = seg.transform; f.segRenderers[i] = seg;
+            }
+            f.tail.localPosition = new Vector3(0f, 0f, -EelSpacing * EelSegments + TailPivot);
+        }
         _fish.Add(f);
         return f;
     }
@@ -426,19 +529,37 @@ public sealed class ShoreFishSchool : MonoBehaviour
             Steer(f, f.pos + Forward(f.heading) * 2f, .4f, 90f, dt, false, LandMargin * .6f);
             return;
         }
+        if (f.leader != null)
+        {
+            var lead = f.leader;
+            if (lead.Alive && lead.State == Stage.Roam && lead.fadeTarget > 0f)
+            {
+                // 우두머리 몸 방향 기준 자리로: 멀어지면 조금 더 빨리 따라붙는다.
+                Vector3 slot = lead.pos + Quaternion.Euler(0f, lead.heading, 0f) * f.slot;
+                float gap = Flat(slot - f.pos);
+                f.cruise = Mathf.Max(lead.cruise, lead.speed) + Mathf.Clamp(gap - .15f, 0f, 1f) * 1.2f;
+                Steer(f, slot, f.cruise, 220f, dt, true, LandMargin);
+                return;
+            }
+            if (!lead.Alive) f.leader = null;
+        }
         if (f.darting && now >= f.stateUntil) { f.darting = false; f.cruise = Random.Range(.3f, .55f); f.retargetAt = now + Random.Range(1f, 3f); }
         // 가끔 휙 방향을 틀며 짧게 내달린다.
         if (!f.darting && now >= f.nextDartAt)
         {
-            f.nextDartAt = now + Random.Range(8f, 18f);
+            f.nextDartAt = f.Species == FishingSpot.FlounderSpecies ? float.MaxValue
+                : now + (f.Species == FishingSpot.MackerelSpecies ? Random.Range(3f, 6f) : Random.Range(8f, 18f));
             if (TryPickTarget(f, 1.6f, 3f, 75f, out var dash))
             { f.target = dash; f.darting = true; f.stateUntil = now + .7f; f.speed = Mathf.Max(f.speed, 1.4f); f.cruise = Random.Range(2.4f, 3.1f); }
         }
-        if (!f.darting && (now >= f.retargetAt || Flat(f.target - f.pos) < .25f))
+        // 2026-11-04 flounder-r145: 멈춰 쉬기는 target=pos라 '목표 도착' 조건이 다음 프레임에 바로 참이 되어 쉬기가 한 프레임 만에 끝났다.
+        // 쉬는 중(cruise 0)에는 정해 둔 휴식 시간(retargetAt)만 따른다.
+        if (!f.darting && (now >= f.retargetAt || f.cruise > 0f && Flat(f.target - f.pos) < .25f))
         {
             f.retargetAt = now + Random.Range(3.5f, 8f);
             float size = Mathf.InverseLerp(.4f, 1.05f, f.Length);
-            if (Random.value < .3f) { f.target = f.pos; f.cruise = 0f; f.retargetAt = now + Random.Range(1f, 2.6f); } // 잠시 멈춰 떠 있기
+            bool flat = f.Species == FishingSpot.FlounderSpecies;
+            if (Random.value < (flat ? .65f : .3f)) { f.target = f.pos; f.cruise = 0f; f.retargetAt = now + (flat ? Random.Range(3f, 6f) : Random.Range(1f, 2.6f)); } // 잠시 멈춰 떠 있기(넙치는 오래 바닥에 붙어 쉼)
             else if (TryPickTarget(f, 1.2f, 4.5f, 110f, out var next)) { f.target = next; f.cruise = Random.Range(.3f, .6f) * Mathf.Lerp(1.15f, .8f, size); }
             else { f.target = f.pos; f.cruise = 0f; f.retargetAt = now + .5f; }
         }
@@ -468,7 +589,8 @@ public sealed class ShoreFishSchool : MonoBehaviour
         {
             float yaw = f.heading + Random.Range(-spread, spread) + (i >= 5 ? 180f : 0f); // 막히면 돌아선다
             Vector3 p = f.pos + Forward(yaw) * Random.Range(minDistance, maxDistance);
-            if (Roamable(p) && PathClear(f.pos, p, true)) { target = p; return true; }
+            // r204 자리 물고기(숭어·복어)는 제 구역(항구 18m·바위 4m) 안의 목표만 고른다.
+            if (Roamable(p) && FishingSpot.InZone(f.Species, p) && PathClear(f.pos, p, true)) { target = p; return true; }
         }
         target = f.pos;
         return false;
@@ -503,7 +625,9 @@ public sealed class ShoreFishSchool : MonoBehaviour
         f.speed = Mathf.MoveTowards(f.speed, cruise, dt * (f.darting ? 6f : 1.2f));
         if (f.speed <= .001f) return true;
         Vector3 next = f.pos + Forward(f.heading) * f.speed * dt;
-        if (shoreOnly ? Roamable(next) : ClearOfLand(_grid, next, margin)) { f.pos = next; return true; }
+        // 구역 안에 있던 자리 물고기는 물가를 헤엄칠 때 구역 밖으로 한 걸음도 나가지 않는다(멈추고 다시 고른다).
+        bool leashed = shoreOnly && FishingSpot.InZone(f.Species, f.pos) && !FishingSpot.InZone(f.Species, next);
+        if (!leashed && (shoreOnly ? Roamable(next) : ClearOfLand(_grid, next, margin))) { f.pos = next; return true; }
         f.speed = 0f; f.retargetAt = 0f;
         return false;
     }
@@ -527,12 +651,28 @@ public sealed class ShoreFishSchool : MonoBehaviour
         f.root.SetPositionAndRotation(new Vector3(f.pos.x, f.surface - SurfaceDepth, f.pos.z) + forward * f.lunge,
             Quaternion.Euler(0f, f.heading - tail * .18f, 0f));
         f.tail.localRotation = Quaternion.Euler(0f, tail, 0f);
+        if (f.segs != null)
+        {
+            // 장어: 머리에서 꼬리로 갈수록 크게, 위상이 늦게 좌우로 굽이친다(뱀처럼).
+            float lastX = 0f, lastYaw = 0f;
+            for (int i = 0; i < f.segs.Length; i++)
+            {
+                float phase = f.wiggle * .55f - (i + 1) * 1.15f;
+                lastX = Mathf.Sin(phase) * .5f * (i + 1) / f.segs.Length;
+                lastYaw = Mathf.Cos(phase) * 38f;
+                f.segs[i].localPosition = new Vector3(lastX, 0f, -EelSpacing * (i + 1));
+                f.segs[i].localRotation = Quaternion.Euler(0f, lastYaw, 0f);
+            }
+            f.tail.localPosition = new Vector3(lastX * 1.2f, 0f, -EelSpacing * f.segs.Length + TailPivot);
+            f.tail.localRotation = Quaternion.Euler(0f, lastYaw + tail * .5f, 0f);
+        }
         // 수면 바로 아래의 어두운 그림자. 큰 물고기가 조금 더 진하다. 밤에는 엷은 물빛 테두리로 읽힌다.
         float alpha = f.fade * Mathf.Lerp(.66f, .78f, night) * (.9f + .2f * Mathf.InverseLerp(.55f, 1.35f, f.Length));
         Color body = Color.Lerp(DayBody, NightBody, night); body.a = alpha;
         _block.SetColor(ColorId, body);
         f.body.SetPropertyBlock(_block);
         f.tailRenderer.SetPropertyBlock(_block);
+        if (f.segRenderers != null) foreach (var seg in f.segRenderers) seg.SetPropertyBlock(_block);
         float halo = f.fade * night * .2f;
         f.halo.enabled = halo > .01f;
         if (f.halo.enabled)

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 // Player-facing fishing action layered on the existing daily stock-prep state.
@@ -52,16 +53,100 @@ public class FishingSpot : MonoBehaviour, IInteractable
     public Item SelectedFish { get; private set; }
     string _selectedResource;
     float _selectedDifficulty;
-    static readonly string[] Species = { "Items/Item_Fish", "Items/Item_Fish_RedSnapper", "Items/Item_Fish_YellowTang" };
-    // 종마다 출현 비율과 릴 난이도가 다르다(비쌀수록 어렵다). 그림자 크기: 기본 작음 · 노랑쥐치 중간 · 붉은 도미 큼.
-    static readonly float[] SpeciesWeight = { .5f, .2f, .3f };
-    static readonly float[] SpeciesDifficultyTable = { .15f, .8f, .45f };
+    static readonly string[] Species = { "Items/Item_Fish", "Items/Item_Fish_RedSnapper", "Items/Item_Fish_YellowTang", "Items/Item_Fish_Sardine", "Items/Item_Fish_Mackerel", "Items/Item_Fish_Flounder", "Items/Item_Fish_Mullet", "Items/Item_Fish_Puffer", "Items/Item_Fish_Trout", "Items/Item_Fish_Eel", "Items/Item_Fish_Crucian" };
+    // 종마다 출현 비율과 릴 난이도가 다르다(비쌀수록 어렵다). 그림자 크기: 정어리 가장 작음 · 기본 작음 · 노랑쥐치 중간 · 붉은 도미 큼.
+    // 2026-11-03 정어리(아이템 생태 연구 F04): 한 번 뽑히면 세 마리 무리로 나타나 화면의 개체 비율은 약 35%가 된다.
+    // 낮 활동·조리 목표가 참치(Items/Item_Fish)를 직접 세므로 참치 몫(.48)은 거의 그대로 두고 도미·옐로탱에서 덜었다.
+    // 2026-11-04 고등어(연구 F05): 길쭉한 그림자, 중간보다 조금 쉬운 릴. 참치 몫은 그대로 두고 도미·옐로탱에서 덜었다.
+    // 2026-11-04 넙치(연구 F06): 넓적한 그림자, 오래 멈춰 있어 찾기 쉬운 쪽. 릴은 쉬운 편(.22). 참치 몫 유지.
+    // flounder-r143: .06은 화면 9마리 안팎에서 한 번도 안 보이는 날이 많아 '찾는 재미'가 아니라 '없는 종'이 됐다 → 고등어 .09·넙치 .08.
+    // 2026-11-09 자리 물고기(연구 F07·F08): 숭어(6)는 항구 앞, 복어(7)는 물가 바위 곁에서만 — 기본 비율 0, 그 구역에서만 몫을 더한다.
+    // 2026-11-09 담수·하구(연구 F09·F12): 송어(8)는 강(하구 제외) 06–18시, 장어(9)는 하구 14–24시. 바다 물고기는 강·연못 안쪽으로 들어가지 않는다.
+    // 2026-11-09 붕어(10, 연구 F10): 생성 섬의 연못(고지대 구덩이 3×3)에서만 06–20시, 쉬운 입문종. 잉어(F11)는 연못이 좁아 연구 조건("차별성이 약하면 둘 중 하나") 따라 넣지 않음.
+    static readonly float[] SpeciesWeight = { .48f, .11f, .13f, .11f, .09f, .08f, 0f, 0f, 0f, 0f, 0f };
+    static readonly float[] SpeciesDifficultyTable = { .15f, .8f, .45f, .08f, .32f, .22f, .38f, .18f, .4f, .5f, .12f };
+    public const int SardineSpecies = 3, MackerelSpecies = 4, FlounderSpecies = 5, MulletSpecies = 6, PufferSpecies = 7, TroutSpecies = 8, EelSpecies = 9, CrucianSpecies = 10;
+    const float EstuaryRadius = 12f, EelShare = .3f, EstuaryMulletShare = .2f;
+    static readonly HashSet<Vector2Int> FreshCells = new HashSet<Vector2Int>();
+    static readonly List<Vector3> Mouths = new List<Vector3>();
+    static WorldGridService s_zoneGrid;
+    public static int FreshCellCount => FreshCells.Count;
+    static readonly List<Vector2Int> River = new List<Vector2Int>();
+    static readonly HashSet<Vector2Int> PondCells = new HashSet<Vector2Int>();
+    public static int PondCellCount => PondCells.Count;
+    public static IReadOnlyCollection<Vector2Int> PondCellSet => PondCells;
+    // qa232: 초원의 강은 둑이 2단 넘게 높은 도랑이라 기본 카메라(남쪽 위)에서 가까운 둑에 물이 가려 송어 그림자가 안 보였다.
+    // 둑(맞닿은 땅 칸)이 수면보다 1단 이하로만 높은 '트인 강' 칸에만 송어를 둔다.
+    static readonly HashSet<Vector2Int> OpenRiver = new HashSet<Vector2Int>();
+    public static int OpenRiverCount => OpenRiver.Count;
+    public static bool IsOpenRiver(Vector3 at) => s_zoneGrid != null && s_zoneGrid.WorldToCell(at, out var c) && OpenRiver.Contains(c);
+    public static Vector3? PondCentre;
+    public static IReadOnlyList<Vector2Int> RiverCells => River; // 강 칸만(연못 제외) — 반딧불이가 강가 자리를 찾는다
+    public static WorldGridService ZoneGrid => s_zoneGrid;
+    public static IReadOnlyList<Vector3> RiverMouths => Mouths;
+
+    // 생성 섬의 강·연못 칸과 하구(강 칸이 바다 칸과 맞닿는 곳)를 기억한다. WorldGameplayAdapterService가 부른다.
+    public static void SetFreshwater(WorldGenerationResult world, WorldGridService grid)
+    {
+        FreshCells.Clear(); Mouths.Clear(); River.Clear(); PondCells.Clear(); PondCentre = null; s_zoneGrid = grid;
+        if (world == null || grid == null) return;
+        foreach (var c in world.Cells) if (c.WaterType == WorldWaterType.River) River.Add(c.Terrain.Coordinate);
+        OpenRiver.Clear();
+        foreach (var rc in River)
+        {
+            if (!grid.TryGetCell(rc, out var water)) continue;
+            int bank = int.MinValue;
+            foreach (var d in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
+                if (grid.TryGetCell(rc + d, out var land) && !land.HasWater) bank = Mathf.Max(bank, land.ElevationLevel);
+            if (bank == int.MinValue || bank - water.WaterSurfaceLevel <= 1) OpenRiver.Add(rc);
+        }
+        Vector3 sum = Vector3.zero;
+        foreach (var c in world.Cells)
+            if (c.WaterType == WorldWaterType.Pond && grid.CellToWorld(c.Terrain.Coordinate, out var pw)) { PondCells.Add(c.Terrain.Coordinate); sum += pw; }
+        PondCentre = PondCells.Count > 0 ? sum / PondCells.Count : (Vector3?)null;
+        foreach (var c in world.Cells)
+            if (c.WaterType == WorldWaterType.River || c.WaterType == WorldWaterType.Pond) FreshCells.Add(c.Terrain.Coordinate);
+        Vector2Int[] around = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        foreach (var c in world.Cells)
+        {
+            if (c.WaterType != WorldWaterType.River) continue;
+            var at = c.Terrain.Coordinate;
+            foreach (var d in around)
+                if (world.TryGetCell(at + d, out var next) && next.IsOcean && grid.CellToWorld(at, out var w)) { Mouths.Add(w); break; }
+        }
+    }
+    public static bool IsEstuary(Vector3 at) { foreach (var m in Mouths) if (FlatSq(at - m) < EstuaryRadius * EstuaryRadius) return true; return false; }
+    public static bool IsFresh(Vector3 at) => s_zoneGrid != null && s_zoneGrid.WorldToCell(at, out var c) && FreshCells.Contains(c);
+    public static bool IsPond(Vector3 at) => s_zoneGrid != null && s_zoneGrid.WorldToCell(at, out var c) && PondCells.Contains(c);
+    static bool HourIn(float from, float until) { float h = GameClock.Instance != null ? GameClock.Instance.CurrentHour : 12f; return h >= from && h < until; }
+    // 지금 나오는 시간인가(송어 06–18, 장어 14–24). 다른 종은 언제나.
+    public static bool ActiveNow(int species) => species == TroutSpecies ? HourIn(6f, 18f) : species == EelSpecies ? HourIn(14f, 24f) : species == CrucianSpecies ? HourIn(6f, 20f) : true;
+    const float MulletShare = .16f, PufferShare = .14f, HarborRadius = 18f, StoneRadius = 4f;
+    public static Vector3? HarborZone; // WorldGameplayAdapterService가 항구 위치를 넣는다
+
+    // 그 자리가 그 종의 구역인가. 숭어: 항구 18m 안 또는 하구, 복어: 물가 바위 4m 안(담수 제외), 송어: 강·연못(하구 제외), 장어: 하구.
+    // 바다 물고기(0~5)는 강·연못 안쪽(하구 제외)이 아닌 곳.
+    public static bool InZone(int species, Vector3 at)
+    {
+        if (species == MulletSpecies) return HarborZone.HasValue && FlatSq(at - HarborZone.Value) < HarborRadius * HarborRadius || IsEstuary(at);
+        if (species == TroutSpecies) return IsFresh(at) && !IsEstuary(at) && !IsPond(at) && (OpenRiver.Count == 0 || IsOpenRiver(at));
+        if (species == CrucianSpecies) return IsPond(at);
+        if (species == EelSpecies) return IsEstuary(at);
+        if (IsFresh(at) && !IsEstuary(at)) return false;
+        if (species == PufferSpecies)
+        {
+            foreach (var s in CoastalVegetationField.WaterlineStones) if (FlatSq(at - s.Stone) < StoneRadius * StoneRadius) return true;
+            return false;
+        }
+        return true;
+    }
+    static float FlatSq(Vector3 v) { v.y = 0f; return v.sqrMagnitude; }
     public static int SpeciesCount => Species.Length;
     public static string SpeciesResource(int species) => Species[Mathf.Clamp(species, 0, Species.Length - 1)];
     public static float SpeciesDifficulty(int species) => SpeciesDifficultyTable[Mathf.Clamp(species, 0, Species.Length - 1)];
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    static void ResetStatics() { s_activeCast = null; ActiveDirectCaster = null; LastDirectPullAt = -10f; }
+    static void ResetStatics() { QaPreferSpecies = null; s_activeCast = null; ActiveDirectCaster = null; LastDirectPullAt = -10f; HarborZone = null; FreshCells.Clear(); Mouths.Clear(); River.Clear(); PondCells.Clear(); PondCentre = null; OpenRiver.Clear(); s_zoneGrid = null; }
 
     public void ConfigureDirectPlayerDemo(WorldGridService grid = null)
     {
@@ -182,7 +267,8 @@ public class FishingSpot : MonoBehaviour, IInteractable
             }
             if (!found) continue;
             float surface = WorldChunkMeshBuilder.OpeningWaterHeight(definition, bestCell);
-            if (origin.y - surface > 3.5f) continue; // 높은 절벽 위에서는 던지지 않는다.
+            // 높은 절벽 위에서는 던지지 않는다. 다만 연못(고지대 바위 구덩이, 둘레 3단 위)은 위에서 드리우는 것이 유일한 길이라 4.6m까지.
+            if (origin.y - surface > (IsPond(best) ? 4.6f : 3.5f)) continue;
             water = new Vector3(best.x, surface + .02f, best.z);
             anchor = origin + dir * Mathf.Clamp(edge, .6f, 1.45f);
             return true;
@@ -257,10 +343,31 @@ public class FishingSpot : MonoBehaviour, IInteractable
         GatherFeedback.Swish();
     }
 
-    public static int PickSpecies()
+    // QA/캡처 전용(FIXTURE로 기록): 설정되면 새 그림자의 절반을 그 종으로 뽑는다. 실제 플레이에서는 항상 null.
+    public static int? QaPreferSpecies;
+
+    public static int PickSpecies() => PickSpecies(null);
+
+    // at: 그림자가 생기는 자리(또는 찌 자리). 자리 물고기는 그 구역일 때만 몫이 붙는다(QA 편향도 구역 안에서만).
+    public static int PickSpecies(Vector3? at)
     {
-        float roll = Random.value, sum = 0f;
-        for (int i = 0; i < Species.Length; i++) { sum += SpeciesWeight[i]; if (roll < sum) return i; }
+        if (QaPreferSpecies.HasValue && Random.value < .5f)
+        {
+            int prefer = Mathf.Clamp(QaPreferSpecies.Value, 0, Species.Length - 1);
+            if (at.HasValue ? InZone(prefer, at.Value) : prefer < MulletSpecies) return prefer;
+        }
+        // 연못은 붕어만, 강 안쪽은 송어만(바다 추첨표에 섞지 않는다 — 연구 F10·F12).
+        if (at.HasValue && IsPond(at.Value)) return CrucianSpecies;
+        if (at.HasValue && IsFresh(at.Value) && !IsEstuary(at.Value)) return TroutSpecies;
+        bool estuary = at.HasValue && IsEstuary(at.Value);
+        float mullet = at.HasValue && InZone(MulletSpecies, at.Value) ? (estuary ? EstuaryMulletShare : MulletShare) : 0f;
+        float puffer = at.HasValue && InZone(PufferSpecies, at.Value) ? PufferShare : 0f;
+        float eel = estuary && ActiveNow(EelSpecies) ? EelShare : 0f;
+        float roll = Random.value * (1f + mullet + puffer + eel), sum = 0f;
+        for (int i = 0; i < MulletSpecies; i++) { sum += SpeciesWeight[i]; if (roll < sum) return i; }
+        if (roll < sum + mullet) return MulletSpecies;
+        if (roll < sum + mullet + puffer) return PufferSpecies;
+        if (roll < sum + mullet + puffer + eel) return EelSpecies;
         return 0;
     }
 
@@ -303,7 +410,7 @@ public class FishingSpot : MonoBehaviour, IInteractable
         }
         if (now >= _unseenBiteAt)
         {
-            int species = PickSpecies();
+            int species = PickSpecies(_waterTarget);
             EnterBite(species, SpeciesDifficulty(species));
         }
     }
